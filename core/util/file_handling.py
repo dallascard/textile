@@ -64,7 +64,7 @@ def write_list_to_text(lines, output_filename, add_newlines=True, add_final_newl
         output_file.writelines(lines)
 
 
-def read_csv_to_df(input_filename, header=0, index_col=0, sep=','):
+def read_csv_to_df(input_filename, header=0, index_col=0, sep=',', encoding='utf-8', parse_dates=False):
     """
     Use pandas to read in a .csv file into a dataframe.
     I should always use this method to ensure consistency in the index, for example
@@ -72,9 +72,11 @@ def read_csv_to_df(input_filename, header=0, index_col=0, sep=','):
     :param header: row of header (-1) if absent
     :param index_col: colum of index
     :param sep: colum separator
+    :param encoding: encoding to use for the input file
+    :param parse_dates: if true, pandas will attempt to parse the dates
     :return: pandas dataframe with an string-based index
     """
-    df = pd.read_csv(input_filename, header=header, index_col=index_col, sep=sep)
+    df = pd.read_csv(input_filename, header=header, index_col=index_col, sep=sep, parse_dates=parse_dates, encoding=encoding)
     df.index = [str(i) for i in df.index]
     return df
 
