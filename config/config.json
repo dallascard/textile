@@ -1,0 +1,5 @@
+{
+  "feature_defs": [
+    "words,min_df=2,transform=binarize"
+  ]
+}
