@@ -4,7 +4,6 @@ import random
 from optparse import OptionParser
 from ..util import file_handling as fh
 
-d
 def main():
     usage = "%prog input_json output_prefix"
     parser = OptionParser(usage=usage)
