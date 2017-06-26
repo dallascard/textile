@@ -4,7 +4,7 @@ import random
 from optparse import OptionParser
 from ..util import file_handling as fh
 
-
+d
 def main():
     usage = "%prog input_json output_prefix"
     parser = OptionParser(usage=usage)
@@ -35,8 +35,8 @@ def make_random_split(input_file, output_prefix, train_percent, overwrite=False)
     n_items = len(keys)
     n_train = int(n_items * train_percent)
 
-    train = {data[k] for k in keys[:n_train]}
-    other = {data[k] for k in keys[n_train:]}
+    train = {k: data[k] for k in keys[:n_train]}
+    other = {k: data[k] for k in keys[n_train:]}
 
     output_file = os.path.join(basedir, output_prefix + '_train.json')
     if os.path.exists(output_file) and not overwrite:
