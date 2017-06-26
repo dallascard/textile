@@ -37,6 +37,8 @@ def make_random_split(input_file, output_prefix, train_percent, overwrite=False)
     train = {k: data[k] for k in keys[:n_train]}
     other = {k: data[k] for k in keys[n_train:]}
 
+    print("Creating train and dev sets of sizes %d and %d" % (len(train), len(other)))
+
     output_file = os.path.join(basedir, output_prefix + '_train.json')
     if os.path.exists(output_file) and not overwrite:
         sys.exit("Error: output file %s exists" % output_file)
