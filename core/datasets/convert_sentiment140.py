@@ -1,5 +1,4 @@
 import os
-import chardet
 from optparse import OptionParser
 
 import pandas as pd
@@ -51,9 +50,6 @@ def convert_sentiment140(train_file, test_file, output_dir):
 
     fh.write_to_json(train_dict, os.path.join(data_dir, 'train.json'))
     fh.write_to_json(test_dict, os.path.join(data_dir, 'test.json'))
-
-    train_dict.update(test_dict)
-    fh.write_to_json(train_dict, os.path.join(data_dir, 'all.json'))
 
 
 def load_df(filename):
