@@ -16,10 +16,10 @@ def main():
                       help='Label name: default=%default')
     parser.add_option('-n', dest='n_classes', default=None,
                       help='Number of classes (None=max+1): default=%default')
+    parser.add_option('--pos_label', dest='pos_label', default=1,
+                      help='Positive label (binary only): default=%default')
     parser.add_option('--average', dest='average', default='micro',
                       help='Averageing to use for F1 (multiclass only): default=%default')
-    #parser.add_option('--boolarg', action="store_true", dest="boolarg", default=False,
-    #                  help='Keyword argument: default=%default')
 
 
     (options, args) = parser.parse_args()
@@ -30,6 +30,7 @@ def main():
     n_classes = options.n_classes
     if n_classes is not None:
         n_classes = int(n_classes)
+    pos_label = int(options.pos_label)
     average = options.average
 
     label_dir = dirs.dir_labels(project_dir, subset)
@@ -38,7 +39,7 @@ def main():
     pred_dir = dirs.dir_predictions(project_dir, subset, model_name)
     predictions = fh.read_csv_to_df(os.path.join(pred_dir, label + '_predictions.csv'), index_col=0, header=0)
 
-    evaluate_predictions(labels, predictions, n_classes=n_classes, average=average)
+    evaluate_predictions(labels, predictions, n_classes=n_classes, pos_label=pos_label, average=average)
 
 
 def evaluate_predictions(labels, predictions, n_classes=None, pos_label=1, average='micro'):
