@@ -27,7 +27,9 @@ def main():
     subset = args[1]
     model_name = args[2]
     label = options.label
-    n_classes = int(options.n_classes)
+    n_classes = options.n_classes
+    if n_classes is not None:
+        n_classes = int(n_classes)
     average = options.average
 
     label_dir = dirs.dir_labels(project_dir, subset)
@@ -40,7 +42,7 @@ def main():
 
 
 def evaluate_predictions(labels, predictions, n_classes=None, pos_label=1, average='micro'):
-    assert labels.index == predictions.index
+    assert np.all(labels.index == predictions.index)
     if n_classes is None:
         n_classes = max(np.max(labels), np.max(predictions)) + 1
     f1 = evaluation.f1_score(labels, predictions, n_classes, pos_label=pos_label, average=average)
