@@ -32,11 +32,11 @@ def make_random_split(input_file, output_prefix, train_percent, overwrite=False)
     keys = list(data.keys())
     random.shuffle(keys)
     n_items = len(keys)
-    n_train = int(n_items * train_percent)
+    print("Loaded %d items" % n_items)
 
+    n_train = int(n_items * train_percent)
     train = {k: data[k] for k in keys[:n_train]}
     other = {k: data[k] for k in keys[n_train:]}
-
     print("Creating train and dev sets of sizes %d and %d, respectively" % (len(train), len(other)))
 
     output_file = os.path.join(basedir, output_prefix + '_train.json')

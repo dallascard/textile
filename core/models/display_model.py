@@ -6,7 +6,7 @@ from ..models import lr
 def main():
     usage = "%prog model_dir"
     parser = OptionParser(usage=usage)
-    parser.add_option('--n_terms', dest='n_terms', default=10,
+    parser.add_option('-n', dest='n_terms', default=10,
                       help='Number of terms to display: default=%default')
     #parser.add_option('--boolarg', action="store_true", dest="boolarg", default=False,
     #                  help='Keyword argument: default=%default')
