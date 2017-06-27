@@ -29,6 +29,10 @@ def dir_predictions(project, subset, model):
     return os.path.join(project, 'data', 'subsets', subset, 'predictions', model)
 
 
+def dir_patterns(project, subset):
+    return os.path.join(project, 'data', 'subsets', subset, 'patterns')
+
+
 def dir_models(project):
     return os.path.join(project, 'models')
 
