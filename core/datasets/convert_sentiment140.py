@@ -8,7 +8,7 @@ from ..util import file_handling as fh
 
 
 def main():
-    usage = "%prog train.csv test.csv output_dir"
+    usage = "%prog train.csv test.csv project_dir"
     parser = OptionParser(usage=usage)
     #parser.add_option('--keyword', dest='key', default=None,
     #                  help='Keyword argument: default=%default')
@@ -18,12 +18,12 @@ def main():
     (options, args) = parser.parse_args()
     train_file = args[0]
     test_file = args[1]
-    output_dir = args[2]
+    project_dir = args[2]
 
-    convert_sentiment140(train_file, test_file, output_dir)
+    convert_sentiment140(train_file, test_file, project_dir)
 
 
-def convert_sentiment140(train_file, test_file, output_dir):
+def convert_sentiment140(train_file, test_file, project_dir):
     print("Loading data")
     train = load_df(train_file)
     test = load_df(test_file)
@@ -45,7 +45,7 @@ def convert_sentiment140(train_file, test_file, output_dir):
     test_dict = convert_to_json(test)
 
     print("Saving data")
-    data_dir = dirs.dir_data_raw(output_dir)
+    data_dir = dirs.dir_data_raw(project_dir)
     fh.makedirs(data_dir)
 
     fh.write_to_json(train_dict, os.path.join(data_dir, 'train.json'))
