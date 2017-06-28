@@ -65,7 +65,15 @@ def convert_to_json(df):
     data = {}
     for i in df.index:
         row = df.loc[i]
-        data[str(i)] = {'label': int(row.label), 'id': int(row.id), 'date': str(row.date), 'year': row.date.year, 'month': row.date.month, 'text': row.text, 'user': row.user, 'query': row.query}
+        data[str(i)] = {'label': int(row.label),
+                        'id': int(row.id),
+                        'date': str(row.date),
+                        'year': row.date.year,
+                        'month': row.date.month,
+                        'dayofyear': row.date.dayofyear,
+                        'text': row.text,
+                        'user': row.user,
+                        'query': row.query}
     return data
 
 
