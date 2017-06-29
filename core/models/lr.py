@@ -32,7 +32,7 @@ class LR:
         else:
             self._model = model
 
-    def fit(self, X, y, col_names):
+    def fit(self, X, y, col_names, sample_weights=None):
         """
         Fit a classifier to data
         :param X: feature matrix: np.array(size=(n_items, n_features))
@@ -51,7 +51,7 @@ class LR:
         else:
             self._model = lr(penalty=self._penalty, C=self._alpha, fit_intercept=self._fit_intercept)
             # otherwise, train the model
-            self._model.fit(X, y)
+            self._model.fit(X, y, sample_weight=sample_weights)
 
     def predict(self, X):
         # if we've stored a default value, then that is our prediction

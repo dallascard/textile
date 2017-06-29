@@ -16,7 +16,7 @@ def main():
     parser = OptionParser(usage=usage)
     parser.add_option('--label', dest='label', default='label',
                       help='Label name: default=%default')
-    parser.add_option('--weights_file', dest='weights_file', default=None,
+    parser.add_option('--weights', dest='weights_file', default=None,
                       help='Weights file: default=%default')
     parser.add_option('--penalty', dest='penalty', default='l1',
                       help='Regularization type: default=%default')
@@ -38,6 +38,7 @@ def main():
     model_name = args[2]
     config_file = args[3]
     label = options.label
+    weights_file = options.weights_file
     penalty = options.penalty
     #objective = options.objective
     intercept = not options.no_intercept
@@ -62,10 +63,10 @@ def main():
     #feature_defs = [feature_def1, feature_def2]
     #feature_defs = [feature_def1]
 
-    train_model(project_dir, model_name, subset, label, feature_defs, n_classes=n_classes, penalty=penalty, intercept=intercept, n_dev_folds=n_dev_folds)
+    train_model(project_dir, model_name, subset, label, feature_defs, weights_file, n_classes=n_classes, penalty=penalty, intercept=intercept, n_dev_folds=n_dev_folds)
 
 
-def train_model(project_dir, model_name, subset, label, feature_defs, n_classes=2, penalty='l2', alpha_min=0.01,
+def train_model(project_dir, model_name, subset, label, feature_defs, weights_file=None, n_classes=2, penalty='l2', alpha_min=0.01,
                      alpha_max=100, n_alphas=4, intercept=True, n_dev_folds=5, save_model=True):
 
     label_dir = dirs.dir_labels(project_dir, subset)
@@ -98,6 +99,14 @@ def train_model(project_dir, model_name, subset, label, feature_defs, n_classes=
 
     X = features_concat.get_counts().tocsr()
     y = labels[label].as_matrix()
+
+    weights = None
+    weights_k = None
+    if weights_file is not None:
+        weights_df = fh.read_csv_to_df(weights_file)
+        assert weights_df.index == labels.index
+        weights = weights_df['weight'].values
+
     if n_classes is None:
         n_classes = int(np.max(y))+1
     bincount = np.bincount(y, minlength=n_classes)
@@ -134,7 +143,9 @@ def train_model(project_dir, model_name, subset, label, feature_defs, n_classes=
 
         #for i, (train, dev) in enumerate(kfold):
         for train_indices, dev_indices in kfold.split(X):
-            model.fit(X[train_indices, :], y[train_indices], col_names)
+            if weights is not None:
+                weights_k = weights[train_indices]
+            model.fit(X[train_indices, :], y[train_indices], col_names, sample_weights=weights_k)
 
             train_predictions = model.predict(X[train_indices, :])
             dev_predictions = model.predict(X[dev_indices, :])

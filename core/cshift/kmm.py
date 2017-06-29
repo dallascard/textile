@@ -168,6 +168,7 @@ def make_spmatrix_from_sparse(X):
     else:
         X_coo = X.tocoo()
 
+    print("Size=%d" % len(X_coo.data.tolist()))
     X_spmatrix = spmatrix(X_coo.data.tolist(), X_coo.row.tolist(), X_coo.col.tolist(), size=X.shape)
     return X_spmatrix
 
