@@ -2,6 +2,7 @@ import math
 from optparse import OptionParser
 
 import numpy as np
+import pandas as pd
 from scipy import sparse
 from cvxopt import matrix, solvers, spmatrix
 
@@ -34,7 +35,7 @@ def main():
         eps = float(eps)
 
     weights = compute_weights(project, source_subset, target_subset, config_file, B, eps, is_sparse)
-    np.savez(output_filename, weights=weights)
+    weights.to_csv(output_filename)
 
 
 def compute_weights(project, source_subset, target_subset, config_file, B=10, eps=None, is_sparse=True):
@@ -99,6 +100,7 @@ def compute_weights(project, source_subset, target_subset, config_file, B=10, ep
     print(weights.shape)
     print("min mean max:")
     print(np.min(weights), np.mean(weights), np.max(weights))
+    return pd.DataFrame(weights, index=source_features_concat.get_items(), columns='weight')
 
 
 def do_kernel_mean_matching(source_X, target_X, kern='lin', B=1.0, eps=None, is_sparse=False):

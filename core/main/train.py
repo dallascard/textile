@@ -16,6 +16,8 @@ def main():
     parser = OptionParser(usage=usage)
     parser.add_option('--label', dest='label', default='label',
                       help='Label name: default=%default')
+    parser.add_option('--weights_file', dest='weights_file', default=None,
+                      help='Weights file: default=%default')
     parser.add_option('--penalty', dest='penalty', default='l1',
                       help='Regularization type: default=%default')
     parser.add_option('--no_intercept', action="store_true", dest="no_intercept", default=False,
