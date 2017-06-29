@@ -50,6 +50,7 @@ def main():
 
     weights = compute_weights(project, source_subset, target_subset, config_file, B, eps, kernel, bandwidth, offset, degree)
     output_dir = dirs.dir_weights(project, source_subset)
+    fh.makedirs(output_dir)
     weights.to_csv(os.path.join(output_dir, output_prefix + '.csv'))
 
 
@@ -117,6 +118,7 @@ def compute_weights(project, source_subset, target_subset, config_file, B=10.0, 
 def do_kernel_mean_matching(source_X, target_X, B=1.0, eps=None, kernel='poly', bandwidth=1.0, offset=0.0, degree=1):
     n_source_items, p = source_X.shape
     n_target_items, _ = target_X.shape
+    print("Computing kernels")
     if eps == None:
         eps = B/math.sqrt(n_source_items)
     if kernel == 'poly':
