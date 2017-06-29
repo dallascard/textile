@@ -44,10 +44,14 @@ def compute_weights(project, source_subset, target_subset, config_file):
         name = feature_def.name
         source_feature = features.load_from_file(input_dir=source_dir, basename=name)
         target_feature = features.load_from_file(input_dir=source_dir, basename=name)
+        print("Source:", source_feature.shape)
+        print("Target:", target_feature.shape)
         common_terms = list(set(source_feature.get_terms()).intersection(set(target_feature.get_terms())))
         source_feature.set_terms(common_terms)
         target_feature.set_terms(common_terms)
+        print("Concatenating source and target")
         common_feature = features.concatenate_rows([source_feature, target_feature])
+        print("Common:", common_feature.shape)
         common_feature.threshold(feature_def.min_df)
         common_feature.transform(feature_def.transform)
         idf = None
@@ -58,7 +62,8 @@ def compute_weights(project, source_subset, target_subset, config_file):
         target_feature.set_terms(common_feature.get_terms())
         source_feature.transform(feature_def.transform, idf=idf)
         target_feature.transform(feature_def.transform, idf=idf)
-
+        print("Source:", source_feature.shape)
+        print("Target:", target_feature.shape)
         source_feature_list.append(source_feature)
         target_feature_list.append(target_feature)
 
