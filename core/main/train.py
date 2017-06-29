@@ -104,7 +104,7 @@ def train_model(project_dir, model_name, subset, label, feature_defs, weights_fi
     weights_k = None
     if weights_file is not None:
         weights_df = fh.read_csv_to_df(weights_file)
-        assert weights_df.index == labels.index
+        assert np.all(weights_df.index == labels.index)
         weights = weights_df['weight'].values
 
     if n_classes is None:
