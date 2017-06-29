@@ -18,6 +18,14 @@ def main():
                       help='Upper bound on weights: default=%default')
     parser.add_option('-e', dest='eps', default=None,
                       help='epsilon parameter [None=B/sqrt(n)]: default=%default')
+    parser.add_option('-k', dest='kernel', default='poly',
+                      help='Kernel type [poly|rbf]: default=%default')
+    parser.add_option('-b', dest='bandwidth', default=1.0,
+                      help='Bandwidth of rbf kernel: default=%default')
+    parser.add_option('-c', dest='offset', default=0.0,
+                      help='Offset of polynomial kernel [0=homogeneous]: default=%default')
+    parser.add_option('-d', dest='degree', default=1,
+                      help='Degree of polynomial kernel [1=linear]: default=%default')
     #parser.add_option('--sparse', action="store_true", dest="sparse", default=False,
     #                  help='Treat feature matrices as sparse: default=%default')
 
@@ -32,12 +40,16 @@ def main():
     eps = options.eps
     if eps is not None:
         eps = float(eps)
+    kernel = options.kernel
+    bandwidth = float(options.bandwidth)
+    degree = int(options.degree)
+    offset = float(options.offset)
 
-    weights = compute_weights(project, source_subset, target_subset, config_file, B, eps)
+    weights = compute_weights(project, source_subset, target_subset, config_file, B, eps, kernel, bandwidth, offset, degree)
     weights.to_csv(output_filename)
 
 
-def compute_weights(project, source_subset, target_subset, config_file, B=10.0, eps=None):
+def compute_weights(project, source_subset, target_subset, config_file, B=10.0, eps=None, kernel='poly', bandwidth=1.0, offset=0.0, degree=1):
 
     config = fh.read_json(config_file)
     feature_defs = []
@@ -90,7 +102,7 @@ def compute_weights(project, source_subset, target_subset, config_file, B=10.0, 
     source_X = source_features_concat.get_counts().todense()
     target_X = target_features_concat.get_counts().todense()
 
-    weights = do_kernel_mean_matching(source_X, target_X, kern='lin', B=B, eps=eps)
+    weights = do_kernel_mean_matching(source_X, target_X, B=B, eps=eps, kernel=kernel, bandwidth=bandwidth, offset=offset, degree=degree)
 
     print(weights.shape)
     print("min mean max:")
@@ -98,17 +110,17 @@ def compute_weights(project, source_subset, target_subset, config_file, B=10.0, 
     return pd.DataFrame(weights, index=source_features_concat.get_items(), columns=['weight'])
 
 
-def do_kernel_mean_matching(source_X, target_X, kern='lin', B=1.0, eps=None):
+def do_kernel_mean_matching(source_X, target_X, B=1.0, eps=None, kernel='poly', bandwidth=1.0, offset=0.0, degree=1):
     n_source_items, p = source_X.shape
     n_target_items, _ = target_X.shape
     if eps == None:
         eps = B/math.sqrt(n_source_items)
-    if kern == 'lin':
-        K = np.dot(source_X, source_X.T)
-        kappa = np.sum(np.dot(source_X, target_X.T), axis=1) * float(n_source_items) / float(n_target_items)
-    elif kern == 'rbf':
-        K = compute_rbf(source_X, source_X)
-        kappa = np.sum(compute_rbf(source_X, target_X), axis=1) * float(n_target_items) / float(n_source_items)
+    if kernel == 'poly':
+        K = compute_poly(source_X, source_X, degree, offset)
+        kappa = np.sum(compute_poly(source_X, target_X, degree, offset), axis=1) * float(n_source_items) / float(n_target_items)
+    elif kernel == 'rbf':
+        K = compute_rbf(source_X, source_X, bandwidth)
+        kappa = np.sum(compute_rbf(source_X, target_X, bandwidth), axis=1) * float(n_target_items) / float(n_source_items)
     else:
         raise ValueError('unknown kernel')
 
@@ -131,10 +143,18 @@ def do_kernel_mean_matching(source_X, target_X, kern='lin', B=1.0, eps=None):
     return beta
 
 
-def compute_rbf(X, Z, sigma=1.0):
-    K = np.zeros((X.shape[0], Z.shape[0]), dtype=float)
+def compute_poly(X, Y, degree=1, offset=0.0):
+    if degree == 1:
+        K = np.dot(X, Y.T) + offset
+    else:
+        K = np.power(np.dot(X, Y.T) + offset, degree)
+    return K
+
+
+def compute_rbf(X, Y, bandwidth=1.0):
+    K = np.zeros((X.shape[0], Y.shape[0]), dtype=float)
     for i, vx in enumerate(X):
-        K[i,:] = np.exp(-np.sum((vx-Z)**2, axis=1)/(2.0*sigma))
+        K[i,:] = np.exp(-bandwidth * np.sum((vx-Y)**2, axis=1))
     return K
 
 
