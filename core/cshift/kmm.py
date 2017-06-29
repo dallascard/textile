@@ -88,12 +88,8 @@ def compute_weights(project, source_subset, target_subset, config_file, B=10, ep
     #coo = A.tocoo()
     #SP = spmatrix(coo.data, coo.row.tolist(), coo.col.tolist())
 
-    if is_sparse:
-        source_X = source_features_concat.get_counts()
-        target_X = target_features_concat.get_counts()
-    else:
-        source_X = source_features_concat.get_counts().todense()
-        target_X = target_features_concat.get_counts().todense()
+    source_X = source_features_concat.get_counts().todense()
+    target_X = target_features_concat.get_counts().todense()
 
     weights = do_kernel_mean_matching(source_X, target_X, kern='lin', B=B, eps=eps, is_sparse=is_sparse)
 
