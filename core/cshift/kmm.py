@@ -110,6 +110,7 @@ def do_kernel_mean_matching(source_X, target_X, kern='lin', B=1.0, eps=None, is_
         if is_sparse:
             assert sparse.isspmatrix(source_X)
             assert sparse.isspmatrix(target_X)
+            print("Doing sparse products")
             K = source_X.dot(source_X.T)
             kappa = sparse.csc_matrix(source_X.dot(target_X.T).sum(axis=1) * float(n_source_items) / float(n_target_items))
         else:
@@ -135,8 +136,8 @@ def do_kernel_mean_matching(source_X, target_X, kern='lin', B=1.0, eps=None, is_
     h = np.r_[n_source_items * (1 + eps), n_source_items * (eps - 1), B * np.ones((n_source_items,)), np.zeros((n_source_items,))]
 
     if is_sparse:
-        G = make_spmatrix_from_sparse(G)
-        h = make_spmatrix_from_sparse(h)
+        G = make_spmatrix_from_sparse(sparse.coo_matrix(G))
+        h = make_spmatrix_from_sparse(sparse.coo_matrix(h))
     else:
         G = matrix(G)
         h = matrix(h)
@@ -155,7 +156,11 @@ def compute_rbf(X, Z, sigma=1.0):
 
 
 def make_spmatrix_from_sparse(X):
-    X_coo = X.tocoo()
+    if sparse.isspmatrix_coo(X):
+        X_coo = X
+    else:
+        X_coo = X.tocoo()
+
     X_spmatrix = spmatrix(X_coo.data.tolist(), X_coo.row.tolist(), X_coo.col.tolist(), size=X.shape)
     return X_spmatrix
 
