@@ -96,9 +96,12 @@ def do_kernel_mean_matching(source_X, target_X, kern='lin', B=1.0, eps=None):
 
     K = matrix(K)
     kappa = matrix(kappa)
+    print("Creating G")
     G = matrix(np.r_[np.ones((1, n_target_items)), -np.ones((1, n_target_items)), np.eye(n_target_items), -np.eye(n_target_items)])
+    print("Creating H")
     h = matrix(np.r_[n_target_items * (1+eps), n_target_items * (eps-1), B*np.ones((n_target_items,)), np.zeros((n_target_items,))])
 
+    print("Calling CVX")
     sol = solvers.qp(K, -kappa, G, h)
     coef = np.array(sol['x'])
     return coef
