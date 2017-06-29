@@ -51,7 +51,6 @@ class Feature:
         self.terms = terms     # list of terms (feature names)
         assert sparse.isspmatrix_csc(counts)
         self.counts = counts   # sparse.csc_matrix
-        self.shape = self.counts.shape
 
     def get_name(self):
         return self.name
@@ -64,6 +63,9 @@ class Feature:
 
     def get_counts(self):
         return self.counts
+
+    def get_shape(self):
+        return self.counts.shape
 
     def get_row_in_index_format(self, row):
         row = self.counts[row]
@@ -107,7 +109,7 @@ class Feature:
         This might be useful to obtain an idf measure from a training set and then pass it to a test set
         :return: a vector of idf values
         """
-        n_items, n_terms = self.shape
+        n_items, n_terms = self.counts.shape
         binarized = preprocessing.binarize(self.counts)
         # compute the number of documents containing each term, and add 1.0 to avoid dividing by zero
         col_sums = binarized.sum(0) + 1.0
@@ -129,7 +131,7 @@ class Feature:
 
         if max_fp < 1.0:
             print("Thresholding %s by max_fp=%0.3f" % (self.name, max_fp))
-            n_items, n_terms = self.shape
+            n_items, n_terms = self._shape
             binarized = preprocessing.binarize(self.counts)
             col_sums = binarized.sum(axis=0)
             col_sums = np.array(col_sums)[0]  # flatten col_sums to 1 dimension
@@ -138,8 +140,6 @@ class Feature:
             self.counts = self.counts[:, indices]
             self.terms = [self.terms[i] for i in indices]
             print("New shape = (%d, %d)" % self.counts.shape)
-
-        self.shape = self.counts.shape
 
     def set_terms(self, terms):
         """
