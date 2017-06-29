@@ -73,7 +73,7 @@ def compute_weights(project, source_subset, target_subset, config_file):
 
     source_X = source_features_concat.get_counts().tocsr()
     target_X = target_features_concat.get_counts().tocsr()
-    coefs = do_kernel_mean_matching(source_X, target_X, kern='lin')
+    coefs = do_kernel_mean_matching(source_X.todense(), target_X.todense(), kern='lin')
 
     print(coefs.shape)
     print(np.min(coefs), np.mean(coefs), np.max(coefs))
