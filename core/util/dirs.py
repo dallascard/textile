@@ -25,6 +25,10 @@ def dir_features(project, subset):
     return os.path.join(project, 'data', 'subsets', subset, 'features')
 
 
+def dir_weights(project, subset):
+    return os.path.join(project, 'data', 'subsets', subset, 'weights')
+
+
 def dir_predictions(project, subset, model):
     return os.path.join(project, 'data', 'subsets', subset, 'predictions', model)
 

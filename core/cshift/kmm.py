@@ -1,3 +1,4 @@
+import os
 import math
 from optparse import OptionParser
 
@@ -12,7 +13,7 @@ from ..preprocessing import features
 
 
 def main():
-    usage = "%prog project source_subset target_subset config.json output_filename.csv"
+    usage = "%prog project source_subset target_subset config.json"
     parser = OptionParser(usage=usage)
     parser.add_option('-B', dest='B', default=10.0,
                       help='Upper bound on weights: default=%default')
@@ -26,6 +27,8 @@ def main():
                       help='Offset of polynomial kernel [0=homogeneous]: default=%default')
     parser.add_option('-d', dest='degree', default=1,
                       help='Degree of polynomial kernel [1=linear]: default=%default')
+    parser.add_option('-o', dest='output_prefix', default='kmm_weights',
+                      help='Output prefix: default=%default')
     #parser.add_option('--sparse', action="store_true", dest="sparse", default=False,
     #                  help='Treat feature matrices as sparse: default=%default')
 
@@ -34,7 +37,6 @@ def main():
     source_subset = args[1]
     target_subset = args[2]
     config_file = args[3]
-    output_filename = args[4]
 
     B = float(options.B)
     eps = options.eps
@@ -44,9 +46,11 @@ def main():
     bandwidth = float(options.bandwidth)
     degree = int(options.degree)
     offset = float(options.offset)
+    output_prefix = options.output_prefix
 
     weights = compute_weights(project, source_subset, target_subset, config_file, B, eps, kernel, bandwidth, offset, degree)
-    weights.to_csv(output_filename)
+    output_dir = dirs.dir_weights(project, source_subset)
+    weights.to_csv(os.path.join(output_dir, output_prefix + '.csv'))
 
 
 def compute_weights(project, source_subset, target_subset, config_file, B=10.0, eps=None, kernel='poly', bandwidth=1.0, offset=0.0, degree=1):
