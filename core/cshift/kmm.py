@@ -2,30 +2,42 @@ import math
 from optparse import OptionParser
 
 import numpy as np
-from cvxopt import matrix, solvers
+from scipy import sparse
+from cvxopt import matrix, solvers, spmatrix
 
 from ..util import dirs
 from ..util import file_handling as fh
 from ..preprocessing import features
 
+
 def main():
-    usage = "%prog project source_subset target_subset config.json"
+    usage = "%prog project source_subset target_subset config.json output_filename"
     parser = OptionParser(usage=usage)
-    #parser.add_option('--keyword', dest='key', default=None,
-    #                  help='Keyword argument: default=%default')
-    #parser.add_option('--boolarg', action="store_true", dest="boolarg", default=False,
-    #                  help='Keyword argument: default=%default')
+    parser.add_option('-B', dest='B', default=10.0,
+                      help='Upper bound on weights: default=%default')
+    parser.add_option('-e', dest='eps', default=None,
+                      help='epsilon parameter [None=B/sqrt(n)]: default=%default')
+    parser.add_option('--sparse', action="store_true", dest="sparse", default=False,
+                      help='Treat feature matrices as sparse: default=%default')
 
     (options, args) = parser.parse_args()
     project = args[0]
     source_subset = args[1]
     target_subset = args[2]
     config_file = args[3]
+    output_filename = args[4]
 
-    compute_weights(project, source_subset, target_subset, config_file)
+    B = float(options.B)
+    is_sparse = options.sparse
+    eps = options.eps
+    if eps is not None:
+        eps = float(eps)
+
+    weights = compute_weights(project, source_subset, target_subset, config_file, B, eps, is_sparse)
+    np.savez(output_filename, weights=weights)
 
 
-def compute_weights(project, source_subset, target_subset, config_file):
+def compute_weights(project, source_subset, target_subset, config_file, B=10, eps=None, is_sparse=True):
 
     config = fh.read_json(config_file)
     feature_defs = []
@@ -71,40 +83,68 @@ def compute_weights(project, source_subset, target_subset, config_file):
     target_features_concat = features.concatenate(target_feature_list)
     col_names = source_features_concat.terms
 
-    source_X = source_features_concat.get_counts().tocsr()
-    target_X = target_features_concat.get_counts().tocsr()
-    coefs = do_kernel_mean_matching(source_X.todense(), target_X.todense(), kern='lin')
+    # code for conversion to a CVX sparse matrix:
+    #coo = A.tocoo()
+    #SP = spmatrix(coo.data, coo.row.tolist(), coo.col.tolist())
 
-    print(coefs.shape)
-    print(np.min(coefs), np.mean(coefs), np.max(coefs))
+    if is_sparse:
+        source_X = source_features_concat.get_counts()
+        target_X = target_features_concat.get_counts()
+    else:
+        source_X = source_features_concat.get_counts().todense()
+        target_X = target_features_concat.get_counts().todense()
+
+    weights = do_kernel_mean_matching(source_X, target_X, kern='lin', B=B, eps=eps, is_sparse=is_sparse)
+
+    print(weights.shape)
+    print("min mean max:")
+    print(np.min(weights), np.mean(weights), np.max(weights))
 
 
-# an implementation of Kernel Mean Matching
-def do_kernel_mean_matching(source_X, target_X, kern='lin', B=1.0, eps=None):
+def do_kernel_mean_matching(source_X, target_X, kern='lin', B=1.0, eps=None, is_sparse=False):
     n_source_items, p = source_X.shape
     n_target_items, _ = target_X.shape
     if eps == None:
-        eps = B/math.sqrt(n_target_items)
+        eps = B/math.sqrt(n_source_items)
     if kern == 'lin':
-        K = np.dot(target_X, target_X.T)
-        kappa = np.sum(np.dot(target_X, source_X.T) * float(n_target_items) / float(n_source_items), axis=1)
+        if is_sparse:
+            assert sparse.isspmatrix(source_X)
+            assert sparse.isspmatrix(target_X)
+            K = source_X.dot(source_X.T)
+            kappa = sparse.csc_matrix(source_X.dot(target_X.T).sum(axis=1) * float(n_source_items) / float(n_target_items))
+        else:
+            K = np.dot(source_X, source_X.T)
+            kappa = np.sum(np.dot(source_X, target_X.T), axis=1) * float(n_source_items) / float(n_target_items)
     elif kern == 'rbf':
-        K = compute_rbf(target_X, target_X)
-        kappa = np.sum(compute_rbf(target_X, source_X), axis=1) * float(n_target_items) / float(n_source_items)
+        K = compute_rbf(source_X, source_X)
+        kappa = np.sum(compute_rbf(source_X, target_X), axis=1) * float(n_target_items) / float(n_source_items)
     else:
         raise ValueError('unknown kernel')
 
-    K = matrix(K)
-    kappa = matrix(kappa)
-    print("Creating G")
-    G = matrix(np.r_[np.ones((1, n_target_items)), -np.ones((1, n_target_items)), np.eye(n_target_items), -np.eye(n_target_items)])
-    print("Creating H")
-    h = matrix(np.r_[n_target_items * (1+eps), n_target_items * (eps-1), B*np.ones((n_target_items,)), np.zeros((n_target_items,))])
+    if is_sparse:
+        K = make_spmatrix_from_sparse(K)
+        kappa = make_spmatrix_from_sparse(kappa)
+    else:
+        K = matrix(K)
+        kappa = matrix(kappa)
+    print("Creating constraint matrices")
+    # will enforce G \cdot \beta <= h
+    # first two are for: | -n_source_items + \sum \beta | <= n_source_items * eps
+    # second two are for : \beta \in [0, B]
+    G = np.r_[np.ones((1, n_source_items)), -np.ones((1, n_source_items)), np.eye(n_source_items), -np.eye(n_source_items)]
+    h = np.r_[n_source_items * (1 + eps), n_source_items * (eps - 1), B * np.ones((n_source_items,)), np.zeros((n_source_items,))]
+
+    if is_sparse:
+        G = make_spmatrix_from_sparse(G)
+        h = make_spmatrix_from_sparse(h)
+    else:
+        G = matrix(G)
+        h = matrix(h)
 
     print("Calling CVX")
     sol = solvers.qp(K, -kappa, G, h)
-    coef = np.array(sol['x'])
-    return coef
+    beta = np.array(sol['x'])
+    return beta
 
 
 def compute_rbf(X, Z, sigma=1.0):
@@ -113,6 +153,11 @@ def compute_rbf(X, Z, sigma=1.0):
         K[i,:] = np.exp(-np.sum((vx-Z)**2, axis=1)/(2.0*sigma))
     return K
 
+
+def make_spmatrix_from_sparse(X):
+    X_coo = X.tocoo()
+    X_spmatrix = spmatrix(X_coo.data.tolist(), X_coo.row.tolist(), X_coo.col.tolist(), size=X.shape)
+    return X_spmatrix
 
 
 if __name__ == '__main__':
