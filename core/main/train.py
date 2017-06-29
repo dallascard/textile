@@ -67,7 +67,7 @@ def main():
 
 
 def train_model(project_dir, model_name, subset, label, feature_defs, weights_file=None, n_classes=2, penalty='l2', alpha_min=0.01,
-                     alpha_max=100, n_alphas=4, intercept=True, n_dev_folds=5, save_model=True):
+                     alpha_max=1000, n_alphas=8, intercept=True, n_dev_folds=5, save_model=True):
 
     label_dir = dirs.dir_labels(project_dir, subset)
     features_dir = dirs.dir_features(project_dir, subset)
