@@ -240,7 +240,8 @@ def concatenate(features):
             assert items == feature.items
         terms.extend(feature.terms)    # concatenate the lists of terms
         counts.append(feature.counts)  # store a list of counts
-    return Feature('concat', items, terms, sparse.hstack(counts))  # create a new feature from concatenation of counts
+    # create a new feature from concatenation of counts
+    return Feature('concat', items, terms, sparse.hstack(counts, format='csc'))
 
 
 def concatenate_rows(features):
@@ -258,7 +259,8 @@ def concatenate_rows(features):
             assert terms == feature.terms
         items.extend(feature.items)
         counts.append(feature.counts)  # store a list of counts
-    return Feature(name, items, terms, sparse.vstack(counts))  # creat a new feature from concatenation of counts
+    # create a new feature from concatenation of counts
+    return Feature(name, items, terms, sparse.vstack(counts, format='csc'))
 
 
 def get_feature_signature(feature_def, feature):

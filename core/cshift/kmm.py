@@ -43,7 +43,7 @@ def compute_weights(project, source_subset, target_subset, config_file):
         print(feature_def)
         name = feature_def.name
         source_feature = features.load_from_file(input_dir=source_dir, basename=name)
-        target_feature = features.load_from_file(input_dir=source_dir, basename=name)
+        target_feature = features.load_from_file(input_dir=target_dir, basename=name)
         print("Source:", source_feature.shape)
         print("Target:", target_feature.shape)
         common_terms = list(set(source_feature.get_terms()).intersection(set(target_feature.get_terms())))
