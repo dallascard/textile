@@ -151,9 +151,10 @@ class Feature:
         n_terms = len(self.terms)
         zeros_col = sparse.csc_matrix(np.zeros([n_items, 1]))
         temp = sparse.hstack([self.counts, zeros_col])
-        terms_index = dict(zip(self.terms + ['__OOV__'], range(n_terms+1)))
-        indices = [terms_index[t] if t in terms_index else terms_index['__OOV__'] for t in terms]
+        terms_index = dict(zip(self.terms + ['__zero_col__'], range(n_terms+1)))
+        indices = [terms_index[t] if t in terms_index else n_terms for t in terms]
         self.counts = temp[:, indices]
+        self.terms = terms
         print("New shape = (%d, %d)" % self.counts.shape)
 
 
@@ -239,7 +240,25 @@ def concatenate(features):
             assert items == feature.items
         terms.extend(feature.terms)    # concatenate the lists of terms
         counts.append(feature.counts)  # store a list of counts
-    return Feature('concat', items, terms, sparse.hstack(counts))  # creat a new feature from concatenation of counts
+    return Feature('concat', items, terms, sparse.hstack(counts))  # create a new feature from concatenation of counts
+
+
+def concatenate_rows(features):
+    items = []
+    terms = []
+    counts = []
+    name = ''
+    for f_i, feature in enumerate(features):
+        # make sure the list of items is the same for all features
+        if f_i == 0:
+            name = feature.name
+            terms = feature.terms
+        else:
+            assert name == feature.name
+            assert terms == feature.terms
+        items.extend(feature.items)
+        counts.append(feature.counts)  # store a list of counts
+    return Feature(name, items, terms, sparse.vstack(counts))  # creat a new feature from concatenation of counts
 
 
 def get_feature_signature(feature_def, feature):
@@ -252,4 +271,6 @@ def get_feature_signature(feature_def, feature):
     if feature_def.transform == 'tfidf':
         signature['idf'] = feature.compute_idf().tolist()
     return signature
+
+
 
