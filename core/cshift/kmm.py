@@ -116,7 +116,7 @@ def do_kernel_mean_matching(source_X, target_X, kern='lin', B=1.0, eps=None, is_
             K = sparse.csc_matrix(np.dot(dense_source_X, dense_source_X.T))
             #K = source_X.dot(source_X.T)
             print("Computing kappa")
-            kappa = sparse.csc_matrix(np.dot(dense_source_X, dense_target_X.T).sum(axis=1) * float(n_source_items) / float(n_target_items))
+            kappa = np.dot(dense_source_X, dense_target_X.T).sum(axis=1) * float(n_source_items) / float(n_target_items)
         else:
             K = np.dot(source_X, source_X.T)
             kappa = np.sum(np.dot(source_X, target_X.T), axis=1) * float(n_source_items) / float(n_target_items)
@@ -127,11 +127,12 @@ def do_kernel_mean_matching(source_X, target_X, kern='lin', B=1.0, eps=None, is_
         raise ValueError('unknown kernel')
 
     if is_sparse:
+        print("Making spmatrices")
         K = make_spmatrix_from_sparse(K)
-        kappa = make_spmatrix_from_sparse(kappa)
     else:
         K = matrix(K)
-        kappa = matrix(kappa)
+    kappa = matrix(kappa)
+
     print("Creating constraint matrices")
     # will enforce G \cdot \beta <= h
     # first two are for: | -n_source_items + \sum \beta | <= n_source_items * eps
