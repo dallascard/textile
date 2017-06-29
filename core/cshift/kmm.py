@@ -100,7 +100,7 @@ def compute_weights(project, source_subset, target_subset, config_file, B=10, ep
     print(weights.shape)
     print("min mean max:")
     print(np.min(weights), np.mean(weights), np.max(weights))
-    return pd.DataFrame(weights, index=source_features_concat.get_items(), columns='weight')
+    return pd.DataFrame(weights, index=source_features_concat.get_items(), columns=['weight'])
 
 
 def do_kernel_mean_matching(source_X, target_X, kern='lin', B=1.0, eps=None, is_sparse=False):
