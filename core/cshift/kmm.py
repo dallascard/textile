@@ -12,14 +12,14 @@ from ..preprocessing import features
 
 
 def main():
-    usage = "%prog project source_subset target_subset config.json output_filename"
+    usage = "%prog project source_subset target_subset config.json output_filename.csv"
     parser = OptionParser(usage=usage)
     parser.add_option('-B', dest='B', default=10.0,
                       help='Upper bound on weights: default=%default')
     parser.add_option('-e', dest='eps', default=None,
                       help='epsilon parameter [None=B/sqrt(n)]: default=%default')
-    parser.add_option('--sparse', action="store_true", dest="sparse", default=False,
-                      help='Treat feature matrices as sparse: default=%default')
+    #parser.add_option('--sparse', action="store_true", dest="sparse", default=False,
+    #                  help='Treat feature matrices as sparse: default=%default')
 
     (options, args) = parser.parse_args()
     project = args[0]
@@ -29,16 +29,15 @@ def main():
     output_filename = args[4]
 
     B = float(options.B)
-    is_sparse = options.sparse
     eps = options.eps
     if eps is not None:
         eps = float(eps)
 
-    weights = compute_weights(project, source_subset, target_subset, config_file, B, eps, is_sparse)
+    weights = compute_weights(project, source_subset, target_subset, config_file, B, eps)
     weights.to_csv(output_filename)
 
 
-def compute_weights(project, source_subset, target_subset, config_file, B=10, eps=None, is_sparse=True):
+def compute_weights(project, source_subset, target_subset, config_file, B=10.0, eps=None):
 
     config = fh.read_json(config_file)
     feature_defs = []
@@ -91,7 +90,7 @@ def compute_weights(project, source_subset, target_subset, config_file, B=10, ep
     source_X = source_features_concat.get_counts().todense()
     target_X = target_features_concat.get_counts().todense()
 
-    weights = do_kernel_mean_matching(source_X, target_X, kern='lin', B=B, eps=eps, is_sparse=is_sparse)
+    weights = do_kernel_mean_matching(source_X, target_X, kern='lin', B=B, eps=eps)
 
     print(weights.shape)
     print("min mean max:")
@@ -99,7 +98,7 @@ def compute_weights(project, source_subset, target_subset, config_file, B=10, ep
     return pd.DataFrame(weights, index=source_features_concat.get_items(), columns=['weight'])
 
 
-def do_kernel_mean_matching(source_X, target_X, kern='lin', B=1.0, eps=None, is_sparse=False):
+def do_kernel_mean_matching(source_X, target_X, kern='lin', B=1.0, eps=None):
     n_source_items, p = source_X.shape
     n_target_items, _ = target_X.shape
     if eps == None:
@@ -123,10 +122,7 @@ def do_kernel_mean_matching(source_X, target_X, kern='lin', B=1.0, eps=None, is_
     G = np.r_[np.ones((1, n_source_items)), -np.ones((1, n_source_items)), np.eye(n_source_items), -np.eye(n_source_items)]
     h = np.r_[n_source_items * (1 + eps), n_source_items * (eps - 1), B * np.ones((n_source_items,)), np.zeros((n_source_items,))]
 
-    if is_sparse:
-        G = make_spmatrix_from_sparse(sparse.coo_matrix(G))
-    else:
-        G = matrix(G)
+    G = make_spmatrix_from_sparse(sparse.coo_matrix(G))
     h = matrix(h)
 
     print("Calling CVX")
