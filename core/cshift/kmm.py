@@ -110,8 +110,11 @@ def do_kernel_mean_matching(source_X, target_X, kern='lin', B=1.0, eps=None, is_
         if is_sparse:
             assert sparse.isspmatrix(source_X)
             assert sparse.isspmatrix(target_X)
-            print("Doing sparse products")
-            K = source_X.dot(source_X.T)
+            print("Computing K")
+            dense_source_X = source_X.todense()
+            K = sparse.csc_matrix(np.dot(dense_source_X, dense_source_X.T))
+            #K = source_X.dot(source_X.T)
+            print("Computing kappa")
             kappa = sparse.csc_matrix(source_X.dot(target_X.T).sum(axis=1) * float(n_source_items) / float(n_target_items))
         else:
             K = np.dot(source_X, source_X.T)
