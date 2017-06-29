@@ -144,10 +144,9 @@ def do_kernel_mean_matching(source_X, target_X, kern='lin', B=1.0, eps=None, is_
 
     if is_sparse:
         G = make_spmatrix_from_sparse(sparse.coo_matrix(G))
-        h = make_spmatrix_from_sparse(sparse.coo_matrix(h))
     else:
         G = matrix(G)
-        h = matrix(h)
+    h = matrix(h)
 
     print("Calling CVX")
     sol = solvers.qp(K, -kappa, G, h)
