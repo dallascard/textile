@@ -20,7 +20,7 @@ def main():
     # generate some simulated data
     n0 = 100
     n1 = 100
-    p = 0
+    p = 3
     mu1 = np.array([1, 1, 0])
     X0 = np.random.randn(n0, p)
     X1 = np.random.randn(n1, p) + mu1
