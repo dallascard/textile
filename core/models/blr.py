@@ -48,7 +48,7 @@ def jj(X, y, m_0, S_0, max_iter=2, tol=1e-6, z_init=None):
 
     S_0_inv = np.linalg.inv(S_0)
     if z_init is None:
-        z = np.random.randn(p) * 0.1
+        z = np.random.randn(n) * 0.1
     else:
         z = z_init
 
@@ -56,7 +56,7 @@ def jj(X, y, m_0, S_0, max_iter=2, tol=1e-6, z_init=None):
 
     for it in range(max_iter):
         lambda_z = lambda_func(z)
-        S_N_inv = S_0_inv + 2 * np.dot(X.T, lambda_z.reshape(p, 1) * X)
+        S_N_inv = S_0_inv + 2 * np.dot(X.T, lambda_z.reshape(n, 1) * X)
 
         # update variational expectation q(w) = N(m_N, S_N)
         S_N = np.linalg.inv(S_N_inv)
