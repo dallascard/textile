@@ -57,9 +57,11 @@ def jj(X, y, m_0, S_0, max_iter=2, tol=1e-6, z_init=None):
     for it in range(max_iter):
         lambda_z = lambda_func(z)
         S_N_inv = S_0_inv + 2 * np.dot(X.T, lambda_z.reshape(n, 1) * X)
+        print(S_N_inv)
 
         # update variational expectation q(w) = N(m_N, S_N)
         S_N = np.linalg.inv(S_N_inv)
+        print(S_N)
         m_N = np.dot(S_N_inv, np.dot(S_0_inv, m_0) + np.sum((y - 0.5).reshape((n, 1)) * X, axis=0))
 
         # update variational parameters
