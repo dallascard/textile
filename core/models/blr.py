@@ -27,7 +27,7 @@ def main():
     y0 = np.ones(n0)
     y1 = -1 * np.ones(n1)
     X = np.vstack([X0, X1])
-    y = np.r_([y0, y1])
+    y = np.r_[y0, y1]
 
     model = lr(penalty='l2', fit_intercept=False)
     model.fit(X, y)
