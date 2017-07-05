@@ -2,13 +2,12 @@ import os
 import operator
 
 import numpy as np
-from sklearn.externals import joblib
-from sklearn.linear_model import LogisticRegression as lr
 
 from ..util import file_handling as fh
 from ..models import blr_fit
 
-class LR:
+
+class BLR:
     """
     Bayesian logistic regression model (including Automatic Relevance Determination)
     Currently only binary labels are supported
@@ -28,71 +27,56 @@ class LR:
         # variable to hold the column names of the feature matrix
         self._col_names = None
         # create variables to hold the estimated parameters
-        self._w = None
+        self._m = None
         self._V = None
+        self._inv_V = None
 
-    """
-    def set_model(self, model, train_proportions, col_names):
+    def set_model(self, train_proportions, col_names, m, V, inv_V):
         self._col_names = col_names
         self._train_proportions = train_proportions
-        if model is None:
-            self._model = None
-        else:
-            self._model = model
-    """
+        self._m = m
+        self._V = V
+        self._inv_V = inv_V
 
-    def fit(self, X, y, col_names, sample_weights=None, batch=True, multilevel=True, ard=True, max_iter=50, tol=1e-6):
+    def fit(self, X, y, col_names, sample_weights=None, batch=True, multilevel=True, ard=True, max_iter=500, tol=1e-6):
 
         # store the proportion of class labels in the training data
         bincount = np.bincount(np.array(y, dtype=int), minlength=self._n_classes)
         self._train_proportions = (bincount / float(bincount.sum())).tolist()
         self._col_names = col_names
 
-        if self._fit_intercept:
-            X = np.hstack((np.ones([X.shape[0], 1]), X))
-
         if batch:
             if multilevel:
                 if ard:
-                    w, V, E_alphas = blr_fit.batch_multilevel_ard(X, y, self._s_0, self._r_0, max_iter, tol)
+                    m, V, inv_V, E_alphas = blr_fit.batch_multilevel_ard(X, y, self._fit_intercept, sample_weights, self._s_0, self._r_0, max_iter, tol)
                 else:
-                    w, V, E_alpha = blr_fit.batch_multilevel(X, y, self._s_0, self._r_0, max_iter, tol)
+                    m, V, inv_V, E_alpha = blr_fit.batch_multilevel(X, y, self._fit_intercept, sample_weights, self._s_0, self._r_0, max_iter, tol)
             else:
-                w, V = blr_fit.batch_basic(X, y, self._alpha, max_iter, tol)
+                m, V, inv_V = blr_fit.batch_fixed_alpha(X, y, self._alpha, self._fit_intercept, sample_weights=sample_weights, max_iter=max_iter, tol=tol)
         else:
-            w, V = blr_fit.iterative_basic(X, y, self._alpha, max_iter, tol)
+            m, V, inv_V = blr_fit.iterative_fixed_alpha(X, y, self._alpha, self._fit_intercept, sample_weights, max_iter, tol)
 
-        self._w = w
+        self._m = m
         self._V = V
+        self._inv_V = inv_V
 
-    """
-    def predict(self, X):
+    def predict(self, X, batch=True, max_iter=500, tol=1e-6):
+        if self._m is None:
+            return None
+        else:
+            p_y_given_x = self.predict_probs(X, batch, max_iter, tol)
+            return p_y_given_x > 0.5
+
+    def predict_probs(self, X, batch=True, max_iter=500, tol=1e-6):
         # if we've stored a default value, then that is our prediction
-        if self._model is None:
-            # else, get the model to make predictions
-            n_items, _ = X.shape
-            return np.ones(n_items, dtype=int) * np.argmax(self._train_proportions)
+        if self._m is None:
+            return None
         else:
-            return self._model.predict(X)
-    """
-
-    """
-    def predict_probs(self, X):
-        n_items, _ = X.shape
-        full_probs = np.zeros([n_items, self._n_classes])
-        # if we've saved a default label, predict that with 100% confidence
-        if self._model is None:
-            default = np.argmax(self._train_proportions)
-            full_probs[:, default] = 1.0
-            return full_probs
-        else:
-            # otherwise, get probabilities from the model
-            model_probs = self._model.predict_proba(X)
-            # map these probabilities back to the full set of classes
-            for i, cl in enumerate(self._model.classes_):
-                full_probs[:, cl] = model_probs[:, i]
-            return full_probs
-    """
+            if batch:
+                p_y_given_x = blr_fit.batch_predictive_density(X, self._m, self._V, self._inv_V, self._fit_intercept, max_iter, tol)
+            else:
+                p_y_given_x = blr_fit.iterative_predictive_density(X, self._m, self._V, self._inv_V, self._fit_intercept, max_iter, tol)
+            return p_y_given_x
 
     def get_n_classes(self):
         return self._n_classes
@@ -106,58 +90,42 @@ class LR:
     def get_col_names(self):
         return self._col_names
 
-    def get_coefs(self):
-        return self._w
-
-    def get_intercept(self, target_class=0):
-        # if we've saved a default value, there are no intercepts
-        intercept = 0
-        if self._model is not None:
-            # otherwise, see if the model an intercept for this class
-            for i, cl in enumerate(self._model.classes_):
-                if cl == target_class:
-                    intercept = self._model.intercept_[i]
-                    break
-        return intercept
-
-    def get_model_size(self):
-        n_nonzeros_coefs = 0
-        if self._model is None:
-            return 0
+    def get_coefs_mean(self):
+        if self._m is not None:
+            if self._fit_intercept:
+                return self._m[1:]
+            else:
+                return self._m
         else:
-            coefs = self._model.coef_
-            for coef_list in coefs:
-                n_nonzeros_coefs += np.sum([1.0 for c in coef_list if c != 0])
-            return n_nonzeros_coefs
+            return None
+
+    def get_intercept_mean(self):
+        # if we've saved a default value, there are no intercepts
+        if self._m is not None:
+            if self._fit_intercept:
+                return self._m[0]
+            else:
+                return 0
+        else:
+            return None
 
     def save(self, output_dir):
         print("Saving model")
-        joblib.dump(self._model, os.path.join(output_dir, 'model.pkl'))
-        all_coefs = {}
-        all_intercepts = {}
-        # deal with the inconsistencies in sklearn depending on the number of classes
-        if self._model is not None:
-            if len(self.get_active_classes()) == 2:
-                coefs_list = self.get_coefs(0)
-                coefs_dict = {k: v for (k, v) in coefs_list if v != 0}
-                coefs_sorted = sorted(coefs_dict.items(), key=operator.itemgetter(1))
-                all_coefs[0] = coefs_sorted
-                all_intercepts[0] = self.get_intercept(0)
-            else:
-                for cln, cl in enumerate(self.get_active_classes()):
-                    coefs_list = self.get_coefs(cln)
-                    coefs_dict = {k: v for (k, v) in coefs_list if v != 0}
-                    coefs_sorted = sorted(coefs_dict.items(), key=operator.itemgetter(1))
-                    all_coefs[str(cl)] = coefs_sorted
-                    all_intercepts[str(cl)] = self.get_intercept(cl)
-        output = {'alpha': self.get_alpha(),
-                  'penalty': self.get_penalty(),
-                  'intercepts': all_intercepts,
-                  'coefs': all_coefs,
+        np.savez(os.path.join(output_dir, 'model.npz'), m=self._m, V=self._V, inv_V=self._inv_V)
+
+        output = {'alpha': self._alpha,
+                  'fit_intercept': self._fit_intercept,
                   'n_classes': self.get_n_classes(),
                   'train_proportions': self.get_train_proportions(),
-                  'fit_intercept': self._fit_intercept
-                  }
+                  's_0': self._s_0,
+                  'r_0': self._r_0
+        }
+
+        if self._m is not None:
+            coefs_dict = dict(zip(self.get_col_names(), self.get_coefs_mean()))
+            output['coefs_mean'] = sorted(coefs_dict.items(), key=operator.itemgetter(1))
+            output['intercept_mean'] = self.get_intercept_mean()
+
         fh.write_to_json(output, os.path.join(output_dir, 'metadata.json'), sort_keys=False)
         fh.write_to_json(self.get_col_names(), os.path.join(output_dir, 'col_names.json'), sort_keys=False)
 
@@ -168,10 +136,11 @@ def load_from_file(model_dir):
     n_classes = int(input['n_classes'])
     alpha = float(input['alpha'])
     train_proportions = input['train_proportions']
-    penalty = input['penalty']
     fit_intercept = input['fit_intercept']
+    s_0 = input['s_0']
+    r_0 = input['r_0']
 
-    classifier = LR(alpha, penalty, fit_intercept, n_classes)
-    model = joblib.load(os.path.join(model_dir, 'model.pkl'))
-    classifier.set_model(model, train_proportions, col_names)
+    classifier = BLR(alpha, s_0, r_0, fit_intercept, n_classes)
+    params = np.load(os.path.join(model_dir, 'model.npz'))
+    classifier.set_model(train_proportions, col_names, params['m'], params['V'], params['inv_V'])
     return classifier
