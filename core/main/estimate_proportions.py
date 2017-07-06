@@ -61,6 +61,9 @@ def load_and_predict(project_dir, model_type, model_name, test_subset, label_nam
     features_concat = features.concatenate(feature_list)
     X = features_concat.get_counts().tocsr()
 
+    if model_type == 'BLR':
+        X = np.array(X.todense())
+
     print("Doing prediction")
     if model_type == 'LR':
         pred_probs = model.predict_probs(X)

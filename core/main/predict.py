@@ -62,7 +62,7 @@ def load_and_predict(project_dir, model_type, model_name, test_subset, label_nam
     X = features_concat.get_counts().tocsr()
 
     if model_type == 'BLR':
-        X = X.todense()
+        X = np.array(X.todense())
 
     print("Doing prediction")
     predictions = model.predict(X)
