@@ -128,7 +128,7 @@ class BLR:
         if self._m is None:
             return None
         else:
-            return self._n_classes
+            return np.nonzero(self._train_proportions)[0]
 
     def save(self, output_dir):
         print("Saving model")

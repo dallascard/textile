@@ -45,6 +45,7 @@ class LR:
         self._col_names = col_names
 
         # if there is only a single type of label, make a default prediction
+        # TODO: deal with the case when I get labels like [1,2,3]
         unique_y_vals = list(set(y.tolist()))
         if len(unique_y_vals) == 1:
             self._model = None
