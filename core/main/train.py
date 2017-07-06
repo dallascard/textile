@@ -141,65 +141,63 @@ def train_model(project_dir, model_type, model_name, subset, label, feature_defs
 
     print("%s\t%s\t%s\t%s\t%s" % ('iter', 'alpha', 'size', 'f1_trn', 'f1_dev'))
 
-    for alpha_i, alpha in enumerate(alphas):
-        if model_type == 'LR':
+    if model_type == 'LR':
+        for alpha_i, alpha in enumerate(alphas):
             model = lr.LR(alpha, penalty=penalty, fit_intercept=intercept, n_classes=n_classes)
-        elif model_type == 'BLR':
-            model = blr.BLR(alpha, fit_intercept=intercept, n_classes=n_classes)
-        else:
-            sys.exit('Model type not recognized')
 
-        #for i, (train, dev) in enumerate(kfold):
-        for train_indices, dev_indices in kfold.split(X):
-            if weights is not None:
-                weights_k = weights[train_indices]
-            print(X[train_indices, :].shape)
-            if model_type == 'LR':
+            #for i, (train, dev) in enumerate(kfold):
+            for train_indices, dev_indices in kfold.split(X):
+                if weights is not None:
+                    weights_k = weights[train_indices]
                 model.fit(X[train_indices, :], y[train_indices], col_names, sample_weights=weights_k)
-            else:
-                model.fit(np.array(X[train_indices, :].todense()), y[train_indices], col_names, sample_weights=weights_k, batch=True, multilevel=False)
 
-            train_predictions = model.predict(X[train_indices, :])
-            dev_predictions = model.predict(X[dev_indices, :])
-            dev_probs = model.predict_probs(X[dev_indices, :])
+                train_predictions = model.predict(X[train_indices, :])
+                dev_predictions = model.predict(X[dev_indices, :])
+                dev_probs = model.predict_probs(X[dev_indices, :])
 
-            train_f1 = evaluation.f1_score(y[train_indices], train_predictions, n_classes)
-            dev_f1 = evaluation.f1_score(y[dev_indices], dev_predictions, n_classes)
-            #dev_acc = evaluation.acc_score(y[dev], dev_prediction)
-            #dev_cal = evaluation.evaluate_calibration_mse(y[dev], dev_probs)
+                train_f1 = evaluation.f1_score(y[train_indices], train_predictions, n_classes)
+                dev_f1 = evaluation.f1_score(y[dev_indices], dev_predictions, n_classes)
+                #dev_acc = evaluation.acc_score(y[dev], dev_prediction)
+                #dev_cal = evaluation.evaluate_calibration_mse(y[dev], dev_probs)
 
-            mean_train_f1s[alpha_i] += train_f1 / float(n_dev_folds)
-            mean_dev_f1s[alpha_i] += dev_f1 / float(n_dev_folds)
-            #mean_dev_accs[alpha_i] += dev_acc / float(n_dev_folds)
-            #mean_dev_cals[alpha_i] += dev_cal / float(n_dev_folds)
+                mean_train_f1s[alpha_i] += train_f1 / float(n_dev_folds)
+                mean_dev_f1s[alpha_i] += dev_f1 / float(n_dev_folds)
+                #mean_dev_accs[alpha_i] += dev_acc / float(n_dev_folds)
+                #mean_dev_cals[alpha_i] += dev_cal / float(n_dev_folds)
 
-            mean_model_size[alpha_i] += model.get_model_size() / float(n_dev_folds)
+                mean_model_size[alpha_i] += model.get_model_size() / float(n_dev_folds)
 
-        print("%d\t%0.2f\t%.1f\t%0.3f\t%0.3f" % (alpha_i, alpha, mean_model_size[alpha_i], mean_train_f1s[alpha_i], mean_dev_f1s[alpha_i]))
+            print("%d\t%0.2f\t%.1f\t%0.3f\t%0.3f" % (alpha_i, alpha, mean_model_size[alpha_i], mean_train_f1s[alpha_i], mean_dev_f1s[alpha_i]))
 
-        #acc_cfms.append(np.mean(alpha_acc_cfms, axis=0))
-        #pacc_cfms.append(np.mean(alpha_pacc_cfms, axis=0))
-        #pvc_cfms.append(np.mean(alpha_pvc_cfms, axis=0))
+            #acc_cfms.append(np.mean(alpha_acc_cfms, axis=0))
+            #pacc_cfms.append(np.mean(alpha_pacc_cfms, axis=0))
+            #pvc_cfms.append(np.mean(alpha_pvc_cfms, axis=0))
 
-    best_f1_alpha_index = np.argmax(mean_dev_f1s)
-    #best_acc_alpha_index = np.argmax(mean_dev_accs)
-    #best_cal_alpha_index = np.argmin(mean_dev_cals)
+        best_f1_alpha_index = np.argmax(mean_dev_f1s)
+        #best_acc_alpha_index = np.argmax(mean_dev_accs)
+        #best_cal_alpha_index = np.argmin(mean_dev_cals)
 
-    best_f1_alpha = alphas[best_f1_alpha_index]
-    #best_acc_alpha = alphas[best_acc_alpha_index]
-    #best_cal_alpha = alphas[best_cal_alpha_index]
+        best_f1_alpha = alphas[best_f1_alpha_index]
+        #best_acc_alpha = alphas[best_acc_alpha_index]
+        #best_cal_alpha = alphas[best_cal_alpha_index]
 
-    #best_acc_cfm = acc_cfms[best_acc_alpha_index]
-    #best_pacc_cfm = pacc_cfms[best_acc_alpha_index]
-    #best_pvc_cfm = pvc_cfms[best_acc_alpha_index]
+        #best_acc_cfm = acc_cfms[best_acc_alpha_index]
+        #best_pacc_cfm = pacc_cfms[best_acc_alpha_index]
+        #best_pvc_cfm = pvc_cfms[best_acc_alpha_index]
 
-    print("Best f1 alpha = %.3f" % best_f1_alpha)
-    #print "Best acc alpha = %.3f" % best_acc_alpha
-    #print "Best cal alpha = %.3f" % best_cal_alpha
+        print("Best f1 alpha = %.3f" % best_f1_alpha)
+        #print "Best acc alpha = %.3f" % best_acc_alpha
+        #print "Best cal alpha = %.3f" % best_cal_alpha
 
-    print("Training full acc model")
-    model = lr.LR(best_f1_alpha, penalty=penalty, fit_intercept=intercept, n_classes=n_classes)
-    model.fit(X, y, col_names)
+        print("Training full acc model")
+        model = lr.LR(best_f1_alpha, penalty=penalty, fit_intercept=intercept, n_classes=n_classes)
+        model.fit(X, y, col_names)
+
+    elif model_type == 'BLR':
+        print("Fitting single model with ARD")
+        model = blr.BLR(alpha=None, fit_intercept=intercept, n_classes=n_classes)
+        model.fit(np.array(X.todense()), y, col_names, sample_weights=weights, batch=True, multilevel=True, ard=True)
+
 
     output_dir = os.path.join(dirs.dir_models(project_dir), model_name)
     if not os.path.exists(output_dir):
