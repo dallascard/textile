@@ -106,9 +106,9 @@ class BLR:
         """Return the mean of the approximate normal posterior over weights"""
         if self._m is not None:
             if self._fit_intercept:
-                return self._m[1:] * (target_class*2-1)
+                return zip(self._col_names, self._m[1:] * (target_class*2-1))
             else:
-                return self._m * (target_class*2-1)
+                return zip(self._col_names, self._m[1:] * (target_class*2-1))
         else:
             return None
 
