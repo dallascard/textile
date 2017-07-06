@@ -52,6 +52,7 @@ def evaluate_predictions(labels, predictions, n_classes=None, pos_label=1, avera
     acc = evaluation.acc_score(labels, predictions, n_classes)
     print("Accuracy = %0.3f" % acc)
 
+    print(labels.shape)
     true_label_counts = np.bincount(labels, minlength=n_classes)
     true_proportions = true_label_counts / float(true_label_counts.sum())
     print("True proportions =", true_proportions)
