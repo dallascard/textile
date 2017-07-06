@@ -153,6 +153,7 @@ def train_model(project_dir, model_type, model_name, subset, label, feature_defs
         for train_indices, dev_indices in kfold.split(X):
             if weights is not None:
                 weights_k = weights[train_indices]
+            print(X[train_indices, :].shape)
             model.fit(X[train_indices, :], y[train_indices], col_names, sample_weights=weights_k)
 
             train_predictions = model.predict(X[train_indices, :])
