@@ -65,8 +65,8 @@ def main():
     p_y_given_x = batch_predictive_density(X_test, w, V_n, inv_V_n, add_intercept=True)
     print(p_y_given_x)
     print("Predictive using sampling")
-    p_y_given_x = mc_predict(X_test, w, V_n, add_intercept=True, n_samples=50)
-    print(p_y_given_x)
+    p_y_given_x = sample_predictions(X_test, w, V_n, add_intercept=True, n_samples=50)
+    print(p_y_given_x.mean(axis=1))
 
     print("multilevel with ard")
     w, V_n, inv_V_n, E_alpha = batch_multilevel_ard(X, y, add_intercept=True, max_iter=max_iter, tol=tol)
@@ -78,8 +78,8 @@ def main():
     p_y_given_x = batch_predictive_density(X_test, w, V_n, inv_V_n, add_intercept=True)
     print(p_y_given_x)
     print("Predictive using sampling")
-    p_y_given_x = mc_predict(X_test, w, V_n, add_intercept=True, n_samples=50)
-    print(p_y_given_x)
+    p_y_given_x = sample_predictions(X_test, w, V_n, add_intercept=True, n_samples=50)
+    print(p_y_given_x.mean(axis=1))
 
 
 def batch_multilevel(X, y, add_intercept=False, sample_weights=None, s_0=1e-2, r_0=1e-4, max_iter=500, tol=1e-6):
@@ -449,12 +449,13 @@ def iterative_predictive_density(X, w_n, V_n, inv_V_n, add_intercept=False, max_
     pass
 
 
-def mc_predict(X, w_n, V_n, add_intercept=False, n_samples=20):
+def sample_predictions(X, w_n, V_n, add_intercept=False, n_samples=20):
+    """return (n_items, n_samples) probs """
     if add_intercept:
         X = add_ones_col(X)
     samples = np.random.multivariate_normal(w_n, V_n, size=n_samples)  # n_samples x d
     p_y_given_x = expit(np.dot(X, samples.T))
-    return np.mean(p_y_given_x, axis=1)
+    return p_y_given_x
 
 
 def lambda_func(z):
