@@ -124,6 +124,12 @@ class BLR:
     def get_model_size(self):
         return len(self._m)
 
+    def get_active_classes(self):
+        if self._m is None:
+            return None
+        else:
+            return self._n_classes
+
     def save(self, output_dir):
         print("Saving model")
         np.savez(os.path.join(output_dir, 'model.npz'), m=self._m, V=self._V, inv_V=self._inv_V)
