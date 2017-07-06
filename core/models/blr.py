@@ -102,7 +102,8 @@ class BLR:
     def get_col_names(self):
         return self._col_names
 
-    def get_coefs_mean(self):
+    def get_coefs(self):
+        """Return the mean of the approximate normal posterior over weights"""
         if self._m is not None:
             if self._fit_intercept:
                 return self._m[1:]
@@ -111,8 +112,8 @@ class BLR:
         else:
             return None
 
-    def get_intercept_mean(self):
-        # if we've saved a default value, there are no intercepts
+    def get_intercept(self):
+        """Return the mean of the approximate normal posterior over the intercept (if present)"""
         if self._m is not None:
             if self._fit_intercept:
                 return self._m[0]
@@ -145,9 +146,9 @@ class BLR:
         }
 
         if self._m is not None:
-            coefs_dict = dict(zip(self.get_col_names(), self.get_coefs_mean()))
+            coefs_dict = dict(zip(self.get_col_names(), self.get_coefs()))
             output['coefs_mean'] = sorted(coefs_dict.items(), key=operator.itemgetter(1))
-            output['intercept_mean'] = self.get_intercept_mean()
+            output['intercept_mean'] = self.get_intercept()
 
         fh.write_to_json(output, os.path.join(output_dir, 'metadata.json'), sort_keys=False)
         fh.write_to_json(self.get_col_names(), os.path.join(output_dir, 'col_names.json'), sort_keys=False)
