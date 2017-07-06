@@ -146,7 +146,7 @@ class BLR:
         }
 
         if self._m is not None:
-            coefs_dict = dict(zip(self.get_col_names(), self.get_coefs()))
+            coefs_dict = self.get_coefs()
             output['coefs_mean'] = sorted(coefs_dict.items(), key=operator.itemgetter(1))
             output['intercept_mean'] = self.get_intercept()
 
