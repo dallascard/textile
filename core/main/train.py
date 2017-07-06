@@ -154,7 +154,10 @@ def train_model(project_dir, model_type, model_name, subset, label, feature_defs
             if weights is not None:
                 weights_k = weights[train_indices]
             print(X[train_indices, :].shape)
-            model.fit(X[train_indices, :], y[train_indices], col_names, sample_weights=weights_k)
+            if model_type == 'LR':
+                model.fit(X[train_indices, :], y[train_indices], col_names, sample_weights=weights_k)
+            else:
+                model.fit(X[train_indices, :].todense(), y[train_indices], col_names, sample_weights=weights_k)
 
             train_predictions = model.predict(X[train_indices, :])
             dev_predictions = model.predict(X[dev_indices, :])
