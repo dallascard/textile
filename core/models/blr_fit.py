@@ -464,7 +464,9 @@ def add_ones_col(X):
     n, p = X.shape
     ones = np.ones([n, 1])
     print(ones.shape)
-    return np.hstack([ones, X])
+    concated = np.concatenate([ones, X], axis=1)
+    print(concated.shape)
+    return concated
 
 
 if __name__ == '__main__':
