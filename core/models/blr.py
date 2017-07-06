@@ -128,7 +128,9 @@ class BLR:
         print("Saving model")
         np.savez(os.path.join(output_dir, 'model.npz'), m=self._m, V=self._V, inv_V=self._inv_V)
 
-        output = {'alpha': self._alpha,
+        output = {'model_type': 'LR',
+                  'class': self.__class__,
+                  'alpha': self._alpha,
                   'fit_intercept': self._fit_intercept,
                   'n_classes': self.get_n_classes(),
                   'train_proportions': self.get_train_proportions(),
@@ -149,7 +151,7 @@ def load_from_file(model_dir):
     input = fh.read_json(os.path.join(model_dir, 'metadata.json'))
     col_names = fh.read_json(os.path.join(model_dir, 'col_names.json'))
     n_classes = int(input['n_classes'])
-    alpha = float(input['alpha'])
+    alpha = input['alpha']
     train_proportions = input['train_proportions']
     fit_intercept = input['fit_intercept']
     s_0 = input['s_0']
