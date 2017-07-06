@@ -461,7 +461,10 @@ def lambda_func(z):
 
 def add_ones_col(X):
     print(X.shape)
-    return np.hstack((np.ones([X.shape[0], 1]), X))
+    n, p = X.shape
+    ones = np.ones([n, 1])
+    print(ones.shape)
+    return np.hstack([ones, X])
 
 
 if __name__ == '__main__':
