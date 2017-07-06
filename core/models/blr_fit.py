@@ -187,6 +187,8 @@ def batch_multilevel_ard(X, y, add_intercept=False, sample_weights=None, s_0=1e-
     # compute things that won't change
     print(X.shape)
     temp = np.reshape(sample_weights * (y - 0.5), (n, 1))
+    print(type(X))
+    print(type(temp))
     prod = temp * X
     prod2 = X * temp
     sum_yX_over_2 = np.sum(temp * X, axis=0)
