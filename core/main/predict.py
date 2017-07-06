@@ -39,6 +39,7 @@ def load_and_predict(project_dir, model_type, model_name, test_subset, label_nam
 
     model_dir = os.path.join(dirs.dir_models(project_dir), model_name)
     model = load_model.load_model(model_dir, model_type)
+    model_type = model.get_model_type()
 
     feature_signatures = fh.read_json(os.path.join(model_dir, 'features.json'))
     test_features_dir = dirs.dir_features(project_dir, test_subset)
@@ -59,6 +60,9 @@ def load_and_predict(project_dir, model_type, model_name, test_subset, label_nam
 
     features_concat = features.concatenate(feature_list)
     X = features_concat.get_counts().tocsr()
+
+    if model_type == 'BLR':
+        X = X.todense()
 
     print("Doing prediction")
     predictions = model.predict(X)

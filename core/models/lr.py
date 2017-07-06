@@ -12,6 +12,7 @@ class LR:
     Wrapper class for logistic regression from sklearn
     """
     def __init__(self, alpha, penalty='l2', fit_intercept=True, n_classes=2):
+        self._model_type = 'LR'
         self._alpha = alpha
         self._penalty = penalty
         self._fit_intercept = fit_intercept
@@ -23,6 +24,9 @@ class LR:
         self._model = None
         # variable to hold the column names of the feature matrix
         self._col_names = None
+
+    def get_model_type(self):
+        return self._model_type
 
     def set_model(self, model, train_proportions, col_names):
         self._col_names = col_names

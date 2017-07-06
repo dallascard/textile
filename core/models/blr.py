@@ -13,6 +13,7 @@ class BLR:
     Currently only binary labels are supported
     """
     def __init__(self, alpha=1.0, s_0=1e-2, r_0=1e-4, fit_intercept=True, n_classes=2):
+        self._model_type = 'BLR'
         self._alpha = alpha
         self._s_0 = s_0
         self._r_0 = r_0
@@ -30,6 +31,9 @@ class BLR:
         self._m = None
         self._V = None
         self._inv_V = None
+
+    def get_model_type(self):
+        return self._model_type
 
     def set_model(self, train_proportions, col_names, m, V, inv_V):
         self._col_names = col_names
