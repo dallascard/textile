@@ -60,22 +60,25 @@ class BLR:
         self._V = V
         self._inv_V = inv_V
 
-    def predict(self, X, batch=True, max_iter=500, tol=1e-6):
+    def predict(self, X, batch=True, sampling=True, max_iter=500, tol=1e-6):
         if self._m is None:
             return None
         else:
-            p_y_given_x = self.predict_probs(X, batch, max_iter, tol)
+            p_y_given_x = self.predict_probs(X, batch, sampling, max_iter, tol)
             return p_y_given_x > 0.5
 
-    def predict_probs(self, X, batch=True, max_iter=500, tol=1e-6):
+    def predict_probs(self, X, batch=True, sampling=True, max_iter=500, tol=1e-6):
         # if we've stored a default value, then that is our prediction
         if self._m is None:
             return None
         else:
-            if batch:
-                p_y_given_x = blr_fit.batch_predictive_density(X, self._m, self._V, self._inv_V, self._fit_intercept, max_iter, tol)
+            if sampling:
+                p_y_given_x = blr_fit.mc_predict(X, self._m, self._V, self._fit_intercept)
             else:
-                p_y_given_x = blr_fit.iterative_predictive_density(X, self._m, self._V, self._inv_V, self._fit_intercept, max_iter, tol)
+                if batch:
+                    p_y_given_x = blr_fit.batch_predictive_density(X, self._m, self._V, self._inv_V, self._fit_intercept, max_iter, tol)
+                else:
+                    p_y_given_x = blr_fit.iterative_predictive_density(X, self._m, self._V, self._inv_V, self._fit_intercept, max_iter, tol)
             return p_y_given_x
 
     def get_n_classes(self):
@@ -108,6 +111,9 @@ class BLR:
                 return 0
         else:
             return None
+
+    def get_model_size(self):
+        return len(self._m)
 
     def save(self, output_dir):
         print("Saving model")

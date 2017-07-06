@@ -6,7 +6,7 @@ import numpy as np
 from sklearn.model_selection import KFold
 
 from ..util import file_handling as fh
-from ..models import lr, evaluation
+from ..models import lr, blr, evaluation
 from ..preprocessing import features
 from ..util import dirs
 
@@ -14,6 +14,8 @@ from ..util import dirs
 def main():
     usage = "%prog project_dir subset model_name config.json"
     parser = OptionParser(usage=usage)
+    parser.add_option('--model', dest='model', default='LR',
+                      help='Model type [LR|BLR]: default=%default')
     parser.add_option('--label', dest='label', default='label',
                       help='Label name: default=%default')
     parser.add_option('--weights', dest='weights_file', default=None,
@@ -37,6 +39,7 @@ def main():
     subset = args[1]
     model_name = args[2]
     config_file = args[3]
+    model_type = options.model
     label = options.label
     weights_file = options.weights_file
     penalty = options.penalty
@@ -63,10 +66,10 @@ def main():
     #feature_defs = [feature_def1, feature_def2]
     #feature_defs = [feature_def1]
 
-    train_model(project_dir, model_name, subset, label, feature_defs, weights_file, n_classes=n_classes, penalty=penalty, intercept=intercept, n_dev_folds=n_dev_folds)
+    train_model(project_dir, model_type, model_name, subset, label, feature_defs, weights_file, n_classes=n_classes, penalty=penalty, intercept=intercept, n_dev_folds=n_dev_folds)
 
 
-def train_model(project_dir, model_name, subset, label, feature_defs, weights_file=None, n_classes=2, penalty='l2', alpha_min=0.01,
+def train_model(project_dir, model_type, model_name, subset, label, feature_defs, weights_file=None, n_classes=2, penalty='l2', alpha_min=0.01,
                      alpha_max=1000, n_alphas=8, intercept=True, n_dev_folds=5, save_model=True):
 
     label_dir = dirs.dir_labels(project_dir, subset)
@@ -139,7 +142,12 @@ def train_model(project_dir, model_name, subset, label, feature_defs, weights_fi
     print("%s\t%s\t%s\t%s\t%s" % ('iter', 'alpha', 'size', 'f1_trn', 'f1_dev'))
 
     for alpha_i, alpha in enumerate(alphas):
-        model = lr.LR(alpha, penalty=penalty, fit_intercept=intercept, n_classes=n_classes)
+        if model_type == 'LR':
+            model = lr.LR(alpha, penalty=penalty, fit_intercept=intercept, n_classes=n_classes)
+        elif model_type == 'BLR':
+            model = blr.BLR(alpha, fit_intercept=intercept, n_classes=n_classes)
+        else:
+            sys.exit('Model type not recognized')
 
         #for i, (train, dev) in enumerate(kfold):
         for train_indices, dev_indices in kfold.split(X):

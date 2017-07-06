@@ -1,4 +1,5 @@
 import os
+import sys
 from optparse import OptionParser
 
 import numpy as np
@@ -6,13 +7,15 @@ import pandas as pd
 
 from ..util import dirs
 from ..util import file_handling as fh
-from ..models import lr
+from ..models import lr, blr
 from ..preprocessing import features
 
 
 def main():
     usage = "%prog project_dir predict_subset model_name"
     parser = OptionParser(usage=usage)
+    parser.add_option('--model', dest='model', default='LR',
+                      help='Model type [LR|BLR]: default=%default')
     parser.add_option('--label', dest='label', default='label',
                       help='Label name: default=%default')
     #parser.add_option('--keyword', dest='key', default=None,
@@ -25,14 +28,21 @@ def main():
     predict_subset = args[1]
     model_name = args[2]
 
+    # TODO: make this automatic
+    model_type = options.mmodel
     label = options.label
-    load_and_predict(project_dir, model_name, predict_subset, label)
+    load_and_predict(project_dir, model_type, model_name, predict_subset, label)
 
 
-def load_and_predict(project_dir, model_name, test_subset, label_name):
+def load_and_predict(project_dir, model_type, model_name, test_subset, label_name):
     print("Loading model")
     model_dir = os.path.join(dirs.dir_models(project_dir), model_name)
-    model = lr.load_from_file(model_dir)
+    if model_type == 'LR':
+        model = lr.load_from_file(model_dir)
+    elif model_type == 'BLR':
+        model = blr.load_from_file(model_dir)
+    else:
+        sys.exit("Model type not recognized")
 
     feature_signatures = fh.read_json(os.path.join(model_dir, 'features.json'))
     test_features_dir = dirs.dir_features(project_dir, test_subset)
