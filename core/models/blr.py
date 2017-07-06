@@ -102,23 +102,23 @@ class BLR:
     def get_col_names(self):
         return self._col_names
 
-    def get_coefs(self):
+    def get_coefs(self, target_class=1):
         """Return the mean of the approximate normal posterior over weights"""
         if self._m is not None:
             if self._fit_intercept:
-                return self._m[1:]
+                return self._m[1:] * (target_class*2-1)
             else:
-                return self._m
+                return self._m * (target_class*2-1)
         else:
             return None
 
-    def get_intercept(self):
+    def get_intercept(self, target_class=1):
         """Return the mean of the approximate normal posterior over the intercept (if present)"""
         if self._m is not None:
             if self._fit_intercept:
-                return self._m[0]
+                return self._m[0] * (target_class*2-1)
             else:
-                return 0
+                return 0 * (target_class*2-1)
         else:
             return None
 
