@@ -35,22 +35,22 @@ def main():
     label_name = options.label
     word2vec_file = options.word2vec_file
 
-
     print("Reading data")
     data = fh.read_json(datafile)
+    keys = list(data.keys())
+
+    # make a list of metadata fields (not text or label)
+    fields = list(data[keys[0]].keys())
+    print(fields)
+    fields.remove('text')
+    fields.remove(label_name)
 
     print("Loading spacy")
     parser = English()
     #tagger = phrasemachine.get_stdeng_nltk_tagger()
 
-    labels = []
-    names = []
-
     words = {}
-    #lemmas = {}
     bigrams = {}
-    #lemma_bigrams = {}
-    #phrases = {}
 
     vectors = None
     vector_dim = 300
@@ -60,6 +60,7 @@ def main():
         vectors = gensim.models.Word2Vec.load_word2vec_format(word2vec_file, binary=True)
 
     labels = pd.DataFrame(columns=[label_name])
+    metadata = pd.DataFrame(columns=fields)
 
     print("Parsing texts")
     keys = list(data.keys())
@@ -114,6 +115,7 @@ def main():
         #phrases[name] = phrase_counter
 
         labels.loc[name] = [label]
+        metadata.loc[name] = [item[f] for f in fields]
 
 
     print("Creating word features")
@@ -202,28 +204,40 @@ def main():
     int_labels_df.to_csv(os.path.join(output_dir, label_name + '.csv'))
     fh.write_to_json(label_index, os.path.join(output_dir, label_name + '_index.json'))
 
+    print("Saving metadata")
+    output_dir = dirs.dir_preprocessed(project_dir, subset)
+    metadata.to_csv(os.path.join(output_dir, 'metadata.csv'))
+
 
 def get_word(token, lower=False):
     #  get word and remove whitespace
-    return re.sub('\s', '', token.orth_)
+    word = re.sub('\s', '', token.orth_)
+    if lower:
+        return word.lower()
+    else:
+        return word
 
 
-def get_lemma(token):
+def get_lemma(token, lower=False):
     # get lemma and remove whitespace
-    return re.sub('\s', '', token.lemma_)
+    lemma = re.sub('\s', '', token.lemma_)
+    if lower:
+        return lemma.lower()
+    else:
+        return lemma
 
 
-def extract_unigram_feature(parse, feature_function):
+def extract_unigram_feature(parse, feature_function, lower=False):
     counter = Counter()
-    counter.update([feature_function(token) for token in parse])
+    counter.update([feature_function(token, lower) for token in parse])
     return counter
 
 
-def extract_bigram_feature(parse, percept):
+def extract_bigram_feature(parse, percept, lower=False):
     counter = Counter()
     for sent in parse.sents:
         if len(sent) > 1:
-            counter.update([percept(sent[i]) + '_' + percept(sent[i+1]) for i in range(len(sent)-1)])
+            counter.update([percept(sent[i], lower) + '_' + percept(sent[i+1], lower) for i in range(len(sent)-1)])
     return counter
 
 
