@@ -158,7 +158,6 @@ class LR:
                     all_coefs[str(cl)] = coefs_sorted
                     all_intercepts[str(cl)] = self.get_intercept(cl)
         output = {'model_type': 'LR',
-                  'class': self.__class__,
                   'alpha': self.get_alpha(),
                   'penalty': self.get_penalty(),
                   'intercepts': all_intercepts,

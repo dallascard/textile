@@ -140,7 +140,6 @@ class BLR:
         np.savez(os.path.join(output_dir, 'model.npz'), m=self._m, V=self._V, inv_V=self._inv_V)
 
         output = {'model_type': 'LR',
-                  'class': self.__class__,
                   'alpha': self._alpha,
                   'fit_intercept': self._fit_intercept,
                   'n_classes': self.get_n_classes(),

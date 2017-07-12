@@ -13,12 +13,12 @@ def dir_subsets(project):
     return os.path.join(project, 'data', 'subsets')
 
 
+def dir_subset(project, subset):
+    return os.path.join(project, 'data', 'subsets', subset)
+
+
 def dir_labels(project, subset):
     return os.path.join(project, 'data', 'subsets', subset, 'labels')
-
-
-def dir_preprocessed(project, subset):
-    return os.path.join(project, 'preprocessed', subset)
 
 
 def dir_features(project, subset):
@@ -35,6 +35,10 @@ def dir_predictions(project, subset, model):
 
 def dir_patterns(project, subset):
     return os.path.join(project, 'data', 'subsets', subset, 'patterns')
+
+
+def dir_partitions(project, subset):
+    return os.path.join(project, 'data', 'subsets', subset, 'partitions')
 
 
 def dir_models(project):

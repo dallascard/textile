@@ -69,15 +69,22 @@ def main():
     train_model(project_dir, model_type, model_name, subset, label, feature_defs, weights_file, n_classes=n_classes, penalty=penalty, intercept=intercept, n_dev_folds=n_dev_folds)
 
 
-def train_model(project_dir, model_type, model_name, subset, label, feature_defs, weights_file=None, n_classes=2, penalty='l2', alpha_min=0.01,
-                     alpha_max=1000, n_alphas=8, intercept=True, n_dev_folds=5, save_model=True):
+def train_model(project_dir, model_type, model_name, subset, label, feature_defs, weights_file=None, items_to_use=None,
+                n_classes=2, penalty='l2', alpha_min=0.01, alpha_max=1000, n_alphas=8, intercept=True,
+                n_dev_folds=5, save_model=True):
 
     label_dir = dirs.dir_labels(project_dir, subset)
     features_dir = dirs.dir_features(project_dir, subset)
 
     print("loading labels")
     labels = fh.read_csv_to_df(os.path.join(label_dir, label + '.csv'), index_col=0, header=0)
-    n_train = len(labels)
+    n_items = len(labels)
+
+    indices_to_use = None
+    if items_to_use is not None:
+        item_index = dict(zip(labels.index, range(n_items)))
+        indices_to_use = [item_index[i] for i in items_to_use]
+        labels = labels.loc[items_to_use]
 
     print("loading features")
     feature_list = []
@@ -86,6 +93,9 @@ def train_model(project_dir, model_type, model_name, subset, label, feature_defs
         print(feature_def)
         name = feature_def.name
         feature = features.load_from_file(input_dir=features_dir, basename=name)
+        # take a subset of the rows, if requested
+        if indices_to_use is not None:
+            feature = features.create_from_feature(feature, indices_to_use)
         feature.threshold(feature_def.min_df)
         feature.transform(feature_def.transform)
         feature_list.append(feature)
@@ -197,16 +207,13 @@ def train_model(project_dir, model_type, model_name, subset, label, feature_defs
         print("Fitting single model with ARD")
         model = blr.BLR(alpha=None, fit_intercept=intercept, n_classes=n_classes)
         model.fit(np.array(X.todense()), y, col_names, sample_weights=weights, batch=True, multilevel=True, ard=True)
-
+    else:
+        sys.exit("Model type not recognized")
 
     output_dir = os.path.join(dirs.dir_models(project_dir), model_name)
     if not os.path.exists(output_dir):
         os.makedirs(output_dir)
     model.save(output_dir)
-
-    #fh.pickle_data(best_acc_cfm, os.path.join(output_dir, 'acc_cfm.pkl'))
-    #fh.pickle_data(best_pacc_cfm, os.path.join(output_dir, 'pacc_cfm.pkl'))
-    #fh.pickle_data(best_pvc_cfm, os.path.join(output_dir, 'pvc_cfm.pkl'))
 
     return model
 

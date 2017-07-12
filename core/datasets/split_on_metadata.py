@@ -8,7 +8,7 @@ from core.util import file_handling as fh
 def main():
     usage = "%prog input_json field_name"
     parser = OptionParser(usage=usage)
-    parser.add_option('-p', dest='calib_percent', default=0.5,
+    parser.add_option('-p', dest='calib_prop', default=0.5,
                       help='Percent to use for the calibration part of each split: default=%default')
     parser.add_option('--sampling', dest='sampling', default='proportional',
                       help='How to divide calibration and test data [proportional|random]: default=%default')
@@ -21,7 +21,7 @@ def main():
     input_file = args[0]
     field_name = args[1]
 
-    calib_percent = float(options.calib_percent)
+    calib_percent = float(options.calib_prop)
     seed = int(options.seed)
     sampling = options.sampling
     overwrite = options.overwrite

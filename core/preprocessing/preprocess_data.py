@@ -205,7 +205,7 @@ def main():
     fh.write_to_json(label_index, os.path.join(output_dir, label_name + '_index.json'))
 
     print("Saving metadata")
-    output_dir = dirs.dir_preprocessed(project_dir, subset)
+    output_dir = dirs.dir_subset(project_dir, subset)
     metadata.to_csv(os.path.join(output_dir, 'metadata.csv'))
 
 
