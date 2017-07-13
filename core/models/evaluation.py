@@ -16,10 +16,12 @@ def f1_score(true, pred, n_classes=2, pos_label=1, average=None):
 
     :return: f1 score
     """
-    #if len(set(true).intersection(set(pred))) == 0:
-    #    return 0
+
     if n_classes == 2:
-        f1 = skl_f1_score(true, pred, average='binary', labels=range(n_classes), pos_label=pos_label)
+        if np.sum(pred == pos_label) == 0:
+            f1 = 0.0
+        else:
+            f1 = skl_f1_score(true, pred, average='binary', labels=range(n_classes), pos_label=pos_label)
     else:
         if average is None:
             f1 = skl_f1_score(true, pred, average='micro', labels=range(n_classes), pos_label=None)

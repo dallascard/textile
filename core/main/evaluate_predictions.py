@@ -33,11 +33,19 @@ def main():
     pos_label = int(options.pos_label)
     average = options.average
 
+    load_and_evaluate_predictons(project_dir, model_name, subset, label, n_classes=n_classes, pos_label=pos_label, average=average)
+
+
+def load_and_evaluate_predictons(project_dir, model_name, subset, label, items_to_use=None, n_classes=None, pos_label=1, average='micro'):
     label_dir = dirs.dir_labels(project_dir, subset)
     labels = fh.read_csv_to_df(os.path.join(label_dir, label + '.csv'), index_col=0, header=0)
 
     pred_dir = dirs.dir_predictions(project_dir, subset, model_name)
     predictions = fh.read_csv_to_df(os.path.join(pred_dir, label + '_predictions.csv'), index_col=0, header=0)
+
+    if items_to_use is not None:
+        labels = labels.loc[items_to_use]
+        predictions = predictions.loc[items_to_use]
 
     evaluate_predictions(labels, predictions, n_classes=n_classes, pos_label=pos_label, average=average)
 

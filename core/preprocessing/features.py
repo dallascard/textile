@@ -155,7 +155,6 @@ class Feature:
         indices = [terms_index[t] if t in terms_index else n_terms for t in terms]
         self.counts = temp[:, indices]
         self.terms = terms
-        print("New shape = (%d, %d)" % self.counts.shape)
 
 
 def create_from_counts(name, items, terms, counts):

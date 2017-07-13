@@ -76,7 +76,6 @@ def train_model(project_dir, model_type, model_name, subset, label, feature_defs
     label_dir = dirs.dir_labels(project_dir, subset)
     features_dir = dirs.dir_features(project_dir, subset)
 
-    print("loading labels")
     labels = fh.read_csv_to_df(os.path.join(label_dir, label + '.csv'), index_col=0, header=0)
     n_items = len(labels)
 
@@ -85,6 +84,7 @@ def train_model(project_dir, model_type, model_name, subset, label, feature_defs
         item_index = dict(zip(labels.index, range(n_items)))
         indices_to_use = [item_index[i] for i in items_to_use]
         labels = labels.loc[items_to_use]
+        n_items = len(labels)
 
     print("loading features")
     feature_list = []
@@ -94,10 +94,14 @@ def train_model(project_dir, model_type, model_name, subset, label, feature_defs
         name = feature_def.name
         feature = features.load_from_file(input_dir=features_dir, basename=name)
         # take a subset of the rows, if requested
+        print("Initial shape = (%d, %d)" % feature.get_shape())
         if indices_to_use is not None:
+            print("Taking subset of items")
             feature = features.create_from_feature(feature, indices_to_use)
+            print("New shape = (%d, %d)" % feature.get_shape())
         feature.threshold(feature_def.min_df)
         feature.transform(feature_def.transform)
+        print("Final shape = (%d, %d)" % feature.get_shape())
         feature_list.append(feature)
         if save_model:
             feature_signatures.append(features.get_feature_signature(feature_def, feature))
@@ -123,11 +127,11 @@ def train_model(project_dir, model_type, model_name, subset, label, feature_defs
     if n_classes is None:
         n_classes = int(np.max(y))+1
     bincount = np.bincount(y, minlength=n_classes)
-    print("n_classes = %d" % n_classes)
+    print("Using %d classes" % n_classes)
     train_proportions = bincount / float(bincount.sum())
-    print("Train proportions:", train_proportions.tolist())
+    print("Train proportions: %s" % str(train_proportions.tolist()))
 
-    print("Train feature matrix shape:", X.shape)
+    print("Train feature matrix shape: (%d, %d)" % X.shape)
 
     try:
         assert np.array(features_concat.items == labels.index).all()
@@ -195,11 +199,11 @@ def train_model(project_dir, model_type, model_name, subset, label, feature_defs
         #best_pacc_cfm = pacc_cfms[best_acc_alpha_index]
         #best_pvc_cfm = pvc_cfms[best_acc_alpha_index]
 
-        print("Best f1 alpha = %.3f" % best_f1_alpha)
+        print("Best: alpha = %.3f, dev f1 = %.3f" % (best_f1_alpha, np.max(mean_dev_f1s)))
         #print "Best acc alpha = %.3f" % best_acc_alpha
         #print "Best cal alpha = %.3f" % best_cal_alpha
 
-        print("Training full acc model")
+        print("Training full model")
         model = lr.LR(best_f1_alpha, penalty=penalty, fit_intercept=intercept, n_classes=n_classes)
         model.fit(X, y, col_names)
 

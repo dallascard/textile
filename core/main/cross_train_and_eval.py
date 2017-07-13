@@ -6,7 +6,7 @@ import numpy as np
 
 from ..util import file_handling as fh
 from ..preprocessing import features
-from ..main import train
+from ..main import train, predict, evaluate_predictions, estimate_proportions
 from ..util import dirs
 
 
@@ -69,12 +69,20 @@ def main():
     metadata_file = os.path.join(dirs.dir_subset(project_dir, subset), 'metadata.csv')
     metadata = fh.read_csv_to_df(metadata_file)
     field_vals = list(set(metadata[field_name].values))
-    subset_to_use = metadata[metadata[field_name] == field_vals[0]]
-    items_to_use = subset_to_use.index
+    field_vals.sort()
+    print(field_vals)
+    subset_5 = metadata[metadata[field_name] == field_vals[5]]
+    train_items = subset_5.index
+    subset_6 = metadata[metadata[field_name] == field_vals[6]]
+    test_items = subset_6.index
 
-    train.train_model(project_dir, model_type, model_name, subset, label, feature_defs, weights_file, items_to_use=items_to_use, n_classes=n_classes, penalty=penalty, intercept=intercept, n_dev_folds=n_dev_folds)
+    print("Doing training")
+    model = train.train_model(project_dir, model_type, model_name, subset, label, feature_defs, weights_file, items_to_use=train_items, n_classes=n_classes, penalty=penalty, intercept=intercept, n_dev_folds=n_dev_folds)
 
+    print("Doing evaluation")
+    predictions, pred_probs = predict.predict(project_dir, model, model_name, subset, label, items_to_use=test_items)
 
+    evaluate_predictions.load_and_evaluate_predictons(project_dir, model_name, subset, label, items_to_use=test_items, n_classes=n_classes, pos_label=1, average='micro')
 
 
 if __name__ == '__main__':

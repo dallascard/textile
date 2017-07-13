@@ -34,15 +34,22 @@ def main():
     load_and_predict(project_dir, model_type, model_name, predict_subset, label)
 
 
-def load_and_predict(project_dir, model_type, model_name, test_subset, label_name):
+def load_and_predict(project_dir, model_type, model_name, test_subset, label_name, items_to_use=None):
     print("Loading model")
-
     model_dir = os.path.join(dirs.dir_models(project_dir), model_name)
     model = load_model.load_model(model_dir, model_type)
+    predict(project_dir, model, model_name, test_subset, label_name, items_to_use=items_to_use)
+
+
+def predict(project_dir, model, model_name, test_subset, label_name, items_to_use=None):
+
+    model_dir = os.path.join(dirs.dir_models(project_dir), model_name)
     model_type = model.get_model_type()
 
     feature_signatures = fh.read_json(os.path.join(model_dir, 'features.json'))
     test_features_dir = dirs.dir_features(project_dir, test_subset)
+
+    indices_to_use = None
 
     print("Loading features")
     feature_list = []
@@ -51,20 +58,35 @@ def load_and_predict(project_dir, model_type, model_name, test_subset, label_nam
         print("Loading %s" % feature_def)
         name = feature_def.name
         test_feature = features.load_from_file(input_dir=test_features_dir, basename=name)
+        print("Initial shape = (%d, %d)" % test_feature.get_shape())
+
+        # use only a subset of the items, if given
+        if items_to_use is not None:
+            if indices_to_use is None:
+                all_test_items = test_feature.get_items()
+                n_items = len(all_test_items)
+                item_index = dict(zip(all_test_items, range(n_items)))
+                indices_to_use = [item_index[i] for i in items_to_use]
+                n_items = len(indices_to_use)
+            print("Taking subset of items")
+            test_feature = features.create_from_feature(test_feature, indices_to_use)
+            print("New shape = (%d, %d)" % test_feature.get_shape())
+        print("Setting vocabulary")
         test_feature.set_terms(sig['terms'])
         idf = None
         if feature_def.transform == 'tfidf':
             idf = sig['idf']
         test_feature.transform(feature_def.transform, idf=idf)
+        print("Final shape = (%d, %d)" % test_feature.get_shape())
         feature_list.append(test_feature)
 
     features_concat = features.concatenate(feature_list)
     X = features_concat.get_counts().tocsr()
+    print("Feature matrix shape: (%d, %d)" % X.shape)
 
     if model_type == 'BLR':
         X = np.array(X.todense())
 
-    print("Doing prediction")
     predictions = model.predict(X)
     pred_probs = model.predict_probs(X)
     n_items, n_labels = pred_probs.shape
@@ -79,6 +101,7 @@ def load_and_predict(project_dir, model_type, model_name, test_subset, label_nam
     df.to_csv(os.path.join(output_dir, label_name + '_pred_probs.csv'))
 
     return predictions, pred_probs
+
 
 if __name__ == '__main__':
     main()
