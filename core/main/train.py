@@ -9,6 +9,7 @@ from ..util import file_handling as fh
 from ..models import lr, blr, evaluation
 from ..preprocessing import features
 from ..util import dirs
+from ..util.misc import printv
 
 
 def main():
@@ -71,7 +72,7 @@ def main():
 
 def train_model(project_dir, model_type, model_name, subset, label, feature_defs, weights_file=None, items_to_use=None,
                 n_classes=2, penalty='l2', alpha_min=0.01, alpha_max=1000, n_alphas=8, intercept=True,
-                n_dev_folds=5, save_model=True):
+                n_dev_folds=5, save_model=True, verbose=True):
 
     label_dir = dirs.dir_labels(project_dir, subset)
     features_dir = dirs.dir_features(project_dir, subset)
@@ -86,22 +87,22 @@ def train_model(project_dir, model_type, model_name, subset, label, feature_defs
         labels = labels.loc[items_to_use]
         n_items = len(labels)
 
-    print("loading features")
+    printv("loading features", verbose)
     feature_list = []
     feature_signatures = []
     for feature_def in feature_defs:
-        print(feature_def)
+        printv(feature_def, verbose)
         name = feature_def.name
         feature = features.load_from_file(input_dir=features_dir, basename=name)
         # take a subset of the rows, if requested
-        print("Initial shape = (%d, %d)" % feature.get_shape())
+        printv("Initial shape = (%d, %d)" % feature.get_shape(), verbose)
         if indices_to_use is not None:
-            print("Taking subset of items")
+            printv("Taking subset of items", verbose)
             feature = features.create_from_feature(feature, indices_to_use)
-            print("New shape = (%d, %d)" % feature.get_shape())
+            printv("New shape = (%d, %d)" % feature.get_shape(), verbose)
         feature.threshold(feature_def.min_df)
         feature.transform(feature_def.transform)
-        print("Final shape = (%d, %d)" % feature.get_shape())
+        printv("Final shape = (%d, %d)" % feature.get_shape(), verbose)
         feature_list.append(feature)
         if save_model:
             feature_signatures.append(features.get_feature_signature(feature_def, feature))
@@ -127,11 +128,11 @@ def train_model(project_dir, model_type, model_name, subset, label, feature_defs
     if n_classes is None:
         n_classes = int(np.max(y))+1
     bincount = np.bincount(y, minlength=n_classes)
-    print("Using %d classes" % n_classes)
+    printv("Using %d classes" % n_classes, verbose)
     train_proportions = bincount / float(bincount.sum())
-    print("Train proportions: %s" % str(train_proportions.tolist()))
+    printv("Train proportions: %s" % str(train_proportions.tolist()), verbose)
 
-    print("Train feature matrix shape: (%d, %d)" % X.shape)
+    printv("Train feature matrix shape: (%d, %d)" % X.shape, verbose)
 
     try:
         assert np.array(features_concat.items == labels.index).all()
@@ -153,7 +154,7 @@ def train_model(project_dir, model_type, model_name, subset, label, feature_defs
     mean_dev_f1s = np.zeros(n_alphas)
     mean_model_size = np.zeros(n_alphas)
 
-    print("%s\t%s\t%s\t%s\t%s" % ('iter', 'alpha', 'size', 'f1_trn', 'f1_dev'))
+    printv("%s\t%s\t%s\t%s\t%s" % ('iter', 'alpha', 'size', 'f1_trn', 'f1_dev'), verbose)
 
     if model_type == 'LR':
         for alpha_i, alpha in enumerate(alphas):
@@ -181,7 +182,7 @@ def train_model(project_dir, model_type, model_name, subset, label, feature_defs
 
                 mean_model_size[alpha_i] += model.get_model_size() / float(n_dev_folds)
 
-            print("%d\t%0.2f\t%.1f\t%0.3f\t%0.3f" % (alpha_i, alpha, mean_model_size[alpha_i], mean_train_f1s[alpha_i], mean_dev_f1s[alpha_i]))
+            printv("%d\t%0.2f\t%.1f\t%0.3f\t%0.3f" % (alpha_i, alpha, mean_model_size[alpha_i], mean_train_f1s[alpha_i], mean_dev_f1s[alpha_i]), verbose)
 
             #acc_cfms.append(np.mean(alpha_acc_cfms, axis=0))
             #pacc_cfms.append(np.mean(alpha_pacc_cfms, axis=0))
@@ -199,16 +200,16 @@ def train_model(project_dir, model_type, model_name, subset, label, feature_defs
         #best_pacc_cfm = pacc_cfms[best_acc_alpha_index]
         #best_pvc_cfm = pvc_cfms[best_acc_alpha_index]
 
-        print("Best: alpha = %.3f, dev f1 = %.3f" % (best_f1_alpha, np.max(mean_dev_f1s)))
+        printv("Best: alpha = %.3f, dev f1 = %.3f" % (best_f1_alpha, np.max(mean_dev_f1s)), verbose)
         #print "Best acc alpha = %.3f" % best_acc_alpha
         #print "Best cal alpha = %.3f" % best_cal_alpha
 
-        print("Training full model")
+        printv("Training full model", verbose)
         model = lr.LR(best_f1_alpha, penalty=penalty, fit_intercept=intercept, n_classes=n_classes)
         model.fit(X, y, col_names)
 
     elif model_type == 'BLR':
-        print("Fitting single model with ARD")
+        printv("Fitting single model with ARD", verbose)
         model = blr.BLR(alpha=None, fit_intercept=intercept, n_classes=n_classes)
         model.fit(np.array(X.todense()), y, col_names, sample_weights=weights, batch=True, multilevel=True, ard=True)
     else:

@@ -37,6 +37,7 @@ def main():
 
 
 def load_and_evaluate_predictons(project_dir, model_name, subset, label, items_to_use=None, n_classes=None, pos_label=1, average='micro'):
+
     label_dir = dirs.dir_labels(project_dir, subset)
     labels = fh.read_csv_to_df(os.path.join(label_dir, label + '.csv'), index_col=0, header=0)
 
@@ -55,21 +56,22 @@ def evaluate_predictions(labels, predictions, n_classes=None, pos_label=1, avera
     if n_classes is None:
         n_classes = np.max([np.max(labels), np.max(predictions)]) + 1
         print("Assuming %d classes" % n_classes)
-    f1 = evaluation.f1_score(labels, predictions, n_classes, pos_label=pos_label, average=average)
+    f1 = evaluation.f1_score(labels.values, predictions.values, n_classes, pos_label=pos_label, average=average)
     print("F1 = %0.3f" % f1)
-    acc = evaluation.acc_score(labels, predictions, n_classes)
+    acc = evaluation.acc_score(labels.values, predictions.values, n_classes)
     print("Accuracy = %0.3f" % acc)
 
     true_label_counts = np.bincount(labels.values.reshape(len(labels),), minlength=n_classes)
     true_proportions = true_label_counts / float(true_label_counts.sum())
     print("True proportions =", true_proportions)
 
-    pred_label_counts = np.bincount(predictions.values.reshape(len(labels),), minlength=n_classes)
+    pred_label_counts = np.bincount(predictions.values.reshape(len(predictions),), minlength=n_classes)
     pred_proportions = pred_label_counts / float(pred_label_counts.sum())
     print("Predicted proportions =", pred_proportions)
 
     rmse = np.sqrt(np.mean((pred_proportions - true_proportions) ** 2))
     print("RMSE on proportions = %0.3f" % rmse)
+
 
 
 if __name__ == '__main__':

@@ -7,16 +7,17 @@ import numpy as np
 from ..util import file_handling as fh
 from ..preprocessing import features
 from ..main import train, predict, evaluate_predictions, estimate_proportions
+from ..models import evaluation, calibration
 from ..util import dirs
 
 
 def main():
     usage = "%prog project_dir subset field_name model_name config.json "
     parser = OptionParser(usage=usage)
-    parser.add_option('-p', dest='calib_prop', default=0.5,
+    parser.add_option('-p', dest='calib_prop', default=0.33,
                       help='Percent to use for the calibration part of each split: default=%default')
-    parser.add_option('--sampling', dest='sampling', default='proportional',
-                      help='How to divide calibration and test data [proportional|random]: default=%default')
+    #parser.add_option('--sampling', dest='sampling', default='proportional',
+    #                  help='How to divide calibration and test data [proportional|random]: default=%default')
     parser.add_option('--model', dest='model', default='LR',
                       help='Model type [LR|BLR]: default=%default')
     parser.add_option('--label', dest='label', default='label',
@@ -44,8 +45,8 @@ def main():
     model_name = args[3]
     config_file = args[4]
 
-    calib_percent = float(options.calib_prop)
-    sampling = options.sampling
+    calib_prop = float(options.calib_prop)
+    #sampling = options.sampling
     model_type = options.model
     label = options.label
     penalty = options.penalty
@@ -59,6 +60,9 @@ def main():
     if options.seed is not None:
         np.random.seed(int(options.seed))
 
+    pos_label = 1
+    average = 'micro'
+
     config = fh.read_json(config_file)
     feature_defs = []
     for f in config['feature_defs']:
@@ -71,18 +75,69 @@ def main():
     field_vals = list(set(metadata[field_name].values))
     field_vals.sort()
     print(field_vals)
-    subset_5 = metadata[metadata[field_name] == field_vals[5]]
-    train_items = subset_5.index
-    subset_6 = metadata[metadata[field_name] == field_vals[6]]
-    test_items = subset_6.index
+    for v_i, v in enumerate(field_vals):
+        print("\nTesting on %s" % v)
+        train_subset = metadata[metadata[field_name] != v]
+        train_items = train_subset.index
+        non_train_subset = metadata[metadata[field_name] == v]
+        non_train_items = non_train_subset.index.tolist()
 
-    print("Doing training")
-    model = train.train_model(project_dir, model_type, model_name, subset, label, feature_defs, weights_file, items_to_use=train_items, n_classes=n_classes, penalty=penalty, intercept=intercept, n_dev_folds=n_dev_folds)
+        n_non_train = len(non_train_items)
+        n_calib = int(calib_prop * n_non_train)
+        np.random.shuffle(non_train_items)
+        calib_items = non_train_items[:n_calib]
+        test_items = non_train_items[n_calib:]
 
-    print("Doing evaluation")
-    predictions, pred_probs = predict.predict(project_dir, model, model_name, subset, label, items_to_use=test_items)
+        # load all labels
+        label_dir = dirs.dir_labels(project_dir, subset)
+        labels = fh.read_csv_to_df(os.path.join(label_dir, label + '.csv'), index_col=0, header=0)
+        if n_classes is None:
+            n_classes = int(np.max(labels)) + 1
+            print("Assuming %d classes" % n_classes)
+        train_labels = labels.loc[train_items]
+        calib_labels = labels.loc[calib_items]
+        test_labels = labels.loc[test_items]
 
-    evaluate_predictions.load_and_evaluate_predictons(project_dir, model_name, subset, label, items_to_use=test_items, n_classes=n_classes, pos_label=1, average='micro')
+        print("Doing training")
+        model = train.train_model(project_dir, model_type, model_name, subset, label, feature_defs, weights_file, items_to_use=train_items, n_classes=n_classes, penalty=penalty, intercept=intercept, n_dev_folds=n_dev_folds, verbose=True)
+
+        print("Doing prediction")
+        calib_predictions, calib_pred_probs = predict.predict(project_dir, model, model_name, subset, label, items_to_use=calib_items)
+        test_predictions, test_pred_probs = predict.predict(project_dir, model, model_name, subset, label, items_to_use=test_items)
+
+        print("Doing evaluation")
+        evaluate_predictions.evaluate_predictions(test_labels, test_predictions, n_classes=n_classes, pos_label=pos_label, average=average)
+
+        # do some sort of calibration here (ACC, PACC, PVC)
+        print("ACC correction")
+        acc = calibration.compute_acc(calib_labels.values, calib_predictions.values, n_classes)
+        acc_corrected = calibration.apply_acc_binary(test_predictions.values, acc)
+        print(acc_corrected)
+
+        print("PVC correction")
+        pvc = calibration.compute_pvc(calib_labels.values, calib_predictions.values, n_classes)
+        pvc_corrected = calibration.apply_pvc(test_predictions.values, pvc)
+        print(pvc_corrected)
+
+        print("Train proportions")
+        train_props = evaluation.compute_proportions(train_labels, n_classes)
+        print(train_props)
+
+        print("Size of calibration set = %d" % n_calib)
+        print("Calibration proportions")
+        calib_props = evaluation.compute_proportions(calib_labels, n_classes)
+        print(calib_props)
+
+        est_var = calib_props[1] * (1 - calib_props[1]) / float(n_calib)
+        beta_a = n_calib * calib_props[0] + 1
+        beta_b = n_calib * calib_props[1] + 1
+        beta_var = beta_a * beta_b / ((beta_a + beta_b)**2 * (beta_a + beta_b + 1))
+        print(np.sqrt(est_var), np.sqrt(beta_var))
+
+        print("Size of test set = %d" % int(n_non_train - n_calib))
+        print("Test proportions")
+        test_props = evaluation.compute_proportions(test_labels, n_classes)
+        print(test_props)
 
 
 if __name__ == '__main__':

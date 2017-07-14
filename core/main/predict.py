@@ -94,13 +94,13 @@ def predict(project_dir, model, model_name, test_subset, label_name, items_to_us
     output_dir = dirs.dir_predictions(project_dir, test_subset, model_name)
     if not os.path.exists(output_dir):
         os.makedirs(output_dir)
-    df = pd.DataFrame(predictions, index=features_concat.get_items(), columns=[label_name])
-    df.to_csv(os.path.join(output_dir, label_name + '_predictions.csv'))
+    predictions_df = pd.DataFrame(predictions, index=features_concat.get_items(), columns=[label_name])
+    predictions_df.to_csv(os.path.join(output_dir, label_name + '_predictions.csv'))
 
-    df = pd.DataFrame(pred_probs, index=features_concat.get_items(), columns=range(n_labels))
-    df.to_csv(os.path.join(output_dir, label_name + '_pred_probs.csv'))
+    pred_probs_df = pd.DataFrame(pred_probs, index=features_concat.get_items(), columns=range(n_labels))
+    pred_probs_df.to_csv(os.path.join(output_dir, label_name + '_pred_probs.csv'))
 
-    return predictions, pred_probs
+    return predictions_df, pred_probs_df
 
 
 if __name__ == '__main__':

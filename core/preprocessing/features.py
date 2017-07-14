@@ -127,7 +127,6 @@ class Feature:
             indices = [i for i, v in enumerate(col_sums) if v >= min_df]
             self.counts = self.counts[:, indices]
             self.terms = [self.terms[i] for i in indices]
-            print("New shape = (%d, %d)" % self.counts.shape)
 
         if max_fp < 1.0:
             print("Thresholding %s by max_fp=%0.3f" % (self.name, max_fp))
@@ -139,14 +138,12 @@ class Feature:
             indices = [i for i, v in enumerate(col_freq) if v <= max_fp]
             self.counts = self.counts[:, indices]
             self.terms = [self.terms[i] for i in indices]
-            print("New shape = (%d, %d)" % self.counts.shape)
 
     def set_terms(self, terms):
         """
         Force self.counts to reflect the membership and order of the list 'terms', by selecting columns
                 and inserting columns of zeros as necessary
         """
-        print("Setting vocabulary")
         n_items = len(self.items)
         n_terms = len(self.terms)
         zeros_col = sparse.csc_matrix(np.zeros([n_items, 1]))

@@ -18,7 +18,8 @@ def f1_score(true, pred, n_classes=2, pos_label=1, average=None):
     """
 
     if n_classes == 2:
-        if np.sum(pred == pos_label) == 0:
+        if np.sum(true * pred) == 0:
+            #print("Warning: no true positives")
             f1 = 0.0
         else:
             f1 = skl_f1_score(true, pred, average='binary', labels=range(n_classes), pos_label=pos_label)
@@ -105,3 +106,9 @@ def eval_proportions_kld(true_props, pred_props, epsilon=1e-5):
     for i, p in enumerate(true_props):
         kld_sum += (p+epsilon) * (np.log(p+epsilon) - np.log(pred_props[i]+epsilon))
     return kld_sum
+
+
+def compute_proportions(labels, n_classes):
+    label_counts = np.bincount(labels.values.reshape(len(labels),), minlength=n_classes)
+    proportions = label_counts / float(label_counts.sum())
+    return proportions
