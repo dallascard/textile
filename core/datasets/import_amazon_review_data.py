@@ -6,6 +6,7 @@ import pandas as pd
 from ..util import dirs
 from ..util import file_handling as fh
 
+
 def main():
     usage = "%prog reviews_file.json project_dir"
     parser = OptionParser(usage=usage)

@@ -13,8 +13,6 @@ def main():
     parser = OptionParser(usage=usage)
     parser.add_option('-p', dest='prop', default=1.0,
                       help='Use only a random proportion of training data: default=%default')
-    parser.add_option('--encoding', dest='encoding', default='utf-8',
-                      help='Encoding: default=%default')
     #parser.add_option('--boolarg', action="store_true", dest="boolarg", default=False,
     #                  help='Keyword argument: default=%default')
 
@@ -23,15 +21,14 @@ def main():
     test_file = args[1]
     project_dir = args[2]
     prop = float(options.prop)
-    encoding = options.encoding
 
-    import_sentiment140(train_file, test_file, project_dir, prop, encoding)
+    import_sentiment140(train_file, test_file, project_dir, prop)
 
 
-def import_sentiment140(train_file, test_file, project_dir, prop=1.0, encoding='utf-8'):
+def import_sentiment140(train_file, test_file, project_dir, prop=1.0):
     print("Loading data")
-    train = load_df(train_file, encoding=encoding)
-    test = load_df(test_file, encoding=encoding)
+    train = load_df(train_file)
+    test = load_df(test_file)
 
     n_train, _ = train.shape
     n_test, _ = test.shape
@@ -58,8 +55,7 @@ def import_sentiment140(train_file, test_file, project_dir, prop=1.0, encoding='
 
 
 def load_df(filename, encoding='utf-8'):
-    #df = fh.read_csv_to_df(filename, index_col=None, header=None, encoding='Windows-1252')
-    df = fh.read_csv_to_df(filename, index_col=None, header=None, encoding=encoding)
+    df = fh.read_csv_to_df(filename, index_col=None, header=None, encoding='Windows-1252')
     print(df.head())
     cols = ['label', 'id', 'date_string', 'query', 'user', 'text']
     df.columns = cols
