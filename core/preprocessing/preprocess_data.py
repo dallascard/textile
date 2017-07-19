@@ -18,14 +18,10 @@ from ..util import dirs
 def main():
     usage = "%prog project_dir subset"
     parser = OptionParser(usage=usage)
-    #parser.add_option('--reference_subset', dest='reference', default=None,
-    #                  help='Reference subset (i.e. train) for ensuring full : default=%default')
     parser.add_option('--label', dest='label', default='label',
                       help='Name of label (in data_file.json): default=%default')
     parser.add_option('--lower', action="store_true", dest="lower", default=False,
                       help='Lower case the text: default=%default')
-    #parser.add_option('-w', dest='ngrams', default=2,
-    #                  help='Max degree of n-grams: default=%default')
     parser.add_option('-w', dest='wgrams', default=2,
                       help='Max degree of word n-grams [0, 1 or 2]: default=%default')
     parser.add_option('-c', dest='cgrams', default=0,

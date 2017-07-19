@@ -38,22 +38,27 @@ def import_review_data(reviews_file, project_dir):
         review = reviews[k]
         if k_i % 1000 == 0:
             print(k_i)
-        data[k] = {}
-        data[k]['reviewerID'] = review['reviewerID']
-        data[k]['text'] = review['reviewText']
-        data[k]['rating'] = review['overall']
-        data[k]['summary'] = review['summary']
-        date_string = review['reviewTime']
-        parts = date_string.split(',')
-        year = int(parts[1])
-        parts2 = parts[0].split()
-        month = int(parts2[0])
-        day = int(parts2[1])
-        data[k]['year'] = year
-        data[k]['month'] = month
-        data[k]['day'] = day
-        date = pd.Timestamp(year=year, month=month, day=day)
-        dates.loc[k] = date
+        helpfulness = review['helpful']
+        n_helpful_votes = helpfulness[0]
+        n_votes = helpfulness[1]
+        if n_votes > 0:
+            data[k] = {}
+            data[k]['reviewerID'] = review['reviewerID']
+            data[k]['text'] = review['reviewText']
+            data[k]['rating'] = review['overall']
+            data[k]['summary'] = review['summary']
+            data[k]['label'] = {'helpful': n_helpful_votes, 'not': n_votes - n_helpful_votes}
+            date_string = review['reviewTime']
+            parts = date_string.split(',')
+            year = int(parts[1])
+            parts2 = parts[0].split()
+            month = int(parts2[0])
+            day = int(parts2[1])
+            data[k]['year'] = year
+            data[k]['month'] = month
+            data[k]['day'] = day
+            date = pd.Timestamp(year=year, month=month, day=day)
+            dates.loc[k] = date
 
     print(dates.date.min())
     print(dates.date.max())

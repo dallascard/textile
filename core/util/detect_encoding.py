@@ -26,8 +26,8 @@ def detect_encoding(filename):
         raw = input_file.read()
     detected_encoding = chardet.detect(raw)
     print("Detected %s with %0.2f confidence" % (detected_encoding['encoding'], detected_encoding['confidence']))
-    f_encoding = detected_encoding['encoding']
-    return f_encoding
+    encoding = detected_encoding['encoding']
+    return encoding
 
 
 if __name__ == '__main__':
