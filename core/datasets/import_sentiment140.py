@@ -71,6 +71,7 @@ def convert_to_json(df, prop=1.0):
         n_items = prop * n_items
         subset = np.random.choice(index, n_items, replace=False)
         index = subset
+        print("Using a random subset of %d tweets" % n_items)
 
     for i in index:
         row = df.loc[i]
