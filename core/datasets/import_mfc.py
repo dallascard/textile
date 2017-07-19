@@ -1,5 +1,6 @@
 import os
 from optparse import OptionParser
+from collections import defaultdict
 
 from ..util import dirs
 from ..util import file_handling as fh
@@ -36,24 +37,28 @@ def convert_mfc(project, data_file, output_prefix):
         text = '\n'.join(paragraphs[2:])
         tone_annotations = data[k]['annotations']['tone']
         #framing_annotations = data[k]['annotations']['framing']
-        article_tones = []
+        article_tones = defaultdict(int)
         # process tone annotations
         for annotator, annotation_list in tone_annotations.items():
             for a in annotation_list:
                 tone = TONE_CODES[int(a['code'])]
                 if tone != 'Neutral':
                     if tone == 'Pro':
-                        article_tones.append(1)
+                        article_tones[1] += 1
                     else:
-                        article_tones.append(0)
+                        article_tones[0] += 1
         if len(article_tones) > 0:
-            tone_set = list(set(article_tones))
             year = int(data[k]['year'])
             year_lower = int(year / 3) * 3
             year_upper = year_lower + 2
             year_group = str(year_lower) + '-' + str(year_upper)
-            if len(tone_set) == 1:
-                output[k] = {'text': text, 'label': int(tone_set[0]), 'year': int(year), 'year_group': year_group}
+
+            # only keep unanimous annotations
+            #if len(tone_set) == 1:
+            #    output[k] = {'text': text, 'label': int(tone_set[0]), 'year': int(year), 'year_group': year_group}
+
+            # keep all annotations
+            output[k] = {'text': text, 'label': article_tones, 'year': int(year), 'year_group': year_group}
 
     print("Saving %d articles" % len(output))
     output_file = os.path.join(dirs.dir_data_raw(project), output_prefix + '.json')

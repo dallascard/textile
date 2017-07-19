@@ -58,15 +58,6 @@ def main():
     for f in config['feature_defs']:
         feature_defs.append(features.parse_feature_string(f))
 
-    #feature_defs = []
-    #for feature_string in args[4:]:
-    #    feature_defs.append(features.parse_feature_string(feature_string))
-
-    #feature_def1 = features.FeatureDef('words', transform='binarize')
-    #feature_def2 = features.FeatureDef('bigrams', min_df=3)
-    #feature_defs = [feature_def1, feature_def2]
-    #feature_defs = [feature_def1]
-
     train_model(project_dir, model_type, model_name, subset, label, feature_defs, weights_file, n_classes=n_classes, penalty=penalty, intercept=intercept, n_dev_folds=n_dev_folds)
 
 
@@ -143,7 +134,6 @@ def train_model(project_dir, model_type, model_name, subset, label, feature_defs
         sys.exit()
 
     kfold = KFold(n_splits=n_dev_folds, shuffle=True)
-    #kfold = KFold(len(y), n_folds=n_dev_folds, shuffle=True)
     if n_alphas > 1:
         alpha_factor = np.power(alpha_max / alpha_min, 1.0/(n_alphas-1))
         alphas = np.array(alpha_min * np.power(alpha_factor, np.arange(n_alphas)))
@@ -160,7 +150,6 @@ def train_model(project_dir, model_type, model_name, subset, label, feature_defs
         for alpha_i, alpha in enumerate(alphas):
             model = lr.LR(alpha, penalty=penalty, fit_intercept=intercept, n_classes=n_classes)
 
-            #for i, (train, dev) in enumerate(kfold):
             for train_indices, dev_indices in kfold.split(X):
                 if weights is not None:
                     weights_k = weights[train_indices]
@@ -168,41 +157,20 @@ def train_model(project_dir, model_type, model_name, subset, label, feature_defs
 
                 train_predictions = model.predict(X[train_indices, :])
                 dev_predictions = model.predict(X[dev_indices, :])
-                dev_probs = model.predict_probs(X[dev_indices, :])
 
                 train_f1 = evaluation.f1_score(y[train_indices], train_predictions, n_classes)
                 dev_f1 = evaluation.f1_score(y[dev_indices], dev_predictions, n_classes)
-                #dev_acc = evaluation.acc_score(y[dev], dev_prediction)
-                #dev_cal = evaluation.evaluate_calibration_mse(y[dev], dev_probs)
 
                 mean_train_f1s[alpha_i] += train_f1 / float(n_dev_folds)
                 mean_dev_f1s[alpha_i] += dev_f1 / float(n_dev_folds)
-                #mean_dev_accs[alpha_i] += dev_acc / float(n_dev_folds)
-                #mean_dev_cals[alpha_i] += dev_cal / float(n_dev_folds)
 
                 mean_model_size[alpha_i] += model.get_model_size() / float(n_dev_folds)
 
             printv("%d\t%0.2f\t%.1f\t%0.3f\t%0.3f" % (alpha_i, alpha, mean_model_size[alpha_i], mean_train_f1s[alpha_i], mean_dev_f1s[alpha_i]), verbose)
 
-            #acc_cfms.append(np.mean(alpha_acc_cfms, axis=0))
-            #pacc_cfms.append(np.mean(alpha_pacc_cfms, axis=0))
-            #pvc_cfms.append(np.mean(alpha_pvc_cfms, axis=0))
-
         best_f1_alpha_index = np.argmax(mean_dev_f1s)
-        #best_acc_alpha_index = np.argmax(mean_dev_accs)
-        #best_cal_alpha_index = np.argmin(mean_dev_cals)
-
         best_f1_alpha = alphas[best_f1_alpha_index]
-        #best_acc_alpha = alphas[best_acc_alpha_index]
-        #best_cal_alpha = alphas[best_cal_alpha_index]
-
-        #best_acc_cfm = acc_cfms[best_acc_alpha_index]
-        #best_pacc_cfm = pacc_cfms[best_acc_alpha_index]
-        #best_pvc_cfm = pvc_cfms[best_acc_alpha_index]
-
         printv("Best: alpha = %.3f, dev f1 = %.3f" % (best_f1_alpha, np.max(mean_dev_f1s)), verbose)
-        #print "Best acc alpha = %.3f" % best_acc_alpha
-        #print "Best cal alpha = %.3f" % best_cal_alpha
 
         printv("Training full model", verbose)
         model = lr.LR(best_f1_alpha, penalty=penalty, fit_intercept=intercept, n_classes=n_classes)

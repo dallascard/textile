@@ -1,6 +1,7 @@
 import os
 from optparse import OptionParser
 
+import numpy as np
 import pandas as pd
 
 from ..util import dirs
@@ -10,8 +11,8 @@ from ..util import file_handling as fh
 def main():
     usage = "%prog train.csv test.csv project_dir"
     parser = OptionParser(usage=usage)
-    #parser.add_option('--keyword', dest='key', default=None,
-    #                  help='Keyword argument: default=%default')
+    parser.add_option('-p', dest='prop', default=1.0,
+                      help='Use only a random proportion of training data : default=%default')
     #parser.add_option('--boolarg', action="store_true", dest="boolarg", default=False,
     #                  help='Keyword argument: default=%default')
 
@@ -19,11 +20,12 @@ def main():
     train_file = args[0]
     test_file = args[1]
     project_dir = args[2]
+    prop = float(options.prop)
 
-    convert_sentiment140(train_file, test_file, project_dir)
+    import_sentiment140(train_file, test_file, project_dir, prop)
 
 
-def convert_sentiment140(train_file, test_file, project_dir):
+def import_sentiment140(train_file, test_file, project_dir, prop=1.0):
     print("Loading data")
     train = load_df(train_file)
     test = load_df(test_file)
@@ -41,7 +43,7 @@ def convert_sentiment140(train_file, test_file, project_dir):
     test['test'] = 1
 
     print("Converting to JSON")
-    train_dict = convert_to_json(train)
+    train_dict = convert_to_json(train, prop)
     test_dict = convert_to_json(test)
 
     print("Saving data")
@@ -61,9 +63,16 @@ def load_df(filename):
     return df
 
 
-def convert_to_json(df):
+def convert_to_json(df, prop=1.0):
     data = {}
-    for i in df.index:
+    index = list(df.index)
+    n_items = len(index)
+    if prop < 1.0:
+        n_items = prop * n_items
+        subset = np.random.choice(index, n_items, replace=False)
+        index = subset
+
+    for i in index:
         row = df.loc[i]
         data[str(i)] = {'label': int(row.label),
                         'id': int(row.id),

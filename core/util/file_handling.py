@@ -33,6 +33,14 @@ def read_json(input_filename):
     return data
 
 
+def read_json_lines(input_filename):
+    with codecs.open(input_filename, 'r', encoding='utf-8') as input_file:
+        data = {}
+        for l_i, line in enumerate(input_file):
+            data[l_i] = json.loads(line, encoding='utf-8')
+    return data
+
+
 def pickle_data(data, output_filename):
     with open(output_filename, 'wb') as outfile:
         pickle.dump(data, outfile, pickle.HIGHEST_PROTOCOL)
