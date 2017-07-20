@@ -54,7 +54,7 @@ def import_sentiment140(train_file, test_file, project_dir, prop=1.0):
     fh.write_to_json(test_dict, os.path.join(data_dir, 'test.json'))
 
 
-def load_df(filename, encoding='utf-8'):
+def load_df(filename):
     df = fh.read_csv_to_df(filename, index_col=None, header=None, encoding='Windows-1252')
     print(df.head())
     cols = ['label', 'id', 'date_string', 'query', 'user', 'text']
@@ -68,9 +68,9 @@ def convert_to_json(df, prop=1.0):
     index = list(df.index)
     n_items = len(index)
     if prop < 1.0:
-        n_items = prop * n_items
-        subset = np.random.choice(index, n_items, replace=False)
-        index = subset
+        subset_size = prop * n_items
+        subset = np.random.choice(range(n_items), size=subset_size, replace=False)
+        index = index[subset]
         print("Using a random subset of %d tweets" % n_items)
 
     for i in index:

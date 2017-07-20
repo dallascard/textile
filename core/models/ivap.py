@@ -13,8 +13,14 @@ def main():
     (options, args) = parser.parse_args()
 
 
-def estimate_probs(model, calibration, test):
-    pass
+def estimate_probs(model, calib_X, calib_y, test_X):
+    calib_pred_probs = model.predict_probs(calib_X)
+    n_items, n_classes = calib_pred_probs.shape
+    assert n_classes == 2
+
+    test_pred_probs = model.predict_probs(test_X)
+
+
 
 
 if __name__ == '__main__':
