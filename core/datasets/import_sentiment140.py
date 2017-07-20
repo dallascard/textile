@@ -34,7 +34,7 @@ def import_sentiment140(train_file, test_file, project_dir, prop=1.0):
     n_test, _ = test.shape
 
     print(n_train)
-    print(len(set(train.id)))
+    #print(len(set(train.id)))
 
     # make compatible indices
     test.index = list(range(n_train, n_train + n_test))
