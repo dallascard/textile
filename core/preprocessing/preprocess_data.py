@@ -139,7 +139,11 @@ def main():
                 bigrams[name] = extract_bigram_feature(parse, get_word)
 
         else:
-            unigrams = text.split()
+            # for fast processing:
+            # remove punctuation
+            clean_text = re.sub('[.,!?:;"`\']', '', text)
+            # split on whitespace
+            unigrams = clean_text.split()
             if wgrams > 0:
                 unigram_counter = Counter()
                 unigram_counter.update(unigrams)
@@ -173,9 +177,6 @@ def main():
     if cgrams > 0:
         chargram_feature = features.create_from_dict_of_counts('chargrams', chargrams)
         chargram_feature.save_feature(dirs.dir_features(project_dir, subset))
-        terms = chargram_feature.get_terms()
-        for t in terms:
-            print(t)
 
     if word2vec_file is not None and wgrams > 0:
         mean_word_vectors = {}
