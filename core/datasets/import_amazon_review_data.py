@@ -43,7 +43,7 @@ def import_review_data(reviews_file, project_dir, prop):
         subset_size = int(prop * n_items)
         subset = np.random.choice(range(n_items), size=subset_size, replace=False)
         keys = [keys[i] for i in subset]
-        print("Using a random subset of %d reviews" % n_items)
+        print("Using a random subset of %d reviews" % subset_size)
 
     data = {}
     for k_i, k in enumerate(keys):
