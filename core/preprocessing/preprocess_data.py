@@ -83,7 +83,7 @@ def main():
     keys.sort()
 
     for k_i, key in enumerate(keys):
-        if k_i % 100 == 0 and k_i > 0:
+        if k_i % display == 0 and k_i > 0:
             print(k_i)
 
         item = data[key]
@@ -193,7 +193,7 @@ def main():
 
         print("Extracting word vectors")
         for k_i, key in enumerate(keys):
-            if k_i % 100 == 0 and k_i > 0:
+            if k_i % display == 0 and k_i > 0:
                 print(k_i)
 
             item = data[key]
