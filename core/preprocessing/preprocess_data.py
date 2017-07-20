@@ -154,8 +154,8 @@ def main():
         if cgrams > 0:
             letters = list(text)
             counter = Counter()
-            for c in range(0, cgrams+1):
-                counter.update([''.join(letters[i:i+c+1]) for i in range(len(letters)-c)])
+            for c in range(1, cgrams+1):
+                counter.update([''.join(letters[i:i+c]) for i in range(len(letters)-c+1)])
             chargrams[name] = dict(counter)
 
         metadata.loc[name] = [item[f] for f in fields]
@@ -173,6 +173,9 @@ def main():
     if cgrams > 0:
         chargram_feature = features.create_from_dict_of_counts('chargrams', chargrams)
         chargram_feature.save_feature(dirs.dir_features(project_dir, subset))
+        terms = chargram_feature.get_terms()
+        for t in terms:
+            print(t)
 
     if word2vec_file is not None and wgrams > 0:
         mean_word_vectors = {}
