@@ -68,7 +68,7 @@ def convert_to_json(df, prop=1.0):
     index = list(df.index)
     n_items = len(index)
     if prop < 1.0:
-        subset_size = prop * n_items
+        subset_size = int(prop * n_items)
         subset = np.random.choice(range(n_items), size=subset_size, replace=False)
         index = index[subset]
         print("Using a random subset of %d tweets" % n_items)
