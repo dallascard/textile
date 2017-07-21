@@ -7,6 +7,7 @@ from optparse import OptionParser
 
 import numpy as np
 import pandas as pd
+from scipy import sparse
 from sklearn import preprocessing
 from spacy.en import English
 
@@ -63,6 +64,7 @@ def main():
         print("Loading spacy")
         parser = English()
 
+    items = []
     words = {}
     bigrams = {}
     chargrams = {}
@@ -81,6 +83,10 @@ def main():
     print("Parsing texts")
     keys = list(data.keys())
     keys.sort()
+
+    unigram_vocab = set()
+    bigram_vocab = set()
+    chargram_vocab = set()
 
     for k_i, key in enumerate(keys):
         if k_i % display == 0 and k_i > 0:
@@ -105,6 +111,10 @@ def main():
             name = item['name']
         else:
             name = str(key)
+        items.append(name)
+
+        metadata.loc[name] = [item[f] for f in fields]
+        labels[name] = label_dict
 
         # extract the bigrams from each sentence
         #bigram_counter = Counter()
@@ -138,6 +148,13 @@ def main():
             if wgrams > 1:
                 bigrams[name] = extract_bigram_feature(parse, get_word)
 
+            if cgrams > 0:
+                letters = list(text)
+                counter = Counter()
+                for c in range(1, cgrams+1):
+                    counter.update([''.join(letters[i:i+c]) for i in range(len(letters)-c+1)])
+                chargrams[name] = dict(counter)
+
         else:
             # for fast processing:
             # remove punctuation
@@ -145,38 +162,56 @@ def main():
             # split on whitespace
             unigrams = clean_text.split()
             if wgrams > 0:
-                unigram_counter = Counter()
-                unigram_counter.update(unigrams)
-                words[name] = dict(unigram_counter)
+                unigram_vocab.update(unigrams)
 
             if wgrams > 1:
-                bigram_counter = Counter()
-                if len(unigrams) > 1:
-                    bigram_counter.update([unigrams[i] + '_' + unigrams[i+1] for i in range(len(unigrams)-1)])
-                bigrams[name] = dict(bigram_counter)
+                bigram_vocab.update([unigrams[i] + '_' + unigrams[i+1] for i in range(len(unigrams)-1)])
+
+            if cgrams > 0:
+                letters = list(text)
+                for c in range(1, cgrams+1):
+                    chargram_vocab.update(set([''.join(letters[i:i+c]) for i in range(len(letters)-c+1)]))
+
+    if not fast:
+        print("Creating word features")
+        if wgrams > 0:
+            word_feature = features.create_from_dict_of_counts('words', words)
+            word_feature.save_feature(dirs.dir_features(project_dir, subset))
+
+        if wgrams > 1:
+            bigram_feature = features.create_from_dict_of_counts('bigrams', bigrams)
+            bigram_feature.save_feature(dirs.dir_features(project_dir, subset))
 
         if cgrams > 0:
-            letters = list(text)
-            counter = Counter()
-            for c in range(1, cgrams+1):
-                counter.update([''.join(letters[i:i+c]) for i in range(len(letters)-c+1)])
-            chargrams[name] = dict(counter)
+            chargram_feature = features.create_from_dict_of_counts('chargrams', chargrams)
+            chargram_feature.save_feature(dirs.dir_features(project_dir, subset))
 
-        metadata.loc[name] = [item[f] for f in fields]
-        labels[name] = label_dict
+    else:
+        unigram_vocab = list(unigram_vocab)
+        unigram
+        unigram_counts = sparse.csr_matrix([n_items, len(unigram_vocab)])
 
-    print("Creating word features")
-    if wgrams > 0:
-        word_feature = features.create_from_dict_of_counts('words', words)
-        word_feature.save_feature(dirs.dir_features(project_dir, subset))
+        for k_i, key in enumerate(keys):
+            if k_i % display == 0 and k_i > 0:
+                print(k_i)
 
-    if wgrams > 1:
-        bigram_feature = features.create_from_dict_of_counts('bigrams', bigrams)
-        bigram_feature.save_feature(dirs.dir_features(project_dir, subset))
+                print("Building count matrices")
+                # for fast processing:
+                # remove punctuation
+                clean_text = re.sub('[.,!?:;"`\']', '', text)
+                # split on whitespace
+                unigrams = clean_text.split()
+                if wgrams > 0:
+                    unigram_counter = Counter()
+                    unigram_counter.update(unigrams)
+                    words[name] = dict(unigram_counter)
 
-    if cgrams > 0:
-        chargram_feature = features.create_from_dict_of_counts('chargrams', chargrams)
-        chargram_feature.save_feature(dirs.dir_features(project_dir, subset))
+                if wgrams > 1:
+                    bigram_counter = Counter()
+                    if len(unigrams) > 1:
+                        bigram_counter.update([unigrams[i] + '_' + unigrams[i+1] for i in range(len(unigrams)-1)])
+                    bigrams[name] = dict(bigram_counter)
+
 
     if word2vec_file is not None and wgrams > 0:
         mean_word_vectors = {}

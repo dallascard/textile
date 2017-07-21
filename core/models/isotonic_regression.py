@@ -19,13 +19,16 @@ def main():
 
 
     # Some code to test isotonic regression
-    n = 20
+    #n = 20
     # create some random Bernoulli data with repeated x values
-    x = np.random.randint(low=0, high=11, size=n)
-    #x = np.arange(n)
-    y = np.zeros_like(x)
-    for i in range(n):
-        y[i] = np.random.binomial(n=1, p=expit((x[i] - 5.0)/2.0))
+    #x = np.random.randint(low=0, high=11, size=n)
+    #y = np.zeros_like(x)
+    #for i in range(n):
+    #    y[i] = np.random.binomial(n=1, p=expit((x[i] - 5.0)/2.0))
+
+    x = np.array([0, 1, 1, 3, 4])
+    y = np.array([0, 0, 1, 0, 1])
+    weights = np.array([1.0, 2.0, 2.0, 1.0, 1.0])
 
     order = np.argsort(x)
     x = x[order]
@@ -35,10 +38,10 @@ def main():
     print(y)
 
     # compute the isotonic regression through these poitns
-    isotonic_regression(x, y, plot=True)
+    isotonic_regression(x, y, weights, plot=False)
 
 
-def isotonic_regression(scores, labels, plot=False):
+def isotonic_regression(scores, labels, sample_weights, plot=False):
     """
     Compute the isotonic regression for a set of points (s, y)
     :param scores: a length-k vector of scores \in (-\inf, \inf) 
@@ -75,7 +78,7 @@ def isotonic_regression(scores, labels, plot=False):
         print(np.mean(se))
 
         ir = IsotonicRegression()
-        ir.fit(scores, labels)
+        ir.fit(scores, labels, sample_weight=sample_weights)
         y_pred = ir.predict(score_set)
 
         full_pred = []
@@ -93,6 +96,36 @@ def isotonic_regression(scores, labels, plot=False):
             gcm_sklearn[i, 1] = gcm_sklearn[i-1, 1] + y_pred[i-1] * (csd_points[i, 0] - csd_points[i-1, 0])
         ax1.plot(gcm_sklearn[:, 0], gcm_sklearn[:, 1], 'k--')
         plt.show()
+
+
+    # plot the CSD and GCM
+    fig, ax = plt.subplots()
+
+    # plot the original data with jitter
+    ax.scatter(scores, labels, s=8, edgecolor='k', facecolor='b', alpha=0.5)
+    # overlay the value of the isotonic regression
+    ax.plot(score_set, slopes[1:])
+
+    full_pred = []
+    for i, s in enumerate(score_set):
+        full_pred.extend([float(slopes[i+1])] * int(weights[i+1]))
+    se = (np.array(full_pred) - labels)**2
+    print(se)
+    print(np.mean(se))
+
+    ir = IsotonicRegression()
+    ir.fit(scores, labels, sample_weight=sample_weights)
+    y_pred = ir.predict(score_set)
+
+    full_pred = []
+    for i, s in enumerate(score_set):
+        full_pred.extend([float(y_pred[i])] * int(weights[i+1]))
+    se = (np.array(full_pred) - labels)**2
+    print(se)
+    print(np.mean(se))
+
+    ax.plot(score_set, y_pred, 'k--')
+    plt.show()
 
     return slopes[1:]
 
