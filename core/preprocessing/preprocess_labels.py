@@ -61,12 +61,7 @@ def preprocess_labels(project_dir, subset, label_name, metadata_fields, display)
             name = str(key)
         items.append(name)
 
-        #if type(item[label_name]) == dict:
-        #    label_dict = item[label_name]
-        #else:
-        #    label_dict = {item[label_name]: 1}
-        #label_set.update(label_dict.keys())
-
+        # TODO: eventually change this to keeping a sparse dictionary of label counts
         label = item[label_name]
         label_set.add(label)
         labels.append(label)

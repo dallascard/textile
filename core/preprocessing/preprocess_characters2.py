@@ -64,15 +64,51 @@ def main():
         # replace underscores with dashes to avoid confusion
         text = re.sub('_', '-', text)
 
+        """
         if ngrams > 0:
             letters = list(text)
             counter = Counter()
             for c in range(1, ngrams+1):
                 counter.update([''.join(letters[i:i+c]) for i in range(len(letters)-c+1)])
             chargrams[name] = dict(counter)
+        """
+
+        letters = list(text)
+        for c in range(1, ngrams+1):
+            chargram_vocab.update(set([''.join(letters[i:i+c]) for i in range(len(letters)-c+1)]))
+
+    chargram_vocab = list(chargram_vocab)
+    chargram_vocab.sort()
+    chargram_index = dict(zip(chargram_vocab, np.arange(len(chargram_vocab))))
+
+    print("Creating sparse matrix of size (%d, %d)" % (len(items), len(chargram_vocab)))
+    counts = sparse.lil_matrix((len(items), len(chargram_vocab)))
+
+    for k_i, key in enumerate(keys):
+        if k_i % display == 0 and k_i > 0:
+            print(k_i)
+
+        item = data[key]
+        text = item['text']
+
+        if lower:
+            text = text.lower()
+
+        # replace underscores with dashes to avoid confusion
+        text = re.sub('_', '-', text)
+
+        if ngrams > 0:
+            letters = list(text)
+            counter = Counter()
+            for c in range(1, ngrams+1):
+                counter.update([''.join(letters[i:i+c]) for i in range(len(letters)-c+1)])
+            rows = k_i * np.ones(len(counter), dtype=int)
+            columns = [chargram_index[c] for c in counter.keys()]
+            values = list(counter.values())
+            counts[rows, columns] = values
 
     if ngrams > 0:
-        chargram_feature = features.create_from_dict_of_counts('chargrams', chargrams)
+        chargram_feature = features.create_from_counts('chargrams', items, chargram_vocab, counts)
         chargram_feature.save_feature(dirs.dir_features(project_dir, subset))
 
 
