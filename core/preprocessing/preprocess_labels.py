@@ -11,20 +11,27 @@ from ..util import dirs
 def main():
     """Preprocess labels and metadata (convert them to my format)"""
 
-    usage = "%prog project_dir subset"
+    usage = "%prog project_dir subset [metadata1,metadata2,...]"
     parser = OptionParser(usage=usage)
     parser.add_option('--label', dest='label', default='label',
                       help='Name of label (in data_file.json): default=%default')
+    parser.add_option('-d', dest='display', default=1000,
+                      help='Display progress every X items: default=%default')
 
     (options, args) = parser.parse_args()
 
     project_dir = args[0]
     subset = args[1]
+    if len(args) > 2:
+        metadata_fields = args[2].split(',')
+    else:
+        metadata_fields = []
     label_name = options.label
-    preprocess_labels(project_dir, subset, label_name)
+    display = int(options.display)
+    preprocess_labels(project_dir, subset, label_name, metadata_fields, display)
 
 
-def preprocess_labels(project_dir, subset, label_name):
+def preprocess_labels(project_dir, subset, label_name, metadata_fields, display):
 
     datafile = os.path.join(dirs.dir_data_raw(project_dir), subset + '.json')
 
@@ -33,21 +40,27 @@ def preprocess_labels(project_dir, subset, label_name):
     keys = list(data.keys())
     keys.sort()
 
-    # make a list of metadata fields (not text or label)
-    fields = list(data[keys[0]].keys())
-    print("Fields found in data:", fields)
-    fields.remove('text')
-    fields.remove(label_name)
-
-    metadata = pd.DataFrame(columns=fields)
     labels = []
     label_set = set()
 
+    metadata_lists = {}
+    for m in metadata_fields:
+        metadata_lists[m] = []
+
+    items = []
+
     for k_i, key in enumerate(keys):
-        if k_i % 1000 == 0 and k_i > 0:
+        if k_i % display == 0 and k_i > 0:
             print(k_i)
 
         item = data[key]
+
+        if 'name' in item:
+            name = item['name']
+        else:
+            name = str(key)
+        items.append(name)
+
         #if type(item[label_name]) == dict:
         #    label_dict = item[label_name]
         #else:
@@ -58,11 +71,8 @@ def preprocess_labels(project_dir, subset, label_name):
         label_set.add(label)
         labels.append(label)
 
-        if 'name' in item:
-            name = item['name']
-        else:
-            name = str(key)
-        metadata.loc[name] = [item[f] for f in fields]
+        for m in metadata_fields:
+            metadata_lists[m].append(item[m])
 
     print("Saving labels")
     label_set = list(label_set)
@@ -82,7 +92,7 @@ def preprocess_labels(project_dir, subset, label_name):
     int_labels = [label_index[label] for label in labels]
     #int_labels = {k: {label_index[label]: value for label, value in item_labels.items()} for k, item_labels in labels.items()}
 
-    labels_df = pd.DataFrame(int_labels, index=keys, columns=[label_name])
+    labels_df = pd.DataFrame(int_labels, index=items, columns=[label_name])
 
     output_dir = dirs.dir_labels(project_dir, subset)
     fh.makedirs(output_dir)
@@ -90,9 +100,13 @@ def preprocess_labels(project_dir, subset, label_name):
     fh.write_to_json(label_index, os.path.join(output_dir, label_name + '_index.json'))
     fh.write_to_json(int_labels, os.path.join(output_dir, label_name + '.json'))
 
-    print("Saving metadata")
-    output_dir = dirs.dir_subset(project_dir, subset)
-    metadata.to_csv(os.path.join(output_dir, 'metadata.csv'))
+    if len(metadata_fields) > 0:
+        print("Saving metadata")
+        metadata = pd.DataFrame([], index=items)
+        for m in metadata_fields:
+            metadata[m] = metadata_lists[m]
+        output_dir = dirs.dir_subset(project_dir, subset)
+        metadata.to_csv(os.path.join(output_dir, 'metadata.csv'))
 
 
 if __name__ == '__main__':
