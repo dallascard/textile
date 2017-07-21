@@ -5,6 +5,7 @@ import numpy as np
 from core.discovery import extract_dependency_patterns
 from core.models import blr
 from core.models import ivap
+from core.preprocessing import preprocess_labels
 
 
 #datafile = os.path.join('projects', '20ng', '20ng_sci', 'data', 'raw', 'train.json')
@@ -12,13 +13,4 @@ from core.models import ivap
 
 #blr.main()
 
-
-n = 20
-x = np.arange(n)
-y = np.random.rand(n)
-
-print(x)
-print(y)
-
-
-ivap.isotonic_regression(x, y)
+preprocess_labels.preprocess_labels('projects/mfc/immigration', 'pro_tone', 'label')

@@ -20,8 +20,13 @@ def main():
 
     project_dir = args[0]
     subset = args[1]
-    datafile = os.path.join(dirs.dir_data_raw(project_dir), subset + '.json')
     label_name = options.label
+    preprocess_labels(project_dir, subset, label_name)
+
+
+def preprocess_labels(project_dir, subset, label_name):
+
+    datafile = os.path.join(dirs.dir_data_raw(project_dir), subset + '.json')
 
     print("Reading data")
     data = fh.read_json(datafile)
@@ -35,7 +40,7 @@ def main():
     fields.remove(label_name)
 
     metadata = pd.DataFrame(columns=fields)
-    labels = {}
+    labels = []
     label_set = set()
 
     for k_i, key in enumerate(keys):
@@ -43,19 +48,21 @@ def main():
             print(k_i)
 
         item = data[key]
-        if type(item[label_name]) == dict:
-            label_dict = item[label_name]
-        else:
-            label_dict = {item[label_name]: 1}
-        label_set.update(label_dict.keys())
+        #if type(item[label_name]) == dict:
+        #    label_dict = item[label_name]
+        #else:
+        #    label_dict = {item[label_name]: 1}
+        #label_set.update(label_dict.keys())
+
+        label = item[label_name]
+        label_set.add(label)
+        labels.append(label)
 
         if 'name' in item:
             name = item['name']
         else:
             name = str(key)
-
         metadata.loc[name] = [item[f] for f in fields]
-        labels[name] = label_dict
 
     print("Saving labels")
     label_set = list(label_set)
@@ -72,10 +79,14 @@ def main():
         label_set.sort()
         label_index = {label: i for i, label in enumerate(label_set)}
 
-    int_labels = {k: {label_index[label]: value for label, value in item_labels.items()} for k, item_labels in labels.items()}
+    int_labels = [label_index[label] for label in labels]
+    #int_labels = {k: {label_index[label]: value for label, value in item_labels.items()} for k, item_labels in labels.items()}
+
+    labels_df = pd.DataFrame(int_labels, index=keys, columns=[label_name])
 
     output_dir = dirs.dir_labels(project_dir, subset)
     fh.makedirs(output_dir)
+    labels_df.to_csv(os.path.join(output_dir, label_name + '.csv'))
     fh.write_to_json(label_index, os.path.join(output_dir, label_name + '_index.json'))
     fh.write_to_json(int_labels, os.path.join(output_dir, label_name + '.json'))
 

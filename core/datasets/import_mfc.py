@@ -54,11 +54,11 @@ def convert_mfc(project, data_file, output_prefix):
             year_group = str(year_lower) + '-' + str(year_upper)
 
             # only keep unanimous annotations
-            #if len(tone_set) == 1:
-            #    output[k] = {'text': text, 'label': int(tone_set[0]), 'year': int(year), 'year_group': year_group}
+            if len(article_tones) == 1:
+                output[k] = {'text': text, 'label': int(list(article_tones.keys())[0]), 'year': int(year), 'year_group': year_group}
 
             # keep all annotations
-            output[k] = {'text': text, 'label': article_tones, 'year': int(year), 'year_group': year_group}
+            #output[k] = {'text': text, 'label': article_tones, 'year': int(year), 'year_group': year_group}
 
     print("Saving %d articles" % len(output))
     output_file = os.path.join(dirs.dir_data_raw(project), output_prefix + '.json')
