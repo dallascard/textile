@@ -5,7 +5,7 @@ import numpy as np
 from core.discovery import extract_dependency_patterns
 from core.models import blr
 from core.models import ivap
-from core.preprocessing import preprocess_labels
+from core.preprocessing import preprocess_characters2
 
 
 #datafile = os.path.join('projects', '20ng', '20ng_sci', 'data', 'raw', 'train.json')
@@ -13,4 +13,4 @@ from core.preprocessing import preprocess_labels
 
 #blr.main()
 
-preprocess_labels.preprocess_labels('projects/mfc/immigration', 'pro_tone', 'label')
+preprocess_characters2.preprocess_chracters('projects/mfc/immigration', 'pro_tone', False, 3, 1000)

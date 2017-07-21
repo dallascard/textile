@@ -1,16 +1,147 @@
+import os
+import re
+import sys
+import gensim
+from collections import Counter
 from optparse import OptionParser
+
+import numpy as np
+import pandas as pd
+from scipy import sparse
+from sklearn import preprocessing
+from spacy.en import English
+
+from ..util import file_handling as fh
+from ..preprocessing import normalize_text, features
+from ..util import dirs
 
 
 def main():
-    usage = "%prog"
+    usage = "%prog project_dir subset"
     parser = OptionParser(usage=usage)
-    #parser.add_option('--keyword', dest='key', default=None,
-    #                  help='Keyword argument: default=%default')
-    #parser.add_option('--boolarg', action="store_true", dest="boolarg", default=False,
-    #                  help='Keyword argument: default=%default')
-
+    parser.add_option('--lower', action="store_true", dest="lower", default=False,
+                      help='Lower case the text: default=%default')
+    parser.add_option('--lemmatize', action="store_true", dest="lemmatize", default=False,
+                      help='Use lemmas instead of words: default=%default')
+    parser.add_option('-n', dest='ngrams', default=2,
+                      help='Max degree of word n-grams [1 or 2]: default=%default')
+    parser.add_option('--fast', action="store_true", dest="fast", default=False,
+                      help='Only do things that are fast (i.e. only splitting, no parsing, no lemmas): default=%default')
+    parser.add_option('-d', dest='display', default=100,
+                      help='Display progress every X items: default=%default')
 
     (options, args) = parser.parse_args()
+
+    project_dir = args[0]
+    subset = args[1]
+    datafile = os.path.join(dirs.dir_data_raw(project_dir), subset + '.json')
+    lower = options.lower
+    lemmatize = options.lemmatize
+    fast = options.fast
+    ngrams = int(options.ngrams)
+    display = int(options.display)
+
+    print("Reading data")
+    data = fh.read_json(datafile)
+    keys = list(data.keys())
+    keys.sort()
+
+    if not fast:
+        print("Loading spacy")
+        parser = English()
+
+    items = []
+    unigrams = {}
+    bigrams = {}
+
+    print("Parsing text")
+
+    for k_i, key in enumerate(keys):
+        if k_i % display == 0 and k_i > 0:
+            print(k_i)
+
+        item = data[key]
+        if 'name' in item:
+            name = item['name']
+        else:
+            name = str(key)
+        items.append(name)
+
+        text = item['text']
+
+        if lower:
+            text = text.lower()
+
+        # replace underscores with dashes to avoid confusion
+        text = re.sub('_', '-', text)
+
+        if not fast:
+            # parse the text with spaCy
+            parse = parser(text)
+
+            if lemmatize:
+                percept = get_lemma
+            else:
+                percept = get_word
+
+            unigrams[name] = extract_unigram_feature(parse, percept)
+            if ngrams > 1:
+                bigrams[name] = extract_bigram_feature(parse, percept)
+
+        else:
+            # for fast processing:
+            # remove punctuation
+            clean_text = re.sub('[.,!?:;"`\']', '', text)
+            parse = clean_text.split()
+            percept = get_token
+
+            unigrams[name] = extract_unigram_feature(parse, percept)
+            if ngrams > 1:
+                counter = Counter()
+                counter.update([percept(parse[i]) + '_' + percept(parse[i+1]) for i in range(len(parse)-1)])
+                bigrams[name] = dict(counter)
+
+    if not fast:
+        print("Creating word features")
+        word_feature = features.create_from_dict_of_counts('unigrams', unigrams)
+        word_feature.save_feature(dirs.dir_features(project_dir, subset))
+
+        if ngrams > 1:
+            bigram_feature = features.create_from_dict_of_counts('bigrams', bigrams)
+            bigram_feature.save_feature(dirs.dir_features(project_dir, subset))
+
+
+def get_word(token):
+    """Get word from spaCy"""
+    #  get word and remove whitespace
+    word = re.sub('\s', '', token.orth_)
+    return word
+
+
+def get_lemma(token):
+    """Get token from spaCy"""
+    # get lemma and remove whitespace
+    lemma = re.sub('\s', '', token.lemma_)
+    return lemma
+
+
+def get_token(token):
+    """Identity function for compatibility"""
+    return token
+
+
+def extract_unigram_feature(parse, feature_function):
+    counter = Counter()
+    counter.update([feature_function(token) for token in parse])
+    return dict(counter)
+
+
+def extract_bigram_feature(parse, percept):
+    counter = Counter()
+    for sent in parse.sents:
+        if len(sent) > 1:
+            counter.update([percept(sent[i]) + '_' + percept(sent[i+1]) for i in range(len(sent)-1)])
+    return dict(counter)
 
 
 if __name__ == '__main__':

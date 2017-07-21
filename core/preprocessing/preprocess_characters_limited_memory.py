@@ -30,10 +30,17 @@ def main():
 
     project_dir = args[0]
     subset = args[1]
-    datafile = os.path.join(dirs.dir_data_raw(project_dir), subset + '.json')
     lower = options.lower
     ngrams = int(options.ngrams)
     display = int(options.display)
+
+    preprocess_chracters(project_dir, subset, lower, ngrams, display)
+
+
+@profile
+def preprocess_chracters(project_dir, subset, lower, ngrams, display):
+
+    datafile = os.path.join(dirs.dir_data_raw(project_dir), subset + '.json')
 
     print("Reading data")
     data = fh.read_json(datafile)
