@@ -7,6 +7,7 @@ from scipy import sparse
 from sklearn import preprocessing
 
 from ..util import file_handling as fh
+from ..util.misc import printv
 
 
 def parse_feature_string(feature_string):
@@ -78,7 +79,7 @@ class Feature:
         fh.write_to_json({'items': self.items, 'terms': self.terms}, os.path.join(output_dir, self.name + '.json'),
                          sort_keys=False)  # Feature.save: fh.write_to_json()
 
-    def transform(self, transform, idf=None):
+    def transform(self, transform, idf=None, verbose=False):
         """
         Apply a transform to the counts for this feature according to the transform parameter
         :param transform: type of transformation (of the type Transforms above)
@@ -86,7 +87,7 @@ class Feature:
         :return: None
         """
         if transform is not None:
-            print("Transforming %s by %s" % (self.name, transform))
+            printv("Transforming %s by %s" % (self.name, transform), verbose)
             assert sparse.isspmatrix_csc(self.counts)
             if transform == 'binarize':
                 self.counts = preprocessing.binarize(self.counts)        # this should still be sparse
@@ -118,10 +119,10 @@ class Feature:
 
     # TODO: keep these values internal? or just give a feature_def as an argument?
     # TODO: replace max_fp with something that drops the most common x% of terms
-    def threshold(self, min_df=0, max_fp=1.0):
+    def threshold(self, min_df=0, max_fp=1.0, verbose=False):
         assert sparse.isspmatrix_csc(self.counts)
         if min_df > 0:
-            print("Thresholding %s by min_df=%d" % (self.name, min_df))
+            printv("Thresholding %s by min_df=%d" % (self.name, min_df), verbose)
             col_sums = self.counts.sum(axis=0)
             col_sums = np.array(col_sums)[0]  # flatten col_sums to 1 dimension
             indices = [i for i, v in enumerate(col_sums) if v >= min_df]
@@ -129,7 +130,7 @@ class Feature:
             self.terms = [self.terms[i] for i in indices]
 
         if max_fp < 1.0:
-            print("Thresholding %s by max_fp=%0.3f" % (self.name, max_fp))
+            printv("Thresholding %s by max_fp=%0.3f" % (self.name, max_fp), verbose)
             n_items, n_terms = self._shape
             binarized = preprocessing.binarize(self.counts)
             col_sums = binarized.sum(axis=0)
