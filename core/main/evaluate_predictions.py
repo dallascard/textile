@@ -72,6 +72,8 @@ def evaluate_predictions(labels, predictions, n_classes=None, pos_label=1, avera
     rmse = np.sqrt(np.mean((pred_proportions - true_proportions) ** 2))
     print("RMSE on proportions = %0.3f" % rmse)
 
+    return f1, acc
+
 
 
 if __name__ == '__main__':

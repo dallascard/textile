@@ -127,15 +127,17 @@ def main():
         test_predictions, test_pred_probs = predict.predict(project_dir, model, model_name, subset, label, items_to_use=test_items)
 
         print("Doing evaluation")
-        evaluate_predictions.evaluate_predictions(test_labels, test_predictions, n_classes=n_classes, pos_label=pos_label, average=average)
+        f1, acc = evaluate_predictions.evaluate_predictions(test_labels, test_predictions, n_classes=n_classes, pos_label=pos_label, average=average)
+        results_df = pd.DataFrame([f1, acc], columns=['f1', 'acc'])
+        results_df.to_csv(os.path.join(dirs.dir_models(project_dir), model_name, 'results.csv'))
 
         cc_estimate = np.sum(test_predictions) / float(n_test)
         cc_rmse = np.sqrt((cc_estimate - test_estimate)**2)
         pcc_estimate = np.mean(test_pred_probs, axis=1)[1]
         pcc_rmse = np.sqrt((pcc_estimate - test_estimate)**2)
 
-        output_df.loc['CC'] = [n_test, cc_estimate, cc_rmse, 0, 1, 1]
-        output_df.loc['PCC'] = [n_test, pcc_estimate, pcc_rmse, 0, 1, 1]
+        output_df.loc['CC'] = [n_test, cc_estimate, cc_rmse, 0, 1, np.nan]
+        output_df.loc['PCC'] = [n_test, pcc_estimate, pcc_rmse, 0, 1, np.nan]
 
         # do some sort of calibration here (ACC, PACC, PVC)
         print("ACC correction")
@@ -156,8 +158,8 @@ def main():
         combo = test_pred_ranges[:, 1] / (1.0 - test_pred_ranges[:, 0] + test_pred_ranges[:, 1])
         test_label_list = test_labels[label]
         pred_prob_list = test_pred_probs[1]
-        for i in range(len(test_label_list)):
-            print(i, test_label_list[i], pred_prob_list[i], test_pred_ranges[i, :], combo[i])
+        #for i in range(len(test_label_list)):
+        #    print(i, test_label_list[i], pred_prob_list[i], test_pred_ranges[i, :], combo[i])
 
         pred_range = np.mean(test_pred_ranges, axis=0)
         venn_estimate = np.mean(combo)
