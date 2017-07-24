@@ -63,11 +63,11 @@ def evaluate_predictions(labels, predictions, n_classes=None, pos_label=1, avera
 
     true_label_counts = np.bincount(labels.values.reshape(len(labels),), minlength=n_classes)
     true_proportions = true_label_counts / float(true_label_counts.sum())
-    printv("True proportions =", true_proportions, verbose)
+    printv("True proportions = %s" % str(true_proportions), verbose)
 
     pred_label_counts = np.bincount(predictions.values.reshape(len(predictions),), minlength=n_classes)
     pred_proportions = pred_label_counts / float(pred_label_counts.sum())
-    printv("Predicted proportions =", pred_proportions, verbose)
+    printv("Predicted proportions = %s" % str(pred_proportions), verbose)
 
     rmse = np.sqrt(np.mean((pred_proportions - true_proportions) ** 2))
     printv("RMSE on proportions = %0.3f" % rmse, verbose)

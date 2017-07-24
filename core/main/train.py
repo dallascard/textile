@@ -144,7 +144,7 @@ def train_model(project_dir, model_type, model_name, subset, label, feature_defs
     mean_dev_f1s = np.zeros(n_alphas)
     mean_model_size = np.zeros(n_alphas)
 
-    printv("%s\t%s\t%s\t%s\t%s" % ('iter', 'alpha', 'size', 'f1_trn', 'f1_dev'), verbose)
+    print("%s\t%s\t%s\t%s\t%s" % ('iter', 'alpha', 'size', 'f1_trn', 'f1_dev'))
 
     if model_type == 'LR':
         for alpha_i, alpha in enumerate(alphas):
