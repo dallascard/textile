@@ -28,7 +28,6 @@ def main():
 
     x = np.array([0, 1, 1, 3, 4])
     y = np.array([0, 0, 1, 0, 1])
-    weights = np.array([1.0, 2.0, 2.0, 1.0, 1.0])
 
     order = np.argsort(x)
     x = x[order]
@@ -38,24 +37,22 @@ def main():
     print(y)
 
     # compute the isotonic regression through these poitns
-    isotonic_regression(x, y, weights, plot=False)
+    isotonic_regression(x, y, plot=False)
 
 
-def isotonic_regression(scores, labels, sample_weights, plot=False):
+def isotonic_regression(scores, labels, plot=False, verbose=False):
     """
     Compute the isotonic regression for a set of points (s, y)
     :param scores: a length-k vector of scores \in (-\inf, \inf) 
     :param labels: a length-k vector of corresponding labels \in {0, 1} (also works outside this range)
-    :return: the value of the isotonic regression at each point
+    :return: the predicted value of the isotonic regression at each point
     """
 
     # compute the cumulative sum diagram (CSD)
     score_set, csd_points, weights = compute_csd(scores, labels)
 
     # compute the greatest convex minorant (GCM) and it's slope to the right of each point
-    gcm, slopes = compute_gcm(csd_points)
-
-    print(gcm)
+    gcm, gcm_slopes = compute_gcm(csd_points, verbose)
 
     if plot:
         # plot the CSD and GCM
@@ -68,66 +65,20 @@ def isotonic_regression(scores, labels, sample_weights, plot=False):
         jitter = np.random.randn(len(scores)) * (np.max(labels) - np.min(labels)) * 0.015
         ax2.scatter(scores, labels + jitter, s=8, edgecolor='k', facecolor='b', alpha=0.5)
         # overlay the value of the isotonic regression
-        ax2.plot(score_set, slopes[1:])
+        ax2.plot(score_set, gcm_slopes[1:])
 
         full_pred = []
         for i, s in enumerate(score_set):
-            full_pred.extend([float(slopes[i+1])] * int(weights[i+1]))
+            full_pred.extend([float(gcm_slopes[i+1])] * int(weights[i+1]))
         se = (np.array(full_pred) - labels)**2
         print(se)
         print(np.mean(se))
 
-        ir = IsotonicRegression()
-        ir.fit(scores, labels, sample_weight=sample_weights)
-        y_pred = ir.predict(score_set)
-
-        full_pred = []
-        for i, s in enumerate(score_set):
-            full_pred.extend([float(y_pred[i])] * int(weights[i+1]))
-        se = (np.array(full_pred) - labels)**2
-        print(se)
-        print(np.mean(se))
-
-        ax2.plot(score_set, y_pred, 'k--')
-
-        # plot the CSD and GCM
-        gcm_sklearn = csd_points.copy()
-        for i in range(1, len(score_set)+1):
-            gcm_sklearn[i, 1] = gcm_sklearn[i-1, 1] + y_pred[i-1] * (csd_points[i, 0] - csd_points[i-1, 0])
-        ax1.plot(gcm_sklearn[:, 0], gcm_sklearn[:, 1], 'k--')
         plt.show()
 
-
-    # plot the CSD and GCM
-    fig, ax = plt.subplots()
-
-    # plot the original data with jitter
-    ax.scatter(scores, labels, s=8, edgecolor='k', facecolor='b', alpha=0.5)
-    # overlay the value of the isotonic regression
-    ax.plot(score_set, slopes[1:])
-
-    full_pred = []
-    for i, s in enumerate(score_set):
-        full_pred.extend([float(slopes[i+1])] * int(weights[i+1]))
-    se = (np.array(full_pred) - labels)**2
-    print(se)
-    print(np.mean(se))
-
-    ir = IsotonicRegression()
-    ir.fit(scores, labels, sample_weight=sample_weights)
-    y_pred = ir.predict(score_set)
-
-    full_pred = []
-    for i, s in enumerate(score_set):
-        full_pred.extend([float(y_pred[i])] * int(weights[i+1]))
-    se = (np.array(full_pred) - labels)**2
-    print(se)
-    print(np.mean(se))
-
-    ax.plot(score_set, y_pred, 'k--')
-    plt.show()
-
-    return slopes[1:]
+    score_set_index = dict(zip(score_set, np.arange(len(score_set))))
+    y_pred = [gcm_slopes[score_set_index[s]+1] for s in scores]
+    return y_pred
 
 
 def compute_csd(scores, labels):
@@ -175,7 +126,7 @@ def compute_csd(scores, labels):
     return score_set, points, weights
 
 
-def compute_gcm(points):
+def compute_gcm(points, verbose=False):
     """
     Compute the greatest convex minorant (GCM)
     :param points: Points P (k'+1, 2) that form the CSD (see above) 
@@ -186,9 +137,11 @@ def compute_gcm(points):
     # find the point with the smallest second value
     min_point_index = np.argmin(points[:, 1])
     # recursively compute the GCM to the left and right
-    print("left")
+    if verbose:
+        print("left")
     left_gcm = compute_left_gcm(points, min_point_index)
-    print("right")
+    if verbose:
+        print("right")
     right_gcm = compute_right_gcm(points, min_point_index)
     # combine them to get the indices of GCM corner points
     gcm_corners = left_gcm[:-1] + right_gcm
@@ -209,7 +162,7 @@ def compute_gcm(points):
     return gcm, slopes
 
 
-def compute_left_gcm(points, index):
+def compute_left_gcm(points, index, verbose=False):
     """Recursively compute the GCM for points to the left of index"""
     if index == 0:
         return [index]
@@ -218,13 +171,15 @@ def compute_left_gcm(points, index):
         slopes = np.zeros(n_points)
         for i in range(0, index):
             slopes[i] = (points[index, 1] - points[i, 1]) / float(points[index, 0] - points[i, 0])
-        print(slopes)
+        if verbose:
+            print(slopes)
         max_slope_index = np.argmax(slopes[:index])
-        print(max_slope_index)
-        return compute_left_gcm(points, max_slope_index) + [index]
+        if verbose:
+            print(max_slope_index)
+        return compute_left_gcm(points, max_slope_index, verbose) + [index]
 
 
-def compute_right_gcm(points, index):
+def compute_right_gcm(points, index, verbose=False):
     """Recursively compute the GCM for points to the right of index"""
     n_points, _ = points.shape
     if index == n_points - 1:
@@ -233,10 +188,12 @@ def compute_right_gcm(points, index):
         slopes = np.zeros(n_points)
         for i in range(index+1, n_points):
             slopes[i] = (points[i, 1] - points[index, 1]) / float(points[i, 0] - points[index, 0])
-        print(slopes)
+        if verbose:
+            print(slopes)
         min_slope_index = np.argmin(slopes[index+1:]) + index + 1
-        print(min_slope_index)
-        return [index] + compute_right_gcm(points, min_slope_index)
+        if verbose:
+            print(min_slope_index)
+        return [index] + compute_right_gcm(points, min_slope_index, verbose)
 
 
 if __name__ == '__main__':

@@ -12,7 +12,7 @@ from ..util import dirs
 
 
 def main():
-    usage = "%prog project_dir subset cross_field_name model_name config.json "
+    usage = "%prog project_dir subset cross_field_name model_basename config.json "
     parser = OptionParser(usage=usage)
     parser.add_option('-p', dest='calib_prop', default=0.33,
                       help='Percent to use for the calibration part of each split: default=%default')
@@ -42,7 +42,7 @@ def main():
     project_dir = args[0]
     subset = args[1]
     field_name = args[2]
-    model_name = args[3]
+    model_basename = args[3]
     config_file = args[4]
 
     calib_prop = float(options.calib_prop)
@@ -77,6 +77,8 @@ def main():
     print(field_vals)
 
     for v_i, v in enumerate(field_vals[-3:-2]):
+        model_name = model_type + '_' + str(v)
+
         print("\nTesting on %s" % v)
         train_subset = metadata[metadata[field_name] != v]
         train_items = train_subset.index
