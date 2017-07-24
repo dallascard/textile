@@ -5,7 +5,7 @@ import numpy as np
 
 from ..util import dirs
 from ..util import file_handling as fh
-
+from ..util.misc import printv
 from ..models import evaluation
 
 
@@ -51,7 +51,7 @@ def load_and_evaluate_predictons(project_dir, model_name, subset, label, items_t
     evaluate_predictions(labels, predictions, n_classes=n_classes, pos_label=pos_label, average=average)
 
 
-def evaluate_predictions(labels, predictions, n_classes=None, pos_label=1, average='micro'):
+def evaluate_predictions(labels, predictions, n_classes=None, pos_label=1, average='micro', verbose=False):
     assert np.all(labels.index == predictions.index)
     if n_classes is None:
         n_classes = np.max([np.max(labels), np.max(predictions)]) + 1
@@ -63,14 +63,14 @@ def evaluate_predictions(labels, predictions, n_classes=None, pos_label=1, avera
 
     true_label_counts = np.bincount(labels.values.reshape(len(labels),), minlength=n_classes)
     true_proportions = true_label_counts / float(true_label_counts.sum())
-    print("True proportions =", true_proportions)
+    printv("True proportions =", true_proportions, verbose)
 
     pred_label_counts = np.bincount(predictions.values.reshape(len(predictions),), minlength=n_classes)
     pred_proportions = pred_label_counts / float(pred_label_counts.sum())
-    print("Predicted proportions =", pred_proportions)
+    printv("Predicted proportions =", pred_proportions, verbose)
 
     rmse = np.sqrt(np.mean((pred_proportions - true_proportions) ** 2))
-    print("RMSE on proportions = %0.3f" % rmse)
+    printv("RMSE on proportions = %0.3f" % rmse, verbose)
 
     return f1, acc
 

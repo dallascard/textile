@@ -7,11 +7,47 @@ from ..util import file_handling as fh
 
 TONE_CODES = {17: 'Pro', 18: 'Neutral', 19: 'Anti'}
 
+
+SOURCES = {
+    'atlanta journal and constitution': 'Atlanta Journal and Constitution',
+    'atlanta journal-constitution': 'Atlanta Journal and Constitution',
+    'daily news (new york)': 'NY Daily News',
+    'denver post': 'Denver Post',
+    'herald-sun (durham, n.c.)': 'Herald-Sun',
+    'herald-sun (durham, nc)': 'Herald-Sun',
+    'new york times': 'NY Times',
+    'new york times blogs (carpetbagger)': 'NY Times blogs',
+    'new york times blogs (city room)': 'NY Times blogs',
+    'new york times blogs (taking note)': 'NY Times blogs',
+    'new york times blogs (the caucus)': 'NY Times blogs',
+    'new york times blogs (the learning network)' : 'NY Times blogs',
+    'new york times blogs (the loyal opposition)': 'NY Times blogs',
+    'new york times blogs (the lede)': 'NY Times blogs',
+    'new york times blogs (lens)': 'NY Times blogs',
+    'new york times blogs (iht rendezvous)': 'NY Times blogs',
+    'new york times blogs (opinionator)': 'NY Times blogs',
+    'new york times blogs (ross douthat)': 'NY Times blogs',
+    'new york times blogs (india ink)': 'NY Times blogs',
+    'new york times blogs (campaign stops)': 'NY Times blogs',
+    'palm beach post (florida)': 'Palm Beach Post',
+    'philadelphia inquirer': 'Philadelphia Inquirer',
+    'saint paul pioneer press (minnesota)': 'St. Paul Pioneer Press',
+    'san jose mercury news (california)': 'San Jose Mercury News',
+    'st. louis post-dispatch (missouri)': 'St. Louis Post-Dispatch',
+    'st. paul pioneer press (minnesota)': 'St. Paul Pioneer Press',
+    'st. petersburg times (florida)': 'Tampa Bay Times',  # renamed
+    'tampa bay times': 'Tampa Bay Times',
+    'usa today': 'USA Today',
+    'washington post': 'Washington Post',
+    'washingtonpost.com': 'Washington Post',
+    'washington post blogs election 2012': 'Washington Post blogs'
+}
+
 def main():
     usage = "%prog project_name path/to/mfc_output.json output_prefix"
     parser = OptionParser(usage=usage)
-    #parser.add_option('--keyword', dest='key', default=None,
-    #                  help='Keyword argument: default=%default')
+    parser.add_option('-y', dest='n_years', default=5,
+                      help='Number of years to group together: default=%default')
     #parser.add_option('--boolarg', action="store_true", dest="boolarg", default=False,
     #                  help='Keyword argument: default=%default')
 
@@ -21,14 +57,19 @@ def main():
     data_file = args[1]
     output_prefix = args[2]
 
-    convert_mfc(project, data_file, output_prefix)
+    n_years = int(options.n_years)
+
+    convert_mfc(project, data_file, output_prefix, n_years)
 
 
-def convert_mfc(project, data_file, output_prefix):
+def convert_mfc(project, data_file, output_prefix, n_years):
     fh.makedirs(dirs.dir_data_raw(project))
 
     data = fh.read_json(data_file)
     output = {}
+    sources = set()
+    sections = set()
+    csis = set()
 
     keys = list(data.keys())
     for k in keys:
@@ -36,6 +77,11 @@ def convert_mfc(project, data_file, output_prefix):
         paragraphs = text.split('\n\n')
         text = '\n'.join(paragraphs[2:])
         tone_annotations = data[k]['annotations']['tone']
+        year = int(data[k]['year'])
+        month = int(data[k]['month'])
+        source = SOURCES[data[k]['source']]
+        section = data[k]['section']
+        csi = data[k]['csi']
         #framing_annotations = data[k]['annotations']['framing']
         article_tones = defaultdict(int)
         # process tone annotations
@@ -47,18 +93,32 @@ def convert_mfc(project, data_file, output_prefix):
                         article_tones[1] += 1
                     else:
                         article_tones[0] += 1
-        if len(article_tones) > 0:
-            year = int(data[k]['year'])
-            year_lower = int(year / 3) * 3
-            year_upper = year_lower + 2
+        if len(article_tones) > 0 and year >= 1990:
+            year_lower = int(year / n_years) * n_years
+            year_upper = year_lower + n_years - 1
             year_group = str(year_lower) + '-' + str(year_upper)
+            sources.add(source)
+            sections.add(section)
+            csis.add(csi)
 
             # only keep unanimous annotations
             if len(article_tones) == 1:
-                output[k] = {'text': text, 'label': int(list(article_tones.keys())[0]), 'year': int(year), 'year_group': year_group}
+                output[k] = {'text': text, 'label': int(list(article_tones.keys())[0]), 'year': int(year), 'year_group': year_group, 'month': month, 'source': source, 'csi': csi}
 
             # keep all annotations
             #output[k] = {'text': text, 'label': article_tones, 'year': int(year), 'year_group': year_group}
+
+    print("Sources")
+    sources = list(sources)
+    sources.sort()
+    for s in sources:
+        print(s)
+
+    print("CSIs")
+    csis = list(csis)
+    csis.sort()
+    for s in csis:
+        print(s)
 
     print("Saving %d articles" % len(output))
     output_file = os.path.join(dirs.dir_data_raw(project), output_prefix + '.json')
