@@ -7,12 +7,12 @@ import numpy as np
 from ..util import file_handling as fh
 from ..preprocessing import features
 from ..main import train, predict, evaluate_predictions, estimate_proportions
-from ..models import evaluation, calibration
+from ..models import evaluation, calibration, ivap
 from ..util import dirs
 
 
 def main():
-    usage = "%prog project_dir subset field_name model_name config.json "
+    usage = "%prog project_dir subset cross_field_name model_name config.json "
     parser = OptionParser(usage=usage)
     parser.add_option('-p', dest='calib_prop', default=0.33,
                       help='Percent to use for the calibration part of each split: default=%default')
@@ -31,7 +31,7 @@ def main():
     #parser.add_option('--objective', dest='objective', default='f1',
     #                  help='Objective for choosing best alpha [calibration|f1]: default=%default')
     parser.add_option('--n_classes', dest='n_classes', default=None,
-                      help='Specify the number of classes (None=max[training labels]): default=%default')
+                      help='Specify the number of classes (None=max(train)+1): default=%default')
     parser.add_option('--n_dev_folds', dest='n_dev_folds', default=5,
                       help='Number of dev folds for tuning regularization: default=%default')
     parser.add_option('--seed', dest='seed', default=None,
@@ -75,7 +75,8 @@ def main():
     field_vals = list(set(metadata[field_name].values))
     field_vals.sort()
     print(field_vals)
-    for v_i, v in enumerate(field_vals):
+
+    for v_i, v in enumerate(field_vals[-3:-2]):
         print("\nTesting on %s" % v)
         train_subset = metadata[metadata[field_name] != v]
         train_items = train_subset.index
@@ -139,6 +140,17 @@ def main():
         test_props = evaluation.compute_proportions(test_labels, n_classes)
         print(test_props)
 
+        test_pred_ranges = ivap.estimate_probs_brute_force(project_dir, model, model_name, subset, subset, label, calib_items, test_items)
+        combo = test_pred_ranges[:, 1] / (1.0 - test_pred_ranges[:, 0] + test_pred_ranges[:, 1])
+        test_label_list = test_labels[label]
+        pred_prob_list = test_pred_probs[1]
+        for i in range(len(test_label_list)):
+            print(i, test_label_list[i], pred_prob_list[i], test_pred_ranges[i, :], combo[i])
+
+        print("Venn calibration")
+        pred_range = np.mean(test_pred_ranges, axis=0)
+        print(pred_range)
+        print(np.mean(combo))
 
 if __name__ == '__main__':
     main()

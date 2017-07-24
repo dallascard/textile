@@ -1,5 +1,6 @@
 {
   "feature_defs": [
-    "words,min_df=2,transform=binarize"
+    "unigrams,min_df=2,transform=binarize",
+    "bigrams,min_df=3,transform=binarize"
   ]
 }

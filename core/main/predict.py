@@ -49,8 +49,6 @@ def predict(project_dir, model, model_name, test_subset, label_name, items_to_us
     feature_signatures = fh.read_json(os.path.join(model_dir, 'features.json'))
     test_features_dir = dirs.dir_features(project_dir, test_subset)
 
-    indices_to_use = None
-
     print("Loading features")
     feature_list = []
     for sig in feature_signatures:
@@ -62,12 +60,10 @@ def predict(project_dir, model, model_name, test_subset, label_name, items_to_us
 
         # use only a subset of the items, if given
         if items_to_use is not None:
-            if indices_to_use is None:
-                all_test_items = test_feature.get_items()
-                n_items = len(all_test_items)
-                item_index = dict(zip(all_test_items, range(n_items)))
-                indices_to_use = [item_index[i] for i in items_to_use]
-                n_items = len(indices_to_use)
+            all_test_items = test_feature.get_items()
+            n_items = len(all_test_items)
+            item_index = dict(zip(all_test_items, range(n_items)))
+            indices_to_use = [item_index[i] for i in items_to_use]
             print("Taking subset of items")
             test_feature = features.create_from_feature(test_feature, indices_to_use)
             print("New shape = (%d, %d)" % test_feature.get_shape())
