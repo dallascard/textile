@@ -1,8 +1,8 @@
 import os
-import sys
 from optparse import OptionParser
 
 import numpy as np
+import pandas as pd
 
 from ..util import file_handling as fh
 from ..preprocessing import features
@@ -79,9 +79,12 @@ def main():
     for v_i, v in enumerate(field_vals[-3:-2]):
         model_name = model_type + '_' + str(v)
 
+        output_df = pd.DataFrame([], columns=['N', 'estimate', 'RMSE', '95lcl', '95ucl', 'contains_test'])
+
         print("\nTesting on %s" % v)
         train_subset = metadata[metadata[field_name] != v]
         train_items = train_subset.index
+        n_train = len(train_items)
         non_train_subset = metadata[metadata[field_name] == v]
         non_train_items = non_train_subset.index.tolist()
 
@@ -90,6 +93,7 @@ def main():
         np.random.shuffle(non_train_items)
         calib_items = non_train_items[:n_calib]
         test_items = non_train_items[n_calib:]
+        n_test = len(test_items)
 
         # load all labels
         label_dir = dirs.dir_labels(project_dir, subset)
@@ -101,8 +105,22 @@ def main():
         calib_labels = labels.loc[calib_items]
         test_labels = labels.loc[test_items]
 
+        print("Size of test set = %d" % int(n_non_train - n_calib))
+        test_props, test_estimate, test_std = get_estimate_and_std(test_labels, n_classes)
+        output_df.loc['test'] = [n_test, test_estimate, 0, test_estimate - 2 * test_std, test_estimate + 2 * test_std, 1]
+
+        train_props, train_estimate, train_std = get_estimate_and_std(train_labels, n_classes)
+        train_rmse = np.sqrt((train_estimate - test_estimate)**2)
+        train_contains_test = test_estimate > train_estimate - 2 * train_std and test_estimate < train_estimate + 2 * train_std
+        output_df.loc['train'] = [n_train, train_estimate, train_rmse, train_estimate - 2 * train_std, train_estimate + 2 * train_std, train_contains_test]
+
+        calib_props, calib_estimate, calib_std = get_estimate_and_std(calib_labels, n_classes)
+        calib_rmse = np.sqrt((calib_estimate - test_estimate)**2)
+        calib_contains_test = test_estimate > calib_estimate - 2 * calib_std and calib_estimate < calib_estimate + 2 * calib_std
+        output_df.loc['calibration'] = [n_calib, calib_estimate, calib_rmse, calib_estimate - 2 * calib_std, calib_estimate + 2 * calib_std, calib_contains_test]
+
         print("Doing training")
-        model = train.train_model(project_dir, model_type, model_name, subset, label, feature_defs, weights_file, items_to_use=train_items, n_classes=n_classes, penalty=penalty, intercept=intercept, n_dev_folds=n_dev_folds, verbose=True)
+        model = train.train_model(project_dir, model_type, model_name, subset, label, feature_defs, weights_file, items_to_use=train_items, n_classes=n_classes, penalty=penalty, intercept=intercept, n_dev_folds=n_dev_folds, verbose=False)
 
         print("Doing prediction")
         calib_predictions, calib_pred_probs = predict.predict(project_dir, model, model_name, subset, label, items_to_use=calib_items)
@@ -115,32 +133,16 @@ def main():
         print("ACC correction")
         acc = calibration.compute_acc(calib_labels.values, calib_predictions.values, n_classes)
         acc_corrected = calibration.apply_acc_binary(test_predictions.values, acc)
-        print(acc_corrected)
+        acc_estimate = acc_corrected[1]
+        acc_rmse = np.sqrt((acc_estimate - test_estimate) ** 2)
+        output_df.loc['ACC'] = [n_calib, acc_estimate, acc_rmse, 0, 1, np.nan]
 
         print("PVC correction")
         pvc = calibration.compute_pvc(calib_labels.values, calib_predictions.values, n_classes)
         pvc_corrected = calibration.apply_pvc(test_predictions.values, pvc)
-        print(pvc_corrected)
-
-        print("Train proportions")
-        train_props = evaluation.compute_proportions(train_labels, n_classes)
-        print(train_props)
-
-        print("Size of calibration set = %d" % n_calib)
-        print("Calibration proportions")
-        calib_props = evaluation.compute_proportions(calib_labels, n_classes)
-        print(calib_props)
-
-        est_var = calib_props[1] * (1 - calib_props[1]) / float(n_calib)
-        beta_a = n_calib * calib_props[0] + 1
-        beta_b = n_calib * calib_props[1] + 1
-        beta_var = beta_a * beta_b / ((beta_a + beta_b)**2 * (beta_a + beta_b + 1))
-        print(np.sqrt(est_var), np.sqrt(beta_var))
-
-        print("Size of test set = %d" % int(n_non_train - n_calib))
-        print("Test proportions")
-        test_props = evaluation.compute_proportions(test_labels, n_classes)
-        print(test_props)
+        pvc_estimate = pvc_corrected
+        pvc_rmse = np.sqrt((pvc_estimate - test_estimate) ** 2)
+        output_df.loc['PVC'] = [n_calib, pvc_estimate, pvc_rmse, 0, 1, np.nan]
 
         test_pred_ranges = ivap.estimate_probs_brute_force(project_dir, model, model_name, subset, subset, label, calib_items, test_items)
         combo = test_pred_ranges[:, 1] / (1.0 - test_pred_ranges[:, 0] + test_pred_ranges[:, 1])
@@ -149,10 +151,23 @@ def main():
         for i in range(len(test_label_list)):
             print(i, test_label_list[i], pred_prob_list[i], test_pred_ranges[i, :], combo[i])
 
-        print("Venn calibration")
         pred_range = np.mean(test_pred_ranges, axis=0)
-        print(pred_range)
-        print(np.mean(combo))
+        venn_estimate = np.mean(combo)
+        venn_rmse = np.sqrt((venn_estimate - test_estimate)**2)
+        venn_contains_test = test_estimate > pred_range[0] and calib_estimate < pred_range[1]
+        output_df.loc['Venn'] = [n_calib, venn_estimate, venn_rmse, pred_range[0], pred_range[1], venn_contains_test]
+
+        output_filename = os.path.join(dirs.dir_models(project_dir), model_name, field_name + '_' + str(v) + '.csv')
+        output_df.to_csv(output_filename)
+
+
+def get_estimate_and_std(subset_labels, n_classes):
+    props = evaluation.compute_proportions(subset_labels, n_classes)
+    estimate = props[1]
+    std = np.sqrt(estimate * (1 - estimate) / float(len(subset_labels)))
+    return props, estimate, std
+
+
 
 if __name__ == '__main__':
     main()
