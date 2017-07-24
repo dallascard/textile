@@ -76,7 +76,7 @@ def main():
     field_vals.sort()
     print(field_vals)
 
-    for v_i, v in enumerate(field_vals[2:3]):
+    for v_i, v in enumerate(field_vals):
         model_name = model_type + '_' + str(v)
 
         output_df = pd.DataFrame([], columns=['N', 'estimate', 'RMSE', '95lcl', '95ucl', 'contains_test'])
@@ -128,12 +128,14 @@ def main():
 
         print("Doing evaluation")
         f1, acc = evaluate_predictions.evaluate_predictions(test_labels, test_predictions, n_classes=n_classes, pos_label=pos_label, average=average)
-        results_df = pd.DataFrame([f1, acc], columns=['f1', 'acc'])
+        results_df = pd.DataFrame([f1, acc], index=['f1', 'acc'])
         results_df.to_csv(os.path.join(dirs.dir_models(project_dir), model_name, 'results.csv'))
 
-        cc_estimate = np.sum(test_predictions) / float(n_test)
+        # average the preditions (assuming binary labels)
+        cc_estimate = np.mean(test_predictions[label].values)
         cc_rmse = np.sqrt((cc_estimate - test_estimate)**2)
-        pcc_estimate = np.mean(test_pred_probs, axis=1)[1]
+        # average the predicted probabilities for the positive label (assuming binary labels)
+        pcc_estimate = np.mean(test_pred_probs[1].values)
         pcc_rmse = np.sqrt((pcc_estimate - test_estimate)**2)
 
         output_df.loc['CC'] = [n_test, cc_estimate, cc_rmse, 0, 1, np.nan]
@@ -150,7 +152,7 @@ def main():
         print("PVC correction")
         pvc = calibration.compute_pvc(calib_labels.values, calib_predictions.values, n_classes)
         pvc_corrected = calibration.apply_pvc(test_predictions.values, pvc)
-        pvc_estimate = pvc_corrected
+        pvc_estimate = pvc_corrected[1]
         pvc_rmse = np.sqrt((pvc_estimate - test_estimate) ** 2)
         output_df.loc['PVC'] = [n_calib, pvc_estimate, pvc_rmse, 0, 1, np.nan]
 
