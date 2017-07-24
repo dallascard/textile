@@ -76,7 +76,7 @@ def main():
     field_vals.sort()
     print(field_vals)
 
-    for v_i, v in enumerate(field_vals[-3:-2]):
+    for v_i, v in enumerate(field_vals[2:3]):
         model_name = model_type + '_' + str(v)
 
         output_df = pd.DataFrame([], columns=['N', 'estimate', 'RMSE', '95lcl', '95ucl', 'contains_test'])
