@@ -129,6 +129,14 @@ def main():
         print("Doing evaluation")
         evaluate_predictions.evaluate_predictions(test_labels, test_predictions, n_classes=n_classes, pos_label=pos_label, average=average)
 
+        cc_estimate = np.sum(test_predictions) / float(n_test)
+        cc_rmse = np.sqrt((cc_estimate - test_estimate)**2)
+        pcc_estimate = np.mean(test_pred_probs, axis=1)[1]
+        pcc_rmse = np.sqrt((pcc_estimate - test_estimate)**2)
+
+        output_df.loc['CC'] = [n_test, cc_estimate, cc_rmse, 0, 1, 1]
+        output_df.loc['PCC'] = [n_test, pcc_estimate, pcc_rmse, 0, 1, 1]
+
         # do some sort of calibration here (ACC, PACC, PVC)
         print("ACC correction")
         acc = calibration.compute_acc(calib_labels.values, calib_predictions.values, n_classes)
