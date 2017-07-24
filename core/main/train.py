@@ -123,7 +123,7 @@ def train_model(project_dir, model_type, model_name, subset, label, feature_defs
     train_proportions = bincount / float(bincount.sum())
     printv("Train proportions: %s" % str(train_proportions.tolist()), verbose)
 
-    printv("Train feature matrix shape: (%d, %d)" % X.shape, verbose)
+    print("Train feature matrix shape: (%d, %d)" % X.shape)
 
     try:
         assert np.array(features_concat.items == labels.index).all()
@@ -166,7 +166,7 @@ def train_model(project_dir, model_type, model_name, subset, label, feature_defs
 
                 mean_model_size[alpha_i] += model.get_model_size() / float(n_dev_folds)
 
-            printv("%d\t%0.2f\t%.1f\t%0.3f\t%0.3f" % (alpha_i, alpha, mean_model_size[alpha_i], mean_train_f1s[alpha_i], mean_dev_f1s[alpha_i]), verbose)
+            print("%d\t%0.2f\t%.1f\t%0.3f\t%0.3f" % (alpha_i, alpha, mean_model_size[alpha_i], mean_train_f1s[alpha_i], mean_dev_f1s[alpha_i]))
 
         best_f1_alpha_index = np.argmax(mean_dev_f1s)
         best_f1_alpha = alphas[best_f1_alpha_index]
