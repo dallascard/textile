@@ -3,6 +3,7 @@ import sys
 from optparse import OptionParser
 
 import numpy as np
+import pandas as pd
 from sklearn.model_selection import KFold
 
 from ..util import file_handling as fh
@@ -58,25 +59,25 @@ def main():
     for f in config['feature_defs']:
         feature_defs.append(features.parse_feature_string(f))
 
-    train_model(project_dir, model_type, model_name, subset, label, feature_defs, weights_file, n_classes=n_classes, penalty=penalty, intercept=intercept, n_dev_folds=n_dev_folds)
+    train_model(project_dir, model_type, model_name, subset, label, feature_defs, weights_file, penalty=penalty, intercept=intercept, n_dev_folds=n_dev_folds)
 
 
 def train_model(project_dir, model_type, model_name, subset, label, feature_defs, weights_file=None, items_to_use=None,
-                n_classes=2, penalty='l2', alpha_min=0.01, alpha_max=1000, n_alphas=8, intercept=True,
+                penalty='l2', alpha_min=0.01, alpha_max=1000, n_alphas=8, intercept=True,
                 n_dev_folds=5, save_model=True, verbose=True):
 
     label_dir = dirs.dir_labels(project_dir, subset)
     features_dir = dirs.dir_features(project_dir, subset)
 
-    labels = fh.read_csv_to_df(os.path.join(label_dir, label + '.csv'), index_col=0, header=0)
-    n_items = len(labels)
+    labels_df = fh.read_csv_to_df(os.path.join(label_dir, label + '.csv'), index_col=0, header=0)
+    n_items, n_classes = len(labels_df)
 
     indices_to_use = None
     if items_to_use is not None:
-        item_index = dict(zip(labels.index, range(n_items)))
+        item_index = dict(zip(labels_df.index, range(n_items)))
         indices_to_use = [item_index[i] for i in items_to_use]
-        labels = labels.loc[items_to_use]
-        n_items = len(labels)
+        labels_df = labels_df.loc[items_to_use]
+        n_items, n_classes = labels_df.shape
 
     printv("loading features", verbose)
     feature_list = []
@@ -107,30 +108,24 @@ def train_model(project_dir, model_type, model_name, subset, label, feature_defs
     col_names = features_concat.terms
 
     X = features_concat.get_counts().tocsr()
-    y = labels[label].as_matrix()
+    y = labels_df.as_matrix()
+    weights = pd.DataFrame(1.0/labels_df.sum(axis=1), index=labels_df.index, columns=['inv_n_labels'])
 
     weights = None
     weights_k = None
     if weights_file is not None:
         weights_df = fh.read_csv_to_df(weights_file)
-        assert np.all(weights_df.index == labels.index)
+        assert np.all(weights_df.index == labels_df.index)
         weights = weights_df['weight'].values
-
-    if n_classes is None:
-        n_classes = int(np.max(y))+1
-    bincount = np.bincount(y, minlength=n_classes)
-    printv("Using %d classes" % n_classes, verbose)
-    train_proportions = bincount / float(bincount.sum())
-    printv("Train proportions: %s" % str(train_proportions.tolist()), verbose)
 
     print("Train feature matrix shape: (%d, %d)" % X.shape)
 
     try:
-        assert np.array(features_concat.items == labels.index).all()
+        assert np.array(features_concat.items == labels_df.index).all()
     except AssertionError:
         print("mismatch in items between labels and features")
         print(features_concat.items[:5])
-        print(labels.index[:5])
+        print(labels_df.index[:5])
         sys.exit()
 
     kfold = KFold(n_splits=n_dev_folds, shuffle=True)
@@ -158,6 +153,11 @@ def train_model(project_dir, model_type, model_name, subset, label, feature_defs
             for train_indices, dev_indices in kfold.split(X):
                 if weights is not None:
                     weights_k = weights[train_indices]
+                X_train = X[train_indices, :]
+                y_train = y[train_indices, :]
+                X_dev = X[dev_indices, :]
+                y_dev = y[dev_indices, :]
+
                 model.fit(X[train_indices, :], y[train_indices], col_names, sample_weights=weights_k)
 
                 train_predictions = model.predict(X[train_indices, :])

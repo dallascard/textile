@@ -13,26 +13,11 @@ SOURCES = {
     'atlanta journal-constitution': 'Atlanta_Journal_and_Constitution',
     'daily news (new york)': 'NY_Daily_News',
     'denver post': 'Denver_Post',
+    'denver post the denver post': 'Denver_Post',
     'herald-sun (durham, n.c.)': 'Herald-Sun',
     'herald-sun (durham, nc)': 'Herald-Sun',
     'raleigh extra (durham, nc)': 'Herald-Sun',
     'new york times': 'NY_Times',
-    'new york times blogs (carpetbagger)': 'NY_Times_blogs',
-    'new york times blogs (city room)': 'NY_Times_blogs',
-    'new york times blogs (taking note)': 'NY_Times_blogs',
-    'new york times blogs (the caucus)': 'NY_Times_blogs',
-    'new york times blogs (the learning network)': 'NY_Times_blogs',
-    'new york times blogs (the loyal opposition)': 'NY_Times_blogs',
-    'new york times blogs (the lede)': 'NY_Times_blogs',
-    'new york times blogs (lens)': 'NY_Times_blogs',
-    'new york times blogs (iht rendezvous)': 'NY_Times_blogs',
-    'new york times blogs (opinionator)': 'NY_Times_blogs',
-    'new york times blogs (ross douthat)': 'NY_Times_blogs',
-    'new york times blogs (india ink)': 'NY_Times_blogs',
-    'new york times blogs (campaign stops)': 'NY_Times_blogs',
-    'new york times blogs (prescriptions)': 'NY_Times_blogs',
-    'new york times blogs (economix)': 'NY_Times_blogs',
-    'new york times blogs (well)': 'NY_Times_blogs',
     'palm beach post (florida)': 'Palm_Beach_Post',
     'philadelphia inquirer': 'Philadelphia_Inquirer',
     'saint paul pioneer press (minnesota)': 'St._Paul_Pioneer_Press',
@@ -43,8 +28,7 @@ SOURCES = {
     'tampa bay times': 'Tampa_Bay_Times',
     'usa today': 'USA_Today',
     'washington post': 'Washington_Post',
-    'washingtonpost.com': 'Washington_Post',
-    'washington post blogs election 2012': 'Washington_Post_blogs'
+    'washingtonpost.com': 'Washington_Post'
 }
 
 def main():
@@ -83,7 +67,13 @@ def convert_mfc(project, data_file, output_prefix, n_years):
         tone_annotations = data[k]['annotations']['tone']
         year = int(data[k]['year'])
         month = int(data[k]['month'])
-        source = SOURCES[data[k]['source']]
+        source = data[k]['source']
+        if source.startswith('new york times blogs'):
+            source = 'NY_Times_blogs'
+        elif source.startswith('washington post blogs'):
+            source = 'Washington_Post_blogs'
+        else:
+            source = SOURCES[source]
         section = data[k]['section']
         csi = data[k]['csi']
         #framing_annotations = data[k]['annotations']['framing']
@@ -106,22 +96,16 @@ def convert_mfc(project, data_file, output_prefix, n_years):
             csis.add(csi)
 
             # only keep unanimous annotations
-            if len(article_tones) == 1:
-                output[k] = {'text': text, 'label': int(list(article_tones.keys())[0]), 'year': int(year), 'year_group': year_group, 'month': month, 'source': source, 'csi': csi}
+            #if len(article_tones) == 1:
+            #    output[k] = {'text': text, 'label': int(list(article_tones.keys())[0]), 'year': int(year), 'year_group': year_group, 'month': month, 'source': source, 'csi': csi}
 
             # keep all annotations
-            #output[k] = {'text': text, 'label': article_tones, 'year': int(year), 'year_group': year_group}
+            output[k] = {'text': text, 'label': article_tones, 'year': int(year), 'year_group': year_group, 'month': month, 'source': source}
 
     print("Sources")
     sources = list(sources)
     sources.sort()
     for s in sources:
-        print(s)
-
-    print("CSIs")
-    csis = list(csis)
-    csis.sort()
-    for s in csis:
         print(s)
 
     print("Saving %d articles" % len(output))

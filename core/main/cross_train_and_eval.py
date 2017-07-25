@@ -103,11 +103,9 @@ def main():
 
         # load all labels
         label_dir = dirs.dir_labels(project_dir, subset)
-        labels = fh.read_csv_to_df(os.path.join(label_dir, label + '.csv'), index_col=0, header=0)
-        if n_classes is None:
-            n_classes = int(np.max(labels)) + 1
-            print("Assuming %d classes" % n_classes)
-        train_labels = labels.loc[train_items]
+        labels_df = fh.read_csv_to_df(os.path.join(label_dir, label + '.csv'), index_col=0, header=0)
+        n_items, n_classes = labels_df.shape
+        train_labels = labels_df.loc[train_items]
 
         # repeat the following process multiple times with different random splits of calibration / test data
         for r in range(repeats):
@@ -121,8 +119,8 @@ def main():
             test_items = non_train_items[n_calib:]
             n_test = len(test_items)
 
-            calib_labels = labels.loc[calib_items]
-            test_labels = labels.loc[test_items]
+            calib_labels = labels_df.loc[calib_items]
+            test_labels = labels_df.loc[test_items]
 
             test_props, test_estimate, test_std = get_estimate_and_std(test_labels, n_classes)
             output_df.loc['test'] = [n_test, test_estimate, 0, test_estimate - 2 * test_std, test_estimate + 2 * test_std, 1]

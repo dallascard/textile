@@ -6,41 +6,7 @@ import numpy as np
 
 from ..util import dirs
 from ..util import file_handling as fh
-
-SOURCES = {
-    'atlanta journal and constitution': 'Atlanta_Journal_and_Constitution',
-    'atlanta journal-constitution': 'Atlanta_Journal_and_Constitution',
-    'daily news (new york)': 'NY_Daily_News',
-    'denver post': 'Denver_Post',
-    'herald-sun (durham, n.c.)': 'Herald-Sun',
-    'herald-sun (durham, nc)': 'Herald-Sun',
-    'new york times': 'NY_Times',
-    'new york times blogs (carpetbagger)': 'NY_Times_blogs',
-    'new york times blogs (city room)': 'NY_Times_blogs',
-    'new york times blogs (taking note)': 'NY_Times_blogs',
-    'new york times blogs (the caucus)': 'NY_Times_blogs',
-    'new york times blogs (the learning network)': 'NY_Times_blogs',
-    'new york times blogs (the loyal opposition)': 'NY_Times_blogs',
-    'new york times blogs (the lede)': 'NY_Times_blogs',
-    'new york times blogs (lens)': 'NY_Times_blogs',
-    'new york times blogs (iht rendezvous)': 'NY_Times_blogs',
-    'new york times blogs (opinionator)': 'NY_Times_blogs',
-    'new york times blogs (ross douthat)': 'NY_Times_blogs',
-    'new york times blogs (india ink)': 'NY_Times_blogs',
-    'new york times blogs (campaign stops)': 'NY_Times_blogs',
-    'palm beach post (florida)': 'Palm_Beach_Post',
-    'philadelphia inquirer': 'Philadelphia_Inquirer',
-    'saint paul pioneer press (minnesota)': 'St._Paul_Pioneer_Press',
-    'san jose mercury news (california)': 'San_Jose_Mercury_News',
-    'st. louis post-dispatch (missouri)': 'St._Louis_Post-Dispatch',
-    'st. paul pioneer press (minnesota)': 'St._Paul_Pioneer_Press',
-    'st. petersburg times (florida)': 'Tampa_Bay_Times',  # renamed
-    'tampa bay times': 'Tampa_Bay_Times',
-    'usa today': 'USA_Today',
-    'washington post': 'Washington_Post',
-    'washingtonpost.com': 'Washington_Post',
-    'washington post blogs election 2012': 'Washington_Post_blogs'
-}
+from ..datasets.import_mfc_tone import SOURCES
 
 
 CODES = {
