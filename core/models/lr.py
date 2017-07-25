@@ -138,7 +138,7 @@ class LR:
             return n_nonzeros_coefs
 
     def save(self, output_dir):
-        print("Saving model")
+        #print("Saving model")
         joblib.dump(self._model, os.path.join(output_dir, 'model.pkl'))
         all_coefs = {}
         all_intercepts = {}

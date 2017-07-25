@@ -94,6 +94,16 @@ def compute_acc(labels, predictions, n_classes, do_normalization=True):
     return p_pred_given_true
 
 
+def compute_acc_ms_binary(labels, pred_probs, n_classes, do_normalization=True):
+    list_of_p_pred_given_true = []
+    prob_set = list(set(pred_probs[:, 1]))
+    for p in prob_set[:-1]:
+        predictions = np.array(pred_probs[:, 1] > p, dtype=int)
+        p_pred_given_true = compute_acc(labels, predictions, n_classes, do_normalization)
+        list_of_p_pred_given_true.append(p_pred_given_true)
+    return list_of_p_pred_given_true
+
+
 def cc(predictions, n_labels):
     """
     The simplest estimation method: simply average the predictions
@@ -148,6 +158,21 @@ def apply_acc_binary(predictions, p_pred_given_true):
         p_d1_binary = 0
 
     return np.array([1-p_d1_binary, p_d1_binary])
+
+
+def apply_acc_ms_binary(predictions, list_of_p_pred_given_true):
+    list_of_p1s = []
+    for p_pred_given_true in list_of_p_pred_given_true:
+        tpr = p_pred_given_true[1, 1]
+        fpr = 1.0 - p_pred_given_true[0, 0]
+        if tpr - fpr > 0.25:
+            pred_proportions = apply_acc_binary(predictions, p_pred_given_true)
+            list_of_p1s.append(pred_proportions[1])
+    if len(list_of_p1s) == 0:
+        print("No predicted p1s found! Skipping correction")
+        return np.mean(predictions)
+    else:
+        return np.median(list_of_p1s)
 
 
 def apply_acc_solve(predictions, p_pred_given_true):

@@ -6,7 +6,7 @@ import numpy as np
 from sklearn.model_selection import KFold
 
 from ..util import file_handling as fh
-from ..models import lr, blr, evaluation
+from ..models import lr, blr, evaluation, calibration
 from ..preprocessing import features
 from ..util import dirs
 from ..util.misc import printv
@@ -142,13 +142,18 @@ def train_model(project_dir, model_type, model_name, subset, label, feature_defs
 
     mean_train_f1s = np.zeros(n_alphas)
     mean_dev_f1s = np.zeros(n_alphas)
+    mean_dev_cal = np.zeros(n_alphas)
     mean_model_size = np.zeros(n_alphas)
+    acc_cfms = []
+    pvc_cfms = []
 
-    print("%s\t%s\t%s\t%s\t%s" % ('iter', 'alpha', 'size', 'f1_trn', 'f1_dev'))
+    print("%s\t%s\t%s\t%s\t%s\t%s" % ('iter', 'alpha', 'size', 'f1_trn', 'f1_dev', 'f1_cal'))
 
     if model_type == 'LR':
         for alpha_i, alpha in enumerate(alphas):
             model = lr.LR(alpha, penalty=penalty, fit_intercept=intercept, n_classes=n_classes)
+            alpha_acc_cfms = []
+            alpha_pvc_cfms = []
 
             for train_indices, dev_indices in kfold.split(X):
                 if weights is not None:
@@ -158,19 +163,35 @@ def train_model(project_dir, model_type, model_name, subset, label, feature_defs
                 train_predictions = model.predict(X[train_indices, :])
                 dev_predictions = model.predict(X[dev_indices, :])
 
+                # internally compute the correction matrices
+                alpha_acc_cfms.append(calibration.compute_acc(y[dev_indices], dev_predictions, n_classes))
+                alpha_pvc_cfms.append(calibration.compute_pvc(y[dev_indices], dev_predictions, n_classes))
+
                 train_f1 = evaluation.f1_score(y[train_indices], train_predictions, n_classes)
                 dev_f1 = evaluation.f1_score(y[dev_indices], dev_predictions, n_classes)
+                dev_cal_rmse = np.sqrt((np.mean(y[dev_indices]) - np.mean(dev_predictions))**2)
+                #evaluation.evaluate_calibration_mse_bins(y[dev_indices], dev_predictions, 1)
 
                 mean_train_f1s[alpha_i] += train_f1 / float(n_dev_folds)
                 mean_dev_f1s[alpha_i] += dev_f1 / float(n_dev_folds)
+                mean_dev_cal[alpha_i] += dev_cal_rmse / float(n_dev_folds)
 
                 mean_model_size[alpha_i] += model.get_model_size() / float(n_dev_folds)
 
-            print("%d\t%0.2f\t%.1f\t%0.3f\t%0.3f" % (alpha_i, alpha, mean_model_size[alpha_i], mean_train_f1s[alpha_i], mean_dev_f1s[alpha_i]))
+            print("%d\t%0.2f\t%.1f\t%0.3f\t%0.3f\t%0.3f" % (alpha_i, alpha, mean_model_size[alpha_i], mean_train_f1s[alpha_i], mean_dev_f1s[alpha_i], mean_dev_cal[alpha_i]))
 
-        best_f1_alpha_index = np.argmax(mean_dev_f1s)
+            acc_cfms.append(np.mean(alpha_acc_cfms, axis=0))
+            pvc_cfms.append(np.mean(alpha_pvc_cfms, axis=0))
+
+
+        best_f1_alpha_index = mean_dev_f1s.argmax()
         best_f1_alpha = alphas[best_f1_alpha_index]
-        printv("Best: alpha = %.3f, dev f1 = %.3f" % (best_f1_alpha, np.max(mean_dev_f1s)), verbose)
+        best_dev_f1 = mean_dev_f1s[best_f1_alpha_index]
+        best_dev_cal = mean_dev_cal[best_f1_alpha_index]
+        print("Best: alpha = %.3f, dev f1 = %.3f, dev cal = %.3f" % (best_f1_alpha, best_dev_f1, best_dev_cal))
+
+        best_acc_cfm = acc_cfms[best_f1_alpha_index]
+        best_pvc_cfm = pvc_cfms[best_f1_alpha_index]
 
         printv("Training full model", verbose)
         model = lr.LR(best_f1_alpha, penalty=penalty, fit_intercept=intercept, n_classes=n_classes)
@@ -180,6 +201,10 @@ def train_model(project_dir, model_type, model_name, subset, label, feature_defs
         printv("Fitting single model with ARD", verbose)
         model = blr.BLR(alpha=None, fit_intercept=intercept, n_classes=n_classes)
         model.fit(np.array(X.todense()), y, col_names, sample_weights=weights, batch=True, multilevel=True, ard=True)
+        best_dev_f1 = 0
+        best_dev_cal = 0
+        best_acc_cfm = None
+        best_pvc_cfm = None
     else:
         sys.exit("Model type not recognized")
 
@@ -188,7 +213,7 @@ def train_model(project_dir, model_type, model_name, subset, label, feature_defs
         os.makedirs(output_dir)
     model.save(output_dir)
 
-    return model
+    return model, best_dev_f1, best_dev_cal, best_acc_cfm, best_pvc_cfm
 
 
 if __name__ == '__main__':
