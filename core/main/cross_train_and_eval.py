@@ -122,15 +122,15 @@ def main():
             calib_labels = labels_df.loc[calib_items]
             test_labels = labels_df.loc[test_items]
 
-            test_props, test_estimate, test_std = get_estimate_and_std(test_labels, n_classes)
+            test_props, test_estimate, test_std = get_estimate_and_std(test_labels)
             output_df.loc['test'] = [n_test, test_estimate, 0, test_estimate - 2 * test_std, test_estimate + 2 * test_std, 1]
 
-            train_props, train_estimate, train_std = get_estimate_and_std(train_labels, n_classes)
+            train_props, train_estimate, train_std = get_estimate_and_std(train_labels)
             train_rmse = np.sqrt((train_estimate - test_estimate)**2)
             train_contains_test = test_estimate > train_estimate - 2 * train_std and test_estimate < train_estimate + 2 * train_std
             output_df.loc['train'] = [n_train, train_estimate, train_rmse, train_estimate - 2 * train_std, train_estimate + 2 * train_std, train_contains_test]
 
-            calib_props, calib_estimate, calib_std = get_estimate_and_std(calib_labels, n_classes)
+            calib_props, calib_estimate, calib_std = get_estimate_and_std(calib_labels)
             calib_rmse = np.sqrt((calib_estimate - test_estimate)**2)
             calib_contains_test = test_estimate > calib_estimate - 2 * calib_std and calib_estimate < calib_estimate + 2 * calib_std
             output_df.loc['calibration'] = [n_calib, calib_estimate, calib_rmse, calib_estimate - 2 * calib_std, calib_estimate + 2 * calib_std, calib_contains_test]
@@ -145,13 +145,14 @@ def main():
             test_predictions, test_pred_probs = predict.predict(project_dir, model, model_name, subset, label, items_to_use=test_items, verbose=verbose)
 
             print("Doing evaluation")
-            f1, acc = evaluate_predictions.evaluate_predictions(test_labels, test_predictions, n_classes=n_classes, pos_label=pos_label, average=average)
+            f1, acc = evaluate_predictions.evaluate_predictions(test_labels, test_predictions, pos_label=pos_label, average=average)
             results_df = pd.DataFrame([f1, acc], index=['f1', 'acc'])
             results_df.to_csv(os.path.join(dirs.dir_models(project_dir), model_name, 'results' + '_' + str(r) + '.csv'))
 
             # average the preditions (assuming binary labels)
             cc_estimate = np.mean(test_predictions[label].values)
             cc_rmse = np.sqrt((cc_estimate - test_estimate)**2)
+
             # average the predicted probabilities for the positive label (assuming binary labels)
             pcc_estimate = np.mean(test_pred_probs[1].values)
             pcc_rmse = np.sqrt((pcc_estimate - test_estimate)**2)
@@ -161,17 +162,12 @@ def main():
 
             # do some sort of calibration here (ACC, PACC, PVC)
             print("ACC correction")
-            acc = calibration.compute_acc(calib_labels.values, calib_predictions.values, n_classes)
+            calib_labels_expanded, calib_weights_expanded, calib_predictions_expanded = expand_labels(calib_labels.values, calib_predictions.values)
+            acc = calibration.compute_acc(calib_labels_expanded, calib_predictions_expanded, n_classes, calib_weights_expanded)
             acc_corrected = calibration.apply_acc_binary(test_predictions.values, acc)
             acc_estimate = acc_corrected[1]
             acc_rmse = np.sqrt((acc_estimate - test_estimate) ** 2)
             output_df.loc['ACC'] = [n_calib, acc_estimate, acc_rmse, 0, 1, np.nan]
-
-            print("ACC MS correction")
-            acc_ms = calibration.compute_acc_ms_binary(calib_labels.values, calib_pred_probs.values, n_classes)
-            acc_ms_estimate = calibration.apply_acc_ms_binary(test_predictions.values, acc_ms)
-            acc_ms_rmse = np.sqrt((acc_ms_estimate - test_estimate) ** 2)
-            output_df.loc['ACC_MS'] = [n_calib, acc_ms_estimate, acc_ms_rmse, 0, 1, np.nan]
 
             print("ACC internal")
             acc_corrected = calibration.apply_acc_binary(test_predictions.values, acc_cfm)
@@ -180,7 +176,7 @@ def main():
             output_df.loc['ACC_int'] = [n_calib, acc_estimate, acc_rmse, 0, 1, np.nan]
 
             print("PVC correction")
-            pvc = calibration.compute_pvc(calib_labels.values, calib_predictions.values, n_classes)
+            pvc = calibration.compute_pvc(calib_labels_expanded, calib_predictions_expanded, n_classes, calib_weights_expanded)
             pvc_corrected = calibration.apply_pvc(test_predictions.values, pvc)
             pvc_estimate = pvc_corrected[1]
             pvc_rmse = np.sqrt((pvc_estimate - test_estimate) ** 2)
@@ -209,12 +205,40 @@ def main():
             output_df.to_csv(output_filename)
 
 
-def get_estimate_and_std(subset_labels, n_classes):
-    props = evaluation.compute_proportions(subset_labels, n_classes)
-    estimate = props[1]
-    std = np.sqrt(estimate * (1 - estimate) / float(len(subset_labels)))
-    return props, estimate, std
+def expand_labels(labels, other=None):
+    weights = labels.sum(axis=1)
+    labels_list = []
+    weights_list = []
+    other_list = []
+    n_items, n_classes = labels.shape
+    for c in range(n_classes):
+        c_max = labels[:, c]
+        for i in range(c_max):
+            items = np.array(labels[:, c] > i)
+            labels_list.append(np.ones(len(items), dtype=int) * c)
+            weights_list.append(weights[items])
+            if other is not None:
+                if other.ndim == 1:
+                    other_list.append(other[items])
+                else:
+                    other_list.append(other[items, :])
+    labels = np.r_[labels_list]
+    weights = np.r_[weights_list]
+    if other is None:
+        return labels, weights
+    else:
+        return labels, weights, np.r_[other_list]
 
+
+def get_estimate_and_std(labels_df):
+    n_items, n_classes = labels_df.shape
+    assert n_classes == 2
+    labels = labels_df.values.copy()
+    labels = labels / labels.sum(axis=1)
+    props = np.mean(labels, axis=0)
+    estimate = props[1]
+    std = np.sqrt(estimate * (1 - estimate) / float(n_items))
+    return props, estimate, std
 
 
 if __name__ == '__main__':

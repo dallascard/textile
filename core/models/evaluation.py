@@ -5,7 +5,7 @@ from sklearn.metrics import f1_score as skl_f1_score
 from sklearn.metrics import accuracy_score as skl_acc_score
 
 
-def f1_score(true, pred, n_classes=2, pos_label=1, average=None):
+def f1_score(true, pred, n_classes=2, pos_label=1, average=None, weights=None):
     """
     Override f1_score in sklearn in order to deal with both binary and multiclass cases
     :param true: true labels
@@ -22,30 +22,39 @@ def f1_score(true, pred, n_classes=2, pos_label=1, average=None):
             #print("Warning: no true positives")
             f1 = 0.0
         else:
-            f1 = skl_f1_score(true, pred, average='binary', labels=range(n_classes), pos_label=pos_label)
+            f1 = skl_f1_score(true, pred, average='binary', labels=range(n_classes), pos_label=pos_label, sample_weight=weights)
     else:
         if average is None:
-            f1 = skl_f1_score(true, pred, average='micro', labels=range(n_classes), pos_label=None)
+            f1 = skl_f1_score(true, pred, average='micro', labels=range(n_classes), pos_label=None, sample_weight=weights)
         else:
-            f1 = skl_f1_score(true, pred, average=average, labels=range(n_classes), pos_label=None)
+            f1 = skl_f1_score(true, pred, average=average, labels=range(n_classes), pos_label=None, sample_weight=weights)
     return f1
 
 
-def acc_score(true, pred, n_classes=2):
-    acc = skl_acc_score(np.array(true, dtype=int), np.array(pred, dtype=int))
+def acc_score(true, pred, n_classes=2, weights=None):
+    acc = skl_acc_score(np.array(true, dtype=int), np.array(pred, dtype=int), sample_weight=weights)
     return acc
 
 
-def brier_score(true, pred_probs, binary_form=False):
+# TODO: double check this
+def brier_score(true, pred_probs, binary_form=False, weights=None):
     n_items, n_classes = pred_probs.shape
     true_probs = np.zeros_like(pred_probs)
     true_probs[range(n_items), true] = 1.0
     # this is the original definition given in Brier
-    score = np.mean((true_probs - pred_probs)**2)
+    if weights is None:
+        weights = np.ones_like(true)
+    score = np.sum(np.dot((true_probs - pred_probs)**2, weights) / np.sum(weights))
     if binary_form:
         # this is the more commonly used form in the binary case
-        score /= score
+        score /= 2.0
     return score
+
+
+def evaluate_proportions_mse(labels, predictions, n_classes, weights=None):
+    true_props = compute_proportions(labels, n_classes, weights)
+    pred_props = compute_proportions(predictions, n_classes, weights)
+    return eval_proportions_mse(true_props, pred_props)
 
 
 def evaluate_calibration_mse_bins(true_labels, pred_probs, n_bins=5):
@@ -108,7 +117,13 @@ def eval_proportions_kld(true_props, pred_props, epsilon=1e-5):
     return kld_sum
 
 
-def compute_proportions(labels, n_classes):
-    label_counts = np.bincount(labels.values.reshape(len(labels),), minlength=n_classes)
+def compute_proportions(labels, n_classes, weights=None):
+    if weights is None:
+        weights = 1.0 / np.sum(labels, axis=1)
+    label_counts = np.zeros(n_classes)
+    for c in range(n_classes):
+        items = np.array(labels == c)
+        label_counts[c] = np.sum(weights[items])
+    #label_counts = np.bincount(labels.values.reshape(len(labels),), minlength=n_classes)
     proportions = label_counts / float(label_counts.sum())
     return proportions

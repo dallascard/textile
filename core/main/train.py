@@ -4,6 +4,7 @@ from optparse import OptionParser
 
 import numpy as np
 import pandas as pd
+from scipy import sparse
 from sklearn.model_selection import KFold
 
 from ..util import file_handling as fh
@@ -111,12 +112,13 @@ def train_model(project_dir, model_type, model_name, subset, label, feature_defs
     y = labels_df.as_matrix()
     weights = pd.DataFrame(1.0/labels_df.sum(axis=1), index=labels_df.index, columns=['inv_n_labels'])
 
-    weights = None
-    weights_k = None
-    if weights_file is not None:
-        weights_df = fh.read_csv_to_df(weights_file)
-        assert np.all(weights_df.index == labels_df.index)
-        weights = weights_df['weight'].values
+    # TODO: add user-supplied weights back in
+    #weights = None
+    #weights_k = None
+    #if weights_file is not None:
+    #    weights_df = fh.read_csv_to_df(weights_file)
+    #    assert np.all(weights_df.index == labels_df.index)
+    #    weights = weights_df['weight'].values
 
     print("Train feature matrix shape: (%d, %d)" % X.shape)
 
@@ -151,25 +153,27 @@ def train_model(project_dir, model_type, model_name, subset, label, feature_defs
             alpha_pvc_cfms = []
 
             for train_indices, dev_indices in kfold.split(X):
-                if weights is not None:
-                    weights_k = weights[train_indices]
                 X_train = X[train_indices, :]
                 y_train = y[train_indices, :]
                 X_dev = X[dev_indices, :]
                 y_dev = y[dev_indices, :]
+                w_train = weights[train_indices]
+                w_dev = weights[dev_indices]
+                X_train, y_train, w_train = expand_features_and_labels(X_train, y_train, w_train)
+                X_dev, y_dev, w_dev = expand_features_and_labels(X_dev, y_dev, w_dev)
 
-                model.fit(X[train_indices, :], y[train_indices], col_names, sample_weights=weights_k)
+                model.fit(X_train, y_train, col_names, sample_weights=w_train)
 
                 train_predictions = model.predict(X[train_indices, :])
                 dev_predictions = model.predict(X[dev_indices, :])
 
                 # internally compute the correction matrices
-                alpha_acc_cfms.append(calibration.compute_acc(y[dev_indices], dev_predictions, n_classes))
-                alpha_pvc_cfms.append(calibration.compute_pvc(y[dev_indices], dev_predictions, n_classes))
+                alpha_acc_cfms.append(calibration.compute_acc(y_dev, dev_predictions, n_classes, weights=w_dev))
+                alpha_pvc_cfms.append(calibration.compute_pvc(y_dev, dev_predictions, n_classes, weights=w_dev))
 
-                train_f1 = evaluation.f1_score(y[train_indices], train_predictions, n_classes)
-                dev_f1 = evaluation.f1_score(y[dev_indices], dev_predictions, n_classes)
-                dev_cal_rmse = np.sqrt((np.mean(y[dev_indices]) - np.mean(dev_predictions))**2)
+                train_f1 = evaluation.f1_score(y[train_indices], train_predictions, n_classes, weights=w_train)
+                dev_f1 = evaluation.f1_score(y[dev_indices], dev_predictions, n_classes, weights=w_dev)
+                dev_cal_rmse = evaluation.evaluate_proportions_mse(y_dev, dev_predictions, n_classes, weights=w_dev)
                 #evaluation.evaluate_calibration_mse_bins(y[dev_indices], dev_predictions, 1)
 
                 mean_train_f1s[alpha_i] += train_f1 / float(n_dev_folds)
@@ -183,7 +187,6 @@ def train_model(project_dir, model_type, model_name, subset, label, feature_defs
             acc_cfms.append(np.mean(alpha_acc_cfms, axis=0))
             pvc_cfms.append(np.mean(alpha_pvc_cfms, axis=0))
 
-
         best_f1_alpha_index = mean_dev_f1s.argmax()
         best_f1_alpha = alphas[best_f1_alpha_index]
         best_dev_f1 = mean_dev_f1s[best_f1_alpha_index]
@@ -195,7 +198,9 @@ def train_model(project_dir, model_type, model_name, subset, label, feature_defs
 
         printv("Training full model", verbose)
         model = lr.LR(best_f1_alpha, penalty=penalty, fit_intercept=intercept, n_classes=n_classes)
-        model.fit(X, y, col_names)
+
+        X, y, w = expand_features_and_labels(X, y, weights)
+        model.fit(X, y, col_names, sample_weights=w)
 
     elif model_type == 'BLR':
         printv("Fitting single model with ARD", verbose)
@@ -214,6 +219,25 @@ def train_model(project_dir, model_type, model_name, subset, label, feature_defs
     model.save(output_dir)
 
     return model, best_dev_f1, best_dev_cal, best_acc_cfm, best_pvc_cfm
+
+
+def expand_features_and_labels(X, y, weights):
+    X_list = []
+    y_list = []
+    weights_list = []
+    n_items, n_classes = y.shape
+    for c in range(n_classes):
+        c_max = np.max(y[:, c])
+        for i in range(c_max):
+            items = np.array(y[:, c] > i)
+            X_list.append(X[items, :])
+            y_list.append(np.ones(len(items), dtype=int) * c)
+            weights_list.append(weights[items])
+
+    X_return = sparse.vstack(X_list)
+    y_return = np.r_[y_list]
+    weights_return = np.r_[weights_list]
+    return X_return, y_return, weights_return
 
 
 if __name__ == '__main__':

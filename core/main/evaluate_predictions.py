@@ -51,26 +51,39 @@ def load_and_evaluate_predictons(project_dir, model_name, subset, label, items_t
     evaluate_predictions(labels, predictions, n_classes=n_classes, pos_label=pos_label, average=average)
 
 
-def evaluate_predictions(labels, predictions, n_classes=None, pos_label=1, average='micro', verbose=False):
-    assert np.all(labels.index == predictions.index)
-    if n_classes is None:
-        n_classes = np.max([np.max(labels), np.max(predictions)]) + 1
-        print("Assuming %d classes" % n_classes)
-    f1 = evaluation.f1_score(labels.values, predictions.values, n_classes, pos_label=pos_label, average=average)
+def evaluate_predictions(labels_df, predictions_df, pos_label=1, average='micro', verbose=False):
+    assert np.all(labels_df.index == predictions_df.index)
+    n_items, n_classes = labels_df.shape
+    labels = labels_df.values
+    predictions = predictions_df.values
+
+    labels_per_item = labels.sum(axis=1)
+    weights = np.array(1.0 / labels_per_item)
+
+    labels_list = []
+    pred_list = []
+    weights_list = []
+
+    for c in range(n_classes):
+        c_max = np.max(labels_df)
+        for i in range(c_max):
+            items = np.array(labels[:, c] > i)
+            labels_list.append(np.ones(len(items)) * c)
+            pred_list.append(predictions[items])
+            weights_list.append(weights[items])
+
+    labels = np.r_[labels_list]
+    predictions = np.r_[pred_list]
+    weights = np.r_[weights_list]
+
+    f1 = evaluation.f1_score(labels, predictions, n_classes, pos_label=pos_label, average=average, weights=weights)
     print("F1 = %0.3f" % f1)
-    acc = evaluation.acc_score(labels.values, predictions.values, n_classes)
+
+    acc = evaluation.acc_score(labels, predictions, n_classes, weights=weights)
     print("Accuracy = %0.3f" % acc)
 
-    true_label_counts = np.bincount(labels.values.reshape(len(labels),), minlength=n_classes)
-    true_proportions = true_label_counts / float(true_label_counts.sum())
-    printv("True proportions = %s" % str(true_proportions), verbose)
-
-    pred_label_counts = np.bincount(predictions.values.reshape(len(predictions),), minlength=n_classes)
-    pred_proportions = pred_label_counts / float(pred_label_counts.sum())
-    printv("Predicted proportions = %s" % str(pred_proportions), verbose)
-
-    rmse = np.sqrt(np.mean((pred_proportions - true_proportions) ** 2))
-    printv("RMSE on proportions = %0.3f" % rmse, verbose)
+    rmse = evaluation.evaluate_proportions_mse(labels, predictions, n_classes, weights)
+    print("RMSE on proportions = %0.3f" % rmse)
 
     return f1, acc
 

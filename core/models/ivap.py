@@ -25,10 +25,14 @@ def main():
 def estimate_probs_brute_force(project_dir, model, model_name, calib_subset, test_subset, label_name, calib_items=None, test_items=None, verbose=False):
 
     label_dir = dirs.dir_labels(project_dir, calib_subset)
-    labels = fh.read_csv_to_df(os.path.join(label_dir, label_name + '.csv'), index_col=0, header=0)
+    labels_df = fh.read_csv_to_df(os.path.join(label_dir, label_name + '.csv'), index_col=0, header=0)
 
     if calib_items is not None:
-        labels = labels.loc[calib_items]
+        labels_df = labels_df.loc[calib_items]
+
+    # normalize labels to just count one each
+    labels = labels_df.values.copy()
+    labels = np.array(labels / labels.sum(axis=1))
 
     model_dir = os.path.join(dirs.dir_models(project_dir), model_name)
 
@@ -64,14 +68,17 @@ def estimate_probs_brute_force(project_dir, model, model_name, calib_subset, tes
 
     features_concat = features.concatenate(calib_feature_list)
     calib_X = features_concat.get_counts().tocsr()
-    calib_y = labels[label_name]
+
+    calib_y = labels[:, 1]
+
     printv("Feature matrix shape: (%d, %d)" % calib_X.shape, verbose)
+
 
     calib_pred_probs = model.predict_probs(calib_X)
     n_calib, n_classes = calib_pred_probs.shape
     assert n_classes == 2
 
-    calib_pred_probs = calib_pred_probs[:, 1]
+    calib_scores = calib_pred_probs[:, 1]
 
     test_features_dir = dirs.dir_features(project_dir, test_subset)
 
@@ -114,10 +121,10 @@ def estimate_probs_brute_force(project_dir, model, model_name, calib_subset, tes
     for i in range(n_test):
         for proposed_label in [0, 1]:
 
-            scores = np.r_[calib_pred_probs, test_pred_probs[i]]
-            labels = np.r_[calib_y, proposed_label]
+            all_scores = np.r_[calib_scores, test_pred_probs[i]]
+            all_labels = np.r_[calib_y, proposed_label]
 
-            slopes = isotonic_regression.isotonic_regression(scores, labels)
+            slopes = isotonic_regression.isotonic_regression(all_scores, all_labels)
             test_pred_ranges[i, proposed_label] = slopes[-1]
 
     return test_pred_ranges
