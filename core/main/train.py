@@ -71,7 +71,7 @@ def train_model(project_dir, model_type, model_name, subset, label, feature_defs
     features_dir = dirs.dir_features(project_dir, subset)
 
     labels_df = fh.read_csv_to_df(os.path.join(label_dir, label + '.csv'), index_col=0, header=0)
-    n_items, n_classes = len(labels_df)
+    n_items, n_classes = labels_df.shape
 
     indices_to_use = None
     if items_to_use is not None:
@@ -110,7 +110,8 @@ def train_model(project_dir, model_type, model_name, subset, label, feature_defs
 
     X = features_concat.get_counts().tocsr()
     y = labels_df.as_matrix()
-    weights = pd.DataFrame(1.0/labels_df.sum(axis=1), index=labels_df.index, columns=['inv_n_labels'])
+    #weights = pd.DataFrame(1.0/labels_df.sum(axis=1), index=labels_df.index, columns=['inv_n_labels'])
+    weights = 1.0/y.sum(axis=1)
 
     # TODO: add user-supplied weights back in
     #weights = None
@@ -164,15 +165,15 @@ def train_model(project_dir, model_type, model_name, subset, label, feature_defs
 
                 model.fit(X_train, y_train, col_names, sample_weights=w_train)
 
-                train_predictions = model.predict(X[train_indices, :])
-                dev_predictions = model.predict(X[dev_indices, :])
+                train_predictions = model.predict(X_train)
+                dev_predictions = model.predict(X_dev)
 
                 # internally compute the correction matrices
                 alpha_acc_cfms.append(calibration.compute_acc(y_dev, dev_predictions, n_classes, weights=w_dev))
                 alpha_pvc_cfms.append(calibration.compute_pvc(y_dev, dev_predictions, n_classes, weights=w_dev))
 
-                train_f1 = evaluation.f1_score(y[train_indices], train_predictions, n_classes, weights=w_train)
-                dev_f1 = evaluation.f1_score(y[dev_indices], dev_predictions, n_classes, weights=w_dev)
+                train_f1 = evaluation.f1_score(y_train, train_predictions, n_classes, weights=w_train)
+                dev_f1 = evaluation.f1_score(y_dev, dev_predictions, n_classes, weights=w_dev)
                 dev_cal_rmse = evaluation.evaluate_proportions_mse(y_dev, dev_predictions, n_classes, weights=w_dev)
                 #evaluation.evaluate_calibration_mse_bins(y[dev_indices], dev_predictions, 1)
 
@@ -227,16 +228,16 @@ def expand_features_and_labels(X, y, weights):
     weights_list = []
     n_items, n_classes = y.shape
     for c in range(n_classes):
-        c_max = np.max(y[:, c])
+        c_max = y[:, c].max()
         for i in range(c_max):
             items = np.array(y[:, c] > i)
             X_list.append(X[items, :])
-            y_list.append(np.ones(len(items), dtype=int) * c)
-            weights_list.append(weights[items])
+            y_list.append(np.ones(np.sum(items), dtype=int) * c)
+            weights_list.append(np.array(weights[items]))
 
     X_return = sparse.vstack(X_list)
-    y_return = np.r_[y_list]
-    weights_return = np.r_[weights_list]
+    y_return = np.hstack(y_list)
+    weights_return = np.hstack(weights_list)
     return X_return, y_return, weights_return
 
 

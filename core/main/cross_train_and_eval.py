@@ -32,8 +32,6 @@ def main():
                       help='Use to fit a model with no intercept: default=%default')
     #parser.add_option('--objective', dest='objective', default='f1',
     #                  help='Objective for choosing best alpha [calibration|f1]: default=%default')
-    parser.add_option('--n_classes', dest='n_classes', default=None,
-                      help='Specify the number of classes (None=max(train)+1): default=%default')
     parser.add_option('--n_dev_folds', dest='n_dev_folds', default=5,
                       help='Number of dev folds for tuning regularization: default=%default')
     parser.add_option('--repeats', dest='repeats', default=1,
@@ -60,9 +58,6 @@ def main():
     cshift = options.cshift
     #objective = options.objective
     intercept = not options.no_intercept
-    n_classes = options.n_classes
-    if n_classes is not None:
-        n_classes = int(n_classes)
     n_dev_folds = int(options.n_dev_folds)
     repeats = int(options.repeats)
     if options.seed is not None:
@@ -136,7 +131,7 @@ def main():
             output_df.loc['calibration'] = [n_calib, calib_estimate, calib_rmse, calib_estimate - 2 * calib_std, calib_estimate + 2 * calib_std, calib_contains_test]
 
             print("Doing training")
-            model, dev_f1, dev_cal, acc_cfm, pvc_cfm = train.train_model(project_dir, model_type, model_name, subset, label, feature_defs, weights_file, items_to_use=train_items, n_classes=n_classes, penalty=penalty, intercept=intercept, n_dev_folds=n_dev_folds, verbose=verbose)
+            model, dev_f1, dev_cal, acc_cfm, pvc_cfm = train.train_model(project_dir, model_type, model_name, subset, label, feature_defs, weights_file, items_to_use=train_items, penalty=penalty, intercept=intercept, n_dev_folds=n_dev_folds, verbose=verbose)
 
             print("Doing prediction on calibration items")
             calib_predictions, calib_pred_probs = predict.predict(project_dir, model, model_name, subset, label, items_to_use=calib_items, verbose=verbose)
@@ -176,7 +171,7 @@ def main():
             output_df.loc['ACC_int'] = [n_calib, acc_estimate, acc_rmse, 0, 1, np.nan]
 
             print("PVC correction")
-            pvc = calibration.compute_pvc(calib_labels_expanded, calib_predictions_expanded, n_classes, calib_weights_expanded)
+            pvc = calibration.compute_pvc(calib_labels_expanded, calib_predictions_expanded, n_classes, weights=calib_weights_expanded)
             pvc_corrected = calibration.apply_pvc(test_predictions.values, pvc)
             pvc_estimate = pvc_corrected[1]
             pvc_rmse = np.sqrt((pvc_estimate - test_estimate) ** 2)
@@ -190,10 +185,6 @@ def main():
 
             test_pred_ranges = ivap.estimate_probs_brute_force(project_dir, model, model_name, subset, subset, label, calib_items, test_items)
             combo = test_pred_ranges[:, 1] / (1.0 - test_pred_ranges[:, 0] + test_pred_ranges[:, 1])
-            test_label_list = test_labels[label]
-            pred_prob_list = test_pred_probs[1]
-            #for i in range(len(test_label_list)):
-            #    print(i, test_label_list[i], pred_prob_list[i], test_pred_ranges[i, :], combo[i])
 
             pred_range = np.mean(test_pred_ranges, axis=0)
             venn_estimate = np.mean(combo)
@@ -212,29 +203,33 @@ def expand_labels(labels, other=None):
     other_list = []
     n_items, n_classes = labels.shape
     for c in range(n_classes):
-        c_max = labels[:, c]
+        c_max = labels[:, c].max()
         for i in range(c_max):
             items = np.array(labels[:, c] > i)
-            labels_list.append(np.ones(len(items), dtype=int) * c)
+            labels_list.append(np.ones(np.sum(items), dtype=int) * c)
             weights_list.append(weights[items])
             if other is not None:
                 if other.ndim == 1:
                     other_list.append(other[items])
                 else:
                     other_list.append(other[items, :])
-    labels = np.r_[labels_list]
-    weights = np.r_[weights_list]
+    labels = np.hstack(labels_list)
+    weights = np.hstack(weights_list)
     if other is None:
         return labels, weights
     else:
-        return labels, weights, np.r_[other_list]
+        if other.ndim == 1:
+            return labels, weights, np.hstack(other_list)
+        else:
+            return labels, weights, np.vstack(other_list)
 
 
 def get_estimate_and_std(labels_df):
     n_items, n_classes = labels_df.shape
     assert n_classes == 2
     labels = labels_df.values.copy()
-    labels = labels / labels.sum(axis=1)
+
+    labels = labels / np.reshape(labels.sum(axis=1), (len(labels), 1))
     props = np.mean(labels, axis=0)
     estimate = props[1]
     std = np.sqrt(estimate * (1 - estimate) / float(n_items))

@@ -51,11 +51,11 @@ def load_and_evaluate_predictons(project_dir, model_name, subset, label, items_t
     evaluate_predictions(labels, predictions, n_classes=n_classes, pos_label=pos_label, average=average)
 
 
-def evaluate_predictions(labels_df, predictions_df, pos_label=1, average='micro', verbose=False):
+def evaluate_predictions(labels_df, predictions_df, pos_label=1, average='micro'):
     assert np.all(labels_df.index == predictions_df.index)
     n_items, n_classes = labels_df.shape
     labels = labels_df.values
-    predictions = predictions_df.values
+    predictions = predictions_df.values.reshape((n_items,))
 
     labels_per_item = labels.sum(axis=1)
     weights = np.array(1.0 / labels_per_item)
@@ -65,16 +65,19 @@ def evaluate_predictions(labels_df, predictions_df, pos_label=1, average='micro'
     weights_list = []
 
     for c in range(n_classes):
-        c_max = np.max(labels_df)
+        c_max = np.max(labels[:, c])
         for i in range(c_max):
             items = np.array(labels[:, c] > i)
-            labels_list.append(np.ones(len(items)) * c)
+            labels_list.append(np.ones(np.sum(items), dtype=int) * c)
             pred_list.append(predictions[items])
             weights_list.append(weights[items])
 
-    labels = np.r_[labels_list]
-    predictions = np.r_[pred_list]
-    weights = np.r_[weights_list]
+    #print(labels_list)
+    #print(pred_list)
+    #print(weights_list)
+    labels = np.hstack(labels_list)
+    predictions = np.hstack(pred_list)
+    weights = np.hstack(weights_list)
 
     f1 = evaluation.f1_score(labels, predictions, n_classes, pos_label=pos_label, average=average, weights=weights)
     print("F1 = %0.3f" % f1)

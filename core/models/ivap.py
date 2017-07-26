@@ -26,13 +26,15 @@ def estimate_probs_brute_force(project_dir, model, model_name, calib_subset, tes
 
     label_dir = dirs.dir_labels(project_dir, calib_subset)
     labels_df = fh.read_csv_to_df(os.path.join(label_dir, label_name + '.csv'), index_col=0, header=0)
+    n_items, n_classes = labels_df.shape
 
     if calib_items is not None:
         labels_df = labels_df.loc[calib_items]
+        n_items, n_classes = labels_df.shape
 
     # normalize labels to just count one each
     labels = labels_df.values.copy()
-    labels = np.array(labels / labels.sum(axis=1))
+    labels = labels / np.reshape(labels.sum(axis=1), (n_items, 1))
 
     model_dir = os.path.join(dirs.dir_models(project_dir), model_name)
 
