@@ -100,8 +100,8 @@ def preprocess_labels(project_dir, subset, label_name, metadata_fields):
         else:
             labels_df.loc[name, int(labels)] = 1
 
-        for m in metadata_fields:
-            metadata_lists[m].append(item[m])
+        #for m in metadata_fields:
+        #    metadata_lists[m].append(item[m])
 
     # normalize those rows that are unanimous
     print("Normalizing")
