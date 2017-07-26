@@ -80,7 +80,8 @@ def preprocess_labels(project_dir, subset, label_name, metadata_fields):
     for m in metadata_fields:
         metadata_lists[m] = []
 
-    labels_df = pd.DataFrame(np.zeros((len(keys), n_classes), dtype=int), index=items, columns=np.arange(n_classes))
+    #labels_df = pd.DataFrame(np.zeros((len(keys), n_classes), dtype=int), index=items, columns=np.arange(n_classes))
+    labels_matrix = np.zeros((len(keys), n_classes), dtype=int)
 
     for k_i, key in enumerate(keys):
         if k_i % 10000 == 0 and k_i > 0:
@@ -88,20 +89,18 @@ def preprocess_labels(project_dir, subset, label_name, metadata_fields):
 
         item = data[key]
 
-        if 'name' in item:
-            name = item['name']
-        else:
-            name = str(key)
-
+        # TODO: make this faster; avoid inserting into dataframe
         labels = item[label_name]
         #if type(labels) == dict:
         #    for k, v in labels.items():
         #        labels_df.loc[name, int(k)] = v
         #else:
-        labels_df.loc[name, int(labels)] = 1
+        labels_matrix[k_i, int(labels)] = 1
 
         for m in metadata_fields:
             metadata_lists[m].append(item[m])
+
+    labels_df = pd.DataFrame(labels_matrix, index=items, columns=np.arange(n_classes))
 
     # normalize those rows that are unanimous
     print("Normalizing")
