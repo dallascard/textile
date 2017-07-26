@@ -103,8 +103,12 @@ def preprocess_labels(project_dir, subset, label_name, metadata_fields):
         for m in metadata_fields:
             metadata_lists[m].append(item[m])
 
-        if np.sum(labels_df.loc[name].values > 0) == 1:
-            labels_df.loc[name] = labels_df.loc[name] // labels_df.loc[name].sum()
+    # normalize those rows that are unanimous
+    print("Normalizing")
+    not_unan = np.array(np.sum(labels_df.values > 0, axis=1) != 1)
+    row_sum = np.reshape(np.sum(labels_df.values, axis=1), (len(not_unan), 1))
+    row_sum[not_unan] = 1.0
+    labels_df = pd.DataFrame(np.array(labels_df.values / row_sum, dtype=int), index=labels_df.index, columns=labels_df.columns)
 
     print("Saving labels")
 
