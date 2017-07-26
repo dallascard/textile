@@ -42,6 +42,8 @@ def preprocess_labels(project_dir, subset, label_name, metadata_fields):
     # first determine the number of classes
     label_set = set()
     for k_i, key in enumerate(keys):
+        if k_i % 10000 == 0 and k_i > 0:
+            print(k_i)
         item = data[key]
         labels = item[label_name]
         if type(labels) == dict:
@@ -81,6 +83,9 @@ def preprocess_labels(project_dir, subset, label_name, metadata_fields):
     labels_df = pd.DataFrame(np.zeros((len(keys), n_classes), dtype=int), index=items, columns=np.arange(n_classes))
 
     for k_i, key in enumerate(keys):
+        if k_i % 10000 == 0 and k_i > 0:
+            print(k_i)
+
         item = data[key]
 
         if 'name' in item:
