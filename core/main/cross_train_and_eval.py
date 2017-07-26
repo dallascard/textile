@@ -18,8 +18,8 @@ def main():
                       help='Percent to use for the calibration part of each split: default=%default')
     parser.add_option('-t', dest='train_prop', default=1.0,
                       help='Proportion of training data to use: default=%default')
-    #parser.add_option('--sampling', dest='sampling', default='proportional',
-    #                  help='How to divide calibration and test data [proportional|random]: default=%default')
+    parser.add_option('--max_folds', dest='max_folds', default=None,
+                      help='Limit the number of partitions to test: default=%default')
     parser.add_option('--model', dest='model', default='LR',
                       help='Model type [LR|BLR]: default=%default')
     parser.add_option('--label', dest='label', default='label',
@@ -51,6 +51,9 @@ def main():
 
     calib_prop = float(options.calib_prop)
     train_prop = float(options.train_prop)
+    max_folds = options.max_folds
+    if max_folds is not None:
+        max_folds = int(max_folds)
     #sampling = options.sampling
     model_type = options.model
     label = options.label
@@ -80,7 +83,10 @@ def main():
     field_vals.sort()
     print(field_vals)
 
-    for v_i, v in enumerate(field_vals):
+    if max_folds is None:
+        max_folds = len(field_vals)
+
+    for v_i, v in enumerate(field_vals[:max_folds]):
 
         print("\nTesting on %s" % v)
         train_subset = metadata[metadata[field_name] != v]
