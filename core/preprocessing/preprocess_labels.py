@@ -93,9 +93,9 @@ def preprocess_labels(project_dir, subset, label_name, metadata_fields):
         labels = item[label_name]
         #if type(labels) == dict:
         #    for k, v in labels.items():
-        #        labels_df.loc[name, int(k)] = v
+        #        labels_df.loc[name, label_index[k]] = v
         #else:
-        labels_matrix[k_i, int(labels)] = 1
+        labels_matrix[k_i, label_index[labels]] = 1
 
         for m in metadata_fields:
             metadata_lists[m].append(item[m])
