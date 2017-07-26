@@ -94,14 +94,14 @@ def preprocess_labels(project_dir, subset, label_name, metadata_fields):
             name = str(key)
 
         labels = item[label_name]
-        if type(labels) == dict:
-            for k, v in labels.items():
-                labels_df.loc[name, int(k)] = v
-        else:
-            labels_df.loc[name, int(labels)] = 1
+        #if type(labels) == dict:
+        #    for k, v in labels.items():
+        #        labels_df.loc[name, int(k)] = v
+        #else:
+        labels_df.loc[name, int(labels)] = 1
 
-        #for m in metadata_fields:
-        #    metadata_lists[m].append(item[m])
+        for m in metadata_fields:
+            metadata_lists[m].append(item[m])
 
     # normalize those rows that are unanimous
     print("Normalizing")
