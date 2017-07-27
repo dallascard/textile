@@ -132,7 +132,7 @@ def estimate_probs_from_labels(project_dir, model, model_name, calib_subset, tes
     test_pred_probs = model.predict_probs(test_X)[:, 1]
 
     if weights_df is not None and test_items is not None:
-        test_weights = np.array(weights_df.loc[test_items].values).reshape(len(n_test),)
+        test_weights = np.array(weights_df.loc[test_items].values).reshape((n_test,))
     else:
         test_weights = np.ones(n_test)
 
