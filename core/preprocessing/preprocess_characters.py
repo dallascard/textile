@@ -37,7 +37,6 @@ def main():
     preprocess_chracters(project_dir, subset, lower, ngrams, display)
 
 
-@profile
 def preprocess_chracters(project_dir, subset, lower, ngrams, display):
 
     datafile = os.path.join(dirs.dir_data_raw(project_dir), subset + '.json')
