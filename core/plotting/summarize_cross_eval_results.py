@@ -42,8 +42,8 @@ def main():
     mean_rmse_df = pd.DataFrame([], columns=columns)
     min_rmse_df = pd.DataFrame([], columns=columns)
     max_rmse_df = pd.DataFrame([], columns=columns)
-    best_counts = np.zeros(len(methods))
-    worst_counts = np.zeros(len(methods))
+    best_counts_df = pd.DataFrame(np.zeros(len(methods)), columns=methods)
+    worst_counts_df = pd.DataFrame(np.zeros(len(methods)), columns=methods)
 
     test_estimate_pairs = []
 
@@ -61,8 +61,8 @@ def main():
             errors = df['RMSE'].values
             errors_df.loc[f_i] = np.r_[N, errors[1:]]
             test_estimate_pairs.append((df.loc['nontest', 'N'], df.loc['test', 'estimate']))
-            best_counts += errors[1:] <= np.min(errors[1:])
-            worst_counts += errors[1:] >= np.max(errors[1:])
+            best_counts_df.iloc[0] += errors[1:] <= np.min(errors[1:])
+            worst_counts_df.iloc[0] += errors[1:] >= np.max(errors[1:])
 
         mean_rmse_df.loc[v] = errors_df.mean(axis=0)
         min_rmse_df.loc[v] = errors_df.min(axis=0)
@@ -75,7 +75,8 @@ def main():
         #    ax.plot([i + m_i * offset, i + m_i * offset], [min_rmse_df.loc[loc, m], max_rmse_df.loc[loc, m]], c='k', label=None, alpha=0.7)
         #ax.scatter(np.arange(n_field_vals) + m_i * offset, mean_rmse_df[m].values, label=m)
 
-
+    print(best_counts_df)
+    print(worst_counts_df)
 
 if __name__ == '__main__':
     main()
