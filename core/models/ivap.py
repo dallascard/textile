@@ -38,18 +38,16 @@ def estimate_probs_from_labels(project_dir, model, model_name, calib_subset, tes
 
     if calib_items is not None:
         labels_df = labels_df.loc[calib_items]
-        if weights_df is not None:
-            weights_df = weights_df.loc[calib_items]
         n_items, n_classes = labels_df.shape
 
     # normalize labels to just count one each
     labels = labels_df.values.copy()
     labels = labels / np.reshape(labels.sum(axis=1), (n_items, 1))
 
-    if weights_df is not None:
-        weights = np.array(weights_df.values.copy()).reshape((n_items,))
+    if weights_df is not None and calib_items is not None:
+        calib_weights = np.array(weights_df.loc[calib_items].values).reshape((n_items,))
     else:
-        weights = np.ones(n_items)
+        calib_weights = np.ones(n_items)
 
     model_dir = os.path.join(dirs.dir_models(project_dir), model_name)
 
@@ -128,9 +126,15 @@ def estimate_probs_from_labels(project_dir, model, model_name, calib_subset, tes
 
     features_concat = features.concatenate(test_feature_list)
     test_X = features_concat.get_counts().tocsr()
+    n_test, _ = test_X.shape
     printv("Feature matrix shape: (%d, %d)" % calib_X.shape, verbose)
 
     test_pred_probs = model.predict_probs(test_X)[:, 1]
+
+    if weights_df is not None and test_items is not None:
+        test_weights = np.array(weights_df.loc[test_items].values).reshape(len(n_test),)
+    else:
+        test_weights = np.ones(n_test)
 
     n_test = len(test_pred_probs)
     test_pred_ranges = np.zeros((n_test, 2))
@@ -141,21 +145,35 @@ def estimate_probs_from_labels(project_dir, model, model_name, calib_subset, tes
 
             all_scores = np.r_[calib_scores, test_pred_probs[i]]
             all_labels = np.r_[calib_y, proposed_label]
-            all_weights = np.r_[weights, np.max(weights)]
+            all_weights = np.r_[calib_weights, test_weights[i]]
 
-            slopes = isotonic_regression.isotonic_regression(all_scores, all_labels)
+            #slopes = isotonic_regression.isotonic_regression(all_scores, all_labels)
+            slopes = my_ir(all_scores, all_labels)
             test_pred_ranges[i, proposed_label] = slopes[-1]
 
             # upweight duplicate scores to force scikit learn's IR to do the right thing
-            ir = IsotonicRegression(0, 1)
-            ir.fit(all_scores, all_labels, all_weights)
-            test_pred_ranges2[i, proposed_label] = ir.predict([all_scores[-1]])
+            #ir = IsotonicRegression(0, 1)
+            #ir.fit(all_scores, all_labels, all_weights)
+            #test_pred_ranges2[i, proposed_label] = ir.predict([all_scores[-1]])
+            test_pred_ranges2[i, proposed_label] = sk_ir(all_scores, all_labels)
 
     print(np.sum(test_pred_ranges != test_pred_ranges2), np.size(test_pred_ranges))
     print(np.max(np.abs(test_pred_ranges - test_pred_ranges2)))
     print(np.mean(np.abs(test_pred_ranges - test_pred_ranges2)))
 
     return test_pred_ranges2
+
+
+@profile
+def my_ir(all_scores, all_labels):
+    return isotonic_regression.isotonic_regression(all_scores, all_labels)
+
+
+@profile
+def sk_ir(all_scores, all_labels):
+    ir = IsotonicRegression(0, 1)
+    ir.fit(all_scores, all_labels)
+    return ir.predict([all_scores[-1]])
 
 
 if __name__ == '__main__':

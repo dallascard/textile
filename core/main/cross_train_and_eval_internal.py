@@ -69,12 +69,17 @@ def main():
         np.random.seed(int(options.seed))
     verbose = options.verbose
 
+    pos_label = 1
+    average = 'micro'
+
+    cross_train_and_eval(project_dir, subset, field_name, config_file, calib_prop, nontest_prop, prefix, max_folds, model_type, label, penalty, cshift, intercept, n_dev_folds, repeats, verbose, pos_label, average)
+
+
+def cross_train_and_eval(project_dir, subset, field_name, config_file, calib_prop=0.33, nontest_prop=1.0, prefix=None, max_folds=None, model_type='LR', label='label', penalty='l2', cshift=None, intercept=True, n_dev_folds=5, repeats=1, verbose=False, pos_label=1, average='micro'):
+
     model_basename = subset + '_' + field_name
     if prefix is not None:
         model_basename = prefix + '_' + model_basename
-
-    pos_label = 1
-    average = 'micro'
 
     config = fh.read_json(config_file)
     feature_defs = []
