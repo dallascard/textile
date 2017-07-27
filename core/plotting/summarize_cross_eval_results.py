@@ -12,8 +12,8 @@ def main():
     usage = "%prog project_dir subset cross_field_name"
 
     parser = OptionParser(usage=usage)
-    parser.add_option('--offset', dest='offset', default=0.1,
-                      help='Keyword argument: default=%default')
+    parser.add_option('--prefix', dest='prefix', default=None,
+                      help='Prefix for name before subset_fieldname: default=%default')
     #parser.add_option('--boolarg', action="store_true", dest="boolarg", default=False,
     #                  help='Keyword argument: default=%default')
 
@@ -25,7 +25,9 @@ def main():
     field_name = args[2]
     model_basename = subset + '_' + field_name
 
-    offset = float(options.offset)
+    prefix = options.prefix
+    if prefix is not None:
+        model_basename = prefix + model_basename
 
     metadata_file = os.path.join(dirs.dir_subset(project_dir, subset), 'metadata.csv')
     metadata = fh.read_csv_to_df(metadata_file)
