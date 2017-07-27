@@ -51,14 +51,18 @@ def load_and_evaluate_predictons(project_dir, model_name, subset, label, items_t
     evaluate_predictions(labels, predictions, n_classes=n_classes, pos_label=pos_label, average=average)
 
 
-def evaluate_predictions(labels_df, predictions_df, pos_label=1, average='micro'):
+def evaluate_predictions(labels_df, predictions_df, pos_label=1, average='micro', weights_df=None):
     assert np.all(labels_df.index == predictions_df.index)
     n_items, n_classes = labels_df.shape
     labels = labels_df.values
     predictions = predictions_df.values.reshape((n_items,))
 
     labels_per_item = labels.sum(axis=1)
-    weights = np.array(1.0 / labels_per_item)
+    if weights_df is None:
+        weights = np.array(1.0 / labels_per_item)
+    else:
+        weights = weights_df.values
+        weights = weights * np.array(1.0 / labels_per_item)
 
     labels_list = []
     pred_list = []

@@ -13,7 +13,7 @@ def main():
     usage = "%prog project_dir subset cross_field_name"
 
     parser = OptionParser(usage=usage)
-    parser.add_option('--offset', dest='offset', default=1.0,
+    parser.add_option('--offset', dest='offset', default=0.1,
                       help='Keyword argument: default=%default')
     #parser.add_option('--boolarg', action="store_true", dest="boolarg", default=False,
     #                  help='Keyword argument: default=%default')
@@ -33,8 +33,10 @@ def main():
     field_vals = list(set(metadata[field_name].values))
 
     field_vals.sort()
+    n_field_vals = len(field_vals)
 
-    methods = ['train', 'calib', 'CC', 'PCC', 'ACC', 'ACC_int', 'PVC', 'PVC_int', 'Venn']
+    #methods = ['train', 'calib', 'CC', 'PCC', 'ACC', 'ACC_int', 'PVC', 'PVC_int', 'Venn']
+    methods = ['nontest', 'CC', 'PCC', 'ACC_int', 'PVC_int', 'Venn']
     columns = ['N'] + methods
     mean_rmse_df = pd.DataFrame([], columns=columns)
     min_rmse_df = pd.DataFrame([], columns=columns)
@@ -51,10 +53,12 @@ def main():
 
         for f_i, f in enumerate(output_files):
             df = pd.read_csv(f, index_col=0, header=0)
-            N = df.loc['calibration', 'N']
+            #N = df.loc['calibration', 'N']
+            N = df.loc['nontest', 'N']
             errors = df['RMSE'].values
             errors_df.loc[f_i] = np.r_[N, errors[1:]]
-            test_estimate_pairs.append((df.loc['calibration', 'N'], df.loc['test', 'estimate']))
+            #test_estimate_pairs.append((df.loc['calibration', 'N'], df.loc['test', 'estimate']))
+            test_estimate_pairs.append((df.loc['nontest', 'N'], df.loc['test', 'estimate']))
 
         mean_rmse_df.loc[v] = errors_df.mean(axis=0)
         min_rmse_df.loc[v] = errors_df.min(axis=0)
@@ -63,11 +67,11 @@ def main():
     fig, ax = plt.subplots()
     for m_i, m in enumerate(methods):
         for i, loc in enumerate(mean_rmse_df.index):
-            ax.plot([min_rmse_df.loc[loc, 'N'] + m_i * offset, max_rmse_df.loc[loc, 'N'] + m_i * offset], [min_rmse_df.loc[loc, m], max_rmse_df.loc[loc, m]], c='k', label=None, alpha=0.7)
-        ax.scatter(mean_rmse_df['N'].values + m_i * offset, mean_rmse_df[m].values, label=m)
+            ax.plot([i + m_i * offset, i + m_i * offset], [min_rmse_df.loc[loc, m], max_rmse_df.loc[loc, m]], c='k', label=None, alpha=0.7)
+        ax.scatter(np.arange(n_field_vals) + m_i * offset, mean_rmse_df[m].values, label=m)
 
     test_Ns, test_estimates = list(zip(*test_estimate_pairs))
-    ax.scatter(test_Ns, test_estimates, c='k', label='test')
+    #ax.scatter(test_Ns, test_estimates, c='k', label='test')
 
     ax.legend()
     plt.show()

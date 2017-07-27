@@ -1,7 +1,10 @@
 import os
 from optparse import OptionParser
 
+from collections import Counter
+
 import numpy as np
+from sklearn.isotonic import IsotonicRegression
 
 from ..models import isotonic_regression
 from ..preprocessing import features
@@ -26,15 +29,27 @@ def estimate_probs_brute_force(project_dir, model, model_name, calib_subset, tes
 
     label_dir = dirs.dir_labels(project_dir, calib_subset)
     labels_df = fh.read_csv_to_df(os.path.join(label_dir, label_name + '.csv'), index_col=0, header=0)
+    estimate_probs_from_labels(project_dir, model, model_name, calib_subset, test_subset, labels_df, calib_items, test_items, verbose)
+
+
+def estimate_probs_from_labels(project_dir, model, model_name, calib_subset, test_subset, labels_df, calib_items=None, test_items=None, verbose=False, weights_df=None):
+
     n_items, n_classes = labels_df.shape
 
     if calib_items is not None:
         labels_df = labels_df.loc[calib_items]
+        if weights_df is not None:
+            weights_df = weights_df.loc[calib_items]
         n_items, n_classes = labels_df.shape
 
     # normalize labels to just count one each
     labels = labels_df.values.copy()
     labels = labels / np.reshape(labels.sum(axis=1), (n_items, 1))
+
+    if weights_df is not None:
+        weights = np.array(weights_df.values.copy()).reshape((n_items,))
+    else:
+        weights = np.ones(n_items)
 
     model_dir = os.path.join(dirs.dir_models(project_dir), model_name)
 
@@ -119,15 +134,26 @@ def estimate_probs_brute_force(project_dir, model, model_name, calib_subset, tes
 
     n_test = len(test_pred_probs)
     test_pred_ranges = np.zeros((n_test, 2))
+    test_pred_ranges2 = np.zeros((n_test, 2))
 
     for i in range(n_test):
         for proposed_label in [0, 1]:
 
             all_scores = np.r_[calib_scores, test_pred_probs[i]]
             all_labels = np.r_[calib_y, proposed_label]
+            all_weights = np.r_[weights, max(np.max(weights), 1)]
 
             slopes = isotonic_regression.isotonic_regression(all_scores, all_labels)
             test_pred_ranges[i, proposed_label] = slopes[-1]
+
+            # upweight duplicate scores to force scikit learn's IR to do the right thing
+            ir = IsotonicRegression(0, 1)
+            ir.fit(all_scores, all_labels, all_weights)
+            test_pred_ranges2[i, proposed_label] = ir.predict([all_scores[-1]])
+
+    print(np.sum(test_pred_ranges != test_pred_ranges2), np.size(test_pred_ranges))
+    print(np.max(np.abs(test_pred_ranges - test_pred_ranges2)))
+    print(np.mean(np.abs(test_pred_ranges - test_pred_ranges2)))
 
     return test_pred_ranges
 
