@@ -26,7 +26,7 @@ def main():
 
     prefix = options.prefix
     if prefix is not None:
-        model_basename = prefix + model_basename
+        model_basename = prefix + '_' + model_basename
 
     metadata_file = os.path.join(dirs.dir_subset(project_dir, subset), 'metadata.csv')
     metadata = fh.read_csv_to_df(metadata_file)
