@@ -18,6 +18,8 @@ def main():
                       help='Percent to use for the calibration part of each split: default=%default')
     parser.add_option('-t', dest='nontest_prop', default=1.0,
                       help='Proportion of non-test data to use: default=%default')
+    parser.add_option('--prefix', dest='prefix', default=None,
+                      help='Prefix to _subset_fieldname: default=%default')
     parser.add_option('--max_folds', dest='max_folds', default=None,
                       help='Limit the number of partitions to test: default=%default')
     parser.add_option('--model', dest='model', default='LR',
@@ -47,10 +49,10 @@ def main():
     subset = args[1]
     field_name = args[2]
     config_file = args[3]
-    model_basename = subset + '_' + field_name
 
     calib_prop = float(options.calib_prop)
     nontest_prop = float(options.nontest_prop)
+    prefix = options.prefix
     max_folds = options.max_folds
     if max_folds is not None:
         max_folds = int(max_folds)
@@ -66,6 +68,10 @@ def main():
     if options.seed is not None:
         np.random.seed(int(options.seed))
     verbose = options.verbose
+
+    model_basename = subset + '_' + field_name
+    if prefix is not None:
+        model_basename = prefix + '_' + model_basename
 
     pos_label = 1
     average = 'micro'
