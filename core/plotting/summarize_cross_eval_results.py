@@ -46,6 +46,7 @@ def main():
 
     test_estimate_pairs = []
 
+    print(field_vals)
     for v_i, v in enumerate(field_vals):
 
         model_name = model_basename + '_' + str(v) + '_*'
