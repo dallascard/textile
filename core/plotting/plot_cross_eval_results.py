@@ -30,7 +30,7 @@ def main():
 
     prefix = options.prefix
     if prefix is not None:
-        model_basename = prefix + model_basename
+        model_basename = prefix + '_' + model_basename
 
     offset = float(options.offset)
 
