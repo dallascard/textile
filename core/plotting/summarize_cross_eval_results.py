@@ -17,7 +17,6 @@ def main():
     #parser.add_option('--boolarg', action="store_true", dest="boolarg", default=False,
     #                  help='Keyword argument: default=%default')
 
-
     (options, args) = parser.parse_args()
 
     project_dir = args[0]
@@ -57,6 +56,7 @@ def main():
 
         for f_i, f in enumerate(output_files):
             df = pd.read_csv(f, index_col=0, header=0)
+            print(df)
             N = df.loc['nontest', 'N']
             errors = df['RMSE'].values
             errors_df.loc[f_i] = np.r_[N, errors[1:]]
