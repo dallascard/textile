@@ -164,12 +164,10 @@ def estimate_probs_from_labels(project_dir, model, model_name, calib_subset, tes
     return test_pred_ranges2
 
 
-@profile
 def my_ir(all_scores, all_labels):
     return isotonic_regression.isotonic_regression(all_scores, all_labels)
 
 
-@profile
 def sk_ir(all_scores, all_labels):
     ir = IsotonicRegression(0, 1)
     ir.fit(all_scores, all_labels)
