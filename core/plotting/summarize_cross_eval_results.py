@@ -46,7 +46,6 @@ def main():
 
     test_estimate_pairs = []
 
-    print(field_vals)
     for v_i, v in enumerate(field_vals):
 
         model_name = model_basename + '_' + str(v) + '_*'
@@ -57,7 +56,6 @@ def main():
 
         for f_i, f in enumerate(output_files):
             df = pd.read_csv(f, index_col=0, header=0)
-            print(df)
             N = df.loc['nontest', 'N']
             errors = df['RMSE'].values
             errors_df.loc[f_i] = np.r_[N, errors[1:]]
@@ -72,6 +70,7 @@ def main():
     for m_i, m in enumerate(methods):
         print(m)
         print(mean_rmse_df[m])
+        print("mean = %0.4f" % mean_rmse_df[m].mean())
         #for i, loc in enumerate(mean_rmse_df.index):
         #    ax.plot([i + m_i * offset, i + m_i * offset], [min_rmse_df.loc[loc, m], max_rmse_df.loc[loc, m]], c='k', label=None, alpha=0.7)
         #ax.scatter(np.arange(n_field_vals) + m_i * offset, mean_rmse_df[m].values, label=m)
