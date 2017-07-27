@@ -76,7 +76,7 @@ def main():
             ax.plot([i + m_i * offset, i + m_i * offset], [min_rmse_df.loc[loc, m], max_rmse_df.loc[loc, m]], c='k', label=None, alpha=0.7)
         ax.scatter(np.arange(n_field_vals) + m_i * offset, mean_rmse_df[m].values, label=m)
 
-    test_Ns, test_estimates = list(zip(*test_estimate_pairs))
+    #test_Ns, test_estimates = list(zip(*test_estimate_pairs))
     #ax.scatter(test_Ns, test_estimates, c='k', label='test')
 
     ax.legend()
