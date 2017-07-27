@@ -141,7 +141,7 @@ def estimate_probs_from_labels(project_dir, model, model_name, calib_subset, tes
 
             all_scores = np.r_[calib_scores, test_pred_probs[i]]
             all_labels = np.r_[calib_y, proposed_label]
-            all_weights = np.r_[weights, max(np.max(weights), 1)]
+            all_weights = np.r_[weights, np.max(weights)]
 
             slopes = isotonic_regression.isotonic_regression(all_scores, all_labels)
             test_pred_ranges[i, proposed_label] = slopes[-1]
@@ -155,7 +155,7 @@ def estimate_probs_from_labels(project_dir, model, model_name, calib_subset, tes
     print(np.max(np.abs(test_pred_ranges - test_pred_ranges2)))
     print(np.mean(np.abs(test_pred_ranges - test_pred_ranges2)))
 
-    return test_pred_ranges
+    return test_pred_ranges2
 
 
 if __name__ == '__main__':
