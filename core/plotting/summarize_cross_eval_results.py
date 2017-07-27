@@ -42,8 +42,8 @@ def main():
     mean_rmse_df = pd.DataFrame([], columns=columns)
     min_rmse_df = pd.DataFrame([], columns=columns)
     max_rmse_df = pd.DataFrame([], columns=columns)
-    best_counts_df = pd.DataFrame(np.zeros(len(methods)), index=[0], columns=methods)
-    worst_counts_df = pd.DataFrame(np.zeros(len(methods)), index=[0], columns=methods)
+    best_counts_df = pd.DataFrame(np.zeros(len(methods)), index=methods, columns=['best'])
+    worst_counts_df = pd.DataFrame(np.zeros(len(methods)), index=methods, columns=['worst'])
 
     test_estimate_pairs = []
 
@@ -61,8 +61,8 @@ def main():
             errors = df['RMSE'].values
             errors_df.loc[f_i] = np.r_[N, errors[1:]]
             test_estimate_pairs.append((df.loc['nontest', 'N'], df.loc['test', 'estimate']))
-            best_counts_df.loc[0] += errors[1:] <= np.min(errors[1:])
-            worst_counts_df.loc[0] += errors[1:] >= np.max(errors[1:])
+            best_counts_df['best'] += errors[1:] <= np.min(errors[1:])
+            worst_counts_df['worst'] += errors[1:] >= np.max(errors[1:])
 
         mean_rmse_df.loc[v] = errors_df.mean(axis=0)
         min_rmse_df.loc[v] = errors_df.min(axis=0)
