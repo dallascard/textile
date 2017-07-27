@@ -138,7 +138,7 @@ def estimate_probs_from_labels(project_dir, model, model_name, calib_subset, tes
 
     n_test = len(test_pred_probs)
     test_pred_ranges = np.zeros((n_test, 2))
-    test_pred_ranges2 = np.zeros((n_test, 2))
+    #test_pred_ranges2 = np.zeros((n_test, 2))
 
     for i in range(n_test):
         for proposed_label in [0, 1]:
@@ -148,30 +148,18 @@ def estimate_probs_from_labels(project_dir, model, model_name, calib_subset, tes
             all_weights = np.r_[calib_weights, test_weights[i]]
 
             #slopes = isotonic_regression.isotonic_regression(all_scores, all_labels)
-            slopes = my_ir(all_scores, all_labels)
-            test_pred_ranges[i, proposed_label] = slopes[-1]
+            #test_pred_ranges[i, proposed_label] = slopes[-1]
 
             # upweight duplicate scores to force scikit learn's IR to do the right thing
-            #ir = IsotonicRegression(0, 1)
-            #ir.fit(all_scores, all_labels, all_weights)
-            #test_pred_ranges2[i, proposed_label] = ir.predict([all_scores[-1]])
-            test_pred_ranges2[i, proposed_label] = sk_ir(all_scores, all_labels)
+            ir = IsotonicRegression(0, 1)
+            ir.fit(all_scores, all_labels, all_weights)
+            test_pred_ranges[i, proposed_label] = ir.predict([all_scores[-1]])
 
-    print(np.sum(test_pred_ranges != test_pred_ranges2), np.size(test_pred_ranges))
-    print(np.max(np.abs(test_pred_ranges - test_pred_ranges2)))
-    print(np.mean(np.abs(test_pred_ranges - test_pred_ranges2)))
+    #print(np.sum(test_pred_ranges != test_pred_ranges2), np.size(test_pred_ranges))
+    #print(np.max(np.abs(test_pred_ranges - test_pred_ranges2)))
+    #print(np.mean(np.abs(test_pred_ranges - test_pred_ranges2)))
 
-    return test_pred_ranges2
-
-
-def my_ir(all_scores, all_labels):
-    return isotonic_regression.isotonic_regression(all_scores, all_labels)
-
-
-def sk_ir(all_scores, all_labels):
-    ir = IsotonicRegression(0, 1)
-    ir.fit(all_scores, all_labels)
-    return ir.predict([all_scores[-1]])
+    return test_pred_ranges
 
 
 if __name__ == '__main__':
