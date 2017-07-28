@@ -59,7 +59,7 @@ def import_review_data(reviews_file, project_dir, prop):
             data[k]['text'] = review['reviewText']
             data[k]['rating'] = review['overall']
             data[k]['summary'] = review['summary']
-            data[k]['label'] = {'helpful': n_helpful_votes, 'not': n_votes - n_helpful_votes}
+            data[k]['label'] = {0: n_votes - n_helpful_votes,  1: n_helpful_votes}
             date_string = review['reviewTime']
             parts = date_string.split(',')
             year = int(parts[1])
