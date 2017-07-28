@@ -45,5 +45,9 @@ def dir_models(project):
     return os.path.join(project, 'models')
 
 
+def dir_logs(project):
+    return os.path.join(project, 'logs')
+
+
 def dir_export(project):
     return os.path.join(project, 'export')

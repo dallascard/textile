@@ -81,6 +81,28 @@ def cross_train_and_eval(project_dir, subset, field_name, config_file, calib_pro
     if prefix is not None:
         model_basename = prefix + '_' + model_basename
 
+    logfile = os.path.join(dirs.dir_logs(project_dir), model_basename + '.json')
+    log = {
+        'project': project_dir,
+        'subset': subset,
+        'field_name': field_name,
+        'config_file': config_file,
+        'calib_prop': calib_prop,
+        'train_prop': nontest_prop,
+        'prefix': prefix,
+        'max_folds': max_folds,
+        'model_type': model_type,
+        'label': label,
+        'penalty': penalty,
+        'cshift': cshift,
+        'intercept': intercept,
+        'n_dev_folds': n_dev_folds,
+        'repeats': repeats,
+        'pos_label': pos_label,
+        'average': average
+    }
+    fh.write_to_json(log, logfile)
+
     config = fh.read_json(config_file)
     feature_defs = []
     for f in config['feature_defs']:
