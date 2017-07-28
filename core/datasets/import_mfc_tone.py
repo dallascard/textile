@@ -68,12 +68,7 @@ def convert_mfc(project, data_file, output_prefix, n_years):
         year = int(data[k]['year'])
         month = int(data[k]['month'])
         source = data[k]['source']
-        if source.startswith('new york times blogs'):
-            source = 'NY_Times_blogs'
-        elif source.startswith('washington post blogs'):
-            source = 'Washington_Post_blogs'
-        else:
-            source = SOURCES[source]
+        source = get_source(source)
         section = data[k]['section']
         csi = data[k]['csi']
         #framing_annotations = data[k]['annotations']['framing']

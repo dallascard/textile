@@ -64,7 +64,8 @@ def convert_mfc(project, data_file, output_prefix, n_years):
         framing_annotations = data[k]['annotations']['framing']
         year = int(data[k]['year'])
         month = int(data[k]['month'])
-        source = get_source([data[k]['source']])
+        source = data[k]['source']
+        source = get_source(source)
         section = data[k]['section']
         csi = data[k]['csi']
         n_annotations = 1
