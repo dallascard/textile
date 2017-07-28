@@ -77,7 +77,7 @@ def import_review_data(reviews_file, project_dir, prop, approx=False):
                 if approx:
                     helpfulness_prop = n_helpful_votes / n_votes
                     n_helpful = int(np.round(helpfulness_prop * 10))
-                    n_not_helpful = 10 - n_helpful_votes
+                    n_not_helpful = 10 - n_helpful
                     data[k]['label'] = {0: n_not_helpful,  1: n_helpful}
                 else:
                     data[k]['label'] = {0: n_votes - n_helpful_votes,  1: n_helpful_votes}
