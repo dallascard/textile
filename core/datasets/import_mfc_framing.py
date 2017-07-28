@@ -6,7 +6,7 @@ import numpy as np
 
 from ..util import dirs
 from ..util import file_handling as fh
-from ..datasets.import_mfc_tone import SOURCES
+from ..datasets.import_mfc_tone import get_source
 
 
 CODES = {
@@ -64,7 +64,7 @@ def convert_mfc(project, data_file, output_prefix, n_years):
         framing_annotations = data[k]['annotations']['framing']
         year = int(data[k]['year'])
         month = int(data[k]['month'])
-        source = SOURCES[data[k]['source']]
+        source = get_source([data[k]['source']])
         section = data[k]['section']
         csi = data[k]['csi']
         n_annotations = 1
