@@ -18,14 +18,16 @@ def main():
                       help='Percent to use for the calibration part of each split: default=%default')
     parser.add_option('-t', dest='train_prop', default=1.0,
                       help='Proportion of training data to use: default=%default')
+    parser.add_option('--prefix', dest='prefix', default=None,
+                      help='Prefix to _subset_fieldname: default=%default')
     parser.add_option('--max_folds', dest='max_folds', default=None,
                       help='Limit the number of partitions to test: default=%default')
     parser.add_option('--model', dest='model', default='LR',
                       help='Model type [LR|BLR]: default=%default')
     parser.add_option('--label', dest='label', default='label',
                       help='Label name: default=%default')
-    #parser.add_option('--cshift', dest='cshift', default=None,
-    #                  help='Covariate shift method [None]: default=%default')
+    parser.add_option('--cshift', dest='cshift', default=None,
+                      help='Covariate shift method [None]: default=%default')
     parser.add_option('--penalty', dest='penalty', default='l1',
                       help='Regularization type: default=%default')
     parser.add_option('--no_intercept', action="store_true", dest="no_intercept", default=False,
@@ -47,10 +49,10 @@ def main():
     subset = args[1]
     field_name = args[2]
     config_file = args[3]
-    model_basename = subset + '_' + field_name
 
     calib_prop = float(options.calib_prop)
     train_prop = float(options.train_prop)
+    prefix = options.prefix
     max_folds = options.max_folds
     if max_folds is not None:
         max_folds = int(max_folds)
@@ -58,7 +60,7 @@ def main():
     model_type = options.model
     label = options.label
     penalty = options.penalty
-    #cshift = options.cshift
+    cshift = options.cshift
     #objective = options.objective
     intercept = not options.no_intercept
     n_dev_folds = int(options.n_dev_folds)
@@ -69,6 +71,15 @@ def main():
 
     pos_label = 1
     average = 'micro'
+
+    cross_train_and_eval(project_dir, subset, field_name, config_file, calib_prop, train_prop, prefix, max_folds, model_type, label, penalty, cshift, intercept, n_dev_folds, repeats, verbose, pos_label, average)
+
+
+def cross_train_and_eval(project_dir, subset, field_name, config_file, calib_prop=0.33, train_prop=1.0, prefix=None, max_folds=None, model_type='LR', label='label', penalty='l2', cshift=None, intercept=True, n_dev_folds=5, repeats=1, verbose=False, pos_label=1, average='micro'):
+
+    model_basename = subset + '_' + field_name
+    if prefix is not None:
+        model_basename = prefix + '_' + model_basename
 
     config = fh.read_json(config_file)
     feature_defs = []
@@ -89,7 +100,8 @@ def main():
     for v_i, v in enumerate(field_vals[:max_folds]):
 
         print("\nTesting on %s" % v)
-        train_subset = metadata[metadata[field_name] != v]
+        train_selector = metadata[field_name] != v
+        train_subset = metadata[train_selector]
         train_items = list(train_subset.index)
         n_train = len(train_items)
 
@@ -98,7 +110,8 @@ def main():
             train_items = np.random.choice(train_items, size=int(n_train * train_prop), replace=False)
             n_train = len(train_items)
 
-        non_train_subset = metadata[metadata[field_name] == v]
+        non_train_selector = metadata[field_name] == v
+        non_train_subset = metadata[non_train_selector]
         non_train_items = non_train_subset.index.tolist()
         n_non_train = len(non_train_items)
 
@@ -107,6 +120,31 @@ def main():
         labels_df = fh.read_csv_to_df(os.path.join(label_dir, label + '.csv'), index_col=0, header=0)
         n_items, n_classes = labels_df.shape
         train_labels = labels_df.loc[train_items]
+
+        if cshift is not None:
+            print("Training a classifier for covariate shift")
+            # start by learning to discriminate test from non-test data
+            train_test_labels = np.zeros((n_items, 2), dtype=int)
+            train_test_labels[train_selector, 0] = 1
+            train_test_labels[non_train_selector, 1] = 1
+            train_test_labels_df = pd.DataFrame(train_test_labels, index=labels_df.index, columns=[0, 1])
+            model_name = model_basename + '_' + str(v) + '_' + 'cshift'
+            model, dev_f1, dev_cal, _, _ = train.train_model_with_labels(project_dir, model_type, model_name, subset, train_test_labels_df, feature_defs, penalty=penalty, intercept=intercept, n_dev_folds=n_dev_folds, verbose=False)
+
+            train_test_pred_df, train_test_probs_df = predict.predict(project_dir, model, model_name, subset, label, verbose=verbose)
+            print("Min: %0.4f" % train_test_probs_df[1].min())
+            print("Max: %0.4f" % train_test_probs_df[1].max())
+            # base the weights on the probability of each item being a training item
+            weights = n_train / float(n_non_train) * (1.0/train_test_probs_df[0].values - 1)
+            print("Min weight: %0.4f" % weights[train_selector].min())
+            print("Ave weight: %0.4f" % weights[train_selector].mean())
+            print("Max weight: %0.4f" % weights[train_selector].max())
+            print("Min weight: %0.4f" % weights.min())
+            print("Ave weight: %0.4f" % weights.mean())
+            print("Max weight: %0.4f" % weights.max())
+            weights_df = pd.DataFrame(weights, index=labels_df.index)
+        else:
+            weights_df = None
 
         # repeat the following process multiple times with different random splits of calibration / test data
         for r in range(repeats):

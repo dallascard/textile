@@ -39,6 +39,7 @@ def import_review_data(reviews_file, project_dir, prop):
     dates = pd.DataFrame(columns=['date'])
     keys = list(reviews.keys())
     reviewers = set()
+    asins = set()
 
     if prop < 1.0:
         subset_size = int(prop * n_items)
@@ -57,6 +58,8 @@ def import_review_data(reviews_file, project_dir, prop):
         if n_votes > 0:
             data[k] = {}
             data[k]['reviewerID'] = review['reviewerID']
+            data[k]['asin'] = review['asin']
+            asins.add(review['asin'])
             reviewers.add(review['reviewerID'])
             data[k]['text'] = review['reviewText']
             data[k]['rating'] = review['overall']
@@ -79,6 +82,7 @@ def import_review_data(reviews_file, project_dir, prop):
     print("Earliest date:", dates.date.min())
     print("Latest date:", dates.date.max())
     print("%d reviewers" % len(reviewers))
+    print("%d products" % len(asins))
 
     print("Saving data")
     data_dir = dirs.dir_data_raw(project_dir)
