@@ -60,11 +60,11 @@ def main():
         for f_i, f in enumerate(output_files):
             df = pd.read_csv(f, index_col=0, header=0)
             #N = df.loc['calibration', 'N']
-            N = df.loc['nontest', 'N']
+            N = df.loc['Venn', 'N']
             errors = df['RMSE'].values
             errors_df.loc[f_i] = np.r_[N, errors[1:]]
             #test_estimate_pairs.append((df.loc['calibration', 'N'], df.loc['test', 'estimate']))
-            test_estimate_pairs.append((df.loc['nontest', 'N'], df.loc['test', 'estimate']))
+            test_estimate_pairs.append((df.loc['Venn', 'N'], df.loc['test', 'estimate']))
 
         mean_rmse_df.loc[v] = errors_df.mean(axis=0)
         min_rmse_df.loc[v] = errors_df.min(axis=0)
