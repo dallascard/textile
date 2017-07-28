@@ -161,14 +161,17 @@ def cross_train_and_eval(project_dir, subset, field_name, config_file, calib_pro
             calib_labels = labels_df.loc[calib_items]
             test_labels = labels_df.loc[test_items]
 
+            print("Test estimate")
             test_props, test_estimate, test_std = get_estimate_and_std(test_labels)
             output_df.loc['test'] = [n_test, test_estimate, 0, test_estimate - 2 * test_std, test_estimate + 2 * test_std, 1]
 
+            print("Train estimate")
             train_props, train_estimate, train_std = get_estimate_and_std(train_labels)
             train_rmse = np.sqrt((train_estimate - test_estimate)**2)
             train_contains_test = test_estimate > train_estimate - 2 * train_std and test_estimate < train_estimate + 2 * train_std
             output_df.loc['train'] = [n_train, train_estimate, train_rmse, train_estimate - 2 * train_std, train_estimate + 2 * train_std, train_contains_test]
 
+            print("Calib estimate")
             calib_props, calib_estimate, calib_std = get_estimate_and_std(calib_labels)
             calib_rmse = np.sqrt((calib_estimate - test_estimate)**2)
             calib_contains_test = test_estimate > calib_estimate - 2 * calib_std and calib_estimate < calib_estimate + 2 * calib_std
