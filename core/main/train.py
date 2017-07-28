@@ -27,8 +27,8 @@ def main():
                       help='Regularization type: default=%default')
     parser.add_option('--no_intercept', action="store_true", dest="no_intercept", default=False,
                       help='Use to fit a model with no intercept: default=%default')
-    #parser.add_option('--objective', dest='objective', default='f1',
-    #                  help='Objective for choosing best alpha [calibration|f1]: default=%default')
+    parser.add_option('--objective', dest='objective', default='f1',
+                      help='Objective for choosing best alpha [calibration|f1]: default=%default')
     parser.add_option('--n_classes', dest='n_classes', default=None,
                       help='Specify the number of classes (None=max[training labels]): default=%default')
     parser.add_option('--n_dev_folds', dest='n_dev_folds', default=5,
@@ -46,7 +46,7 @@ def main():
     label = options.label
     weights_file = options.weights_file
     penalty = options.penalty
-    #objective = options.objective
+    objective = options.objective
     intercept = not options.no_intercept
     n_classes = options.n_classes
     if n_classes is not None:
@@ -60,12 +60,12 @@ def main():
     for f in config['feature_defs']:
         feature_defs.append(features.parse_feature_string(f))
 
-    train_model(project_dir, model_type, model_name, subset, label, feature_defs, weights_file, penalty=penalty, intercept=intercept, n_dev_folds=n_dev_folds)
+    train_model(project_dir, model_type, model_name, subset, label, feature_defs, weights_file, penalty=penalty, intercept=intercept, objective=objective, n_dev_folds=n_dev_folds)
 
 
 def train_model(project_dir, model_type, model_name, subset, label, feature_defs, weights_file=None, items_to_use=None,
                 penalty='l2', alpha_min=0.01, alpha_max=1000, n_alphas=8, intercept=True,
-                n_dev_folds=5, save_model=True, verbose=True):
+                objective='f1', n_dev_folds=5, save_model=True, verbose=True):
 
     label_dir = dirs.dir_labels(project_dir, subset)
     labels_df = fh.read_csv_to_df(os.path.join(label_dir, label + '.csv'), index_col=0, header=0)
@@ -78,12 +78,12 @@ def train_model(project_dir, model_type, model_name, subset, label, feature_defs
 
     return train_model_with_labels(project_dir, model_type, model_name, subset, labels_df, feature_defs, weights, items_to_use,
                             penalty, alpha_min, alpha_max, n_alphas, intercept,
-                            n_dev_folds, save_model, verbose)
+                            objective, n_dev_folds, save_model, verbose)
 
 
 def train_model_with_labels(project_dir, model_type, model_name, subset, labels_df, feature_defs, weights_df=None,
                             items_to_use=None, penalty='l2', alpha_min=0.01, alpha_max=1000, n_alphas=8, intercept=True,
-                            n_dev_folds=5, save_model=True, verbose=True):
+                            objective='f1', n_dev_folds=5, save_model=True, verbose=True):
 
     features_dir = dirs.dir_features(project_dir, subset)
     n_items, n_classes = labels_df.shape
@@ -207,14 +207,19 @@ def train_model_with_labels(project_dir, model_type, model_name, subset, labels_
             acc_cfms.append(np.mean(alpha_acc_cfms, axis=0))
             pvc_cfms.append(np.mean(alpha_pvc_cfms, axis=0))
 
-        best_f1_alpha_index = mean_dev_f1s.argmax()
-        best_f1_alpha = alphas[best_f1_alpha_index]
-        best_dev_f1 = mean_dev_f1s[best_f1_alpha_index]
-        best_dev_cal = mean_dev_cal[best_f1_alpha_index]
+        if objective == 'f1':
+            best_alpha_index = mean_dev_f1s.argmax()
+        elif objective.startswith('cal'):
+            best_alpha_index = mean_dev_cal.argmax()
+        else:
+            sys.exit("Objective not recognized")
+        best_f1_alpha = alphas[best_alpha_index]
+        best_dev_f1 = mean_dev_f1s[best_alpha_index]
+        best_dev_cal = mean_dev_cal[best_alpha_index]
         print("Best: alpha = %.3f, dev f1 = %.3f, dev cal = %.3f" % (best_f1_alpha, best_dev_f1, best_dev_cal))
 
-        best_acc_cfm = acc_cfms[best_f1_alpha_index]
-        best_pvc_cfm = pvc_cfms[best_f1_alpha_index]
+        best_acc_cfm = acc_cfms[best_alpha_index]
+        best_pvc_cfm = pvc_cfms[best_alpha_index]
 
         printv("Training full model", verbose)
         model = lr.LR(best_f1_alpha, penalty=penalty, fit_intercept=intercept, n_classes=n_classes)

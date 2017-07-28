@@ -32,8 +32,8 @@ def main():
                       help='Regularization type: default=%default')
     parser.add_option('--no_intercept', action="store_true", dest="no_intercept", default=False,
                       help='Use to fit a model with no intercept: default=%default')
-    #parser.add_option('--objective', dest='objective', default='f1',
-    #                  help='Objective for choosing best alpha [calibration|f1]: default=%default')
+    parser.add_option('--objective', dest='objective', default='f1',
+                      help='Objective for choosing best alpha [calibration|f1]: default=%default')
     parser.add_option('--n_dev_folds', dest='n_dev_folds', default=5,
                       help='Number of dev folds for tuning regularization: default=%default')
     parser.add_option('--repeats', dest='repeats', default=1,
@@ -61,7 +61,7 @@ def main():
     label = options.label
     penalty = options.penalty
     cshift = options.cshift
-    #objective = options.objective
+    objective = options.objective
     intercept = not options.no_intercept
     n_dev_folds = int(options.n_dev_folds)
     repeats = int(options.repeats)
@@ -72,10 +72,10 @@ def main():
     pos_label = 1
     average = 'micro'
 
-    cross_train_and_eval(project_dir, subset, field_name, config_file, calib_prop, train_prop, prefix, max_folds, model_type, label, penalty, cshift, intercept, n_dev_folds, repeats, verbose, pos_label, average)
+    cross_train_and_eval(project_dir, subset, field_name, config_file, calib_prop, train_prop, prefix, max_folds, model_type, label, penalty, cshift, intercept, n_dev_folds, repeats, verbose, pos_label, average, objective)
 
 
-def cross_train_and_eval(project_dir, subset, field_name, config_file, calib_prop=0.33, train_prop=1.0, prefix=None, max_folds=None, model_type='LR', label='label', penalty='l2', cshift=None, intercept=True, n_dev_folds=5, repeats=1, verbose=False, pos_label=1, average='micro'):
+def cross_train_and_eval(project_dir, subset, field_name, config_file, calib_prop=0.33, train_prop=1.0, prefix=None, max_folds=None, model_type='LR', label='label', penalty='l2', cshift=None, intercept=True, n_dev_folds=5, repeats=1, verbose=False, pos_label=1, average='micro', objective='f1'):
 
     model_basename = subset + '_' + field_name
     if prefix is not None:
@@ -97,6 +97,7 @@ def cross_train_and_eval(project_dir, subset, field_name, config_file, calib_pro
         'penalty': penalty,
         'cshift': cshift,
         'intercept': intercept,
+        'objective': objective,
         'n_dev_folds': n_dev_folds,
         'repeats': repeats,
         'pos_label': pos_label,
@@ -203,7 +204,7 @@ def cross_train_and_eval(project_dir, subset, field_name, config_file, calib_pro
 
             print("Doing training")
             #model, dev_f1, dev_cal, acc_cfm, pvc_cfm = train.train_model(project_dir, model_type, model_name, subset, label, feature_defs, weights_file, items_to_use=train_items, penalty=penalty, intercept=intercept, n_dev_folds=n_dev_folds, verbose=verbose)
-            model, dev_f1, dev_cal, acc_cfm, pvc_cfm = train.train_model_with_labels(project_dir, model_type, model_name, subset, labels_df, feature_defs, weights_df=weights_df, items_to_use=train_items, penalty=penalty, intercept=intercept, n_dev_folds=n_dev_folds, verbose=verbose)
+            model, dev_f1, dev_cal, acc_cfm, pvc_cfm = train.train_model_with_labels(project_dir, model_type, model_name, subset, labels_df, feature_defs, weights_df=weights_df, items_to_use=train_items, penalty=penalty, intercept=intercept, objective=objective, n_dev_folds=n_dev_folds, verbose=verbose)
 
             print("Doing prediction on calibration items")
             calib_predictions, calib_pred_probs = predict.predict(project_dir, model, model_name, subset, label, items_to_use=calib_items, verbose=verbose)
