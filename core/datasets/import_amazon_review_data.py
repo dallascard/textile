@@ -55,7 +55,14 @@ def import_review_data(reviews_file, project_dir, prop):
         helpfulness = review['helpful']
         n_helpful_votes = helpfulness[0]
         n_votes = helpfulness[1]
-        if n_votes > 0:
+        date_string = review['reviewTime']
+        parts = date_string.split(',')
+        year = int(parts[1])
+        parts2 = parts[0].split()
+        month = int(parts2[0])
+        day = int(parts2[1])
+
+        if n_votes > 0 and year > 1999:
             data[k] = {}
             data[k]['reviewerID'] = review['reviewerID']
             data[k]['asin'] = review['asin']
@@ -65,12 +72,6 @@ def import_review_data(reviews_file, project_dir, prop):
             data[k]['rating'] = review['overall']
             data[k]['summary'] = review['summary']
             data[k]['label'] = {0: n_votes - n_helpful_votes,  1: n_helpful_votes}
-            date_string = review['reviewTime']
-            parts = date_string.split(',')
-            year = int(parts[1])
-            parts2 = parts[0].split()
-            month = int(parts2[0])
-            day = int(parts2[1])
             data[k]['year'] = year
             data[k]['month'] = month
             data[k]['day'] = day
