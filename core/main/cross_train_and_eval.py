@@ -82,6 +82,7 @@ def cross_train_and_eval(project_dir, subset, field_name, config_file, calib_pro
         model_basename = prefix + '_' + model_basename
 
     logfile = os.path.join(dirs.dir_logs(project_dir), model_basename + '.json')
+    fh.makedirs(dirs.dir_logs(project_dir))
     log = {
         'project': project_dir,
         'subset': subset,
