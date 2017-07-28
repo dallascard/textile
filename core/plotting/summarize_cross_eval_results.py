@@ -64,7 +64,7 @@ def main():
             test_estimate_pairs.append((df.loc['Venn', 'N'], df.loc['test', 'estimate']))
             best_counts_df['best'] += errors[1:] <= np.min(errors[1:])
             worst_counts_df['worst'] += errors[1:] >= np.max(errors[1:])
-            order = np.argsort(errors)
+            order = np.argsort(errors[1:])
             ranking_df['rank'] += order / float(n_output_files)
 
         mean_rmse_df.loc[v] = errors_df.mean(axis=0)
