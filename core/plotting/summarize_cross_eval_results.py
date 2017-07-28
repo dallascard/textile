@@ -87,5 +87,8 @@ def main():
     print(worst_counts_df)
     print(ranking_df)
 
+    order = np.argsort(ranking_df['rank'].values)
+    print("Best to worst:", [methods[i] for i in list(order)])
+
 if __name__ == '__main__':
     main()
