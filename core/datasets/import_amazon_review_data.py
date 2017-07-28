@@ -15,10 +15,8 @@ def main():
     parser = OptionParser(usage=usage)
     parser.add_option('-p', dest='prop', default=1.0,
                       help='Use only a random proportion of training data: default=%default')
-    #parser.add_option('--keyword', dest='key', default=None,
-    #                  help='Keyword argument: default=%default')
-    #parser.add_option('--boolarg', action="store_true", dest="boolarg", default=False,
-    #                  help='Keyword argument: default=%default')
+    parser.add_option('--approx', action="store_true", dest="approx", default=False,
+                      help='Approximate label distribution: default=%default')
 
 
     (options, args) = parser.parse_args()
@@ -26,11 +24,12 @@ def main():
     reviews_file = args[0]
     project = args[1]
     prop = float(options.prop)
+    approx = options.approx
 
-    import_review_data(reviews_file, project, prop)
+    import_review_data(reviews_file, project, prop, approx)
 
 
-def import_review_data(reviews_file, project_dir, prop):
+def import_review_data(reviews_file, project_dir, prop, approx=False):
     print("Loading data")
     reviews = fh.read_json_lines(reviews_file)
 
@@ -59,7 +58,9 @@ def import_review_data(reviews_file, project_dir, prop):
         helpfulness = review['helpful']
         n_helpful_votes = helpfulness[0]
         n_votes = helpfulness[1]
-
+        helpfulness_prop = n_helpful_votes / n_votes
+        n_helpful = int(np.round(helpfulness_prop * 10))
+        n_not_helpful = 10 - n_helpful_votes
         if n_votes > 0:
             date_string = review['reviewTime']
             parts = date_string.split(',')
@@ -76,7 +77,10 @@ def import_review_data(reviews_file, project_dir, prop):
                 data[k]['text'] = review['reviewText']
                 data[k]['rating'] = review['overall']
                 data[k]['summary'] = review['summary']
-                data[k]['label'] = {0: n_votes - n_helpful_votes,  1: n_helpful_votes}
+                if approx:
+                    data[k]['label'] = {0: n_not_helpful,  1: n_helpful}
+                else:
+                    data[k]['label'] = {0: n_votes - n_helpful_votes,  1: n_helpful_votes}
                 year_counts.update([year])
                 data[k]['year'] = year
                 data[k]['month'] = month
