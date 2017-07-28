@@ -35,14 +35,15 @@ def main():
     field_vals.sort()
     n_field_vals = len(field_vals)
 
-    #methods = ['train', 'calib', 'CC', 'PCC', 'ACC', 'ACC_int', 'PVC', 'PVC_int', 'Venn']
-    methods = ['nontest', 'CC', 'PCC', 'ACC_int', 'PVC_int', 'Venn']
+    methods = ['train', 'calib', 'CC', 'PCC', 'ACC', 'ACC_int', 'PVC', 'PVC_int', 'Venn']
+    #methods = ['nontest', 'CC', 'PCC', 'ACC_int', 'PVC_int', 'Venn']
     columns = ['N'] + methods
     mean_rmse_df = pd.DataFrame([], columns=columns)
     min_rmse_df = pd.DataFrame([], columns=columns)
     max_rmse_df = pd.DataFrame([], columns=columns)
     best_counts_df = pd.DataFrame(np.zeros(len(methods)), index=methods, columns=['best'])
     worst_counts_df = pd.DataFrame(np.zeros(len(methods)), index=methods, columns=['worst'])
+    ranking_df = pd.DataFrame(np.zeros(len(methods)), index=methods, columns=['rank'])
 
     test_estimate_pairs = []
 
@@ -54,18 +55,23 @@ def main():
 
         errors_df = pd.DataFrame([], columns=columns)
 
+        n_output_files = len(output_files)
         for f_i, f in enumerate(output_files):
             df = pd.read_csv(f, index_col=0, header=0)
-            N = df.loc['nontest', 'N']
+            N = df.loc['Venn', 'N']
             errors = df['RMSE'].values
             errors_df.loc[f_i] = np.r_[N, errors[1:]]
-            test_estimate_pairs.append((df.loc['nontest', 'N'], df.loc['test', 'estimate']))
+            test_estimate_pairs.append((df.loc['Venn', 'N'], df.loc['test', 'estimate']))
             best_counts_df['best'] += errors[1:] <= np.min(errors[1:])
             worst_counts_df['worst'] += errors[1:] >= np.max(errors[1:])
+            order = np.argsort(errors)
+            ranking_df['rank'] += order / float(n_output_files)
 
         mean_rmse_df.loc[v] = errors_df.mean(axis=0)
         min_rmse_df.loc[v] = errors_df.min(axis=0)
         max_rmse_df.loc[v] = errors_df.max(axis=0)
+
+    ranking_df['rank'] = ranking_df['rank'] / float(n_field_vals)
 
     for m_i, m in enumerate(methods):
         print(m)
@@ -77,6 +83,7 @@ def main():
 
     print(best_counts_df)
     print(worst_counts_df)
+    print(ranking_df)
 
 if __name__ == '__main__':
     main()
