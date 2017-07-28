@@ -68,7 +68,7 @@ def convert_mfc(project, data_file, output_prefix, n_years):
         source = get_source(source)
         section = data[k]['section']
         csi = data[k]['csi']
-        n_annotations = 1
+        n_annotations = 0
         annotation_counts = {}
         for i in range(1, 16):
             annotation_counts[i] = defaultdict(int)
@@ -81,8 +81,9 @@ def convert_mfc(project, data_file, output_prefix, n_years):
                 frames[frame] = 1
                 n_annotations += 1
             # note the presence of legality annotations (0 or 1)
-            for i in range(1, 16):
-                annotation_counts[i][frames[i]] += 1
+            if np.sum(frames) > 0:
+                for i in range(1, 16):
+                    annotation_counts[i][frames[i]] += 1
 
         if n_annotations > 0 and year >= 1990:
             year_lower = int(year / n_years) * n_years
