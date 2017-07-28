@@ -58,9 +58,6 @@ def import_review_data(reviews_file, project_dir, prop, approx=False):
         helpfulness = review['helpful']
         n_helpful_votes = helpfulness[0]
         n_votes = helpfulness[1]
-        helpfulness_prop = n_helpful_votes / n_votes
-        n_helpful = int(np.round(helpfulness_prop * 10))
-        n_not_helpful = 10 - n_helpful_votes
         if n_votes > 0:
             date_string = review['reviewTime']
             parts = date_string.split(',')
@@ -78,6 +75,9 @@ def import_review_data(reviews_file, project_dir, prop, approx=False):
                 data[k]['rating'] = review['overall']
                 data[k]['summary'] = review['summary']
                 if approx:
+                    helpfulness_prop = n_helpful_votes / n_votes
+                    n_helpful = int(np.round(helpfulness_prop * 10))
+                    n_not_helpful = 10 - n_helpful_votes
                     data[k]['label'] = {0: n_not_helpful,  1: n_helpful}
                 else:
                     data[k]['label'] = {0: n_votes - n_helpful_votes,  1: n_helpful_votes}
