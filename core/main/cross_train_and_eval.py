@@ -258,7 +258,7 @@ def cross_train_and_eval(project_dir, subset, field_name, config_file, calib_pro
             output_df.loc['PVC_int'] = [n_calib, pvc_estimate, pvc_rmse, 0, 1, np.nan]
 
             print("Venn")
-            test_pred_ranges = ivap.estimate_probs_from_labels(project_dir, model, model_name, subset, subset, labels_df, calib_items, test_items, weights_df=weights_df)
+            test_pred_ranges = ivap.estimate_probs_from_labels(project_dir, model, model_name, subset, subset, labels_df, calib_items, test_items, weights_df=None)
             combo = test_pred_ranges[:, 1] / (1.0 - test_pred_ranges[:, 0] + test_pred_ranges[:, 1])
 
             pred_range = np.mean(test_pred_ranges, axis=0)
