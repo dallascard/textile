@@ -175,7 +175,8 @@ def cross_train_and_eval(project_dir, subset, field_name, config_file, calib_pro
             output_df.loc['calibration'] = [n_calib, calib_estimate, calib_rmse, calib_estimate - 2 * calib_std, calib_estimate + 2 * calib_std, calib_contains_test]
 
             print("Doing training")
-            model, dev_f1, dev_cal, acc_cfm, pvc_cfm = train.train_model(project_dir, model_type, model_name, subset, label, feature_defs, weights_file, items_to_use=train_items, penalty=penalty, intercept=intercept, n_dev_folds=n_dev_folds, verbose=verbose)
+            #model, dev_f1, dev_cal, acc_cfm, pvc_cfm = train.train_model(project_dir, model_type, model_name, subset, label, feature_defs, weights_file, items_to_use=train_items, penalty=penalty, intercept=intercept, n_dev_folds=n_dev_folds, verbose=verbose)
+            model, dev_f1, dev_cal, acc_cfm, pvc_cfm = train.train_model_with_labels(project_dir, model_type, model_name, subset, labels_df, feature_defs, weights_df=weights_df, items_to_use=train_items, penalty=penalty, intercept=intercept, n_dev_folds=n_dev_folds, verbose=verbose)
 
             print("Doing prediction on calibration items")
             calib_predictions, calib_pred_probs = predict.predict(project_dir, model, model_name, subset, label, items_to_use=calib_items, verbose=verbose)
@@ -184,9 +185,12 @@ def cross_train_and_eval(project_dir, subset, field_name, config_file, calib_pro
             test_predictions, test_pred_probs = predict.predict(project_dir, model, model_name, subset, label, items_to_use=test_items, verbose=verbose)
 
             print("Doing evaluation")
-            f1, acc = evaluate_predictions.evaluate_predictions(test_labels, test_predictions, pos_label=pos_label, average=average)
-            results_df = pd.DataFrame([f1, acc], index=['f1', 'acc'])
-            results_df.to_csv(os.path.join(dirs.dir_models(project_dir), model_name, 'results' + '_' + str(r) + '.csv'))
+            f1_cal, acc_cal = evaluate_predictions.evaluate_predictions(calib_labels, calib_predictions, pos_label=pos_label, average=average)
+            f1_test, acc_test = evaluate_predictions.evaluate_predictions(test_labels, test_predictions, pos_label=pos_label, average=average)
+            results_df = pd.DataFrame([], columns=['f1', 'acc'])
+            results_df.loc['calibration'] = [f1_cal, acc_cal]
+            results_df.loc['test'] = [f1_test, acc_test]
+            results_df.to_csv(os.path.join(dirs.dir_models(project_dir), model_name, 'results.csv'))
 
             # average the preditions (assuming binary labels)
             cc_estimate = np.mean(test_predictions[label].values)
@@ -227,7 +231,8 @@ def cross_train_and_eval(project_dir, subset, field_name, config_file, calib_pro
             pvc_rmse = np.sqrt((pvc_estimate - test_estimate) ** 2)
             output_df.loc['PVC_int'] = [n_calib, pvc_estimate, pvc_rmse, 0, 1, np.nan]
 
-            test_pred_ranges = ivap.estimate_probs_brute_force(project_dir, model, model_name, subset, subset, label, calib_items, test_items)
+            print("Venn")
+            test_pred_ranges = ivap.estimate_probs_from_labels(project_dir, model, model_name, subset, subset, labels_df, calib_items, test_items, weights_df=weights_df)
             combo = test_pred_ranges[:, 1] / (1.0 - test_pred_ranges[:, 0] + test_pred_ranges[:, 1])
 
             pred_range = np.mean(test_pred_ranges, axis=0)
