@@ -158,6 +158,7 @@ def cross_train_and_eval(project_dir, subset, field_name, config_file, calib_pro
             test_items = non_train_items[n_calib:]
             n_test = len(test_items)
 
+            print("%d %d %d" % (n_train, n_calib, n_test))
             calib_labels = labels_df.loc[calib_items]
             test_labels = labels_df.loc[test_items]
 
