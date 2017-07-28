@@ -65,8 +65,8 @@ def main():
             best_counts_df['best'] += errors[1:] <= np.min(errors[1:])
             worst_counts_df['worst'] += errors[1:] >= np.max(errors[1:])
             order = np.argsort(errors[1:])
-            ranking = np.argsort(order)
-            print(v, f, order, ranking)
+            ranking = np.array([order[i] for i in range(len(methods))])
+            print(v, errors, order, ranking)
             ranking_df['rank'] += ranking / float(n_output_files)
 
         mean_rmse_df.loc[v] = errors_df.mean(axis=0)
