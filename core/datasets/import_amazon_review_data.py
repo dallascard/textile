@@ -1,6 +1,8 @@
 import os
 from optparse import OptionParser
 
+from collections import Counter
+
 import numpy as np
 import pandas as pd
 
@@ -40,6 +42,8 @@ def import_review_data(reviews_file, project_dir, prop):
     keys = list(reviews.keys())
     reviewers = set()
     asins = set()
+    year_counts = Counter()
+
 
     if prop < 1.0:
         subset_size = int(prop * n_items)
@@ -72,6 +76,7 @@ def import_review_data(reviews_file, project_dir, prop):
             data[k]['rating'] = review['overall']
             data[k]['summary'] = review['summary']
             data[k]['label'] = {0: n_votes - n_helpful_votes,  1: n_helpful_votes}
+            year_counts.update([year])
             data[k]['year'] = year
             data[k]['month'] = month
             data[k]['day'] = day
@@ -84,6 +89,7 @@ def import_review_data(reviews_file, project_dir, prop):
     print("Latest date:", dates.date.max())
     print("%d reviewers" % len(reviewers))
     print("%d products" % len(asins))
+    print(year_counts)
 
     print("Saving data")
     data_dir = dirs.dir_data_raw(project_dir)
