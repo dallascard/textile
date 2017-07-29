@@ -211,7 +211,7 @@ def train_model_with_labels(project_dir, model_type, model_name, subset, labels_
             best_alpha_index = mean_dev_f1s.argmax()
             print("Using best f1: %d" % best_alpha_index)
         elif objective == 'calibration':
-            best_alpha_index = mean_dev_cal.argmax()
+            best_alpha_index = mean_dev_cal.argmin()
             print("Using best calibration: %d" % best_alpha_index)
         else:
             sys.exit("Objective not recognized")
