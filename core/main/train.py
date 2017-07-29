@@ -162,7 +162,7 @@ def train_model_with_labels(project_dir, model_type, model_name, subset, labels_
     acc_cfms = []
     pvc_cfms = []
 
-    print("%s\t%s\t%s\t%s\t%s\t%s\t%s" % ('iter', 'alpha', 'size', 'f1_trn', 'f1_dev', 'acc_dev', 'f1_cal'))
+    print("%s\t%s\t%s\t%s\t%s\t%s\t%s" % ('iter', 'alpha', 'size', 'f1_trn', 'f1_dev', 'acc_dev', 'dev_cal'))
 
     if model_type == 'LR':
         for alpha_i, alpha in enumerate(alphas):
@@ -209,8 +209,10 @@ def train_model_with_labels(project_dir, model_type, model_name, subset, labels_
 
         if objective == 'f1':
             best_alpha_index = mean_dev_f1s.argmax()
-        elif objective.startswith('cal'):
+            print("Using best f1: %d" % best_alpha_index)
+        elif objective == 'calibration':
             best_alpha_index = mean_dev_cal.argmax()
+            print("Using best calibration: %d" % best_alpha_index)
         else:
             sys.exit("Objective not recognized")
         best_f1_alpha = alphas[best_alpha_index]
