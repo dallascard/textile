@@ -2,7 +2,7 @@ import os
 import re
 import sys
 import gensim
-from collections import Counter
+from collections import Counter, defaultdict
 from optparse import OptionParser
 
 import numpy as np
@@ -51,12 +51,12 @@ def main():
         parser = English()
 
     items = []
-    unigrams = {}
-    bigrams = {}
+    unigrams = defaultdict(Counter)
+    bigrams = defaultdict(Counter)
 
     print("Parsing text")
 
-    for k_i, key in enumerate(keys):
+    for k_i, key in enumerate(keys[:2]):
         if k_i % display == 0 and k_i > 0:
             print(k_i)
 
@@ -79,68 +79,57 @@ def main():
             # parse the text with spaCy
             parse = parser(text)
 
-            if lemmatize:
-                percept = get_lemma
-            else:
-                percept = get_word
+            for token in parse:
+                word = token.orth_
+                shape = token.shape_
+                lemma = token.lemma_
+                pos = token.pos_
+                tag = token.tag_
+                #dep = token.dep_
+                #head_token = token.head
+                #children_tokens = token.children
+                #ent_type = token.ent_type_
+                #prefix = token.prefix_
+                #suffix = token.suffix_
 
-            unigrams[name] = extract_unigram_feature(parse, percept)
-            if ngrams > 1:
-                bigrams[name] = extract_bigram_feature(parse, percept)
+                unigrams[pos].update([word])
 
-        else:
-            # for fast processing:
-            # remove punctuation
-            clean_text = re.sub('[.,!?:;"`\']', '', text)
-            parse = clean_text.split()
-            percept = get_token
+            for sent in parse.sents:
+                if len(sent) > 1:
+                    word_pos_pairs = [get_word_pos_pair(sent[i]) for i in range(len(sent))]
+                    words, tags = zip(*word_pos_pairs)
+                    for i in range(len(sent)-1):
+                        key = tags[i] + '_' + tags[i+1]
+                        bigrams[key].update([words[i] + '_' + words[i+1]])
 
-            unigrams[name] = extract_unigram_feature(parse, percept)
-            if ngrams > 1:
-                counter = Counter()
-                counter.update([percept(parse[i]) + '_' + percept(parse[i+1]) for i in range(len(parse)-1)])
-                bigrams[name] = dict(counter)
+    keys = bigrams.keys()
+    order = list(np.argsort([len(bigrams[k]) for k in keys]).tolist())
+    order.reverse()
 
-    print("Creating word features")
-    word_feature = features.create_from_dict_of_counts('unigrams', unigrams)
-    word_feature.save_feature(dirs.dir_features(project_dir, subset))
-
-    if ngrams > 1:
-        bigram_feature = features.create_from_dict_of_counts('bigrams', bigrams)
-        bigram_feature.save_feature(dirs.dir_features(project_dir, subset))
-
-
-def get_word(token):
-    """Get word from spaCy"""
-    #  get word and remove whitespace
-    word = re.sub('\s', '', token.orth_)
-    return word
+    k0 = keys[order[0]]
+    first = defaultdict(int)
+    second = defaultdict(int)
+    for bigram in bigrams[k0]:
+        parts = bigram.split('_')
+        first.update([parts[0]])
+        second.update([parts[1]])
 
 
-def get_lemma(token):
-    """Get token from spaCy"""
+    #print("Creating word features")
+    #word_feature = features.create_from_dict_of_counts('unigrams', unigrams)
+    #word_feature.save_feature(dirs.dir_features(project_dir, subset))
+
+    #if ngrams > 1:
+    #    bigram_feature = features.create_from_dict_of_counts('bigrams', bigrams)
+    #    bigram_feature.save_feature(dirs.dir_features(project_dir, subset))
+
+
+
+def get_word_pos_pair(token):
     # get lemma and remove whitespace
-    lemma = re.sub('\s', '', token.lemma_)
-    return lemma
+    word = re.sub('\s', '', token.orth_)
+    return word, token.pos_
 
-
-def get_token(token):
-    """Identity function for compatibility"""
-    return token
-
-
-def extract_unigram_feature(parse, feature_function):
-    counter = Counter()
-    counter.update([feature_function(token) for token in parse])
-    return dict(counter)
-
-
-def extract_bigram_feature(parse, percept):
-    counter = Counter()
-    for sent in parse.sents:
-        if len(sent) > 1:
-            counter.update([percept(sent[i]) + '_' + percept(sent[i+1]) for i in range(len(sent)-1)])
-    return dict(counter)
 
 
 if __name__ == '__main__':

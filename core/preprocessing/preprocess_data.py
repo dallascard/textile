@@ -188,7 +188,6 @@ def main():
 
     else:
         unigram_vocab = list(unigram_vocab)
-        unigram
         unigram_counts = sparse.csr_matrix([n_items, len(unigram_vocab)])
 
         for k_i, key in enumerate(keys):

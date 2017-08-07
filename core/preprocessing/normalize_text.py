@@ -29,4 +29,20 @@ def replace_underscores(text, replacement='-'):
     return re.sub('_', replacement, text)
 
 
+def split_off_punctuation(text):
+    """ Put spaces between punctuation and characters
+    
+    >>> split_off_punctuation("I'm a sentence.")
+    "I ' m a sentence ."
+    >>> split_off_punctuation('This is a "sentence".')
+    'This is a " sentence " .'
+    >>> split_off_punctuation("It's 12 minutes 'til 4:00!")
+    "It ' s 12 minutes ' til 4 : 00 !"
+    """
+    # replace internal single quotes with a special character
+    text = re.sub(r"\w+'\w+", )
+    text = re.findall(r"\w+|[^\w\s]", text)
+    return ' '.join(text)
+
+
 doctest.testmod()
