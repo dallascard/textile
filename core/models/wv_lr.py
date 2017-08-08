@@ -19,7 +19,6 @@ def main():
     parser.add_option('--load', action="store_true", dest="load", default=False,
                       help='Load embeddings from last run: default=%default')
 
-
     (options, args) = parser.parse_args()
 
     project_dir = args[0]
@@ -65,11 +64,9 @@ def train(project_dir, subset, word2vec_file, label='label', load=False):
 
     if load:
         W = np.load('W.npz')['W']
-        #W = None
     else:
         vectors = gensim.models.KeyedVectors.load_word2vec_format(word2vec_file, binary=True)
         W = np.zeros([dv, dh])
-        vocab_index = dict(zip(vocab, range(dv)))
         for w_i, word in enumerate(vocab):
             if word in vectors:
                 W[w_i, :] = vectors[word]
@@ -85,38 +82,36 @@ def train(project_dir, subset, word2vec_file, label='label', load=False):
     x = tf.placeholder(tf.float32, shape=[None, dh])
     y = tf.placeholder(tf.int32, shape=[None, 2])
     sample_weights = tf.placeholder(tf.float32)
-    #p_w = tf.placeholder((1, dv))
 
     w = weight_variable((dh, 2))
     #w2 = weight_variable((dh, 2))
     b = bias_variable((2, ))
     #b2 = bias_variable((2, ))
 
-    #v = tf.multiply(a, 1.0/tf.add(a, word_freqs))
-    #h = tf.reduce_sum(x, 1)
     s = tf.matmul(x, w) + b
 
     cross_entropy = tf.reduce_mean(tf.nn.softmax_cross_entropy_with_logits(labels=y, logits=s))
 
     train_step = tf.train.GradientDescentOptimizer(0.5).minimize(cross_entropy * sample_weights)
-    pred = tf.argmax(s)
 
     init = tf.global_variables_initializer()
 
     with tf.Session() as sess:
         sess.run(init)
-        for i in range(100):
+        running_loss = 0.0
+        running_accuracy = 0.0
+        for i in range(n_items):
             counts_i = X[i, :]
             x_i = np.dot(counts_i.reshape((1, dv)), W)
             #print(x_i.shape)
             y_i = np.array(Y[i], dtype=np.int32).reshape((1, 2))
             w_i = weights[i]
-            sess.run(train_step, feed_dict={x: x_i, y: y_i, sample_weights: w_i})
-            score = sess.run(s, feed_dict={x: x_i, y: y_i, sample_weights: w_i})
-            bias = sess.run(b, feed_dict={x: x_i, y: y_i, sample_weights: w_i})
-            ws = sess.run(w, feed_dict={x: x_i, y: y_i, sample_weights: w_i})
-            #h = sess.run(h, feed_dict={x: x_i, y: y_i})
-            print(y_i[0], w_i, score[0], bias, np.min(ws), np.max(ws))
+            _, loss, scores = sess.run([train_step, cross_entropy, s], feed_dict={x: x_i, y: y_i, sample_weights: w_i})
+            running_accuracy += np.argmax(y_i, axis=1) == np.argmax(scores, axis=1)
+            running_loss += loss
+            if i % 5 == 0 and i > 0:
+                print(running_loss / float(i+1), running_accuracy / float(i+1))
+
 
         test_X = W
         test_Y = np.zeros((dv, 2))

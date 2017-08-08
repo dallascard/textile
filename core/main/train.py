@@ -18,7 +18,7 @@ def main():
     usage = "%prog project_dir subset model_name config.json"
     parser = OptionParser(usage=usage)
     parser.add_option('--model', dest='model', default='LR',
-                      help='Model type [LR|BLR]: default=%default')
+                      help='Model type [LR|BLR|MLP]: default=%default')
     parser.add_option('--label', dest='label', default='label',
                       help='Label name: default=%default')
     parser.add_option('--weights', dest='weights_file', default=None,
@@ -117,11 +117,17 @@ def train_model_with_labels(project_dir, model_type, model_name, subset, labels_
             feature = features.create_from_feature(feature, indices_to_use)
             printv("New shape = (%d, %d)" % feature.get_shape(), verbose)
         feature.threshold(feature_def.min_df)
-        feature.transform(feature_def.transform)
+        if feature_def.transform == 'doc2vec':
+            word_vectors_prefix = os.path.join(features_dir, name + '_vecs')
+        else:
+            word_vectors_prefix = None
+        feature.transform(feature_def.transform, word_vectors_prefix=word_vectors_prefix, alpha=feature_def.alpha)
         printv("Final shape = (%d, %d)" % feature.get_shape(), verbose)
         feature_list.append(feature)
         if save_model:
-            feature_signatures.append(features.get_feature_signature(feature_def, feature))
+            feature_signature = features.get_feature_signature(feature_def, feature)
+            feature_signature['word_vectors_prefix'] = word_vectors_prefix
+            feature_signatures.append(feature_signature)
 
     if save_model:
         output_dir = os.path.join(dirs.dir_models(project_dir), model_name)
@@ -131,7 +137,10 @@ def train_model_with_labels(project_dir, model_type, model_name, subset, labels_
     features_concat = features.concatenate(feature_list)
     col_names = features_concat.terms
 
-    X = features_concat.get_counts().tocsr()
+    if features_concat.sparse:
+        X = features_concat.get_counts().tocsr()
+    else:
+        X = features_concat.get_counts()
     y = labels_df.as_matrix()
     #weights = pd.DataFrame(1.0/labels_df.sum(axis=1), index=labels_df.index, columns=['inv_n_labels'])
     # divide weights by the number of annotations that we have for each item

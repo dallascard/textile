@@ -73,12 +73,18 @@ def predict(project_dir, model, model_name, test_subset, label_name, items_to_us
         idf = None
         if feature_def.transform == 'tfidf':
             idf = sig['idf']
-        test_feature.transform(feature_def.transform, idf=idf)
+        if feature_def.transform == 'doc2vec':
+            p_w = sig['p_w']
+        word_vectors_prefix = sig['word_vectors_prefix']
+        test_feature.transform(feature_def.transform, idf=idf, word_vectors_prefix=word_vectors_prefix, alpha=feature_def.alpha)
         printv("Final shape = (%d, %d)" % test_feature.get_shape(), verbose)
         feature_list.append(test_feature)
 
     features_concat = features.concatenate(feature_list)
-    X = features_concat.get_counts().tocsr()
+    if features_concat.sparse:
+        X = features_concat.get_counts().tocsr()
+    else:
+        X = features_concat.get_counts()
     print("Feature matrix shape: (%d, %d)" % X.shape)
 
     if model_type == 'BLR':

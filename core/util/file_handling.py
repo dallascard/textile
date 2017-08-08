@@ -106,3 +106,12 @@ def load_sparse(input_filename):
     npy = np.load(input_filename)
     coo_matrix = sparse.coo_matrix((npy['data'], (npy['row'], npy['col'])), shape=npy['shape'])
     return coo_matrix.tocsc()
+
+
+def save_dense(array, output_filename):
+    np.savez(output_filename, array=array)
+
+
+def load_dense(input_filename):
+    npy = np.load(input_filename)
+    return npy['array']

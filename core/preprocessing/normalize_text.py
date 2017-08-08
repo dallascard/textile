@@ -39,8 +39,6 @@ def split_off_punctuation(text):
     >>> split_off_punctuation("It's 12 minutes 'til 4:00!")
     "It ' s 12 minutes ' til 4 : 00 !"
     """
-    # replace internal single quotes with a special character
-    text = re.sub(r"\w+'\w+", )
     text = re.findall(r"\w+|[^\w\s]", text)
     return ' '.join(text)
 

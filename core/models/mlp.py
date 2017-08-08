@@ -7,16 +7,17 @@ from sklearn.linear_model import LogisticRegression as lr
 
 from ..util import file_handling as fh
 
-class LR:
+class MLP:
     """
-    Wrapper class for logistic regression from sklearn
+    Multilayer perceptron (representing documents as weighted sums of word vectors)
     """
-    def __init__(self, alpha, penalty='l2', fit_intercept=True, n_classes=2):
-        self._model_type = 'LR'
+    def __init__(self, alpha=1e-3, penalty=None, fit_intercept=True, n_classes=2, n_layers=1):
+        self._model_type = 'MLP'
         self._alpha = alpha
         self._penalty = penalty
         self._fit_intercept = fit_intercept
         self._n_classes = n_classes
+        self.n_layers = n_layers
 
         # create a variable to store the label proportions in the training data
         self._train_proportions = None
@@ -28,6 +29,7 @@ class LR:
     def get_model_type(self):
         return self._model_type
 
+    # TODO: revise
     def set_model(self, model, train_proportions, col_names):
         self._col_names = col_names
         self._train_proportions = train_proportions
@@ -36,23 +38,21 @@ class LR:
         else:
             self._model = model
 
-    # TODO: change this over to taking an array of one-hot label encodings, rather than a list
-    def fit(self, X, y, col_names, sample_weights=None):
+    # TODO: convert to MLP
+    def fit(self, X, Y, col_names, sample_weights=None):
         """
         Fit a classifier to data
         :param X: feature matrix: np.array(size=(n_items, n_features))
-        :param y: item labels: list or np.array(size=(n_items,)); unique values must be [0, 1, ..]
+        :param Y: one-hot label encoding np.array(size=(n_items, n_classes))
         :return: None
         """
         # store the proportion of class labels in the training data
-        bincount = np.bincount(np.array(y, dtype=int), minlength=self._n_classes)
-        self._train_proportions = (bincount / float(bincount.sum())).tolist()
+        class_sums = np.array(np.sum(Y, axis=0), dtype=float)
+        self._train_proportions = (class_sums / np.sum(class_sums)).tolist()
         self._col_names = col_names
 
         # if there is only a single type of label, make a default prediction
-        # TODO: deal with the case when I get labels like [1,2,3]
-        unique_y_vals = list(set(y.tolist()))
-        if len(unique_y_vals) == 1:
+        if np.max(self._train_proportions) == 1.0:
             self._model = None
         else:
             self._model = lr(penalty=self._penalty, C=self._alpha, fit_intercept=self._fit_intercept)

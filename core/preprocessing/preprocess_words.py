@@ -1,14 +1,8 @@
 import os
 import re
-import sys
-import gensim
 from collections import Counter
 from optparse import OptionParser
 
-import numpy as np
-import pandas as pd
-from scipy import sparse
-from sklearn import preprocessing
 from spacy.en import English
 
 from ..util import file_handling as fh
@@ -19,6 +13,8 @@ from ..util import dirs
 def main():
     usage = "%prog project_dir subset"
     parser = OptionParser(usage=usage)
+    parser.add_option('--suffix', dest='suffix', default="",
+                      help='Suffix for file name (after unigrams/bigrams): default=%default')
     parser.add_option('--lower', action="store_true", dest="lower", default=False,
                       help='Lower case the text: default=%default')
     parser.add_option('--lemmatize', action="store_true", dest="lemmatize", default=False,
@@ -27,21 +23,34 @@ def main():
                       help='Max degree of word n-grams [1 or 2]: default=%default')
     parser.add_option('--fast', action="store_true", dest="fast", default=False,
                       help='Only do things that are fast (i.e. only splitting, no parsing, no lemmas): default=%default')
-    parser.add_option('-d', dest='display', default=100,
+    parser.add_option('-d', dest='display', default=1000,
                       help='Display progress every X items: default=%default')
 
     (options, args) = parser.parse_args()
 
     project_dir = args[0]
     subset = args[1]
-    datafile = os.path.join(dirs.dir_data_raw(project_dir), subset + '.json')
+
+    suffix = options.suffix
     lower = options.lower
     lemmatize = options.lemmatize
     fast = options.fast
     ngrams = int(options.ngrams)
     display = int(options.display)
 
+    dicts = preprocess_words(project_dir, subset, ngrams=ngrams, lower=lower, lemmatize=lemmatize, fast=fast, display=display)
+
+    print("Creating features")
+    for k, v in dicts.items():
+        feature = features.create_from_dict_of_counts(k + suffix, v)
+        feature.save_feature(dirs.dir_features(project_dir, subset))
+
+
+def preprocess_words(project_dir, subset, ngrams=2, lower=False, lemmatize=False, fast=False, display=1000):
+
     print("Reading data")
+    datafile = os.path.join(dirs.dir_data_raw(project_dir), subset + '.json')
+
     data = fh.read_json(datafile)
     keys = list(data.keys())
     keys.sort()
@@ -101,13 +110,19 @@ def main():
                 counter.update([percept(parse[i]) + '_' + percept(parse[i+1]) for i in range(len(parse)-1)])
                 bigrams[name] = dict(counter)
 
-    print("Creating word features")
-    word_feature = features.create_from_dict_of_counts('unigrams', unigrams)
-    word_feature.save_feature(dirs.dir_features(project_dir, subset))
+    #print("Creating word features")
+    #word_feature = features.create_from_dict_of_counts('unigrams', unigrams)
+    #word_feature.save_feature(dirs.dir_features(project_dir, subset))
 
+    feature_dicts = {'unigrams': unigrams}
     if ngrams > 1:
-        bigram_feature = features.create_from_dict_of_counts('bigrams', bigrams)
-        bigram_feature.save_feature(dirs.dir_features(project_dir, subset))
+        feature_dicts['bigrams'] = bigrams
+
+    #if ngrams > 1:
+    #    bigram_feature = features.create_from_dict_of_counts('bigrams', bigrams)
+    #    bigram_feature.save_feature(dirs.dir_features(project_dir, subset))
+
+    return feature_dicts
 
 
 def get_word(token):

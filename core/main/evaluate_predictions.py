@@ -48,7 +48,7 @@ def load_and_evaluate_predictons(project_dir, model_name, subset, label, items_t
         labels = labels.loc[items_to_use]
         predictions = predictions.loc[items_to_use]
 
-    evaluate_predictions(labels, predictions, n_classes=n_classes, pos_label=pos_label, average=average)
+    evaluate_predictions(labels, predictions, pos_label=pos_label, average=average)
 
 
 def evaluate_predictions(labels_df, predictions_df, pos_label=1, average='micro', weights_df=None):
@@ -93,7 +93,6 @@ def evaluate_predictions(labels_df, predictions_df, pos_label=1, average='micro'
     print("RMSE on proportions = %0.3f" % rmse)
 
     return f1, acc
-
 
 
 if __name__ == '__main__':
