@@ -126,6 +126,7 @@ class Feature:
                     doc_vectors[i, :] = np.dot(self.counts[i, :].todense(), word_vectors)
                 self.counts = doc_vectors  # this will no longer be sparse
                 self.sparse = False
+                self.terms = [str(i) for i in range(dh)]
             else:
                 sys.exit('Tranform %s not recognized' % transform)
 

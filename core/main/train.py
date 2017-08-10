@@ -8,7 +8,7 @@ from scipy import sparse
 from sklearn.model_selection import KFold
 
 from ..util import file_handling as fh
-from ..models import lr, blr, evaluation, calibration
+from ..models import lr, mlp, evaluation, calibration
 from ..preprocessing import features
 from ..util import dirs
 from ..util.misc import printv
@@ -126,6 +126,7 @@ def train_model_with_labels(project_dir, model_type, model_name, subset, labels_
         feature_list.append(feature)
         if save_model:
             feature_signature = features.get_feature_signature(feature_def, feature)
+            # save the location of the word vectors from training... (need a better solution for this eventually)
             feature_signature['word_vectors_prefix'] = word_vectors_prefix
             feature_signatures.append(feature_signature)
 
@@ -142,8 +143,11 @@ def train_model_with_labels(project_dir, model_type, model_name, subset, labels_
     else:
         X = features_concat.get_counts()
     y = labels_df.as_matrix()
+    print(y.shape)
+
     #weights = pd.DataFrame(1.0/labels_df.sum(axis=1), index=labels_df.index, columns=['inv_n_labels'])
     # divide weights by the number of annotations that we have for each item
+
     weights = weights * 1.0/y.sum(axis=1)
 
     print("Train feature matrix shape: (%d, %d)" % X.shape)
@@ -173,71 +177,79 @@ def train_model_with_labels(project_dir, model_type, model_name, subset, labels_
 
     print("%s\t%s\t%s\t%s\t%s\t%s\t%s" % ('iter', 'alpha', 'size', 'f1_trn', 'f1_dev', 'acc_dev', 'dev_cal'))
 
-    if model_type == 'LR':
-        for alpha_i, alpha in enumerate(alphas):
+    # TODO: don't do cross validation for MLP?
+    for alpha_i, alpha in enumerate(alphas):
+        if model_type == 'LR':
             model = lr.LR(alpha, penalty=penalty, fit_intercept=intercept, n_classes=n_classes)
-            alpha_acc_cfms = []
-            alpha_pvc_cfms = []
+        elif model_type == 'MLP':
+            model = mlp.MLP(alpha=alpha, penalty=penalty, fit_intercept=intercept, n_classes=n_classes, n_layers=0)
+        alpha_acc_cfms = []
+        alpha_pvc_cfms = []
 
-            for train_indices, dev_indices in kfold.split(X):
-                X_train = X[train_indices, :]
-                y_train = y[train_indices, :]
-                X_dev = X[dev_indices, :]
-                y_dev = y[dev_indices, :]
-                w_train = weights[train_indices]
-                w_dev = weights[dev_indices]
-                X_train, y_train, w_train = expand_features_and_labels(X_train, y_train, w_train)
-                X_dev, y_dev, w_dev = expand_features_and_labels(X_dev, y_dev, w_dev)
+        for train_indices, dev_indices in kfold.split(X):
+            X_train = X[train_indices, :]
+            y_train = y[train_indices, :]
+            X_dev = X[dev_indices, :]
+            y_dev = y[dev_indices, :]
+            w_train = weights[train_indices]
+            w_dev = weights[dev_indices]
+            X_train, y_train, w_train = expand_features_and_labels(X_train, y_train, w_train)
+            X_dev, y_dev, w_dev = expand_features_and_labels(X_dev, y_dev, w_dev)
 
-                model.fit(X_train, y_train, col_names, sample_weights=w_train)
+            model.fit(X_train, y_train, X_dev=X_dev, Y_dev=y_dev, train_weights=w_train, dev_weights=w_dev, col_names=col_names)
 
-                train_predictions = model.predict(X_train)
-                dev_predictions = model.predict(X_dev)
+            train_predictions = model.predict(X_train)
+            dev_predictions = model.predict(X_dev)
 
-                # internally compute the correction matrices
-                alpha_acc_cfms.append(calibration.compute_acc(y_dev, dev_predictions, n_classes, weights=w_dev))
-                alpha_pvc_cfms.append(calibration.compute_pvc(y_dev, dev_predictions, n_classes, weights=w_dev))
+            y_train_vector = np.argmax(y_train, axis=1)
+            y_dev_vector = np.argmax(y_dev, axis=1)
 
-                train_f1 = evaluation.f1_score(y_train, train_predictions, n_classes, weights=w_train)
-                dev_f1 = evaluation.f1_score(y_dev, dev_predictions, n_classes, weights=w_dev)
-                dev_acc = evaluation.acc_score(y_dev, dev_predictions, n_classes, weights=w_dev)
-                dev_cal_rmse = evaluation.evaluate_proportions_mse(y_dev, dev_predictions, n_classes, weights=w_dev)
-                #evaluation.evaluate_calibration_mse_bins(y[dev_indices], dev_predictions, 1)
+            # internally compute the correction matrices
+            alpha_acc_cfms.append(calibration.compute_acc(y_dev_vector, dev_predictions, n_classes, weights=w_dev))
+            alpha_pvc_cfms.append(calibration.compute_pvc(y_dev_vector, dev_predictions, n_classes, weights=w_dev))
 
-                mean_train_f1s[alpha_i] += train_f1 / float(n_dev_folds)
-                mean_dev_f1s[alpha_i] += dev_f1 / float(n_dev_folds)
-                mean_dev_acc[alpha_i] += dev_acc / float(n_dev_folds)
-                mean_dev_cal[alpha_i] += dev_cal_rmse / float(n_dev_folds)
+            train_f1 = evaluation.f1_score(y_train_vector, train_predictions, n_classes, weights=w_train)
+            dev_f1 = evaluation.f1_score(y_dev_vector, dev_predictions, n_classes, weights=w_dev)
+            train_acc = evaluation.acc_score(y_train_vector, train_predictions, n_classes, weights=w_train)
+            dev_acc = evaluation.acc_score(y_dev_vector, dev_predictions, n_classes, weights=w_dev)
+            dev_cal_rmse = evaluation.evaluate_proportions_mse(y_dev_vector, dev_predictions, n_classes, weights=w_dev)
+            #evaluation.evaluate_calibration_mse_bins(y[dev_indices], dev_predictions, 1)
 
-                mean_model_size[alpha_i] += model.get_model_size() / float(n_dev_folds)
+            mean_train_f1s[alpha_i] += train_f1 / float(n_dev_folds)
+            mean_dev_f1s[alpha_i] += dev_f1 / float(n_dev_folds)
+            mean_dev_acc[alpha_i] += dev_acc / float(n_dev_folds)
+            mean_dev_cal[alpha_i] += dev_cal_rmse / float(n_dev_folds)
 
-            print("%d\t%0.2f\t%.1f\t%0.3f\t%0.3f\t%0.3f\t%0.3f" % (alpha_i, alpha, mean_model_size[alpha_i], mean_train_f1s[alpha_i], mean_dev_f1s[alpha_i], mean_dev_acc[alpha_i], mean_dev_cal[alpha_i]))
+            mean_model_size[alpha_i] += model.get_model_size() / float(n_dev_folds)
 
-            acc_cfms.append(np.mean(alpha_acc_cfms, axis=0))
-            pvc_cfms.append(np.mean(alpha_pvc_cfms, axis=0))
+        print("%d\t%0.2f\t%.1f\t%0.3f\t%0.3f\t%0.3f\t%0.3f" % (alpha_i, alpha, mean_model_size[alpha_i], mean_train_f1s[alpha_i], mean_dev_f1s[alpha_i], mean_dev_acc[alpha_i], mean_dev_cal[alpha_i]))
 
-        if objective == 'f1':
-            best_alpha_index = mean_dev_f1s.argmax()
-            print("Using best f1: %d" % best_alpha_index)
-        elif objective == 'calibration':
-            best_alpha_index = mean_dev_cal.argmin()
-            print("Using best calibration: %d" % best_alpha_index)
-        else:
-            sys.exit("Objective not recognized")
-        best_f1_alpha = alphas[best_alpha_index]
-        best_dev_f1 = mean_dev_f1s[best_alpha_index]
-        best_dev_cal = mean_dev_cal[best_alpha_index]
-        print("Best: alpha = %.3f, dev f1 = %.3f, dev cal = %.3f" % (best_f1_alpha, best_dev_f1, best_dev_cal))
+        acc_cfms.append(np.mean(alpha_acc_cfms, axis=0))
+        pvc_cfms.append(np.mean(alpha_pvc_cfms, axis=0))
 
-        best_acc_cfm = acc_cfms[best_alpha_index]
-        best_pvc_cfm = pvc_cfms[best_alpha_index]
+    if objective == 'f1':
+        best_alpha_index = mean_dev_f1s.argmax()
+        print("Using best f1: %d" % best_alpha_index)
+    elif objective == 'calibration':
+        best_alpha_index = mean_dev_cal.argmin()
+        print("Using best calibration: %d" % best_alpha_index)
+    else:
+        sys.exit("Objective not recognized")
+    best_f1_alpha = alphas[best_alpha_index]
+    best_dev_f1 = mean_dev_f1s[best_alpha_index]
+    best_dev_cal = mean_dev_cal[best_alpha_index]
+    print("Best: alpha = %.3f, dev f1 = %.3f, dev cal = %.3f" % (best_f1_alpha, best_dev_f1, best_dev_cal))
 
-        printv("Training full model", verbose)
-        model = lr.LR(best_f1_alpha, penalty=penalty, fit_intercept=intercept, n_classes=n_classes)
+    best_acc_cfm = acc_cfms[best_alpha_index]
+    best_pvc_cfm = pvc_cfms[best_alpha_index]
 
-        X, y, w = expand_features_and_labels(X, y, weights)
-        model.fit(X, y, col_names, sample_weights=w)
+    printv("Training full model", verbose)
+    model = lr.LR(best_f1_alpha, penalty=penalty, fit_intercept=intercept, n_classes=n_classes)
 
+    X, y, w = expand_features_and_labels(X, y, weights)
+    model.fit(X, y, col_names, train_weights=w)
+
+    """
     elif model_type == 'BLR':
         printv("Fitting single model with ARD", verbose)
         model = blr.BLR(alpha=None, fit_intercept=intercept, n_classes=n_classes)
@@ -248,6 +260,7 @@ def train_model_with_labels(project_dir, model_type, model_name, subset, labels_
         best_pvc_cfm = None
     else:
         sys.exit("Model type not recognized")
+    """
 
     output_dir = os.path.join(dirs.dir_models(project_dir), model_name)
     if not os.path.exists(output_dir):
@@ -257,6 +270,36 @@ def train_model_with_labels(project_dir, model_type, model_name, subset, labels_
     return model, best_dev_f1, best_dev_cal, best_acc_cfm, best_pvc_cfm
 
 
+def expand_features_and_labels(X, Y, weights):
+    """
+    Expand the feature matrix and label matrix by converting items with multiple labels to multiple rows with 1 each
+    :param X: feature matrix (n_items, n_features)
+    :param Y: label matrix (n_items, n_classes)
+    :param weights: (n_items, )
+    :return: 
+    """
+    X_list = []
+    Y_list = []
+    weights_list = []
+    n_items, n_classes = Y.shape
+    for i in range(n_items):
+        labels = Y[i, :]
+        total = labels.sum()
+        for index, count in enumerate(labels):
+            if count > 0:
+                for c in range(count):
+                    X_list.append(np.array(X[i, :]))
+                    label_vector = np.zeros(n_classes, dtype=int)
+                    label_vector[index] = 1
+                    Y_list.append(label_vector)
+                    weights_list.append(weights[i] * 1.0/total)
+
+    X_return = np.vstack(X_list)
+    y_return = np.array(Y_list)
+    weights_return = np.array(weights_list)
+    return X_return, y_return, weights_return
+
+"""
 def expand_features_and_labels(X, y, weights):
     X_list = []
     y_list = []
@@ -274,7 +317,7 @@ def expand_features_and_labels(X, y, weights):
     y_return = np.hstack(y_list)
     weights_return = np.hstack(weights_list)
     return X_return, y_return, weights_return
-
+"""
 
 if __name__ == '__main__':
     main()

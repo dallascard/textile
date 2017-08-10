@@ -37,17 +37,24 @@ class LR:
             self._model = model
 
     # TODO: change this over to taking an array of one-hot label encodings, rather than a list
-    def fit(self, X, y, col_names, sample_weights=None):
+    # TODO: add in dev data here as an option (for eval?)
+    def fit(self, X, y, X_dev=None, y_dev=None, train_weights=None, dev_weights=None, col_names=None):
         """
         Fit a classifier to data
         :param X: feature matrix: np.array(size=(n_items, n_features))
         :param y: item labels: list or np.array(size=(n_items,)); unique values must be [0, 1, ..]
         :return: None
         """
+        n_train_items, n_features = X.shape
+
         # store the proportion of class labels in the training data
         bincount = np.bincount(np.array(y, dtype=int), minlength=self._n_classes)
         self._train_proportions = (bincount / float(bincount.sum())).tolist()
-        self._col_names = col_names
+
+        if col_names is not None:
+            self._col_names = col_names
+        else:
+            self._col_names = range(n_features)
 
         # if there is only a single type of label, make a default prediction
         # TODO: deal with the case when I get labels like [1,2,3]
@@ -57,7 +64,7 @@ class LR:
         else:
             self._model = lr(penalty=self._penalty, C=self._alpha, fit_intercept=self._fit_intercept)
             # otherwise, train the model
-            self._model.fit(X, y, sample_weight=sample_weights)
+            self._model.fit(X, y, sample_weight=train_weights)
 
     def predict(self, X):
         # if we've stored a default value, then that is our prediction
