@@ -1,5 +1,6 @@
 import os
 import operator
+import tempfile
 
 import numpy as np
 from sklearn.externals import joblib
@@ -11,12 +12,17 @@ class LR:
     """
     Wrapper class for logistic regression from sklearn
     """
-    def __init__(self, alpha, penalty='l2', fit_intercept=True, n_classes=2):
+    def __init__(self, alpha, penalty='l2', fit_intercept=True, output_dir=None, name='model'):
         self._model_type = 'LR'
         self._alpha = alpha
         self._penalty = penalty
         self._fit_intercept = fit_intercept
-        self._n_classes = n_classes
+        self._n_classes = None
+        if output_dir is None:
+            self._output_dir = tempfile.gettempdir()
+        else:
+            self._output_dir = output_dir
+        self._name = name
 
         # create a variable to store the label proportions in the training data
         self._train_proportions = None
@@ -28,28 +34,34 @@ class LR:
     def get_model_type(self):
         return self._model_type
 
-    def set_model(self, model, train_proportions, col_names):
+    def set_model(self, model, train_proportions, col_names, n_classes):
         self._col_names = col_names
         self._train_proportions = train_proportions
+        self._n_classes = n_classes
         if model is None:
             self._model = None
         else:
             self._model = model
 
-    # TODO: change this over to taking an array of one-hot label encodings, rather than a list
-    # TODO: add in dev data here as an option (for eval?)
-    def fit(self, X, y, X_dev=None, y_dev=None, train_weights=None, dev_weights=None, col_names=None):
+    def fit(self, X, Y, train_weights=None, col_names=None, *args, **kwargs):
         """
         Fit a classifier to data
         :param X: feature matrix: np.array(size=(n_items, n_features))
-        :param y: item labels: list or np.array(size=(n_items,)); unique values must be [0, 1, ..]
+        :param Y: int matrix of item labels: (n_items, n_classes); each row is a 1-hot vector
+        :param train_weights: vector of item weights (one per item)
+        :param col_names: names of the features (optional)
         :return: None
         """
         n_train_items, n_features = X.shape
+        _, n_classes = Y.shape
+        self._n_classes = n_classes
 
         # store the proportion of class labels in the training data
-        bincount = np.bincount(np.array(y, dtype=int), minlength=self._n_classes)
-        self._train_proportions = (bincount / float(bincount.sum())).tolist()
+        if train_weights is None:
+            class_sums = np.sum(Y, axis=0)
+        else:
+            class_sums = np.dot(train_weights, Y) / train_weights.sum()
+        self._train_proportions = (class_sums / float(class_sums.sum())).tolist()
 
         if col_names is not None:
             self._col_names = col_names
@@ -57,14 +69,12 @@ class LR:
             self._col_names = range(n_features)
 
         # if there is only a single type of label, make a default prediction
-        # TODO: deal with the case when I get labels like [1,2,3]
-        unique_y_vals = list(set(y.tolist()))
-        if len(unique_y_vals) == 1:
+        if np.max(self._train_proportions) == 1.0:
             self._model = None
         else:
             self._model = lr(penalty=self._penalty, C=self._alpha, fit_intercept=self._fit_intercept)
-            # otherwise, train the model
-            self._model.fit(X, y, sample_weight=train_weights)
+            # train the model using a vector of labels
+            self._model.fit(X, np.argmax(Y), sample_weight=train_weights)
 
     def predict(self, X):
         # if we've stored a default value, then that is our prediction
@@ -145,9 +155,9 @@ class LR:
                 n_nonzeros_coefs += np.sum([1.0 for c in coef_list if c != 0])
             return n_nonzeros_coefs
 
-    def save(self, output_dir):
+    def save(self):
         #print("Saving model")
-        joblib.dump(self._model, os.path.join(output_dir, 'model.pkl'))
+        joblib.dump(self._model, os.path.join(self._output_dir, self._name + '.pkl'))
         all_coefs = {}
         all_intercepts = {}
         # deal with the inconsistencies in sklearn depending on the number of classes
@@ -174,20 +184,20 @@ class LR:
                   'train_proportions': self.get_train_proportions(),
                   'fit_intercept': self._fit_intercept
                   }
-        fh.write_to_json(output, os.path.join(output_dir, 'metadata.json'), sort_keys=False)
-        fh.write_to_json(self.get_col_names(), os.path.join(output_dir, 'col_names.json'), sort_keys=False)
+        fh.write_to_json(output, os.path.join(self._output_dir, self._name + '_metadata.json'), sort_keys=False)
+        fh.write_to_json(self.get_col_names(), os.path.join(self._output_dir, self._name + '_col_names.json'), sort_keys=False)
 
 
-def load_from_file(model_dir):
-    input = fh.read_json(os.path.join(model_dir, 'metadata.json'))
-    col_names = fh.read_json(os.path.join(model_dir, 'col_names.json'))
+def load_from_file(model_dir, name='model'):
+    input = fh.read_json(os.path.join(model_dir, name + '_metadata.json'))
+    col_names = fh.read_json(os.path.join(model_dir, name + '_col_names.json'))
     n_classes = int(input['n_classes'])
     alpha = float(input['alpha'])
     train_proportions = input['train_proportions']
     penalty = input['penalty']
     fit_intercept = input['fit_intercept']
 
-    classifier = LR(alpha, penalty, fit_intercept, n_classes)
-    model = joblib.load(os.path.join(model_dir, 'model.pkl'))
-    classifier.set_model(model, train_proportions, col_names)
+    classifier = LR(alpha, penalty, fit_intercept, output_dir=model_dir, name=name)
+    model = joblib.load(os.path.join(model_dir, name + '.pkl'))
+    classifier.set_model(model, train_proportions, col_names, n_classes)
     return classifier

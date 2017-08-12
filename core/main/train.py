@@ -8,7 +8,7 @@ from scipy import sparse
 from sklearn.model_selection import KFold
 
 from ..util import file_handling as fh
-from ..models import lr, mlp, evaluation, calibration
+from ..models import lr, mlp, evaluation, calibration, ensemble
 from ..preprocessing import features
 from ..util import dirs
 from ..util.misc import printv
@@ -19,6 +19,10 @@ def main():
     parser = OptionParser(usage=usage)
     parser.add_option('--model', dest='model', default='LR',
                       help='Model type [LR|BLR|MLP]: default=%default')
+    parser.add_option('--dh', dest='dh', default=100,
+                      help='Hidden layer size for MLP [0 for None]: default=%default')
+    parser.add_option('--ensemble', action="store_true", dest="ensemble", default=False,
+                      help='Make an ensemble from cross-validation, instead of training one model: default=%default')
     parser.add_option('--label', dest='label', default='label',
                       help='Label name: default=%default')
     parser.add_option('--weights', dest='weights_file', default=None,
@@ -29,8 +33,6 @@ def main():
                       help='Use to fit a model with no intercept: default=%default')
     parser.add_option('--objective', dest='objective', default='f1',
                       help='Objective for choosing best alpha [calibration|f1]: default=%default')
-    parser.add_option('--n_classes', dest='n_classes', default=None,
-                      help='Specify the number of classes (None=max[training labels]): default=%default')
     parser.add_option('--n_dev_folds', dest='n_dev_folds', default=5,
                       help='Number of dev folds for tuning regularization: default=%default')
     parser.add_option('--seed', dest='seed', default=None,
@@ -42,15 +44,15 @@ def main():
     subset = args[1]
     model_name = args[2]
     config_file = args[3]
+
     model_type = options.model
+    do_ensemble = options.ensemble
+    dh = int(options.dh)
     label = options.label
     weights_file = options.weights_file
     penalty = options.penalty
     objective = options.objective
     intercept = not options.no_intercept
-    n_classes = options.n_classes
-    if n_classes is not None:
-        n_classes = int(n_classes)
     n_dev_folds = int(options.n_dev_folds)
     if options.seed is not None:
         np.random.seed(int(options.seed))
@@ -60,12 +62,12 @@ def main():
     for f in config['feature_defs']:
         feature_defs.append(features.parse_feature_string(f))
 
-    train_model(project_dir, model_type, model_name, subset, label, feature_defs, weights_file, penalty=penalty, intercept=intercept, objective=objective, n_dev_folds=n_dev_folds)
+    train_model(project_dir, model_type, model_name, subset, label, feature_defs, weights_file, penalty=penalty, intercept=intercept, objective=objective, n_dev_folds=n_dev_folds, do_ensemble=do_ensemble, dh=dh)
 
 
 def train_model(project_dir, model_type, model_name, subset, label, feature_defs, weights_file=None, items_to_use=None,
                 penalty='l2', alpha_min=0.01, alpha_max=1000, n_alphas=8, intercept=True,
-                objective='f1', n_dev_folds=5, save_model=True, verbose=True):
+                objective='f1', n_dev_folds=5, save_model=True, do_ensemble=False, dh=0, verbose=True):
 
     label_dir = dirs.dir_labels(project_dir, subset)
     labels_df = fh.read_csv_to_df(os.path.join(label_dir, label + '.csv'), index_col=0, header=0)
@@ -78,12 +80,12 @@ def train_model(project_dir, model_type, model_name, subset, label, feature_defs
 
     return train_model_with_labels(project_dir, model_type, model_name, subset, labels_df, feature_defs, weights, items_to_use,
                             penalty, alpha_min, alpha_max, n_alphas, intercept,
-                            objective, n_dev_folds, save_model, verbose)
+                            objective, n_dev_folds, save_model, do_ensemble, dh, verbose)
 
 
 def train_model_with_labels(project_dir, model_type, model_name, subset, labels_df, feature_defs, weights_df=None,
                             items_to_use=None, penalty='l2', alpha_min=0.01, alpha_max=1000, n_alphas=8, intercept=True,
-                            objective='f1', n_dev_folds=5, save_model=True, verbose=True):
+                            objective='f1', n_dev_folds=5, save_model=True, do_ensemble=False, dh=0, verbose=True):
 
     features_dir = dirs.dir_features(project_dir, subset)
     n_items, n_classes = labels_df.shape
@@ -130,8 +132,8 @@ def train_model_with_labels(project_dir, model_type, model_name, subset, labels_
             feature_signature['word_vectors_prefix'] = word_vectors_prefix
             feature_signatures.append(feature_signature)
 
+    output_dir = os.path.join(dirs.dir_models(project_dir), model_name)
     if save_model:
-        output_dir = os.path.join(dirs.dir_models(project_dir), model_name)
         fh.makedirs(output_dir)
         fh.write_to_json(feature_signatures, os.path.join(output_dir, 'features.json'), sort_keys=False)
 
@@ -142,13 +144,15 @@ def train_model_with_labels(project_dir, model_type, model_name, subset, labels_
         X = features_concat.get_counts().tocsr()
     else:
         X = features_concat.get_counts()
-    y = labels_df.as_matrix()
-    print(y.shape)
+    Y = labels_df.as_matrix()
+
+    n_items, n_features = X.shape
+    _, n_classes = Y.shape
 
     #weights = pd.DataFrame(1.0/labels_df.sum(axis=1), index=labels_df.index, columns=['inv_n_labels'])
     # divide weights by the number of annotations that we have for each item
 
-    weights = weights * 1.0/y.sum(axis=1)
+    weights = weights * 1.0/Y.sum(axis=1)
 
     print("Train feature matrix shape: (%d, %d)" % X.shape)
 
@@ -177,77 +181,122 @@ def train_model_with_labels(project_dir, model_type, model_name, subset, labels_
 
     print("%s\t%s\t%s\t%s\t%s\t%s\t%s" % ('iter', 'alpha', 'size', 'f1_trn', 'f1_dev', 'acc_dev', 'dev_cal'))
 
-    # TODO: don't do cross validation for MLP?
-    for alpha_i, alpha in enumerate(alphas):
-        if model_type == 'LR':
-            model = lr.LR(alpha, penalty=penalty, fit_intercept=intercept, n_classes=n_classes)
-        elif model_type == 'MLP':
-            model = mlp.MLP(alpha=alpha, penalty=penalty, fit_intercept=intercept, n_classes=n_classes, n_layers=0)
-        alpha_acc_cfms = []
-        alpha_pvc_cfms = []
+    model = None
+    model_ensemble = None
+    if do_ensemble:
+        model_ensemble = ensemble.Ensemble(output_dir, model_name)
 
+    if model_type == 'LR':
+        for alpha_i, alpha in enumerate(alphas):
+            alpha_acc_cfms = []
+            alpha_pvc_cfms = []
+            for train_indices, dev_indices in kfold.split(X):
+                model = lr.LR(alpha, penalty=penalty, fit_intercept=intercept, output_dir=output_dir, name='temp')
+
+                X_train = X[train_indices, :]
+                Y_train = Y[train_indices, :]
+                X_dev = X[dev_indices, :]
+                Y_dev = Y[dev_indices, :]
+                w_train = weights[train_indices]
+                w_dev = weights[dev_indices]
+                X_train, Y_train, w_train = expand_features_and_labels(X_train, Y_train, w_train)
+                X_dev, Y_dev, w_dev = expand_features_and_labels(X_dev, Y_dev, w_dev)
+
+                model.fit(X_train, Y_train, train_weights=w_train)
+
+                train_predictions = model.predict(X_train)
+                dev_predictions = model.predict(X_dev)
+
+                y_train_vector = np.argmax(Y_train, axis=1)
+                y_dev_vector = np.argmax(Y_dev, axis=1)
+
+                # internally compute the correction matrices
+                alpha_acc_cfms.append(calibration.compute_acc(y_dev_vector, dev_predictions, n_classes, weights=w_dev))
+                alpha_pvc_cfms.append(calibration.compute_pvc(y_dev_vector, dev_predictions, n_classes, weights=w_dev))
+
+                train_f1 = evaluation.f1_score(y_train_vector, train_predictions, n_classes, weights=w_train)
+                dev_f1 = evaluation.f1_score(y_dev_vector, dev_predictions, n_classes, weights=w_dev)
+                train_acc = evaluation.acc_score(y_train_vector, train_predictions, n_classes, weights=w_train)
+                dev_acc = evaluation.acc_score(y_dev_vector, dev_predictions, n_classes, weights=w_dev)
+                dev_cal_rmse = evaluation.evaluate_proportions_mse(y_dev_vector, dev_predictions, n_classes, weights=w_dev)
+                #evaluation.evaluate_calibration_mse_bins(y[dev_indices], dev_predictions, 1)
+
+                mean_train_f1s[alpha_i] += train_f1 / float(n_dev_folds)
+                mean_dev_f1s[alpha_i] += dev_f1 / float(n_dev_folds)
+                mean_dev_acc[alpha_i] += dev_acc / float(n_dev_folds)
+                mean_dev_cal[alpha_i] += dev_cal_rmse / float(n_dev_folds)
+
+                mean_model_size[alpha_i] += model.get_model_size() / float(n_dev_folds)
+
+            print("%d\t%0.2f\t%.1f\t%0.3f\t%0.3f\t%0.3f\t%0.3f" % (alpha_i, alpha, mean_model_size[alpha_i], mean_train_f1s[alpha_i], mean_dev_f1s[alpha_i], mean_dev_acc[alpha_i], mean_dev_cal[alpha_i]))
+
+            acc_cfms.append(np.mean(alpha_acc_cfms, axis=0))
+            pvc_cfms.append(np.mean(alpha_pvc_cfms, axis=0))
+
+        if objective == 'f1':
+            best_alpha_index = mean_dev_f1s.argmax()
+            print("Using best f1: %d" % best_alpha_index)
+        elif objective == 'calibration':
+            best_alpha_index = mean_dev_cal.argmin()
+            print("Using best calibration: %d" % best_alpha_index)
+        else:
+            sys.exit("Objective not recognized")
+        best_f1_alpha = alphas[best_alpha_index]
+        best_dev_f1 = mean_dev_f1s[best_alpha_index]
+        best_dev_cal = mean_dev_cal[best_alpha_index]
+        print("Best: alpha = %.3f, dev f1 = %.3f, dev cal = %.3f" % (best_f1_alpha, best_dev_f1, best_dev_cal))
+
+        best_acc_cfm = acc_cfms[best_alpha_index]
+        best_pvc_cfm = pvc_cfms[best_alpha_index]
+
+        printv("Training full model", verbose)
+        model = lr.LR(best_f1_alpha, penalty=penalty, fit_intercept=intercept, output_dir=output_dir, name=model_name)
+
+        X, Y, w = expand_features_and_labels(X, Y, weights)
+        model.fit(X, Y, col_names, train_weights=w)
+        model.save()
+
+    elif model_type == 'MLP':
+        if dh > 0:
+            dimensions = [n_features, dh, n_classes]
+        else:
+            dimensions = [n_features, n_classes]
+        if not save_model:
+            output_dir = None
+
+        fold = 1
         for train_indices, dev_indices in kfold.split(X):
+            if do_ensemble:
+                name = model_name + '_' + str(fold)
+            else:
+                name = model_name
+            model = mlp.MLP(dimensions=dimensions, loss_function='log', nonlinearity='tanh', penalty=penalty, reg_strength=0, output_dir=output_dir, name=name)
+
             X_train = X[train_indices, :]
-            y_train = y[train_indices, :]
+            Y_train = Y[train_indices, :]
             X_dev = X[dev_indices, :]
-            y_dev = y[dev_indices, :]
+            Y_dev = Y[dev_indices, :]
             w_train = weights[train_indices]
             w_dev = weights[dev_indices]
-            X_train, y_train, w_train = expand_features_and_labels(X_train, y_train, w_train)
-            X_dev, y_dev, w_dev = expand_features_and_labels(X_dev, y_dev, w_dev)
+            X_train, Y_train, w_train = expand_features_and_labels(X_train, Y_train, w_train)
+            X_dev, Y_dev, w_dev = expand_features_and_labels(X_dev, Y_dev, w_dev)
 
-            model.fit(X_train, y_train, X_dev=X_dev, Y_dev=y_dev, train_weights=w_train, dev_weights=w_dev, col_names=col_names)
+            model.fit(X_train, Y_train, X_dev, Y_dev, train_weights=w_train, dev_weights=w_dev)
+            if save_model:
+                model.save()
 
-            train_predictions = model.predict(X_train)
-            dev_predictions = model.predict(X_dev)
+            if do_ensemble:
+                model_ensemble.add_model(model, name)
+                fold += 1
+            else:
+                break
 
-            y_train_vector = np.argmax(y_train, axis=1)
-            y_dev_vector = np.argmax(y_dev, axis=1)
+        if do_ensemble:
+            model = model_ensemble
+            model.save()
 
-            # internally compute the correction matrices
-            alpha_acc_cfms.append(calibration.compute_acc(y_dev_vector, dev_predictions, n_classes, weights=w_dev))
-            alpha_pvc_cfms.append(calibration.compute_pvc(y_dev_vector, dev_predictions, n_classes, weights=w_dev))
-
-            train_f1 = evaluation.f1_score(y_train_vector, train_predictions, n_classes, weights=w_train)
-            dev_f1 = evaluation.f1_score(y_dev_vector, dev_predictions, n_classes, weights=w_dev)
-            train_acc = evaluation.acc_score(y_train_vector, train_predictions, n_classes, weights=w_train)
-            dev_acc = evaluation.acc_score(y_dev_vector, dev_predictions, n_classes, weights=w_dev)
-            dev_cal_rmse = evaluation.evaluate_proportions_mse(y_dev_vector, dev_predictions, n_classes, weights=w_dev)
-            #evaluation.evaluate_calibration_mse_bins(y[dev_indices], dev_predictions, 1)
-
-            mean_train_f1s[alpha_i] += train_f1 / float(n_dev_folds)
-            mean_dev_f1s[alpha_i] += dev_f1 / float(n_dev_folds)
-            mean_dev_acc[alpha_i] += dev_acc / float(n_dev_folds)
-            mean_dev_cal[alpha_i] += dev_cal_rmse / float(n_dev_folds)
-
-            mean_model_size[alpha_i] += model.get_model_size() / float(n_dev_folds)
-
-        print("%d\t%0.2f\t%.1f\t%0.3f\t%0.3f\t%0.3f\t%0.3f" % (alpha_i, alpha, mean_model_size[alpha_i], mean_train_f1s[alpha_i], mean_dev_f1s[alpha_i], mean_dev_acc[alpha_i], mean_dev_cal[alpha_i]))
-
-        acc_cfms.append(np.mean(alpha_acc_cfms, axis=0))
-        pvc_cfms.append(np.mean(alpha_pvc_cfms, axis=0))
-
-    if objective == 'f1':
-        best_alpha_index = mean_dev_f1s.argmax()
-        print("Using best f1: %d" % best_alpha_index)
-    elif objective == 'calibration':
-        best_alpha_index = mean_dev_cal.argmin()
-        print("Using best calibration: %d" % best_alpha_index)
     else:
-        sys.exit("Objective not recognized")
-    best_f1_alpha = alphas[best_alpha_index]
-    best_dev_f1 = mean_dev_f1s[best_alpha_index]
-    best_dev_cal = mean_dev_cal[best_alpha_index]
-    print("Best: alpha = %.3f, dev f1 = %.3f, dev cal = %.3f" % (best_f1_alpha, best_dev_f1, best_dev_cal))
-
-    best_acc_cfm = acc_cfms[best_alpha_index]
-    best_pvc_cfm = pvc_cfms[best_alpha_index]
-
-    printv("Training full model", verbose)
-    model = lr.LR(best_f1_alpha, penalty=penalty, fit_intercept=intercept, n_classes=n_classes)
-
-    X, y, w = expand_features_and_labels(X, y, weights)
-    model.fit(X, y, col_names, train_weights=w)
+        sys.exit("Model type %s not recognized" % model_type)
 
     """
     elif model_type == 'BLR':
@@ -258,16 +307,9 @@ def train_model_with_labels(project_dir, model_type, model_name, subset, labels_
         best_dev_cal = 0
         best_acc_cfm = None
         best_pvc_cfm = None
-    else:
-        sys.exit("Model type not recognized")
     """
 
-    output_dir = os.path.join(dirs.dir_models(project_dir), model_name)
-    if not os.path.exists(output_dir):
-        os.makedirs(output_dir)
-    model.save(output_dir)
-
-    return model, best_dev_f1, best_dev_cal, best_acc_cfm, best_pvc_cfm
+    return model
 
 
 def expand_features_and_labels(X, Y, weights):
@@ -299,25 +341,6 @@ def expand_features_and_labels(X, Y, weights):
     weights_return = np.array(weights_list)
     return X_return, y_return, weights_return
 
-"""
-def expand_features_and_labels(X, y, weights):
-    X_list = []
-    y_list = []
-    weights_list = []
-    n_items, n_classes = y.shape
-    for c in range(n_classes):
-        c_max = y[:, c].max()
-        for i in range(c_max):
-            items = np.array(y[:, c] > i)
-            X_list.append(X[items, :])
-            y_list.append(np.ones(np.sum(items), dtype=int) * c)
-            weights_list.append(np.array(weights[items]))
-
-    X_return = sparse.vstack(X_list)
-    y_return = np.hstack(y_list)
-    weights_return = np.hstack(weights_list)
-    return X_return, y_return, weights_return
-"""
 
 if __name__ == '__main__':
     main()
