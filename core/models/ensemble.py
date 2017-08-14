@@ -35,15 +35,20 @@ class Ensemble:
         return np.mean(np.vstack(pred_prob_list), axis=0)
 
     def save(self):
-        filename = os.path.join(self._model_dir, self._name + '.json')
-        fh.write_to_json(list(self._models.keys()), filename)
+        filename = os.path.join(self._model_dir, self._name + '_metadata.json')
+        output = {'model_type': self._model_type,
+                  'models': list(self._models.keys())
+                  }
+        fh.write_to_json(output, filename)
 
 
 def load_from_file(model_dir, name):
-    filename = os.path.join(model_dir, name + '.json')
+    filename = os.path.join(model_dir, name + '_metadata.json')
+    metadata = fh.read_json(filename)
+    assert metadata['model_type'] == 'ensemble'
     ensemble = Ensemble(model_dir, name=name)
+    models = metadata['models']
 
-    models = fh.read_json(filename)
     for m in models:
         filename = os.path.join(model_dir, m + '_metadata.json')
         metadata = fh.read_json(filename)
