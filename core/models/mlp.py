@@ -340,10 +340,10 @@ class tf_MLP:
 
         return predictions
 
-    def predict_probs(self, X, n_classes):
+    def predict_probs(self, X):
         n_items, n_features = X.shape
-        pred_probs = np.zeros([n_items, n_classes], dtype=int)
 
+        probs_list = []
         with tf.Session() as sess:
             self.saver.restore(sess, self.filename)
             # just do minibatche sizes of 1 for now
@@ -351,8 +351,9 @@ class tf_MLP:
                 x_i = X[i, :].reshape((1, n_features))
                 feed_dict = {self.x: x_i, self.sample_weights: 1.0}
                 probs = sess.run(self.probs, feed_dict=feed_dict)
-                pred_probs[i, :] = probs
+                probs_list.append(probs)
 
+        pred_probs = np.array(probs_list, dtype=int)
         return pred_probs
 
     def get_n_params(self):

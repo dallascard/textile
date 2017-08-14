@@ -40,7 +40,7 @@ def main():
                 output = str(c) + ': ' + ' '.join([t for t in terms[-1:-n_terms:-1]])
                 print(output)
     elif model_type == 'MLP':
-        pass
+
 
 
 if __name__ == '__main__':
