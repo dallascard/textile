@@ -45,7 +45,6 @@ def load_and_predict(project_dir, model_type, model_name, test_subset, label_nam
 def predict(project_dir, model, model_name, test_subset, label_name, items_to_use=None, verbose=False):
 
     model_dir = os.path.join(dirs.dir_models(project_dir), model_name)
-    model_type = model.get_model_type()
 
     feature_signatures = fh.read_json(os.path.join(model_dir, 'features.json'))
     test_features_dir = dirs.dir_features(project_dir, test_subset)

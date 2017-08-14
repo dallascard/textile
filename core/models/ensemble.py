@@ -34,6 +34,9 @@ class Ensemble:
             pred_prob_list.append(model.predict_probs(X))
         return np.mean(np.vstack(pred_prob_list), axis=0)
 
+    def get_model_type(self):
+        return self._model_type
+
     def save(self):
         filename = os.path.join(self._model_dir, self._name + '_metadata.json')
         output = {'model_type': self._model_type,
