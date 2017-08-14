@@ -45,6 +45,7 @@ def main():
                 terms, values = zip(*coefs_sorted)
                 output = str(c) + ': ' + ' '.join([t for t in terms[-1:-n_terms:-1]])
                 print(output)
+
     elif model_type == 'MLP':
         features_file = os.path.join(model_dir, 'features.json')
         features = fh.read_json(features_file)
@@ -54,11 +55,11 @@ def main():
         n_classes = model.get_n_classes()
 
         activations = model.predict_probs(word_vectors)
+        print(activations[:5, :])
 
         for cl in range(n_classes):
             order = np.argsort(activations[:, cl]).tolist()
-            order.reverse()
-            output = str(cl) + ': ' + ' '.join([t for t in word_vector_terms[-1:-n_terms:-1]])
+            output = str(cl) + ': ' + ' '.join([t for t in word_vector_terms[order[-1:-n_terms:-1]]])
             print(output)
 
 
