@@ -199,7 +199,6 @@ def train_model_with_labels(project_dir, model_type, model_name, subset, labels_
                 Y_dev = Y[dev_indices, :]
                 w_train = weights[train_indices]
                 w_dev = weights[dev_indices]
-                print("Before expansion:", X_train.shape)
                 X_train, Y_train, w_train = expand_features_and_labels(X_train, Y_train, w_train)
                 X_dev, Y_dev, w_dev = expand_features_and_labels(X_dev, Y_dev, w_dev)
 
@@ -337,7 +336,7 @@ def expand_features_and_labels(X, Y, weights):
                     Y_list.append(label_vector)
                     weights_list.append(weights[i] * 1.0/total)
 
-    if sparse.issparse(X_list[0]):
+    if sparse.issparse(X):
         X_return = sparse.vstack(X_list)
     else:
         X_return = np.vstack(X_list)
