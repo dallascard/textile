@@ -31,8 +31,9 @@ class Ensemble:
     def predict_probs(self, X):
         pred_prob_list = []
         for model in self._models.values():
-            pred_prob_list.append(model.predict_probs(X))
-        return np.mean(np.vstack(pred_prob_list), axis=0)
+            probs = model.predict_probs(X)
+            pred_prob_list.append(probs)
+        return np.mean(np.array(pred_prob_list), axis=0)
 
     def get_model_type(self):
         return self._model_type
