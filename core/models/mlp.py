@@ -351,7 +351,7 @@ class tf_MLP:
                 _, n_classes = probs.shape
                 probs_list.append(probs.reshape(n_classes, ))
 
-        pred_probs = np.array(probs_list, dtype=int)
+        pred_probs = np.array(probs_list)
         return pred_probs
 
     def get_n_params(self):

@@ -55,7 +55,7 @@ def main():
         n_classes = model.get_n_classes()
 
         activations = model.predict_probs(word_vectors)
-        print(activations[:5, :])
+        print(activations.min(), activations.mean(), activations.max())
 
         for cl in range(n_classes):
             order = np.argsort(activations[:, cl]).tolist()
