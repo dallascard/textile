@@ -22,22 +22,25 @@ def main():
     model_type = options.model_type
     model = load_model.load_model(model_dir, model_type)
 
-    classes = model.get_active_classes()
-    if len(classes) == 2:
-        coefs = model.get_coefs(target_class=0)
-        coefs_sorted = sorted(coefs, key=operator.itemgetter(1))
-        terms, values = zip(*coefs_sorted)
-        output = str(0) + ': ' + ' '.join([t for t in terms[-1:-n_terms:-1]])
-        print(output)
-        output = str(1) + ': ' + ' '.join([t for t in terms[:n_terms]])
-        print(output)
-    else:
-        for c in classes:
-            coefs = model.get_coefs(target_class=c)
+    if model_type == 'LR':
+        classes = model.get_active_classes()
+        if len(classes) == 2:
+            coefs = model.get_coefs(target_class=0)
             coefs_sorted = sorted(coefs, key=operator.itemgetter(1))
             terms, values = zip(*coefs_sorted)
-            output = str(c) + ': ' + ' '.join([t for t in terms[-1:-n_terms:-1]])
+            output = str(0) + ': ' + ' '.join([t for t in terms[-1:-n_terms:-1]])
             print(output)
+            output = str(1) + ': ' + ' '.join([t for t in terms[:n_terms]])
+            print(output)
+        else:
+            for c in classes:
+                coefs = model.get_coefs(target_class=c)
+                coefs_sorted = sorted(coefs, key=operator.itemgetter(1))
+                terms, values = zip(*coefs_sorted)
+                output = str(c) + ': ' + ' '.join([t for t in terms[-1:-n_terms:-1]])
+                print(output)
+    elif model_type == 'MLP':
+        pass
 
 
 if __name__ == '__main__':

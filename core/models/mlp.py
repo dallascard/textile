@@ -100,7 +100,7 @@ class MLP:
             return full_probs
         else:
             # otherwise, get probabilities from the model
-            model_probs = self._model.predict_proba(X)
+            model_probs = self._model.predict_probs(X)
             # map these probabilities back to the full set of classes
             for i, cl in enumerate(self._model.classes_):
                 full_probs[:, cl] = model_probs[:, i]
