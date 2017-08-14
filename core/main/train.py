@@ -54,8 +54,10 @@ def main():
     objective = options.objective
     intercept = not options.no_intercept
     n_dev_folds = int(options.n_dev_folds)
-    if options.seed is not None:
-        np.random.seed(int(options.seed))
+    seed = options.seed
+    if seed is not None:
+        seed = int(seed)
+        np.random.seed(seed)
 
     config = fh.read_json(config_file)
     feature_defs = []
