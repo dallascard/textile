@@ -330,7 +330,7 @@ def expand_features_and_labels(X, Y, weights):
         for index, count in enumerate(labels):
             if count > 0:
                 for c in range(count):
-                    X_list.append(np.array(X[i, :]))
+                    X_list.append(X[i, :])
                     label_vector = np.zeros(n_classes, dtype=int)
                     label_vector[index] = 1
                     Y_list.append(label_vector)
