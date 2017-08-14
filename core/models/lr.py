@@ -74,13 +74,14 @@ class LR:
             self._col_names = range(n_features)
 
         # if there is only a single type of label, make a default prediction
-        train_labels = np.argmax(Y_train, axis=1)
+        train_labels = np.argmax(Y_train, axis=1).reshape((n_train_items, ))
         if np.max(self._train_proportions) == 1.0:
             self._model = None
 
         else:
             self._model = lr(penalty=self._penalty, C=self._alpha, fit_intercept=self._fit_intercept)
             # train the model using a vector of labels
+            print(X_train.shape, Y_train.shape, train_weights.shape)
             self._model.fit(X_train, train_labels, sample_weight=train_weights)
 
         # do a quick evaluation and store the results internally
