@@ -253,7 +253,7 @@ def train_model_with_labels(project_dir, model_type, model_name, subset, labels_
         model = lr.LR(best_f1_alpha, penalty=penalty, fit_intercept=intercept, output_dir=output_dir, name=model_name)
 
         X, Y, w = expand_features_and_labels(X, Y, weights)
-        model.fit(X, Y, col_names, train_weights=w)
+        model.fit(X, Y, train_weights=w, col_names=col_names)
         model.save()
 
     elif model_type == 'MLP':
