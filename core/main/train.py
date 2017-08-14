@@ -18,7 +18,7 @@ def main():
     usage = "%prog project_dir subset model_name config.json"
     parser = OptionParser(usage=usage)
     parser.add_option('--model', dest='model', default='LR',
-                      help='Model type [LR|BLR|MLP]: default=%default')
+                      help='Model type [LR|MLP]: default=%default')
     parser.add_option('--dh', dest='dh', default=100,
                       help='Hidden layer size for MLP [0 for None]: default=%default')
     parser.add_option('--ensemble', action="store_true", dest="ensemble", default=False,
@@ -292,6 +292,7 @@ def train_model_with_labels(project_dir, model_type, model_name, subset, labels_
 
         fold = 1
         for train_indices, dev_indices in kfold.split(X):
+            print("Starting fold %d" % fold)
             if do_ensemble:
                 name = model_name + '_' + str(fold)
             else:

@@ -10,15 +10,15 @@ def main():
     parser.add_option('-n', dest='n_terms', default=10,
                       help='Number of terms to display: default=%default')
     parser.add_option('--model_type', dest='model_type', default=None,
-                      help='Modelt type [LR|BLR]; None=auto-detect: default=%default')
+                      help='Model type [LR|MLP|ensemble]; None=auto-detect: default=%default')
 
     #parser.add_option('--boolarg', action="store_true", dest="boolarg", default=False,
     #                  help='Keyword argument: default=%default')
 
     (options, args) = parser.parse_args()
     model_dir = args[0]
-    n_terms = int(options.n_terms)
 
+    n_terms = int(options.n_terms)
     model_type = options.model_type
     model = load_model.load_model(model_dir, model_type)
 
@@ -38,6 +38,7 @@ def main():
             terms, values = zip(*coefs_sorted)
             output = str(c) + ': ' + ' '.join([t for t in terms[-1:-n_terms:-1]])
             print(output)
+
 
 if __name__ == '__main__':
     main()

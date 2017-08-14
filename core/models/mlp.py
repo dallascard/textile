@@ -187,7 +187,7 @@ class MLP:
 def load_from_file(model_dir, name):
     input = fh.read_json(os.path.join(model_dir, name + '_metadata.json'))
     dimensions = input['dimensions']
-    penalty = float(input['penalty'])
+    penalty = input['penalty']
     reg_strength = float(input['reg_strength'])
     n_classes = int(input['n_classes'])
     train_proportions = input['train_proportions']
