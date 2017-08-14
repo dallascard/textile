@@ -184,12 +184,13 @@ def train_model_with_labels(project_dir, model_type, model_name, subset, labels_
     model = None
     model_ensemble = None
     if do_ensemble:
-        model_ensemble = ensemble.Ensemble(output_dir, model_name)
+        model_ensemble = ensemble.Ensemble(output_dir, model_name + '_ensemble')
 
     if model_type == 'LR':
         for alpha_i, alpha in enumerate(alphas):
             alpha_acc_cfms = []
             alpha_pvc_cfms = []
+            fold = 1
             for train_indices, dev_indices in kfold.split(X):
                 model = lr.LR(alpha, penalty=penalty, fit_intercept=intercept, output_dir=output_dir, name='temp')
 
@@ -241,16 +242,38 @@ def train_model_with_labels(project_dir, model_type, model_name, subset, labels_
             print("Using best calibration: %d" % best_alpha_index)
         else:
             sys.exit("Objective not recognized")
-        best_f1_alpha = alphas[best_alpha_index]
+        best_alpha = alphas[best_alpha_index]
         best_dev_f1 = mean_dev_f1s[best_alpha_index]
         best_dev_cal = mean_dev_cal[best_alpha_index]
-        print("Best: alpha = %.3f, dev f1 = %.3f, dev cal = %.3f" % (best_f1_alpha, best_dev_f1, best_dev_cal))
+        print("Best: alpha = %.3f, dev f1 = %.3f, dev cal = %.3f" % (best_alpha, best_dev_f1, best_dev_cal))
 
         best_acc_cfm = acc_cfms[best_alpha_index]
         best_pvc_cfm = pvc_cfms[best_alpha_index]
 
+        if do_ensemble:
+            printv("Retraining with best alpha for ensemble", verbose)
+            fold = 1
+            for train_indices, dev_indices in kfold.split(X):
+                name = model_name + '_' + str(fold)
+                model = lr.LR(best_alpha, penalty=penalty, fit_intercept=intercept, output_dir=output_dir, name=name)
+                X_train = X[train_indices, :]
+                Y_train = Y[train_indices, :]
+                X_dev = X[dev_indices, :]
+                Y_dev = Y[dev_indices, :]
+                w_train = weights[train_indices]
+                w_dev = weights[dev_indices]
+                X_train, Y_train, w_train = expand_features_and_labels(X_train, Y_train, w_train)
+                X_dev, Y_dev, w_dev = expand_features_and_labels(X_dev, Y_dev, w_dev)
+                model.fit(X_train, Y_train, train_weights=w_train, X_dev=X_dev, Y_dev=Y_dev, dev_weights=w_dev, col_names=col_names)
+                if save_model:
+                    model.save()
+                model_ensemble.add_model(model, name)
+                fold += 1
+            model = model_ensemble
+            model.save()
+
         printv("Training full model", verbose)
-        model = lr.LR(best_f1_alpha, penalty=penalty, fit_intercept=intercept, output_dir=output_dir, name=model_name)
+        model = lr.LR(best_alpha, penalty=penalty, fit_intercept=intercept, output_dir=output_dir, name=model_name)
 
         X, Y, w = expand_features_and_labels(X, Y, weights)
         model.fit(X, Y, train_weights=w, col_names=col_names)
