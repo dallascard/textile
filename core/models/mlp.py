@@ -101,10 +101,7 @@ class MLP:
         else:
             # otherwise, get probabilities from the model
             model_probs = self._model.predict_probs(X)
-            # map these probabilities back to the full set of classes
-            for i, cl in enumerate(self._model.classes_):
-                full_probs[:, cl] = model_probs[:, i]
-            return full_probs
+            return model_probs
 
     def get_penalty(self):
         return self._penalty
