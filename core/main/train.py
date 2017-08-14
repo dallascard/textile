@@ -202,7 +202,7 @@ def train_model_with_labels(project_dir, model_type, model_name, subset, labels_
                 X_train, Y_train, w_train = expand_features_and_labels(X_train, Y_train, w_train)
                 X_dev, Y_dev, w_dev = expand_features_and_labels(X_dev, Y_dev, w_dev)
 
-                model.fit(X_train, Y_train, train_weights=w_train)
+                model.fit(X_train, Y_train, train_weights=w_train, X_dev=X_dev, Y_dev=Y_dev, dev_weights=w_dev)
 
                 train_predictions = model.predict(X_train)
                 dev_predictions = model.predict(X_dev)

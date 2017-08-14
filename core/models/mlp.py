@@ -26,6 +26,10 @@ class MLP:
         else:
             self._output_dir = output_dir
         self._name = name
+        self._train_f1 = None
+        self._train_acc = None
+        self._dev_f1 = None
+        self._dev_acc = None
 
         # create a variable to store the label proportions in the training data
         self._train_proportions = None
@@ -58,12 +62,24 @@ class MLP:
         self._train_proportions = (class_sums / float(class_sums.sum())).tolist()
 
         # if there is only a single type of label, make a default prediction
+        train_labels = np.argmax(Y_train, axis=1)
         if np.max(self._train_proportions) == 1.0:
             self._model = None
         else:
             model_filename = os.path.join(self._output_dir, self._name + '.ckpt')
             self._model = tf_MLP(self._dimensions,  model_filename, loss_function=self._loss_function, penalty=self._penalty, reg_strength=self._reg_strength, nonlinearity=self._nonlinearity)
             self._model.train(X_train, Y_train, X_dev, Y_dev, train_weights, dev_weights)
+
+        # do a quick evaluation and store the results internally
+        train_pred = self.predict(X_train)
+        self._train_acc = evaluation.acc_score(train_labels, train_pred, n_classes=n_classes, weights=train_weights)
+        self._train_f1 = evaluation.f1_score(train_labels, train_pred, n_classes=n_classes, weights=train_weights)
+
+        if X_dev is not None and Y_dev is not None:
+            dev_labels = np.argmax(Y_dev, axis=1)
+            dev_pred = self.predict(X_dev)
+            self._dev_acc = evaluation.acc_score(dev_labels, dev_pred, n_classes=n_classes, weights=dev_weights)
+            self._dev_f1 = evaluation.f1_score(dev_labels, dev_pred, n_classes=n_classes, weights=dev_weights)
 
     def predict(self, X):
         # if we've stored a default value, then that is our prediction
@@ -159,7 +175,11 @@ class MLP:
                   'reg_strength': self.get_reg_strength(),
                   'penalty': self.get_penalty(),
                   'n_classes': self.get_n_classes(),
-                  'train_proportions': self.get_train_proportions()
+                  'train_proportions': self.get_train_proportions(),
+                  'train_f1': self._train_f1,
+                  'train_acc': self._train_acc,
+                  'dev_f1': self._dev_f1,
+                  'dev_acc': self._dev_acc
                   }
         fh.write_to_json(output, os.path.join(self._output_dir, self._name + '_metadata.json'), sort_keys=False)
 
@@ -188,8 +208,6 @@ class tf_MLP:
         """
         Create an MLP in tensorflow, using a softmax on the final layer
         """
-        # TODO: add regularization
-
         self.dimensions = dimensions
         self.n_hidden_layers = len(dimensions) - 2
         self.loss_function = loss_function

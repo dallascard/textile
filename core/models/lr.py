@@ -7,6 +7,7 @@ from sklearn.externals import joblib
 from sklearn.linear_model import LogisticRegression as lr
 
 from ..util import file_handling as fh
+from ..models import evaluation
 
 class LR:
     """
@@ -23,6 +24,10 @@ class LR:
         else:
             self._output_dir = output_dir
         self._name = name
+        self._train_f1 = None
+        self._train_acc = None
+        self._dev_f1 = None
+        self._dev_acc = None
 
         # create a variable to store the label proportions in the training data
         self._train_proportions = None
@@ -43,7 +48,7 @@ class LR:
         else:
             self._model = model
 
-    def fit(self, X, Y, train_weights=None, col_names=None, *args, **kwargs):
+    def fit(self, X_train, Y_train, train_weights=None, col_names=None, X_dev=None, Y_dev=None, dev_weights=None, *args, **kwargs):
         """
         Fit a classifier to data
         :param X: feature matrix: np.array(size=(n_items, n_features))
@@ -52,15 +57,15 @@ class LR:
         :param col_names: names of the features (optional)
         :return: None
         """
-        n_train_items, n_features = X.shape
-        _, n_classes = Y.shape
+        n_train_items, n_features = X_train.shape
+        _, n_classes = Y_train.shape
         self._n_classes = n_classes
 
         # store the proportion of class labels in the training data
         if train_weights is None:
-            class_sums = np.sum(Y, axis=0)
+            class_sums = np.sum(Y_train, axis=0)
         else:
-            class_sums = np.dot(train_weights, Y) / train_weights.sum()
+            class_sums = np.dot(train_weights, Y_train) / train_weights.sum()
         self._train_proportions = (class_sums / float(class_sums.sum())).tolist()
 
         if col_names is not None:
@@ -69,12 +74,25 @@ class LR:
             self._col_names = range(n_features)
 
         # if there is only a single type of label, make a default prediction
+        train_labels = np.argmax(Y_train, axis=1)
         if np.max(self._train_proportions) == 1.0:
             self._model = None
+
         else:
             self._model = lr(penalty=self._penalty, C=self._alpha, fit_intercept=self._fit_intercept)
             # train the model using a vector of labels
-            self._model.fit(X, np.argmax(Y), sample_weight=train_weights)
+            self._model.fit(X_train, train_labels, sample_weight=train_weights)
+
+        # do a quick evaluation and store the results internally
+        train_pred = self.predict(X_train)
+        self._train_acc = evaluation.acc_score(train_labels, train_pred, n_classes=n_classes, weights=train_weights)
+        self._train_f1 = evaluation.f1_score(train_labels, train_pred, n_classes=n_classes, weights=train_weights)
+
+        if X_dev is not None and Y_dev is not None:
+            dev_labels = np.argmax(Y_dev, axis=1)
+            dev_pred = self.predict(X_dev)
+            self._dev_acc = evaluation.acc_score(dev_labels, dev_pred, n_classes=n_classes, weights=dev_weights)
+            self._dev_f1 = evaluation.f1_score(dev_labels, dev_pred, n_classes=n_classes, weights=dev_weights)
 
     def predict(self, X):
         # if we've stored a default value, then that is our prediction
@@ -182,7 +200,11 @@ class LR:
                   'coefs': all_coefs,
                   'n_classes': self.get_n_classes(),
                   'train_proportions': self.get_train_proportions(),
-                  'fit_intercept': self._fit_intercept
+                  'fit_intercept': self._fit_intercept,
+                  'train_f1': self._train_f1,
+                  'train_acc': self._train_acc,
+                  'dev_f1': self._dev_f1,
+                  'dev_acc': self._dev_acc
                   }
         fh.write_to_json(output, os.path.join(self._output_dir, self._name + '_metadata.json'), sort_keys=False)
         fh.write_to_json(self.get_col_names(), os.path.join(self._output_dir, self._name + '_col_names.json'), sort_keys=False)
