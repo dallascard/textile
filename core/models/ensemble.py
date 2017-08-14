@@ -34,7 +34,6 @@ class Ensemble:
             probs = model.predict_probs(X)
             pred_prob_list.append(probs)
         tensor = np.array(pred_prob_list)
-        print(tensor.shape)
         return np.mean(tensor, axis=0)
 
     def get_model_type(self):

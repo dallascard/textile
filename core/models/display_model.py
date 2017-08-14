@@ -2,8 +2,10 @@ import os
 import operator
 from optparse import OptionParser
 
+import numpy as np
+
 from ..models import lr
-from ..models import load_model
+from ..models import load_model, mlp
 from ..util import file_handling as fh
 
 def main():
@@ -48,7 +50,19 @@ def main():
         word_vectors = fh.load_dense(word_vectors_prefix + '.npz')
         word_vector_terms = fh.read_json(word_vectors_prefix + '.json')
         vocab_size = len(word_vector_terms)
+        n_classes = model.get_n_classes()
+        activations = np.zeros([vocab_size, n_classes])
 
+        for i in range(vocab_size):
+            X = word_vectors[i, :]
+            probs = model.predict_probs(X)
+            activations[i, :] = probs
+
+        for cl in range(n_classes):
+            order = np.argsort(activations[:, cl]).tolist()
+            order.reverse()
+            output = str(cl) + ': ' + ' '.join([t for t in word_vector_terms[-1:-n_terms:-1]])
+            print(output)
 
 
 
