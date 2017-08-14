@@ -199,6 +199,7 @@ def train_model_with_labels(project_dir, model_type, model_name, subset, labels_
                 Y_dev = Y[dev_indices, :]
                 w_train = weights[train_indices]
                 w_dev = weights[dev_indices]
+                print("Before expansion:", X_train.shape)
                 X_train, Y_train, w_train = expand_features_and_labels(X_train, Y_train, w_train)
                 X_dev, Y_dev, w_dev = expand_features_and_labels(X_dev, Y_dev, w_dev)
 
