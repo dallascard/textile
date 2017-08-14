@@ -58,7 +58,7 @@ def main():
         print(activations[:5, :])
 
         for cl in range(n_classes):
-            order = np.argsort(activations[:, cl]).tolist()
+            order = np.argsort(activations[:, cl])
             output = str(cl) + ': ' + ' '.join([t for t in word_vector_terms[order[-1:-n_terms:-1]]])
             print(output)
 
