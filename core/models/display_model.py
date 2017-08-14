@@ -56,6 +56,8 @@ def main():
         activations = np.zeros([vocab_size, n_classes])
 
         for i in range(vocab_size):
+            if i % 1000 == 0 and i > 0:
+                print(i)
             X = word_vectors[i, :].reshape((1, dv))
             probs = model.predict_probs(X)
             activations[i, :] = probs
