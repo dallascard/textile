@@ -202,7 +202,7 @@ def train_model_with_labels(project_dir, model_type, model_name, subset, labels_
                 X_train, Y_train, w_train = expand_features_and_labels(X_train, Y_train, w_train)
                 X_dev, Y_dev, w_dev = expand_features_and_labels(X_dev, Y_dev, w_dev)
 
-                model.fit(X_train, Y_train, train_weights=w_train, X_dev=X_dev, Y_dev=Y_dev, dev_weights=w_dev)
+                model.fit(X_train, Y_train, train_weights=w_train, X_dev=X_dev, Y_dev=Y_dev, dev_weights=w_dev, col_names=col_names)
 
                 train_predictions = model.predict(X_train)
                 dev_predictions = model.predict(X_dev)
@@ -336,7 +336,10 @@ def expand_features_and_labels(X, Y, weights):
                     Y_list.append(label_vector)
                     weights_list.append(weights[i] * 1.0/total)
 
-    X_return = np.vstack(X_list)
+    if sparse.issparse(X_list[0]):
+        X_return = sparse.vstack(X_list)
+    else:
+        X_return = np.vstack(X_list)
     y_return = np.array(Y_list)
     weights_return = np.array(weights_list)
     return X_return, y_return, weights_return
