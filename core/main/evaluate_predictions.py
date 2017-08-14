@@ -57,14 +57,15 @@ def evaluate_predictions(labels_df, predictions_df, pos_label=1, average='micro'
 
     placeholder = np.zeros([n_items, 2])
     _, labels, weights, predictions = train.expand_features_and_labels(placeholder, labels, weights, predictions)
+    true = np.argmax(labels, axis=1)
 
-    f1 = evaluation.f1_score(labels, predictions, n_classes, pos_label=pos_label, average=average, weights=weights)
+    f1 = evaluation.f1_score(true, predictions, n_classes, pos_label=pos_label, average=average, weights=weights)
     print("F1 = %0.3f" % f1)
 
-    acc = evaluation.acc_score(labels, predictions, n_classes, weights=weights)
+    acc = evaluation.acc_score(true, predictions, n_classes, weights=weights)
     print("Accuracy = %0.3f" % acc)
 
-    rmse = evaluation.evaluate_proportions_mse(labels, predictions, n_classes, weights)
+    rmse = evaluation.evaluate_proportions_mse(true, predictions, n_classes, weights)
     print("RMSE on proportions = %0.3f" % rmse)
 
     return f1, acc
