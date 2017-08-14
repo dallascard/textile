@@ -58,8 +58,10 @@ def main():
         print(activations[:5, :])
 
         for cl in range(n_classes):
-            order = np.argsort(activations[:, cl])
-            output = str(cl) + ': ' + ' '.join([t for t in word_vector_terms[order[-1:-n_terms:-1]]])
+            order = np.argsort(activations[:, cl]).tolist()
+            order.reverse()
+            terms = [word_vector_terms[i] for i in order[:n_terms]]
+            output = str(cl) + ': ' + ' '.join(terms)
             print(output)
 
 
