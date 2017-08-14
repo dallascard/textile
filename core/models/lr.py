@@ -81,7 +81,6 @@ class LR:
         else:
             self._model = lr(penalty=self._penalty, C=self._alpha, fit_intercept=self._fit_intercept)
             # train the model using a vector of labels
-            print(X_train.shape, train_labels.shape, train_weights.shape)
             self._model.fit(X_train, train_labels, sample_weight=train_weights)
 
         # do a quick evaluation and store the results internally
