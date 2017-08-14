@@ -51,12 +51,12 @@ def main():
         word_vectors_prefix = features[0]['word_vectors_prefix']
         word_vectors = fh.load_dense(word_vectors_prefix + '.npz')
         word_vector_terms = fh.read_json(word_vectors_prefix + '.json')
-        vocab_size = len(word_vector_terms)
+        vocab_size, dv = word_vectors.shape
         n_classes = model.get_n_classes()
         activations = np.zeros([vocab_size, n_classes])
 
         for i in range(vocab_size):
-            X = word_vectors[i, :]
+            X = word_vectors[i, :].reshape((1, dv))
             probs = model.predict_probs(X)
             activations[i, :] = probs
 
