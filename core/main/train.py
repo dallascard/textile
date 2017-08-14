@@ -184,7 +184,7 @@ def train_model_with_labels(project_dir, model_type, model_name, subset, labels_
     model = None
     model_ensemble = None
     if do_ensemble:
-        model_ensemble = ensemble.Ensemble(output_dir, model_name + '_ensemble')
+        model_ensemble = ensemble.Ensemble(output_dir, model_name)
 
     if model_type == 'LR':
         for alpha_i, alpha in enumerate(alphas):
@@ -272,12 +272,13 @@ def train_model_with_labels(project_dir, model_type, model_name, subset, labels_
             model = model_ensemble
             model.save()
 
-        printv("Training full model", verbose)
-        model = lr.LR(best_alpha, penalty=penalty, fit_intercept=intercept, output_dir=output_dir, name=model_name)
+        else:
+            printv("Training full model", verbose)
+            model = lr.LR(best_alpha, penalty=penalty, fit_intercept=intercept, output_dir=output_dir, name=model_name)
 
-        X, Y, w = expand_features_and_labels(X, Y, weights)
-        model.fit(X, Y, train_weights=w, col_names=col_names)
-        model.save()
+            X, Y, w = expand_features_and_labels(X, Y, weights)
+            model.fit(X, Y, train_weights=w, col_names=col_names)
+            model.save()
 
     elif model_type == 'MLP':
         if dh > 0:

@@ -35,7 +35,7 @@ class Ensemble:
 
     def save(self):
         filename = os.path.join(self._model_dir, self._name + '.json')
-        fh.write_to_json(self._models.keys(), filename)
+        fh.write_to_json(list(self._models.keys()), filename)
 
 
 def load_from_file(model_dir, name):
