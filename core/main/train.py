@@ -151,8 +151,7 @@ def train_model_with_labels(project_dir, model_type, model_name, subset, labels_
 
     #weights = pd.DataFrame(1.0/labels_df.sum(axis=1), index=labels_df.index, columns=['inv_n_labels'])
     # divide weights by the number of annotations that we have for each item
-
-    weights = weights * 1.0/Y.sum(axis=1)
+    #weights = weights * 1.0/Y.sum(axis=1)
 
     print("Train feature matrix shape: (%d, %d)" % X.shape)
 
@@ -336,7 +335,7 @@ def train_model_with_labels(project_dir, model_type, model_name, subset, labels_
     return model
 
 
-def expand_features_and_labels(X, Y, weights):
+def expand_features_and_labels(X, Y, weights=None, predictions=None):
     """
     Expand the feature matrix and label matrix by converting items with multiple labels to multiple rows with 1 each
     :param X: feature matrix (n_items, n_features)
@@ -347,7 +346,10 @@ def expand_features_and_labels(X, Y, weights):
     X_list = []
     Y_list = []
     weights_list = []
+    pred_list = []
     n_items, n_classes = Y.shape
+    if weights is None:
+        weights = np.ones(n_items)
     for i in range(n_items):
         labels = Y[i, :]
         total = labels.sum()
@@ -359,6 +361,8 @@ def expand_features_and_labels(X, Y, weights):
                     label_vector[index] = 1
                     Y_list.append(label_vector)
                     weights_list.append(weights[i] * 1.0/total)
+                    if predictions is not None:
+                        pred_list.append(predictions[i])
 
     if sparse.issparse(X):
         X_return = sparse.vstack(X_list)
@@ -366,7 +370,11 @@ def expand_features_and_labels(X, Y, weights):
         X_return = np.vstack(X_list)
     y_return = np.array(Y_list)
     weights_return = np.array(weights_list)
-    return X_return, y_return, weights_return
+    if predictions is None:
+        return X_return, y_return, weights_return
+    else:
+        pred_return = np.array(pred_list)
+        return X_return, y_return, weights_return, pred_return
 
 
 if __name__ == '__main__':

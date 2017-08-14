@@ -347,6 +347,3 @@ def get_feature_signature(feature_def, feature):
     elif feature_def.transform == 'doc2vec':
         signature['p_w'] = feature.compute_p_w().tolist()
     return signature
-
-
-
