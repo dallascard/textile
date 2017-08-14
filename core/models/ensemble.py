@@ -13,6 +13,7 @@ class Ensemble:
         self._models = {}
         self._model_dir = model_dir
         self._name = name
+        self._model_type = 'ensemble'
 
     def add_model(self, model, name):
         self._models[name] = model

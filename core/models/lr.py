@@ -210,7 +210,7 @@ class LR:
         fh.write_to_json(self.get_col_names(), os.path.join(self._output_dir, self._name + '_col_names.json'), sort_keys=False)
 
 
-def load_from_file(model_dir, name='model'):
+def load_from_file(model_dir, name):
     input = fh.read_json(os.path.join(model_dir, name + '_metadata.json'))
     col_names = fh.read_json(os.path.join(model_dir, name + '_col_names.json'))
     n_classes = int(input['n_classes'])

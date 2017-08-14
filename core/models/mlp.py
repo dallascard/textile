@@ -184,7 +184,7 @@ class MLP:
         fh.write_to_json(output, os.path.join(self._output_dir, self._name + '_metadata.json'), sort_keys=False)
 
 
-def load_from_file(model_dir, name='model'):
+def load_from_file(model_dir, name):
     input = fh.read_json(os.path.join(model_dir, name + '_metadata.json'))
     dimensions = input['dimensions']
     penalty = float(input['penalty'])

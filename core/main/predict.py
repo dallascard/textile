@@ -38,7 +38,7 @@ def main():
 def load_and_predict(project_dir, model_type, model_name, test_subset, label_name, items_to_use=None):
     print("Loading model")
     model_dir = os.path.join(dirs.dir_models(project_dir), model_name)
-    model = load_model.load_model(model_dir, model_type)
+    model = load_model.load_model(model_dir, model_name, model_type)
     predict(project_dir, model, model_name, test_subset, label_name, items_to_use=items_to_use)
 
 
