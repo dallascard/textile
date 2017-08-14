@@ -47,7 +47,7 @@ class MLP:
         else:
             self._model = model
 
-    def fit(self, X_train, Y_train, X_dev, Y_dev, train_weights=None, dev_weights=None, **kwargs):
+    def fit(self, X_train, Y_train, X_dev, Y_dev, train_weights=None, dev_weights=None, seed=None, **kwargs):
         """
         Fit a classifier to data
         """
@@ -67,7 +67,7 @@ class MLP:
             self._model = None
         else:
             model_filename = os.path.join(self._output_dir, self._name + '.ckpt')
-            self._model = tf_MLP(self._dimensions,  model_filename, loss_function=self._loss_function, penalty=self._penalty, reg_strength=self._reg_strength, nonlinearity=self._nonlinearity)
+            self._model = tf_MLP(self._dimensions,  model_filename, loss_function=self._loss_function, penalty=self._penalty, reg_strength=self._reg_strength, nonlinearity=self._nonlinearity, seed=seed)
             self._model.train(X_train, Y_train, X_dev, Y_dev, train_weights, dev_weights)
 
         # do a quick evaluation and store the results internally
@@ -204,7 +204,7 @@ def load_from_file(model_dir, name):
 class tf_MLP:
 
     # TODO: optionally add embedding layer, or embedding updates, or attention over embeddings
-    def __init__(self, dimensions, filename, loss_function='log', penalty=None, reg_strength=0.1, nonlinearity='tanh'):
+    def __init__(self, dimensions, filename, loss_function='log', penalty=None, reg_strength=0.1, nonlinearity='tanh', seed=None):
         """
         Create an MLP in tensorflow, using a softmax on the final layer
         """
@@ -224,7 +224,7 @@ class tf_MLP:
         self.weights = []
         self.biases = []
         for layer in range(1, len(dimensions)):
-            self.weights.append(tf_common.weight_variable((dimensions[layer-1], dimensions[layer]), name='weights' + str(layer)))
+            self.weights.append(tf_common.weight_variable((dimensions[layer-1], dimensions[layer]), name='weights' + str(layer), seed=seed))
             self.biases.append(tf_common.bias_variable((dimensions[layer], ), 0.0, name='weights' + str(layer)))
 
         self.scores = []

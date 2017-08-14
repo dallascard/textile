@@ -62,12 +62,12 @@ def main():
     for f in config['feature_defs']:
         feature_defs.append(features.parse_feature_string(f))
 
-    train_model(project_dir, model_type, model_name, subset, label, feature_defs, weights_file, penalty=penalty, intercept=intercept, objective=objective, n_dev_folds=n_dev_folds, do_ensemble=do_ensemble, dh=dh)
+    train_model(project_dir, model_type, model_name, subset, label, feature_defs, weights_file, penalty=penalty, intercept=intercept, objective=objective, n_dev_folds=n_dev_folds, do_ensemble=do_ensemble, dh=dh, seed=seed)
 
 
 def train_model(project_dir, model_type, model_name, subset, label, feature_defs, weights_file=None, items_to_use=None,
                 penalty='l2', alpha_min=0.01, alpha_max=1000, n_alphas=8, intercept=True,
-                objective='f1', n_dev_folds=5, save_model=True, do_ensemble=False, dh=0, verbose=True):
+                objective='f1', n_dev_folds=5, save_model=True, do_ensemble=False, dh=0, seed=None, verbose=True):
 
     label_dir = dirs.dir_labels(project_dir, subset)
     labels_df = fh.read_csv_to_df(os.path.join(label_dir, label + '.csv'), index_col=0, header=0)
@@ -78,14 +78,15 @@ def train_model(project_dir, model_type, model_name, subset, label, feature_defs
     #    assert np.all(weights_df.index == labels_df.index)
     #    weights = weights_df['weight'].values
 
-    return train_model_with_labels(project_dir, model_type, model_name, subset, labels_df, feature_defs, weights, items_to_use,
-                            penalty, alpha_min, alpha_max, n_alphas, intercept,
-                            objective, n_dev_folds, save_model, do_ensemble, dh, verbose)
+    return train_model_with_labels(project_dir, model_type, model_name, subset, labels_df, feature_defs, weights,
+                                   items_to_use, penalty, alpha_min, alpha_max, n_alphas, intercept, objective,
+                                   n_dev_folds, save_model, do_ensemble, dh, seed, verbose)
 
 
 def train_model_with_labels(project_dir, model_type, model_name, subset, labels_df, feature_defs, weights_df=None,
                             items_to_use=None, penalty='l2', alpha_min=0.01, alpha_max=1000, n_alphas=8, intercept=True,
-                            objective='f1', n_dev_folds=5, save_model=True, do_ensemble=False, dh=0, verbose=True):
+                            objective='f1', n_dev_folds=5, save_model=True, do_ensemble=False, dh=0, seed=None,
+                            verbose=True):
 
     features_dir = dirs.dir_features(project_dir, subset)
     n_items, n_classes = labels_df.shape
@@ -263,7 +264,7 @@ def train_model_with_labels(project_dir, model_type, model_name, subset, labels_
                 w_dev = weights[dev_indices]
                 X_train, Y_train, w_train = expand_features_and_labels(X_train, Y_train, w_train)
                 X_dev, Y_dev, w_dev = expand_features_and_labels(X_dev, Y_dev, w_dev)
-                model.fit(X_train, Y_train, train_weights=w_train, X_dev=X_dev, Y_dev=Y_dev, dev_weights=w_dev, col_names=col_names)
+                model.fit(X_train, Y_train, train_weights=w_train, X_dev=X_dev, Y_dev=Y_dev, dev_weights=w_dev, col_names=col_names, seed=seed)
                 if save_model:
                     model.save()
                 model_ensemble.add_model(model, name)
