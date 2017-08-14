@@ -1,8 +1,10 @@
+import os
 import operator
 from optparse import OptionParser
 
 from ..models import lr
 from ..models import load_model
+from ..util import file_handling as fh
 
 def main():
     usage = "%prog model_dir"
@@ -40,6 +42,13 @@ def main():
                 output = str(c) + ': ' + ' '.join([t for t in terms[-1:-n_terms:-1]])
                 print(output)
     elif model_type == 'MLP':
+        features_file = os.path.join(model_dir, 'features.json')
+        features = fh.read_json(features_file)
+        word_vectors_prefix = features['word_vectors_prefix']
+        word_vectors = fh.load_dense(word_vectors_prefix + '.npz')
+        word_vector_terms = fh.read_json(word_vectors_prefix + '.json')
+        vocab_size = len(word_vector_terms)
+
 
 
 

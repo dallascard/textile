@@ -348,7 +348,8 @@ class tf_MLP:
                 x_i = X[i, :].reshape((1, n_features))
                 feed_dict = {self.x: x_i, self.sample_weights: 1.0}
                 probs = sess.run(self.probs, feed_dict=feed_dict)
-                probs_list.append(probs)
+                _, n_classes = probs.shape
+                probs_list.append(probs.reshape(n_classes, ))
 
         pred_probs = np.array(probs_list, dtype=int)
         return pred_probs
