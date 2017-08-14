@@ -87,9 +87,7 @@ def predict(project_dir, model, model_name, test_subset, label_name, items_to_us
         X = features_concat.get_counts()
     print("Feature matrix shape: (%d, %d)" % X.shape)
 
-    if model_type == 'BLR':
-        X = np.array(X.todense())
-
+    print("Doing prediction")
     predictions = model.predict(X)
     pred_probs = model.predict_probs(X)
     n_items, n_labels = pred_probs.shape
