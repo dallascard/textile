@@ -81,7 +81,7 @@ def evaluate_predictions(labels_df, predictions_df, pred_probs_df=None, pos_labe
             weights = np.ones(n_items)
         pred_props = np.dot(weights, pred_probs)
         pred_props = pred_probs / np.sum(pred_props)
-        true_props = evaluation.compute_proportions(labels, n_classes, weights)
+        true_props = evaluation.compute_proportions(labels, weights)
         rmse = evaluation.eval_proportions(true_props, pred_props, 'mse')
         print("RMSE on \sum pred probs = %0.3f" % rmse)
 
