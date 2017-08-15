@@ -99,7 +99,6 @@ def import_review_data(reviews_file, project_dir, prop, approx=False):
     print("Saving data")
     data_dir = dirs.dir_data_raw(project_dir)
     fh.makedirs(data_dir)
-
     fh.write_to_json(data, os.path.join(data_dir, 'all.json'))
 
 if __name__ == '__main__':
