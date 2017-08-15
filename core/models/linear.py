@@ -144,8 +144,8 @@ class LinearClassifier:
             # otherwise, get probabilities from the model
             model_probs = self._model.predict(X)
             # map these probabilities back to the full set of classes
-            for i, cl in enumerate(self._model.classes_):
-                full_probs[:, cl] = model_probs[:, i]
+            full_probs[:, 0] = 1 - model_probs
+            full_probs[:, 1] = model_probs
             return full_probs
 
     def get_penalty(self):
