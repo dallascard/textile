@@ -48,7 +48,7 @@ def load_and_evaluate_predictons(project_dir, model_name, subset, label, items_t
 
     weights = None
 
-    evaluate_predictions(labels, predictions, pred_probs=pred_probs, pos_label=pos_label, average=average, weights=weights)
+    evaluate_predictions(labels, predictions, pred_probs_df=pred_probs, pos_label=pos_label, average=average, weights=weights)
 
 
 def evaluate_predictions(labels_df, predictions_df, pred_probs_df=None, pos_label=1, average='micro', weights=None):
