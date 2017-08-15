@@ -3,7 +3,7 @@ import sys
 
 import numpy as np
 
-from ..models import lr, mlp
+from ..models import linear, mlp
 from ..util import file_handling as fh
 
 
@@ -59,7 +59,7 @@ def load_from_file(model_dir, name):
         metadata = fh.read_json(filename)
         model_type = metadata['model_type']
         if model_type == 'LR':
-            model = lr.load_from_file(model_dir, m)
+            model = linear.load_from_file(model_dir, m)
         elif model_type == 'MLP':
             model = mlp.load_from_file(model_dir, m)
         else:
