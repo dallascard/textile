@@ -65,7 +65,7 @@ def evaluate_predictions(labels_df, predictions_df, pos_label=1, average='micro'
     acc = evaluation.acc_score(true, predictions, n_classes, weights=weights)
     print("Accuracy = %0.3f" % acc)
 
-    rmse = evaluation.evaluate_proportions_mse(true, predictions, n_classes, weights)
+    rmse = evaluation.evaluate_proportions_mse(true, predictions, n_classes, weights, verbose=True)
     print("RMSE on proportions = %0.3f" % rmse)
 
     return f1, acc

@@ -51,9 +51,12 @@ def brier_score(true, pred_probs, binary_form=False, weights=None):
     return score
 
 
-def evaluate_proportions_mse(labels, predictions, n_classes, weights=None):
+def evaluate_proportions_mse(labels, predictions, n_classes, weights=None, verbose=False):
     true_props = compute_proportions(labels, n_classes, weights)
     pred_props = compute_proportions(predictions, n_classes, weights)
+    if verbose:
+        print("True proportions:", true_props)
+        print("Pred proportions:", pred_props)
     return eval_proportions_mse(true_props, pred_props)
 
 
