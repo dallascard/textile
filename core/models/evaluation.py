@@ -51,6 +51,7 @@ def brier_score(true, pred_probs, binary_form=False, weights=None):
     return score
 
 
+"""
 def evaluate_proportions_mse(labels, predictions, n_classes, weights=None, verbose=False):
     true_props = compute_proportions(labels, n_classes, weights)
     pred_props = compute_proportions(predictions, n_classes, weights)
@@ -58,6 +59,7 @@ def evaluate_proportions_mse(labels, predictions, n_classes, weights=None, verbo
         print("True proportions:", true_props)
         print("Pred proportions:", pred_props)
     return eval_proportions_mse(true_props, pred_props)
+"""
 
 
 def evaluate_calibration_mse_bins(true_labels, pred_probs, n_bins=5):
@@ -120,7 +122,16 @@ def eval_proportions_kld(true_props, pred_props, epsilon=1e-5):
     return kld_sum
 
 
-def compute_proportions(labels, n_classes, weights=None):
+
+def compute_proportions(labels, weights=None):
+    n_items, n_classes = labels.shape
+    if weights is None:
+        weights = np.ones(n_items)
+    class_sums = np.dot(weights, labels)
+    return class_sums / float(class_sums.sum())
+
+
+def compute_proportions_from_label_vector(labels, n_classes, weights=None):
     if weights is None:
         weights = np.ones(len(labels))
     label_counts = np.zeros(n_classes)

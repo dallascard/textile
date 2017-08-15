@@ -78,19 +78,21 @@ def evaluate_predictions(labels_df, predictions_df, pred_probs_df=None, pos_labe
     acc = evaluation.acc_score(true, predictions, n_classes, weights=weights)
     print("Accuracy = %0.3f" % acc)
 
-    rmse = evaluation.evaluate_proportions_mse(true, predictions, n_classes, weights, verbose=True)
+    true_props = evaluation.compute_proportions(labels, weights)
+    predicted_label_props = evaluation.compute_proportions_from_label_vector(predictions, n_classes, weights)
+
+    print("True:", true_props)
+    print("Pred:", predicted_label_props)
+
+    rmse = evaluation.eval_proportions_mse(true_props, predicted_label_props)
     print("RMSE on proportions (CC) = %0.3f" % rmse)
 
     # if predicted probabilities are given, also evaluate the proportion estimate based on these
     if pred_probs is not None:
-        if weights is None:
-            weights = np.ones(n_items)
-        pred_props = np.dot(weights, pred_probs)
-        pred_props = pred_props / np.sum(pred_props)
-        true_counts = np.dot(weights, labels)
-        true_props = true_counts / float(true_counts.sum())
-        rmse = evaluation.eval_proportions(true_props, pred_props, 'mse')
-        print("RMSE on proportions (PCC) = %0.3f" % rmse)
+        predicted_prob_proportions = evaluation.compute_proportions_from_label_vector(predictions, n_classes, weights)
+        rmse = evaluation.eval_proportions_mse(true_props, predicted_prob_proportions)
+        print("Pred (p):", predicted_prob_proportions)
+        print("RMSE on proportions (p) = %0.3f" % rmse)
 
 
     return f1, acc
