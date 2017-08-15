@@ -197,7 +197,7 @@ class LinearClassifier:
                         intercept = self._model.intercept_[i]
                         break
             elif self._loss_function == 'brier':
-                intercept = self._model.intercept_[i]
+                intercept = self._model.intercept_
         return intercept
 
     def get_model_size(self):
