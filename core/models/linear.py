@@ -1,11 +1,12 @@
 import os
+import sys
 import operator
 import tempfile
 
 import numpy as np
 from sklearn.externals import joblib
-from sklearn.linear_model import LogisticRegression as lr
-from sklearn.linear_model import SGDClassifier
+from sklearn.linear_model import LogisticRegression
+from sklearn.linear_model import LinearRegression, Lasso, Ridge
 
 from ..util import file_handling as fh
 from ..models import evaluation
@@ -85,9 +86,18 @@ class LinearClassifier:
 
         else:
             if self._loss_function == 'log':
-                self._model = lr(penalty=self._penalty, C=self._alpha, fit_intercept=self._fit_intercept)
+                self._model = LogisticRegression(penalty=self._penalty, C=self._alpha, fit_intercept=self._fit_intercept)
+            elif self._loss_function == 'brier':
+                if self._penalty == 'l1':
+                    self._model = Lasso(alpha=self._alpha, fit_intercept=self._fit_intercept)
+                elif self._penalty == 'l2':
+                    self._model = Ridge(alpha=self._alpha, fit_intercept=self._fit_intercept)
+                elif self._penalty is None:
+                    self._model = LinearRegression(fit_intercept=self._fit_intercept)
+                else:
+                    sys.exit('penalty %s not supported with %s loss' % (self._penalty, self._loss_function))
             else:
-                self._model = SGDClassifier(loss=self._loss_function, penalty=self._penalty, alpha=self._alpha, fit_intercept=self._fit_intercept)
+                sys.exit('Loss function %s not supported' % self._loss_function)
             # train the model using a vector of labels
             self._model.fit(X_train, train_labels, sample_weight=train_weights)
 
@@ -108,8 +118,10 @@ class LinearClassifier:
             # else, get the model to make predictions
             n_items, _ = X.shape
             return np.ones(n_items, dtype=int) * np.argmax(self._train_proportions)
-        else:
+        elif self._loss_function == 'log':
             return self._model.predict(X)
+        elif self._loss_function == 'brier':
+            return np.array(self._model.predict(X) > 0, dtype=int)
 
     def predict_probs(self, X):
         n_items, _ = X.shape
@@ -119,9 +131,16 @@ class LinearClassifier:
             default = np.argmax(self._train_proportions)
             full_probs[:, default] = 1.0
             return full_probs
-        else:
+        elif self._loss_function == 'log':
             # otherwise, get probabilities from the model
             model_probs = self._model.predict_proba(X)
+            # map these probabilities back to the full set of classes
+            for i, cl in enumerate(self._model.classes_):
+                full_probs[:, cl] = model_probs[:, i]
+            return full_probs
+        elif self._loss_function == 'brier':
+            # otherwise, get probabilities from the model
+            model_probs = self._model.predict(X)
             # map these probabilities back to the full set of classes
             for i, cl in enumerate(self._model.classes_):
                 full_probs[:, cl] = model_probs[:, i]

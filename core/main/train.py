@@ -20,7 +20,7 @@ def main():
     parser.add_option('--model', dest='model', default='LR',
                       help='Model type [linear|MLP]: default=%default')
     parser.add_option('--loss', dest='loss', default='log',
-                      help='Loss function [log|squared_loss]: default=%default')
+                      help='Loss function [log|brier]: default=%default')
     parser.add_option('--dh', dest='dh', default=0,
                       help='Hidden layer size for MLP [0 for None]: default=%default')
     parser.add_option('--ensemble', action="store_true", dest="ensemble", default=False,
