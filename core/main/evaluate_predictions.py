@@ -39,17 +39,19 @@ def load_and_evaluate_predictons(project_dir, model_name, subset, label, items_t
 
     pred_dir = dirs.dir_predictions(project_dir, subset, model_name)
     predictions = fh.read_csv_to_df(os.path.join(pred_dir, label + '_predictions.csv'), index_col=0, header=0)
+    pred_probs = fh.read_csv_to_df(os.path.join(pred_dir, label + '_pred_probs.csv'), index_col=0, header=0)
 
     if items_to_use is not None:
         labels = labels.loc[items_to_use]
         predictions = predictions.loc[items_to_use]
+        pred_probs = pred_probs.loc[items_to_use]
 
     weights = None
 
-    evaluate_predictions(labels, predictions, pos_label=pos_label, average=average, weights=weights)
+    evaluate_predictions(labels, predictions, pred_probs=pred_probs, pos_label=pos_label, average=average, weights=weights)
 
 
-def evaluate_predictions(labels_df, predictions_df, pos_label=1, average='micro', weights=None):
+def evaluate_predictions(labels_df, predictions_df, pred_probs=None, pos_label=1, average='micro', weights=None):
     assert np.all(labels_df.index == predictions_df.index)
     n_items, n_classes = labels_df.shape
     labels = labels_df.values
@@ -57,6 +59,7 @@ def evaluate_predictions(labels_df, predictions_df, pos_label=1, average='micro'
 
     placeholder = np.zeros([n_items, 2])
     _, labels, weights, predictions = train.expand_features_and_labels(placeholder, labels, weights, predictions)
+    n_items, _ = labels.shape
     true = np.argmax(labels, axis=1)
 
     f1 = evaluation.f1_score(true, predictions, n_classes, pos_label=pos_label, average=average, weights=weights)
@@ -67,6 +70,16 @@ def evaluate_predictions(labels_df, predictions_df, pos_label=1, average='micro'
 
     rmse = evaluation.evaluate_proportions_mse(true, predictions, n_classes, weights, verbose=True)
     print("RMSE on proportions = %0.3f" % rmse)
+
+    if pred_probs is not None:
+        if weights is None:
+            weights = np.ones(n_items)
+        pred_props = np.dot(weights, pred_probs)
+        pred_props = pred_probs / np.sum(pred_props)
+        true_props = evaluation.compute_proportions(labels, n_classes, weights)
+        rmse = evaluation.eval_proportions(true_props, pred_props, 'mse')
+        print("RMSE on \sum pred probs = %0.3f" % rmse)
+
 
     return f1, acc
 

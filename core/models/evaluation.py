@@ -122,11 +122,11 @@ def eval_proportions_kld(true_props, pred_props, epsilon=1e-5):
 
 def compute_proportions(labels, n_classes, weights=None):
     if weights is None:
-        weights = 1.0 / np.sum(labels, axis=1)
+        weights = np.ones(len(labels))
     label_counts = np.zeros(n_classes)
     for c in range(n_classes):
         items = np.array(labels == c)
         label_counts[c] = np.sum(weights[items])
-    #label_counts = np.bincount(labels.values.reshape(len(labels),), minlength=n_classes)
     proportions = label_counts / float(label_counts.sum())
     return proportions
+
