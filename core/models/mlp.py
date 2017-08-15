@@ -256,7 +256,7 @@ class tf_MLP:
         self.initializer = tf.global_variables_initializer()
         self.saver = tf.train.Saver()
 
-    def train(self, X_train, Y_train, X_dev, Y_dev, w_train=None, w_dev=None, display_period=200, min_epochs=5, patience=5):
+    def train(self, X_train, Y_train, X_dev, Y_dev, w_train=None, w_dev=None, display_period=500, min_epochs=5, patience=5):
         done = False
         best_dev_f1 = 0
 
@@ -280,7 +280,8 @@ class tf_MLP:
                 # just do minibatches sizes of 1 for now
                 order = np.arange(n_train_items)
                 np.random.shuffle(order)
-                for i in order:
+                weight_sum = 0.0
+                for count, i in enumerate(order):
                     x_i = X_train[i, :].reshape((1, n_features))
                     y_i = np.array(Y_train[i], dtype=np.int32).reshape((1, n_classes))
                     w_i = w_train[i]
@@ -288,9 +289,10 @@ class tf_MLP:
                     feed_dict = {self.x: x_i, self.y: y_i, self.sample_weights: w_i}
                     _, loss, scores = sess.run([self.train_step, self.loss, self.scores_out], feed_dict=feed_dict)
                     running_accuracy += (np.argmax(y_i, axis=1) == np.argmax(scores, axis=1)) * w_i
+                    weight_sum += w_i
                     running_loss += loss * w_i
-                    if i % display_period == 0 and i > 0:
-                        print(i, running_loss / np.sum(w_train[:i+1]), running_accuracy / np.sum(w_train[:i+1]))
+                    if count % display_period == 0 and i > 0:
+                        print(count, running_loss / weight_sum, running_accuracy / weight_sum)
 
                 predictions = []
                 for i in range(n_dev_items):
