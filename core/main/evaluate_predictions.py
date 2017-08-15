@@ -57,13 +57,13 @@ def evaluate_predictions(labels_df, predictions_df, pred_probs_df=None, pos_labe
     labels = labels_df.values
     predictions = predictions_df.values.reshape((n_items,))
 
-
     if pred_probs_df is None:
         pred_probs = np.zeros([n_items, 2])
     else:
         pred_probs = pred_probs_df.values
 
     pred_probs, labels, weights, predictions = train.expand_features_and_labels(pred_probs, labels, weights, predictions)
+    print(pred_probs.shape, labels.shape)
     n_items, _ = labels.shape
     true = np.argmax(labels, axis=1)
 
