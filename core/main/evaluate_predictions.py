@@ -57,6 +57,7 @@ def evaluate_predictions(labels_df, predictions_df, pred_probs_df=None, pos_labe
     assert np.all(labels_df.index == predictions_df.index)
     n_items, n_classes = labels_df.shape
     labels = labels_df.values
+    print(predictions_df.shape)
     predictions = predictions_df.values.reshape((n_items,))
 
     if pred_probs_df is None:
@@ -64,9 +65,16 @@ def evaluate_predictions(labels_df, predictions_df, pred_probs_df=None, pos_labe
     else:
         pred_probs = pred_probs_df.values
 
+    print(labels)
+    print(pred_probs)
+
+    print("Expanding")
     # use this function in a slightly hacky way to expand the predicted probabilities
     pred_probs, labels, weights, predictions = train.prepare_data(pred_probs, labels, weights, predictions, loss=loss)
     n_items, _ = labels.shape
+
+    print(labels)
+    print(pred_probs)
 
     # get the true label for each item
     true = np.argmax(labels, axis=1)

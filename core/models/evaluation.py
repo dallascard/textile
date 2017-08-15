@@ -120,6 +120,7 @@ def eval_proportions_kld(true_props, pred_props, epsilon=1e-5):
     return kld_sum
 
 
+# TODO: look for differences between weighted and unweighted
 def compute_proportions(labels, n_classes, weights=None):
     if weights is None:
         weights = np.ones(len(labels))
