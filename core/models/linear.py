@@ -64,7 +64,7 @@ class LinearClassifier:
         :return: None
         """
         n_train_items, n_features = X_train.shape
-        _, n_classes = Y_train.shae
+        _, n_classes = Y_train.shape
         self._n_classes = n_classes
         if self._loss_function == 'brier' and self._n_classes != 2:
             sys.exit("Only 2-class problems supported with brier score")
