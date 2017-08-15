@@ -380,10 +380,7 @@ def prepare_data(X, Y, weights=None, predictions=None, loss='log'):
         else:
             X_return = np.vstack(X_list)
         Y_return = np.array(Y_list)
-        if weights is None:
-            weights_return = None
-        else:
-            weights_return = np.array(weights_list)
+        weights_return = np.array(weights_list)
         if predictions is not None:
             pred_return = np.array(pred_list)
 
@@ -396,7 +393,7 @@ def prepare_data(X, Y, weights=None, predictions=None, loss='log'):
         X_return = X.copy()
         Y_return = np.array(Y_list)
         if weights is None:
-            weights_return = None
+            weights_return = np.ones(n_items)
         else:
             weights_return = np.array(weights)
         if predictions is not None:
