@@ -123,7 +123,7 @@ class LinearClassifier:
         elif self._loss_function == 'log':
             return self._model.predict(X)
         elif self._loss_function == 'brier':
-            return np.array(self._model.predict(X) > 0, dtype=int)
+            return np.array(self._model.predict(X) > 0.5, dtype=int)
 
     def predict_probs(self, X):
         n_items, _ = X.shape
