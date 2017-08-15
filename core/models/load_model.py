@@ -2,7 +2,7 @@ import os
 import sys
 
 from ..util import file_handling as fh
-from ..models import lr, mlp, ensemble
+from ..models import linear, mlp, ensemble
 
 
 def load_model(model_dir, model_name, model_type=None):
@@ -14,7 +14,7 @@ def load_model(model_dir, model_name, model_type=None):
             sys.exit("Auto-detect failed; please specify model type")
 
     if model_type == 'LR':
-        return lr.load_from_file(model_dir, model_name)
+        return linear.load_from_file(model_dir, model_name)
     elif model_type == 'MLP':
         return mlp.load_from_file(model_dir, model_name)
     elif model_type == 'ensemble':
