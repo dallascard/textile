@@ -353,7 +353,7 @@ def prepare_data(X, Y, weights=None, predictions=None, loss='log'):
     """
     n_items, n_classes = Y.shape
     pred_return = None
-    if loss == 'log' or loss == 'hinge':
+    if loss == 'log':
         # duplicate and down-weight items with multiple labels
         X_list = []
         Y_list = []
@@ -384,7 +384,7 @@ def prepare_data(X, Y, weights=None, predictions=None, loss='log'):
         if predictions is not None:
             pred_return = np.array(pred_list)
 
-    elif loss == 'squared_loss' or loss == 'huber':
+    elif loss == 'brier':
         # just normalize labels
         Y_list = []
         for i in range(n_items):
