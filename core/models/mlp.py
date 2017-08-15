@@ -209,6 +209,7 @@ class tf_MLP:
         Create an MLP in tensorflow, using a softmax on the final layer
         """
         self.dimensions = dimensions
+        self.loss_function = loss_function
         self.n_hidden_layers = len(dimensions) - 2
         self.loss_function = loss_function
         self.penalty = penalty
@@ -218,7 +219,12 @@ class tf_MLP:
 
         # create model
         self.x = tf.placeholder(tf.float32, shape=[None, dimensions[0]])
-        self.y = tf.placeholder(tf.int32, shape=[None, dimensions[-1]])
+        if loss_function == 'log':
+            self.y = tf.placeholder(tf.int32, shape=[None, dimensions[-1]])
+        elif loss_function == 'brier':
+            self.y = tf.placeholder(tf.float32, shape=[None, dimensions[-1]])
+        else:
+            sys.exit("%s loss not supported" % loss_function)
         self.sample_weights = tf.placeholder(tf.float32)
 
         self.weights = []
