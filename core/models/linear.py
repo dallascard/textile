@@ -64,8 +64,10 @@ class LinearClassifier:
         :return: None
         """
         n_train_items, n_features = X_train.shape
-        _, n_classes = Y_train.shape
+        _, n_classes = Y_train.shae
         self._n_classes = n_classes
+        if self._loss_function == 'brier' and self._n_classes != 2:
+            sys.exit("Only 2-class problems supported with brier score")
 
         # store the proportion of class labels in the training data
         if train_weights is None:
@@ -173,10 +175,13 @@ class LinearClassifier:
     def get_coefs(self, target_class=0):
         coefs = zip(self._col_names, np.zeros(len(self._col_names)))
         if self._model is not None:
-            for i, cl in enumerate(self._model.classes_):
-                if cl == target_class:
-                    coefs = zip(self._col_names, self._model.coef_[i])
-                    break
+            if self._loss_function == 'log':
+                for i, cl in enumerate(self._model.classes_):
+                    if cl == target_class:
+                        coefs = zip(self._col_names, self._model.coef_[i])
+                        break
+            elif self._loss_function == 'brier':
+                coefs = zip(self._col_names, self._model.coef_)
         return coefs
 
     def get_intercept(self, target_class=0):
@@ -184,10 +189,13 @@ class LinearClassifier:
         intercept = 0
         if self._model is not None:
             # otherwise, see if the model an intercept for this class
-            for i, cl in enumerate(self._model.classes_):
-                if cl == target_class:
-                    intercept = self._model.intercept_[i]
-                    break
+            if self._loss_function == 'log':
+                for i, cl in enumerate(self._model.classes_):
+                    if cl == target_class:
+                        intercept = self._model.intercept_[i]
+                        break
+            elif self._loss_function == 'brier':
+                intercept = self._model.intercept_[i]
         return intercept
 
     def get_model_size(self):
