@@ -72,8 +72,6 @@ def predict(project_dir, model, model_name, test_subset, label_name, items_to_us
         idf = None
         if feature_def.transform == 'tfidf':
             idf = sig['idf']
-        if feature_def.transform == 'doc2vec':
-            p_w = sig['p_w']
         word_vectors_prefix = sig['word_vectors_prefix']
         test_feature.transform(feature_def.transform, idf=idf, word_vectors_prefix=word_vectors_prefix, alpha=feature_def.alpha)
         printv("Final shape = (%d, %d)" % test_feature.get_shape(), verbose)
@@ -99,6 +97,7 @@ def predict(project_dir, model, model_name, test_subset, label_name, items_to_us
 
     pred_probs_df = pd.DataFrame(pred_probs, index=features_concat.get_items(), columns=range(n_labels))
     pred_probs_df.to_csv(os.path.join(output_dir, label_name + '_pred_probs.csv'))
+    print("Done")
 
     return predictions_df, pred_probs_df
 

@@ -42,7 +42,7 @@ class Feature:
     features for a classifier and apply transformation such as tf-idf or limit the vocabulary.
     """
 
-    def __init__(self, name, items, terms, counts):
+    def __init__(self, name, items, terms, counts, col_names=None):
         self.name = name       # name of feature
         assert type(items) == list
         self.items = items     # list of items
@@ -54,6 +54,11 @@ class Feature:
         else:
             self.sparse = False
         self.counts = counts
+        # add an additional member to be usd primarily for the case of vector transformations
+        if col_names is None:
+            self.col_names = terms[:]
+        else:
+            self.col_names = col_names
 
     def get_name(self):
         return self.name
@@ -63,6 +68,9 @@ class Feature:
 
     def get_terms(self):
         return self.terms
+
+    def get_col_names(self):
+        return self.col_names
 
     def get_counts(self):
         return self.counts
@@ -81,8 +89,7 @@ class Feature:
         assert self.sparse
         fh.save_sparse(self.counts, output_filename)
         # save index and column names separately for human readability
-        fh.write_to_json({'items': self.items, 'terms': self.terms}, os.path.join(output_dir, self.name + '.json'),
-                         sort_keys=False)  # Feature.save: fh.write_to_json()
+        fh.write_to_json({'items': self.items, 'terms': self.terms, 'col_names': self.col_names}, os.path.join(output_dir, self.name + '.json'), sort_keys=False)  # Feature.save: fh.write_to_json()
 
     def transform(self, transform, idf=None, verbose=False, word_vectors_prefix=None, alpha=None):
         """
@@ -126,7 +133,7 @@ class Feature:
                     doc_vectors[i, :] = np.dot(self.counts[i, :].todense(), word_vectors)
                 self.counts = doc_vectors  # this will no longer be sparse
                 self.sparse = False
-                self.terms = [str(i) for i in range(dh)]
+                self.col_names = [str(i) for i in range(dh)]
             else:
                 sys.exit('Tranform %s not recognized' % transform)
 
@@ -163,6 +170,7 @@ class Feature:
             indices = [i for i, v in enumerate(col_sums) if v >= min_df]
             self.counts = self.counts[:, indices]
             self.terms = [self.terms[i] for i in indices]
+            self.col_names = self.terms[:]
 
         if max_fp < 1.0:
             printv("Thresholding %s by max_fp=%0.3f" % (self.name, max_fp), verbose)
@@ -174,6 +182,7 @@ class Feature:
             indices = [i for i, v in enumerate(col_freq) if v <= max_fp]
             self.counts = self.counts[:, indices]
             self.terms = [self.terms[i] for i in indices]
+            self.col_names = self.terms[:]
 
     def set_terms(self, terms):
         """
@@ -236,7 +245,10 @@ def create_from_dict_of_counts(name, dict_of_counters):
 def load_from_file(input_dir, basename):
     metadata = fh.read_json(os.path.join(input_dir, basename + '.json'))
     counts = fh.load_sparse(os.path.join(input_dir, basename + '.npz'))    # sparse.csc_matrix
-    return Feature(basename, metadata['items'], metadata['terms'], counts)
+    if 'col_names' in metadata:
+        return Feature(basename, metadata['items'], metadata['terms'], counts, col_names=col_names)
+    else:
+        return Feature(basename, metadata['items'], metadata['terms'], counts)
 
 
 def create_from_feature(feature, indices):
@@ -244,7 +256,8 @@ def create_from_feature(feature, indices):
     items = feature.get_items()
     terms = feature.get_terms()
     counts = feature.get_counts()
-    return Feature(name, [items[i] for i in indices], terms, counts.tocsr()[indices, :].tocsc())
+    col_names = feature.get_col_names()
+    return Feature(name, [items[i] for i in indices], terms, counts.tocsr()[indices, :].tocsc(), col_names=col_names)
 
 
 def create_from_dict_of_vectors(name, dict_of_vectors):
@@ -342,6 +355,7 @@ def get_feature_signature(feature_def, feature):
     signature['max_fp'] = feature_def.max_fp
     signature['transform'] = feature_def.transform
     signature['terms'] = feature.get_terms()
+    signature['col_names'] = feature.get_col_names()
     if feature_def.transform == 'tfidf':
         signature['idf'] = feature.compute_idf().tolist()
     elif feature_def.transform == 'doc2vec':

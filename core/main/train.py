@@ -141,7 +141,7 @@ def train_model_with_labels(project_dir, model_type, model_name, subset, labels_
         fh.write_to_json(feature_signatures, os.path.join(output_dir, 'features.json'), sort_keys=False)
 
     features_concat = features.concatenate(feature_list)
-    col_names = features_concat.terms
+    col_names = features_concat.get_col_names()
 
     if features_concat.sparse:
         X = features_concat.get_counts().tocsr()
