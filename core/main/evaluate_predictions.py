@@ -57,8 +57,10 @@ def evaluate_predictions(labels_df, predictions_df, pred_probs=None, pos_label=1
     labels = labels_df.values
     predictions = predictions_df.values.reshape((n_items,))
 
-    placeholder = np.zeros([n_items, 2])
-    _, labels, weights, predictions = train.expand_features_and_labels(placeholder, labels, weights, predictions)
+    if pred_probs is None:
+        pred_probs = np.zeros([n_items, 2])
+
+    pred_probs, labels, weights, predictions = train.expand_features_and_labels(pred_probs, labels, weights, predictions)
     n_items, _ = labels.shape
     true = np.argmax(labels, axis=1)
 
