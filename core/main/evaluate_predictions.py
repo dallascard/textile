@@ -89,7 +89,7 @@ def evaluate_predictions(labels_df, predictions_df, pred_probs_df=None, pos_labe
 
     # if predicted probabilities are given, also evaluate the proportion estimate based on these
     if pred_probs is not None:
-        predicted_prob_proportions = evaluation.compute_proportions_from_label_vector(predictions, n_classes, weights)
+        predicted_prob_proportions = evaluation.compute_proportions(pred_probs, weights)
         rmse = evaluation.eval_proportions_mse(true_props, predicted_prob_proportions)
         print("Pred (p):", predicted_prob_proportions)
         print("RMSE on proportions (p) = %0.3f" % rmse)
