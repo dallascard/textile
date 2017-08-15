@@ -5,17 +5,19 @@ import tempfile
 import numpy as np
 from sklearn.externals import joblib
 from sklearn.linear_model import LogisticRegression as lr
+from sklearn.linear_model import SGDClassifier
 
 from ..util import file_handling as fh
 from ..models import evaluation
 
-class LR:
+class LinearClassifier:
     """
     Wrapper class for logistic regression from sklearn
     """
-    def __init__(self, alpha, penalty='l2', fit_intercept=True, output_dir=None, name='model'):
+    def __init__(self, alpha, loss_function='log', penalty='l2', fit_intercept=True, output_dir=None, name='model'):
         self._model_type = 'LR'
         self._alpha = alpha
+        self._loss_function = loss_function
         self._penalty = penalty
         self._fit_intercept = fit_intercept
         self._n_classes = None
@@ -38,6 +40,9 @@ class LR:
 
     def get_model_type(self):
         return self._model_type
+
+    def get_loss_function(self):
+        return self._loss_function
 
     def set_model(self, model, train_proportions, col_names, n_classes):
         self._col_names = col_names
@@ -79,7 +84,10 @@ class LR:
             self._model = None
 
         else:
-            self._model = lr(penalty=self._penalty, C=self._alpha, fit_intercept=self._fit_intercept)
+            if self._loss_function == 'log':
+                self._model = lr(penalty=self._penalty, C=self._alpha, fit_intercept=self._fit_intercept)
+            else:
+                self._model = SGDClassifier(loss=self._loss_function, penalty=self._penalty, alpha=self._alpha, fit_intercept=self._fit_intercept)
             # train the model using a vector of labels
             self._model.fit(X_train, train_labels, sample_weight=train_weights)
 
@@ -194,6 +202,7 @@ class LR:
                     all_coefs[str(cl)] = coefs_sorted
                     all_intercepts[str(cl)] = self.get_intercept(cl)
         output = {'model_type': 'LR',
+                  'loss': self._loss_function,
                   'alpha': self.get_alpha(),
                   'penalty': self.get_penalty(),
                   'intercepts': all_intercepts,
@@ -218,8 +227,9 @@ def load_from_file(model_dir, name):
     train_proportions = input['train_proportions']
     penalty = input['penalty']
     fit_intercept = input['fit_intercept']
+    loss = input['loss']
 
-    classifier = LR(alpha, penalty, fit_intercept, output_dir=model_dir, name=name)
+    classifier = LinearClassifier(alpha, loss, penalty, fit_intercept, output_dir=model_dir, name=name)
     model = joblib.load(os.path.join(model_dir, name + '.pkl'))
     classifier.set_model(model, train_proportions, col_names, n_classes)
     return classifier

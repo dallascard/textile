@@ -39,6 +39,9 @@ class MLP:
     def get_model_type(self):
         return self._model_type
 
+    def get_loss_function(self):
+        return self._loss_function
+
     def set_model(self, model, train_proportions, n_classes):
         self._train_proportions = train_proportions
         self._n_classes = n_classes
@@ -241,7 +244,7 @@ class tf_MLP:
 
         if loss_function == 'log':
             self.loss = tf.reduce_mean(tf.nn.softmax_cross_entropy_with_logits(labels=self.y, logits=self.scores_out))
-        elif loss_function == 'brier':
+        elif loss_function == 'squared_loss':
             self.loss = tf.reduce_mean(tf.square(self.y - self.probs))
         else:
             sys.exit("%s loss not supported" % loss_function)

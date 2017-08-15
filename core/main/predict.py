@@ -7,7 +7,7 @@ import pandas as pd
 
 from ..util import dirs
 from ..util import file_handling as fh
-from ..models import lr, blr, load_model
+from ..models import load_model
 from ..preprocessing import features
 from ..util.misc import printv
 

@@ -8,18 +8,20 @@ from scipy import sparse
 from sklearn.model_selection import KFold
 
 from ..util import file_handling as fh
-from ..models import lr, mlp, evaluation, calibration, ensemble
+from ..models import linear, mlp, evaluation, calibration, ensemble
 from ..preprocessing import features
 from ..util import dirs
 from ..util.misc import printv
 
-
+# TODO: add more loss functions
 def main():
     usage = "%prog project_dir subset model_name config.json"
     parser = OptionParser(usage=usage)
     parser.add_option('--model', dest='model', default='LR',
-                      help='Model type [LR|MLP]: default=%default')
-    parser.add_option('--dh', dest='dh', default=100,
+                      help='Model type [linear|MLP]: default=%default')
+    parser.add_option('--loss', dest='loss', default='log',
+                      help='Loss function [log|squared_loss]: default=%default')
+    parser.add_option('--dh', dest='dh', default=0,
                       help='Hidden layer size for MLP [0 for None]: default=%default')
     parser.add_option('--ensemble', action="store_true", dest="ensemble", default=False,
                       help='Make an ensemble from cross-validation, instead of training one model: default=%default')
@@ -46,6 +48,7 @@ def main():
     config_file = args[3]
 
     model_type = options.model
+    loss = options.loss
     do_ensemble = options.ensemble
     dh = int(options.dh)
     label = options.label
@@ -64,10 +67,10 @@ def main():
     for f in config['feature_defs']:
         feature_defs.append(features.parse_feature_string(f))
 
-    train_model(project_dir, model_type, model_name, subset, label, feature_defs, weights_file, penalty=penalty, intercept=intercept, objective=objective, n_dev_folds=n_dev_folds, do_ensemble=do_ensemble, dh=dh, seed=seed)
+    train_model(project_dir, model_type, loss, model_name, subset, label, feature_defs, weights_file, penalty=penalty, intercept=intercept, objective=objective, n_dev_folds=n_dev_folds, do_ensemble=do_ensemble, dh=dh, seed=seed)
 
 
-def train_model(project_dir, model_type, model_name, subset, label, feature_defs, weights_file=None, items_to_use=None,
+def train_model(project_dir, model_type, loss, model_name, subset, label, feature_defs, weights_file=None, items_to_use=None,
                 penalty='l2', alpha_min=0.01, alpha_max=1000, n_alphas=8, intercept=True,
                 objective='f1', n_dev_folds=5, save_model=True, do_ensemble=False, dh=0, seed=None, verbose=True):
 
@@ -80,12 +83,12 @@ def train_model(project_dir, model_type, model_name, subset, label, feature_defs
     #    assert np.all(weights_df.index == labels_df.index)
     #    weights = weights_df['weight'].values
 
-    return train_model_with_labels(project_dir, model_type, model_name, subset, labels_df, feature_defs, weights,
+    return train_model_with_labels(project_dir, model_type, loss, model_name, subset, labels_df, feature_defs, weights,
                                    items_to_use, penalty, alpha_min, alpha_max, n_alphas, intercept, objective,
                                    n_dev_folds, save_model, do_ensemble, dh, seed, verbose)
 
 
-def train_model_with_labels(project_dir, model_type, model_name, subset, labels_df, feature_defs, weights_df=None,
+def train_model_with_labels(project_dir, model_type, loss, model_name, subset, labels_df, feature_defs, weights_df=None,
                             items_to_use=None, penalty='l2', alpha_min=0.01, alpha_max=1000, n_alphas=8, intercept=True,
                             objective='f1', n_dev_folds=5, save_model=True, do_ensemble=False, dh=0, seed=None,
                             verbose=True):
@@ -192,9 +195,8 @@ def train_model_with_labels(project_dir, model_type, model_name, subset, labels_
         for alpha_i, alpha in enumerate(alphas):
             alpha_acc_cfms = []
             alpha_pvc_cfms = []
-            fold = 1
             for train_indices, dev_indices in kfold.split(X):
-                model = lr.LR(alpha, penalty=penalty, fit_intercept=intercept, output_dir=output_dir, name='temp')
+                model = linear.LinearClassifier(alpha, loss_function=loss, penalty=penalty, fit_intercept=intercept, output_dir=output_dir, name='temp')
 
                 X_train = X[train_indices, :]
                 Y_train = Y[train_indices, :]
@@ -202,8 +204,8 @@ def train_model_with_labels(project_dir, model_type, model_name, subset, labels_
                 Y_dev = Y[dev_indices, :]
                 w_train = weights[train_indices]
                 w_dev = weights[dev_indices]
-                X_train, Y_train, w_train = expand_features_and_labels(X_train, Y_train, w_train)
-                X_dev, Y_dev, w_dev = expand_features_and_labels(X_dev, Y_dev, w_dev)
+                X_train, Y_train, w_train = prepare_data(X_train, Y_train, w_train, loss=loss)
+                X_dev, Y_dev, w_dev = prepare_data(X_dev, Y_dev, w_dev, loss=loss)
 
                 model.fit(X_train, Y_train, train_weights=w_train, X_dev=X_dev, Y_dev=Y_dev, dev_weights=w_dev, col_names=col_names)
 
@@ -257,15 +259,15 @@ def train_model_with_labels(project_dir, model_type, model_name, subset, labels_
             fold = 1
             for train_indices, dev_indices in kfold.split(X):
                 name = model_name + '_' + str(fold)
-                model = lr.LR(best_alpha, penalty=penalty, fit_intercept=intercept, output_dir=output_dir, name=name)
+                model = linear.LinearClassifier(best_alpha, loss_function=loss, penalty=penalty, fit_intercept=intercept, output_dir=output_dir, name=name)
                 X_train = X[train_indices, :]
                 Y_train = Y[train_indices, :]
                 X_dev = X[dev_indices, :]
                 Y_dev = Y[dev_indices, :]
                 w_train = weights[train_indices]
                 w_dev = weights[dev_indices]
-                X_train, Y_train, w_train = expand_features_and_labels(X_train, Y_train, w_train)
-                X_dev, Y_dev, w_dev = expand_features_and_labels(X_dev, Y_dev, w_dev)
+                X_train, Y_train, w_train = prepare_data(X_train, Y_train, w_train, loss=loss)
+                X_dev, Y_dev, w_dev = prepare_data(X_dev, Y_dev, w_dev, loss=loss)
                 model.fit(X_train, Y_train, train_weights=w_train, X_dev=X_dev, Y_dev=Y_dev, dev_weights=w_dev, col_names=col_names, seed=seed)
                 if save_model:
                     model.save()
@@ -276,9 +278,9 @@ def train_model_with_labels(project_dir, model_type, model_name, subset, labels_
 
         else:
             printv("Training full model", verbose)
-            model = lr.LR(best_alpha, penalty=penalty, fit_intercept=intercept, output_dir=output_dir, name=model_name)
+            model = linear.LinearClassifier(best_alpha, loss_function=loss, penalty=penalty, fit_intercept=intercept, output_dir=output_dir, name=model_name)
 
-            X, Y, w = expand_features_and_labels(X, Y, weights)
+            X, Y, w = prepare_data(X, Y, weights, loss=loss)
             model.fit(X, Y, train_weights=w, col_names=col_names)
             model.save()
 
@@ -297,7 +299,7 @@ def train_model_with_labels(project_dir, model_type, model_name, subset, labels_
                 name = model_name + '_' + str(fold)
             else:
                 name = model_name
-            model = mlp.MLP(dimensions=dimensions, loss_function='log', nonlinearity='tanh', penalty=penalty, reg_strength=0, output_dir=output_dir, name=name)
+            model = mlp.MLP(dimensions=dimensions, loss_function=loss, nonlinearity='tanh', penalty=penalty, reg_strength=0, output_dir=output_dir, name=name)
 
             X_train = X[train_indices, :]
             Y_train = Y[train_indices, :]
@@ -305,8 +307,8 @@ def train_model_with_labels(project_dir, model_type, model_name, subset, labels_
             Y_dev = Y[dev_indices, :]
             w_train = weights[train_indices]
             w_dev = weights[dev_indices]
-            X_train, Y_train, w_train = expand_features_and_labels(X_train, Y_train, w_train)
-            X_dev, Y_dev, w_dev = expand_features_and_labels(X_dev, Y_dev, w_dev)
+            X_train, Y_train, w_train = prepare_data(X_train, Y_train, w_train, loss=loss)
+            X_dev, Y_dev, w_dev = prepare_data(X_dev, Y_dev, w_dev, loss=loss)
 
             model.fit(X_train, Y_train, X_dev, Y_dev, train_weights=w_train, dev_weights=w_dev)
             if save_model:
@@ -339,46 +341,67 @@ def train_model_with_labels(project_dir, model_type, model_name, subset, labels_
     return model
 
 
-def expand_features_and_labels(X, Y, weights=None, predictions=None):
+def prepare_data(X, Y, weights=None, predictions=None, loss='log'):
     """
     Expand the feature matrix and label matrix by converting items with multiple labels to multiple rows with 1 each
     :param X: feature matrix (n_items, n_features)
     :param Y: label matrix (n_items, n_classes)
     :param weights: (n_items, )
+    :param predictions: optional vector of predcitions to expand in parallel
+    :param loss: loss function (determines whether to expand or average
     :return: 
     """
-    X_list = []
-    Y_list = []
-    weights_list = []
-    pred_list = []
     n_items, n_classes = Y.shape
-    if weights is None:
-        weights = np.ones(n_items)
-    for i in range(n_items):
-        labels = Y[i, :]
-        total = labels.sum()
-        for index, count in enumerate(labels):
-            if count > 0:
-                for c in range(count):
-                    X_list.append(X[i, :])
-                    label_vector = np.zeros(n_classes, dtype=int)
-                    label_vector[index] = 1
-                    Y_list.append(label_vector)
-                    weights_list.append(weights[i] * 1.0/total)
-                    if predictions is not None:
-                        pred_list.append(predictions[i])
+    pred_return = None
+    if loss == 'log' or loss == 'hinge':
+        # duplicate and down-weight items with multiple labels
+        X_list = []
+        Y_list = []
+        weights_list = []
+        pred_list = []
+        if weights is None:
+            weights = np.ones(n_items)
+        for i in range(n_items):
+            labels = Y[i, :]
+            total = labels.sum()
+            for index, count in enumerate(labels):
+                if count > 0:
+                    for c in range(count):
+                        X_list.append(X[i, :])
+                        label_vector = np.zeros(n_classes, dtype=int)
+                        label_vector[index] = 1
+                        Y_list.append(label_vector)
+                        weights_list.append(weights[i] * 1.0/total)
+                        if predictions is not None:
+                            pred_list.append(predictions[i])
 
-    if sparse.issparse(X):
-        X_return = sparse.vstack(X_list)
+        if sparse.issparse(X):
+            X_return = sparse.vstack(X_list)
+        else:
+            X_return = np.vstack(X_list)
+        Y_return = np.array(Y_list)
+        weights_return = np.array(weights_list)
+        if predictions is not None:
+            pred_return = np.array(pred_list)
+
+    elif loss == 'squared_loss' or loss == 'huber':
+        # just normalize labels
+        Y_list = []
+        for i in range(n_items):
+            labels = Y[i, :]
+            Y_list.append(labels / float(labels.sum()))
+        X_return = X.copy()
+        Y_return = np.array(Y_list)
+        weights_return = np.array(weights)
+        if predictions is not None:
+            pred_return = np.array(predictions)
     else:
-        X_return = np.vstack(X_list)
-    y_return = np.array(Y_list)
-    weights_return = np.array(weights_list)
+        sys.exit("Loss %s not recognized" % loss)
+
     if predictions is None:
-        return X_return, y_return, weights_return
+        return X_return, Y_return, weights_return
     else:
-        pred_return = np.array(pred_list)
-        return X_return, y_return, weights_return, pred_return
+        return X_return, Y_return, weights_return, pred_return
 
 
 if __name__ == '__main__':
