@@ -244,7 +244,7 @@ class tf_MLP:
 
         if loss_function == 'log':
             self.loss = tf.reduce_mean(tf.nn.softmax_cross_entropy_with_logits(labels=self.y, logits=self.scores_out))
-        elif loss_function == 'squared_loss':
+        elif loss_function == 'brier':
             self.loss = tf.reduce_mean(tf.square(self.y - self.probs))
         else:
             sys.exit("%s loss not supported" % loss_function)
@@ -294,7 +294,7 @@ class tf_MLP:
                     running_accuracy += (np.argmax(y_i, axis=1) == np.argmax(scores, axis=1)) * w_i
                     weight_sum += w_i
                     running_loss += loss * w_i
-                    if count % display_period == 0 and i > 0:
+                    if count % display_period == 0 and count > 0:
                         print(count, running_loss / weight_sum, running_accuracy / weight_sum)
 
                 predictions = []
