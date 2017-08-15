@@ -202,11 +202,14 @@ class LinearClassifier:
         n_nonzeros_coefs = 0
         if self._model is None:
             return 0
-        else:
+        elif self._loss_function == 'log':
             coefs = self._model.coef_
             for coef_list in coefs:
                 n_nonzeros_coefs += np.sum([1.0 for c in coef_list if c != 0])
             return n_nonzeros_coefs
+        elif self._loss_function == 'brier':
+            # TODO implement this
+            return 0
 
     def save(self):
         #print("Saving model")
