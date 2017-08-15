@@ -146,6 +146,8 @@ class LinearClassifier:
             # map these probabilities back to the full set of classes
             full_probs[:, 0] = 1 - model_probs
             full_probs[:, 1] = model_probs
+            full_probs = np.maximum([full_probs, np.zeros_like(full_probs)])
+            full_probs = np.minimum([full_probs, np.ones_like(full_probs)])
             return full_probs
 
     def get_penalty(self):
