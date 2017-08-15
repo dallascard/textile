@@ -163,8 +163,10 @@ class LinearClassifier:
     def get_active_classes(self):
         if self._model is None:
             return []
-        else:
+        elif self._loss_function == 'log':
             return self._model.classes_
+        elif self._loss_function == 'brier':
+            return 2
 
     def get_default(self):
         return np.argmax(self._train_proportions)
