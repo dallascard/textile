@@ -269,8 +269,8 @@ def cross_train_and_eval(project_dir, subset, field_name, config_file, calib_pro
 
             print("Doing evaluation")
             # evaluate the performance of the model using standard metrics
-            f1_cal, acc_cal = evaluate_predictions.evaluate_predictions(calib_labels, calib_predictions, pos_label=pos_label, average=average)
-            f1_test, acc_test = evaluate_predictions.evaluate_predictions(test_labels, test_predictions, pos_label=pos_label, average=average)
+            f1_cal, acc_cal = evaluate_predictions.evaluate_predictions(calib_labels, calib_predictions, calib_pred_probs, pos_label=pos_label, average=average)
+            f1_test, acc_test = evaluate_predictions.evaluate_predictions(test_labels, test_predictions, test_pred_probs, pos_label=pos_label, average=average)
             results_df = pd.DataFrame([], columns=['f1', 'acc', 'cal'])
             results_df.loc['cross_val'] = [dev_f1, dev_acc, dev_cal]
             results_df.loc['calibration'] = [f1_cal, acc_cal, calib_rmse]
