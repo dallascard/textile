@@ -4,11 +4,17 @@ from optparse import OptionParser
 import numpy as np
 import pandas as pd
 
-from ..util import file_handling as fh
-from ..preprocessing import features
-from ..main import train, predict, evaluate_predictions, estimate_proportions
-from ..models import evaluation, calibration, ivap
-from ..util import dirs
+from core.util import file_handling as fh
+from core.preprocessing import features
+from core.main import train, predict, evaluate_predictions, estimate_proportions
+from core.models import evaluation, calibration, ivap
+from core.util import dirs
+
+
+"""
+Run an experiment by using each fold of a partition as test data, and training on the rest, doing cross-validation
+on the training set to choose a model, and sampling from the test data to get a calibration set 
+"""
 
 
 def main():
@@ -16,18 +22,28 @@ def main():
     parser = OptionParser(usage=usage)
     parser.add_option('-p', dest='calib_prop', default=0.33,
                       help='Percent to use for the calibration part of each split: default=%default')
-    parser.add_option('-t', dest='nontest_prop', default=1.0,
-                      help='Proportion of non-test data to use: default=%default')
+    parser.add_option('-t', dest='train_prop', default=0.33,
+                      help='Proportion of training data to use: default=%default')
     parser.add_option('--prefix', dest='prefix', default=None,
                       help='Prefix to _subset_fieldname: default=%default')
     parser.add_option('--max_folds', dest='max_folds', default=None,
                       help='Limit the number of partitions to test: default=%default')
+    parser.add_option('--min_val', dest='min_val', default=None,
+                      help='Minimum value of partition to test on: default=%default')
+    parser.add_option('--max_val', dest='max_val', default=None,
+                      help='Maximum value of partition to test on: default=%default')
     parser.add_option('--model', dest='model', default='LR',
-                      help='Model type [LR|BLR]: default=%default')
+                      help='Model type [LR|MLP]: default=%default')
+    parser.add_option('--loss', dest='loss', default='log',
+                      help='Loss function [log|brier]: default=%default')
+    parser.add_option('--dh', dest='dh', default=0,
+                      help='Hidden layer size for MLP [0 for None]: default=%default')
+    parser.add_option('--ensemble', action="store_true", dest="ensemble", default=False,
+                      help='Make an ensemble from cross-validation, instead of training one model: default=%default')
     parser.add_option('--label', dest='label', default='label',
                       help='Label name: default=%default')
     parser.add_option('--cshift', dest='cshift', default=None,
-                      help='Covariate shift method [None|LR]: default=%default')
+                      help='Covariate shift method [None]: default=%default')
     parser.add_option('--penalty', dest='penalty', default='l1',
                       help='Regularization type: default=%default')
     parser.add_option('--no_intercept', action="store_true", dest="no_intercept", default=False,
@@ -51,13 +67,17 @@ def main():
     config_file = args[3]
 
     calib_prop = float(options.calib_prop)
-    nontest_prop = float(options.nontest_prop)
+    train_prop = float(options.train_prop)
     prefix = options.prefix
     max_folds = options.max_folds
+    min_val = options.min_val
+    max_val = options.max_val
     if max_folds is not None:
         max_folds = int(max_folds)
-    #sampling = options.sampling
     model_type = options.model
+    loss = options.loss
+    do_ensemble = options.ensemble
+    dh = int(options.dh)
     label = options.label
     penalty = options.penalty
     cshift = options.cshift
@@ -65,22 +85,25 @@ def main():
     intercept = not options.no_intercept
     n_dev_folds = int(options.n_dev_folds)
     repeats = int(options.repeats)
+    seed = options.seed
     if options.seed is not None:
-        np.random.seed(int(options.seed))
+        seed = int(seed)
+        np.random.seed(seed)
     verbose = options.verbose
 
     pos_label = 1
     average = 'micro'
 
-    cross_train_and_eval(project_dir, subset, field_name, config_file, calib_prop, nontest_prop, prefix, max_folds, model_type, label, penalty, cshift, intercept, n_dev_folds, repeats, verbose, pos_label, average, objective)
+    cross_train_and_eval(project_dir, subset, field_name, config_file, calib_prop, train_prop, prefix, max_folds, min_val, max_val, model_type, loss, do_ensemble, dh, label, penalty, cshift, intercept, n_dev_folds, repeats, verbose, pos_label, average, objective, seed)
 
 
-def cross_train_and_eval(project_dir, subset, field_name, config_file, calib_prop=0.33, nontest_prop=1.0, prefix=None, max_folds=None, model_type='LR', label='label', penalty='l2', cshift=None, intercept=True, n_dev_folds=5, repeats=1, verbose=False, pos_label=1, average='micro', objective='f1'):
+def cross_train_and_eval(project_dir, subset, field_name, config_file, calib_prop=0.33, train_prop=1.0, prefix=None, max_folds=None, min_val=None, max_val=None, model_type='LR', loss='log', do_ensemble=False, dh=0, label='label', penalty='l2', cshift=None, intercept=True, n_dev_folds=5, repeats=1, verbose=False, pos_label=1, average='micro', objective='f1', seed=None):
 
     model_basename = subset + '_' + field_name
     if prefix is not None:
         model_basename = prefix + '_' + model_basename
 
+    # save the experiment parameters to a log file
     logfile = os.path.join(dirs.dir_logs(project_dir), model_basename + '.json')
     fh.makedirs(dirs.dir_logs(project_dir))
     log = {
@@ -89,10 +112,13 @@ def cross_train_and_eval(project_dir, subset, field_name, config_file, calib_pro
         'field_name': field_name,
         'config_file': config_file,
         'calib_prop': calib_prop,
-        'train_prop': nontest_prop,
+        'train_prop': train_prop,
         'prefix': prefix,
         'max_folds': max_folds,
         'model_type': model_type,
+        'loss': loss,
+        'do_ensemble': do_ensemble,
+        'dh': dh,
         'label': label,
         'penalty': penalty,
         'cshift': cshift,
@@ -105,66 +131,71 @@ def cross_train_and_eval(project_dir, subset, field_name, config_file, calib_pro
     }
     fh.write_to_json(log, logfile)
 
+    # load the features specified in the config file
     config = fh.read_json(config_file)
     feature_defs = []
     for f in config['feature_defs']:
         feature_defs.append(features.parse_feature_string(f))
 
-    weights_file = None
-
+    # load the file that contains metadata about each item
     metadata_file = os.path.join(dirs.dir_subset(project_dir, subset), 'metadata.csv')
     metadata = fh.read_csv_to_df(metadata_file)
     field_vals = list(set(metadata[field_name].values))
     field_vals.sort()
     print(field_vals)
 
+    # exclude certain values of the partition if desired
+    if min_val is not None:
+        field_vals = [v for v in field_vals if v >= float(min_val)]
+
+    if max_val is not None:
+        field_vals = [v for v in field_vals if v <= float(max_val)]
+
     if max_folds is None:
         max_folds = len(field_vals)
 
+    # repeat the following value for each fold of the partition of interest (up to max_folds, if given)
     for v_i, v in enumerate(field_vals[:max_folds]):
-
         print("\nTesting on %s" % v)
-        nontest_selector = metadata[field_name] != v
-        nontest_subset = metadata[nontest_selector]
-        nontest_items = list(nontest_subset.index)
-        n_nontest = len(nontest_items)
+        # first, split into training and non-train data based on the field of interest
+        train_selector = metadata[field_name] != v
+        train_subset = metadata[train_selector]
+        train_items = list(train_subset.index)
+        n_train = len(train_items)
 
-        test_selector = metadata[field_name] == v
-        test_subset = metadata[test_selector]
-        test_items = test_subset.index.tolist()
-        n_test = len(test_items)
+        non_train_selector = metadata[field_name] == v
+        non_train_subset = metadata[non_train_selector]
+        non_train_items = non_train_subset.index.tolist()
+        n_non_train = len(non_train_items)
 
         # load all labels
         label_dir = dirs.dir_labels(project_dir, subset)
         labels_df = fh.read_csv_to_df(os.path.join(label_dir, label + '.csv'), index_col=0, header=0)
         n_items, n_classes = labels_df.shape
+        train_labels = labels_df.loc[train_items]
 
-        # subsample the non-test items if desired
-        if nontest_prop < 1.0:
-            np.random.shuffle(nontest_items)
-            nontest_items = np.random.choice(nontest_items, size=int(n_nontest * nontest_prop), replace=False)
-            n_nontest = len(nontest_items)
-
-        nontest_labels = labels_df.loc[nontest_items]
-
+        # if desired, attempt to learn weights for the training data using techniques for covariate shift
+        # TODO: update this to work with ALL of the data
         if cshift is not None:
             print("Training a classifier for covariate shift")
-            # start by learning to discriminate test from non-test data
+            # start by learning to discriminate train from non-train data
             train_test_labels = np.zeros((n_items, 2), dtype=int)
-            train_test_labels[nontest_selector, 0] = 1
-            train_test_labels[test_selector, 1] = 1
+            train_test_labels[train_selector, 0] = 1
+            train_test_labels[non_train_selector, 1] = 1
             train_test_labels_df = pd.DataFrame(train_test_labels, index=labels_df.index, columns=[0, 1])
+            # create a cshift model using the same specifiction as our model below (e.g. LR/MLP, etc.)
             model_name = model_basename + '_' + str(v) + '_' + 'cshift'
-            model, dev_f1, dev_cal, _, _ = train.train_model_with_labels(project_dir, model_type, model_name, subset, train_test_labels_df, feature_defs, penalty=penalty, intercept=intercept, n_dev_folds=n_dev_folds, verbose=False)
+            model, dev_f1, dev_cal, _, _ = train.train_model_with_labels(project_dir, model_type, loss, model_name, subset, train_test_labels_df, feature_defs, penalty=penalty, intercept=intercept, n_dev_folds=n_dev_folds, save_model=True, do_ensemble=do_ensemble, dh=dh, seed=seed, verbose=False)
 
+            # evaluate the
             train_test_pred_df, train_test_probs_df = predict.predict(project_dir, model, model_name, subset, label, verbose=verbose)
             print("Min: %0.4f" % train_test_probs_df[1].min())
             print("Max: %0.4f" % train_test_probs_df[1].max())
             # base the weights on the probability of each item being a training item
-            weights = n_nontest / float(n_test) * (1.0/train_test_probs_df[0].values - 1)
-            print("Min weight: %0.4f" % weights[nontest_selector].min())
-            print("Ave weight: %0.4f" % weights[nontest_selector].mean())
-            print("Max weight: %0.4f" % weights[nontest_selector].max())
+            weights = n_train / float(n_non_train) * (1.0/train_test_probs_df[0].values - 1)
+            print("Min weight: %0.4f" % weights[train_selector].min())
+            print("Ave weight: %0.4f" % weights[train_selector].mean())
+            print("Max weight: %0.4f" % weights[train_selector].max())
             print("Min weight: %0.4f" % weights.min())
             print("Ave weight: %0.4f" % weights.mean())
             print("Max weight: %0.4f" % weights.max())
@@ -172,43 +203,54 @@ def cross_train_and_eval(project_dir, subset, field_name, config_file, calib_pro
         else:
             weights_df = None
 
+        # next, take a random subset of the training data (and ignore the rest), to simulate fewer annotated items
+        if train_prop < 1.0:
+            np.random.shuffle(train_items)
+            train_items = np.random.choice(train_items, size=int(n_train * train_prop), replace=False)
+            n_train = len(train_items)
+
         # repeat the following process multiple times with different random splits of calibration / test data
         for r in range(repeats):
             output_df = pd.DataFrame([], columns=['N', 'estimate', 'RMSE', '95lcl', '95ucl', 'contains_test'])
 
             model_name = model_basename + '_' + str(v) + '_' + str(r)
 
-            # split the non-test items into train and calibration
-            n_calib = int(n_nontest * calib_prop)
-            np.random.shuffle(nontest_items)
-            calib_items = nontest_items[:n_calib]
-            train_items = nontest_items[n_calib:]
+            n_calib = int(calib_prop * n_non_train)
+            np.random.shuffle(non_train_items)
+            calib_items = non_train_items[:n_calib]
+            test_items = non_train_items[n_calib:]
+            n_test = len(test_items)
 
-            train_labels = labels_df.loc[train_items]
+            print("%d %d %d" % (n_train, n_calib, n_test))
             calib_labels = labels_df.loc[calib_items]
             test_labels = labels_df.loc[test_items]
 
-            # get the label proportions from the test and non-test data
+            print("Test estimate")
             test_props, test_estimate, test_std = get_estimate_and_std(test_labels)
             output_df.loc['test'] = [n_test, test_estimate, 0, test_estimate - 2 * test_std, test_estimate + 2 * test_std, 1]
 
-            nontest_props, nontest_estimate, nontest_std = get_estimate_and_std(nontest_labels)
-            nontest_rmse = np.sqrt((nontest_estimate - test_estimate)**2)
-            nontest_contains_test = test_estimate > nontest_estimate - 2 * nontest_std and test_estimate < nontest_estimate + 2 * nontest_std
-            output_df.loc['nontest'] = [n_nontest, nontest_estimate, nontest_rmse, nontest_estimate - 2 * nontest_std, nontest_estimate + 2 * nontest_std, nontest_contains_test]
+            print("Train estimate")
+            train_props, train_estimate, train_std = get_estimate_and_std(train_labels)
+            train_rmse = np.sqrt((train_estimate - test_estimate)**2)
+            train_contains_test = test_estimate > train_estimate - 2 * train_std and test_estimate < train_estimate + 2 * train_std
+            output_df.loc['train'] = [n_train, train_estimate, train_rmse, train_estimate - 2 * train_std, train_estimate + 2 * train_std, train_contains_test]
 
-            # train a model
+            print("Calib estimate")
+            calib_props, calib_estimate, calib_std = get_estimate_and_std(calib_labels)
+            calib_rmse = np.sqrt((calib_estimate - test_estimate)**2)
+            calib_contains_test = test_estimate > calib_estimate - 2 * calib_std and calib_estimate < calib_estimate + 2 * calib_std
+            output_df.loc['calibration'] = [n_calib, calib_estimate, calib_rmse, calib_estimate - 2 * calib_std, calib_estimate + 2 * calib_std, calib_contains_test]
+
             print("Doing training")
+            #model, dev_f1, dev_cal, acc_cfm, pvc_cfm = train.train_model(project_dir, model_type, model_name, subset, label, feature_defs, weights_file, items_to_use=train_items, penalty=penalty, intercept=intercept, n_dev_folds=n_dev_folds, verbose=verbose)
             model, dev_f1, dev_cal, acc_cfm, pvc_cfm = train.train_model_with_labels(project_dir, model_type, model_name, subset, labels_df, feature_defs, weights_df=weights_df, items_to_use=train_items, penalty=penalty, intercept=intercept, objective=objective, n_dev_folds=n_dev_folds, verbose=verbose)
 
-            # predict on the calibration and test sets
             print("Doing prediction on calibration items")
             calib_predictions, calib_pred_probs = predict.predict(project_dir, model, model_name, subset, label, items_to_use=calib_items, verbose=verbose)
 
             print("Doing prediction on test items")
             test_predictions, test_pred_probs = predict.predict(project_dir, model, model_name, subset, label, items_to_use=test_items, verbose=verbose)
 
-            # evaluate the model on the calibration and test data
             print("Doing evaluation")
             f1_cal, acc_cal = evaluate_predictions.evaluate_predictions(calib_labels, calib_predictions, pos_label=pos_label, average=average)
             f1_test, acc_test = evaluate_predictions.evaluate_predictions(test_labels, test_predictions, pos_label=pos_label, average=average)
@@ -217,7 +259,6 @@ def cross_train_and_eval(project_dir, subset, field_name, config_file, calib_pro
             results_df.loc['test'] = [f1_test, acc_test]
             results_df.to_csv(os.path.join(dirs.dir_models(project_dir), model_name, 'results.csv'))
 
-            # first check results without any correction
             # average the preditions (assuming binary labels)
             cc_estimate = np.mean(test_predictions[label].values)
             cc_rmse = np.sqrt((cc_estimate - test_estimate)**2)
@@ -229,25 +270,36 @@ def cross_train_and_eval(project_dir, subset, field_name, config_file, calib_pro
             output_df.loc['CC'] = [n_test, cc_estimate, cc_rmse, 0, 1, np.nan]
             output_df.loc['PCC'] = [n_test, pcc_estimate, pcc_rmse, 0, 1, np.nan]
 
-            # do the two basic corrections, based on the calibration data
-            print("ACC internal")
+            # do some sort of calibration here (ACC, PACC, PVC)
+            print("ACC correction")
             calib_labels_expanded, calib_weights_expanded, calib_predictions_expanded = expand_labels(calib_labels.values, calib_predictions.values)
             acc = calibration.compute_acc(calib_labels_expanded, calib_predictions_expanded, n_classes, calib_weights_expanded)
             acc_corrected = calibration.apply_acc_binary(test_predictions.values, acc)
             acc_estimate = acc_corrected[1]
             acc_rmse = np.sqrt((acc_estimate - test_estimate) ** 2)
+            output_df.loc['ACC'] = [n_calib, acc_estimate, acc_rmse, 0, 1, np.nan]
+
+            print("ACC internal")
+            acc_corrected = calibration.apply_acc_binary(test_predictions.values, acc_cfm)
+            acc_estimate = acc_corrected[1]
+            acc_rmse = np.sqrt((acc_estimate - test_estimate) ** 2)
             output_df.loc['ACC_int'] = [n_calib, acc_estimate, acc_rmse, 0, 1, np.nan]
 
-            print("PVC internal")
+            print("PVC correction")
             pvc = calibration.compute_pvc(calib_labels_expanded, calib_predictions_expanded, n_classes, weights=calib_weights_expanded)
             pvc_corrected = calibration.apply_pvc(test_predictions.values, pvc)
             pvc_estimate = pvc_corrected[1]
             pvc_rmse = np.sqrt((pvc_estimate - test_estimate) ** 2)
+            output_df.loc['PVC'] = [n_calib, pvc_estimate, pvc_rmse, 0, 1, np.nan]
+
+            print("PVC internal")
+            pvc_corrected = calibration.apply_pvc(test_predictions.values, pvc_cfm)
+            pvc_estimate = pvc_corrected[1]
+            pvc_rmse = np.sqrt((pvc_estimate - test_estimate) ** 2)
             output_df.loc['PVC_int'] = [n_calib, pvc_estimate, pvc_rmse, 0, 1, np.nan]
 
-            # do IVAP for calibration
             print("Venn")
-            test_pred_ranges = ivap.estimate_probs_from_labels(project_dir, model, model_name, subset, subset, labels_df, calib_items, test_items, weights_df=weights_df)
+            test_pred_ranges = ivap.estimate_probs_from_labels(project_dir, model, model_name, subset, subset, labels_df, calib_items, test_items, weights_df=None)
             combo = test_pred_ranges[:, 1] / (1.0 - test_pred_ranges[:, 0] + test_pred_ranges[:, 1])
 
             pred_range = np.mean(test_pred_ranges, axis=0)

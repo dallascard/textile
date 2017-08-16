@@ -13,12 +13,12 @@ from ..preprocessing import features
 from ..util import dirs
 from ..util.misc import printv
 
-# TODO: add more loss functions
+
 def main():
     usage = "%prog project_dir subset model_name config.json"
     parser = OptionParser(usage=usage)
     parser.add_option('--model', dest='model', default='LR',
-                      help='Model type [linear|MLP]: default=%default')
+                      help='Model type [LR|MLP]: default=%default')
     parser.add_option('--loss', dest='loss', default='log',
                       help='Loss function [log|brier]: default=%default')
     parser.add_option('--dh', dest='dh', default=0,

@@ -246,6 +246,7 @@ def load_from_file(input_dir, basename):
     metadata = fh.read_json(os.path.join(input_dir, basename + '.json'))
     counts = fh.load_sparse(os.path.join(input_dir, basename + '.npz'))    # sparse.csc_matrix
     if 'col_names' in metadata:
+        col_names = metadata['col_names']
         return Feature(basename, metadata['items'], metadata['terms'], counts, col_names=col_names)
     else:
         return Feature(basename, metadata['items'], metadata['terms'], counts)
