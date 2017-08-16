@@ -168,6 +168,8 @@ def cross_train_and_eval(project_dir, subset, field_name, config_file, calib_pro
         non_train_items = non_train_subset.index.tolist()
         n_non_train = len(non_train_items)
 
+        print("Train: %d, non-train: %d" % (n_train, n_non_train))
+
         # load all labels
         label_dir = dirs.dir_labels(project_dir, subset)
         labels_df = fh.read_csv_to_df(os.path.join(label_dir, label + '.csv'), index_col=0, header=0)
