@@ -1,6 +1,10 @@
 import os
 import re
+from collections import defaultdict
 from optparse import OptionParser
+
+import numpy as np
+import matplotlib.pyplot as plt
 
 from ..util import file_handling as fh
 from ..util import dirs
@@ -8,8 +12,8 @@ from ..util import dirs
 def main():
     usage = "%prog input_dir project_dir"
     parser = OptionParser(usage=usage)
-    #parser.add_option('-p', dest='prop', default=1.0,
-    #                  help='Use only a random proportion of training data: default=%default')
+    parser.add_option('--subset', dest='subset', default='article',
+                      help='article or user: default=%default')
     #parser.add_option('--approx', action="store_true", dest="approx", default=False,
     #                  help='Approximate label distribution: default=%default')
 
@@ -17,13 +21,13 @@ def main():
 
     input_dir = args[0]
     project = args[1]
-    #prop = float(options.prop)
-    prop = 1.0
 
-    import_data(input_dir, project, prop)
+    subset = options.subset
+
+    import_data(input_dir, project, subset)
 
 
-def import_data(input_dir, project, prop):
+def import_data(input_dir, project, subset):
     print("Loading data")
     comments_file = os.path.join(input_dir, 'attack_annotated_comments.tsv')
     comments = fh.read_csv_to_df(comments_file, sep='\t')
@@ -42,31 +46,52 @@ def import_data(input_dir, project, prop):
     split_set = set()
 
     data = {}
-    for i, item in comments.index:
+    print("Processing comments")
+    for i, item in enumerate(comments.index):
         year_set.add(comments.loc[item, 'year'])
         ns_set.add(comments.loc[item, 'ns'])
         sample_set.add(comments.loc[item, 'sample'])
         split_set.add(comments.loc[item, 'split'])
-        if comments.loc[item, 'sample'] == 'random':
+        if comments.loc[item, 'sample'] == 'random' and comments.loc[item, 'ns'] == subset:
             data[item] = {}
             data[item]['text'] = re.sub('NEWLINE_TOKEN', '\n', comments.loc[item, 'comment'])
             data[item]['year'] = int(comments.loc[item, 'year'])
             data[item]['split'] = comments.loc[item, 'split']
             data[item]['label'] = {0: 0,  1: 0}
 
-    for i, item in annotations.index:
-        attack = int(annotations.loc[item, 'attack'])
+    print("Processing annotations")
+    items = list(annotations.index)
+    ratings = annotations['attack'].values
+
+    for i, item in enumerate(items):
         if item in data:
-            data[item]['label'][attack] += 1
+            data[item]['label'][ratings[i]] += 1
 
     print(year_set)
     print(ns_set)
     print(sample_set)
     print(split_set)
 
+    year_averages = defaultdict(list)
+    for item, values in data.items():
+        year = values['year']
+        attack = values['label'][0] / float(values['label'][0] + values['label'][1])
+        year_averages[year].append(attack)
+
+    years = list(year_averages.keys())
+    years.sort()
+    attacks = [np.mean(year_averages[year]) for year in years]
+    n_items = [len(year_averages[year]) for year in years]
+
+    fig, (ax1, ax2) = plt.subplots(2)
+    ax1.plot(years, n_items)
+    ax2.plot(years, attacks)
+    plt.show()
+
+    print("Saving %d items" % len(data))
     data_dir = dirs.dir_data_raw(project)
     fh.makedirs(data_dir)
-    fh.write_to_json(data, os.path.join(data_dir, 'all.json'))
+    fh.write_to_json(data, os.path.join(data_dir, subset + '.json'))
 
 
 if __name__ == '__main__':
