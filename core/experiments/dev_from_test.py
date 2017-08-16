@@ -6,8 +6,8 @@ import pandas as pd
 
 from core.util import file_handling as fh
 from core.preprocessing import features
-from core.main import train, predict, evaluate_predictions, estimate_proportions
-from core.models import evaluation, calibration, ivap
+from core.main import train, predict, evaluate_predictions
+from core.models import calibration, ivap
 from core.util import dirs
 
 
