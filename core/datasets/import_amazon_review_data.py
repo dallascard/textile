@@ -15,21 +15,17 @@ def main():
     parser = OptionParser(usage=usage)
     parser.add_option('-p', dest='prop', default=1.0,
                       help='Use only a random proportion of training data: default=%default')
-    parser.add_option('--approx', action="store_true", dest="approx", default=False,
-                      help='Approximate label distribution: default=%default')
-
 
     (options, args) = parser.parse_args()
 
     reviews_file = args[0]
     project = args[1]
     prop = float(options.prop)
-    approx = options.approx
 
-    import_review_data(reviews_file, project, prop, approx)
+    import_review_data(reviews_file, project, prop)
 
 
-def import_review_data(reviews_file, project_dir, prop, approx=False):
+def import_review_data(reviews_file, project_dir, prop):
     print("Loading data")
     reviews = fh.read_json_lines(reviews_file)
 
@@ -42,7 +38,6 @@ def import_review_data(reviews_file, project_dir, prop, approx=False):
     reviewers = set()
     asins = set()
     year_counts = Counter()
-
 
     if prop < 1.0:
         subset_size = int(prop * n_items)
@@ -74,13 +69,7 @@ def import_review_data(reviews_file, project_dir, prop, approx=False):
                 data[k]['text'] = review['reviewText']
                 data[k]['rating'] = review['overall']
                 data[k]['summary'] = review['summary']
-                if approx:
-                    helpfulness_prop = n_helpful_votes / n_votes
-                    n_helpful = int(np.round(helpfulness_prop * 10))
-                    n_not_helpful = 10 - n_helpful
-                    data[k]['label'] = {0: n_not_helpful,  1: n_helpful}
-                else:
-                    data[k]['label'] = {0: n_votes - n_helpful_votes,  1: n_helpful_votes}
+                data[k]['label'] = {0: n_votes - n_helpful_votes,  1: n_helpful_votes}
                 year_counts.update([year])
                 data[k]['year'] = year
                 data[k]['month'] = month
