@@ -102,25 +102,19 @@ def preprocess_labels(project_dir, subset, label_name, metadata_fields):
 
     labels_df = pd.DataFrame(labels_matrix, index=items, columns=np.arange(n_classes))
 
+    # nah, do this in training...
     # normalize those rows that are unanimous
-    print("Normalizing")
-    not_unan = np.array(np.sum(labels_df.values > 0, axis=1) != 1)
-    row_sum = np.reshape(np.sum(labels_df.values, axis=1), (len(not_unan), 1))
-    row_sum[not_unan] = 1.0
-    labels_df = pd.DataFrame(np.array(labels_df.values / row_sum, dtype=int), index=labels_df.index, columns=labels_df.columns)
+    #print("Normalizing")
+    #not_unan = np.array(np.sum(labels_df.values > 0, axis=1) != 1)
+    #row_sum = np.reshape(np.sum(labels_df.values, axis=1), (len(not_unan), 1))
+    #row_sum[not_unan] = 1.0
+    #labels_df = pd.DataFrame(np.array(labels_df.values / row_sum, dtype=int), index=labels_df.index, columns=labels_df.columns)
 
     print("Saving labels")
-
-    #int_labels = [label_index[label] for label in labels]
-    #int_labels = {k: {label_index[label]: value for label, value in item_labels.items()} for k, item_labels in labels.items()}
-
-    #labels_df = pd.DataFrame(int_labels, index=items, columns=[label_name])
-
     output_dir = dirs.dir_labels(project_dir, subset)
     fh.makedirs(output_dir)
     labels_df.to_csv(os.path.join(output_dir, label_name + '.csv'))
     fh.write_to_json(label_index, os.path.join(output_dir, label_name + '_index.json'))
-    #fh.write_to_json(int_labels, os.path.join(output_dir, label_name + '.json'))
 
     if len(metadata_fields) > 0:
         print("Saving metadata")

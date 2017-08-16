@@ -361,20 +361,27 @@ def prepare_data(X, Y, weights=None, predictions=None, loss='log'):
         pred_list = []
         if weights is None:
             weights = np.ones(n_items)
+        # process each item
         for i in range(n_items):
             labels = Y[i, :]
-            total = labels.sum()
+            # sum the total number of annotations given to this item
+            total = float(labels.sum())
+            # for each possible class
             for index, count in enumerate(labels):
+                # if there is at least one annotation for this class
                 if count > 0:
-                    for c in range(count):
-                        X_list.append(X[i, :])
-                        label_vector = np.zeros(n_classes, dtype=int)
-                        label_vector[index] = 1
-                        Y_list.append(label_vector)
-                        weights_list.append(weights[i] * 1.0/total)
-                        if predictions is not None:
-                            pred_list.append(predictions[i])
+                    # create a row representing an annotation for this class
+                    X_list.append(X[i, :])
+                    label_vector = np.zeros(n_classes, dtype=int)
+                    label_vector[index] = 1
+                    Y_list.append(label_vector)
+                    # give it a weight based on prior weighting and the proportion of annotations for this class
+                    weights_list.append(weights[i] * count/total)
+                    # also append the prediction if given
+                    if predictions is not None:
+                        pred_list.append(predictions[i])
 
+        # concatenate the newly form lists
         if sparse.issparse(X):
             X_return = sparse.vstack(X_list)
         else:
@@ -385,8 +392,8 @@ def prepare_data(X, Y, weights=None, predictions=None, loss='log'):
             pred_return = np.array(pred_list)
 
     elif loss == 'brier':
-        # just normalize labels
         Y_list = []
+        # just normalize labels
         for i in range(n_items):
             labels = Y[i, :]
             Y_list.append(labels / float(labels.sum()))

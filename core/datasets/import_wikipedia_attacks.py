@@ -4,7 +4,6 @@ from collections import defaultdict
 from optparse import OptionParser
 
 import numpy as np
-import matplotlib.pyplot as plt
 
 from ..util import file_handling as fh
 from ..util import dirs
@@ -82,11 +81,8 @@ def import_data(input_dir, project, subset):
     years.sort()
     attacks = [np.mean(year_averages[year]) for year in years]
     n_items = [len(year_averages[year]) for year in years]
-
-    fig, (ax1, ax2) = plt.subplots(2)
-    ax1.plot(years, n_items)
-    ax2.plot(years, attacks)
-    plt.show()
+    for i, year in enumerate(years):
+        print("%d, %d, %0.4f" % (year, n_items[i], attacks[i]))
 
     print("Saving %d items" % len(data))
     data_dir = dirs.dir_data_raw(project)
