@@ -94,7 +94,6 @@ def evaluate_predictions(labels_df, predictions_df, pred_probs_df=None, pos_labe
         print("Pred (p):", predicted_prob_proportions)
         print("RMSE on proportions (p) = %0.3f" % rmse)
 
-
     return f1, acc
 
 

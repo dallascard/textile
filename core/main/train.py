@@ -211,6 +211,7 @@ def train_model_with_labels(project_dir, model_type, loss, model_name, subset, l
 
                 train_predictions = model.predict(X_train)
                 dev_predictions = model.predict(X_dev)
+                dev_pred_probs = model.predict_probs(X_dev)
 
                 y_train_vector = np.argmax(Y_train, axis=1)
                 y_dev_vector = np.argmax(Y_dev, axis=1)
@@ -221,10 +222,10 @@ def train_model_with_labels(project_dir, model_type, loss, model_name, subset, l
 
                 train_f1 = evaluation.f1_score(y_train_vector, train_predictions, n_classes, weights=w_train)
                 dev_f1 = evaluation.f1_score(y_dev_vector, dev_predictions, n_classes, weights=w_dev)
-                train_acc = evaluation.acc_score(y_train_vector, train_predictions, n_classes, weights=w_train)
                 dev_acc = evaluation.acc_score(y_dev_vector, dev_predictions, n_classes, weights=w_dev)
-                dev_cal_rmse = evaluation.evaluate_proportions_mse(y_dev_vector, dev_predictions, n_classes, weights=w_dev)
-                #evaluation.evaluate_calibration_mse_bins(y[dev_indices], dev_predictions, 1)
+                dev_proportions = evaluation.compute_proportions(Y_dev, w_dev)
+                pred_proportions = evaluation.compute_proportions(dev_pred_probs, w_dev)
+                dev_cal_rmse = evaluation.eval_proportions_mse(dev_proportions, pred_proportions)
 
                 mean_train_f1s[alpha_i] += train_f1 / float(n_dev_folds)
                 mean_dev_f1s[alpha_i] += dev_f1 / float(n_dev_folds)
@@ -248,6 +249,7 @@ def train_model_with_labels(project_dir, model_type, loss, model_name, subset, l
             sys.exit("Objective not recognized")
         best_alpha = alphas[best_alpha_index]
         best_dev_f1 = mean_dev_f1s[best_alpha_index]
+        best_dev_acc = mean_dev_acc[best_alpha_index]
         best_dev_cal = mean_dev_cal[best_alpha_index]
         print("Best: alpha = %.3f, dev f1 = %.3f, dev cal = %.3f" % (best_alpha, best_dev_f1, best_dev_cal))
 
@@ -293,6 +295,9 @@ def train_model_with_labels(project_dir, model_type, loss, model_name, subset, l
             output_dir = None
 
         fold = 1
+        best_dev_f1 = 0.0
+        best_dev_acc = 0.0
+        best_dev_cal = 0.0
         for train_indices, dev_indices in kfold.split(X):
             print("Starting fold %d" % fold)
             if do_ensemble:
@@ -314,6 +319,24 @@ def train_model_with_labels(project_dir, model_type, loss, model_name, subset, l
             if save_model:
                 model.save()
 
+            dev_predictions = model.predict(X_dev)
+            dev_pred_probs = model.predict_probs(X_dev)
+
+            y_dev_vector = np.argmax(Y_dev, axis=1)
+
+            dev_f1 = evaluation.f1_score(y_dev_vector, dev_predictions, n_classes, weights=w_dev)
+            dev_acc = evaluation.acc_score(y_dev_vector, dev_predictions, n_classes, weights=w_dev)
+            dev_proportions = evaluation.compute_proportions(Y_dev, w_dev)
+            pred_proportions = evaluation.compute_proportions(dev_pred_probs, w_dev)
+            dev_cal_rmse = evaluation.eval_proportions_mse(dev_proportions, pred_proportions)
+
+            best_dev_f1 += dev_f1 / float(n_dev_folds)
+            best_dev_acc += dev_acc / float(n_dev_folds)
+            best_dev_cal += dev_cal_rmse / float(n_dev_folds)
+
+            acc_cfms.append(calibration.compute_acc(y_dev_vector, dev_predictions, n_classes, weights=w_dev))
+            pvc_cfms.append(calibration.compute_pvc(y_dev_vector, dev_predictions, n_classes, weights=w_dev))
+
             if do_ensemble:
                 model_ensemble.add_model(model, name)
                 fold += 1
@@ -323,6 +346,10 @@ def train_model_with_labels(project_dir, model_type, loss, model_name, subset, l
         if do_ensemble:
             model = model_ensemble
             model.save()
+
+        # TODO: figure out if I'm better off keeping the individual matrices
+        best_acc_cfm = np.mean(acc_cfms, axis=0)
+        best_pvc_cfm = np.mean(pvc_cfms, axis=0)
 
     else:
         sys.exit("Model type %s not recognized" % model_type)
@@ -338,7 +365,7 @@ def train_model_with_labels(project_dir, model_type, loss, model_name, subset, l
         best_pvc_cfm = None
     """
 
-    return model
+    return model, best_dev_f1, best_dev_acc, best_dev_cal, best_acc_cfm, best_pvc_cfm
 
 
 def prepare_data(X, Y, weights=None, predictions=None, loss='log'):
