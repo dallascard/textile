@@ -53,7 +53,7 @@ def load_and_evaluate_predictons(project_dir, model_name, subset, label, items_t
     evaluate_predictions(labels, predictions, pred_probs_df=pred_probs, pos_label=pos_label, average=average, weights=weights, loss=loss)
 
 
-def evaluate_predictions(labels_df, predictions_df, pred_probs_df=None, pos_label=1, average='micro', weights=None, loss='log'):
+def evaluate_predictions(labels_df, predictions_df, pred_probs_df=None, pos_label=1, average='micro', weights=None, loss='log', verbose=True):
     assert np.all(labels_df.index == predictions_df.index)
     n_items, n_classes = labels_df.shape
     labels = labels_df.values
@@ -81,18 +81,21 @@ def evaluate_predictions(labels_df, predictions_df, pred_probs_df=None, pos_labe
     true_props = evaluation.compute_proportions(labels, weights)
     predicted_label_props = evaluation.compute_proportions_from_label_vector(predictions, n_classes, weights)
 
-    print("True:", true_props)
-    print("Pred:", predicted_label_props)
+    if verbose:
+        print("True:", true_props)
+        print("Pred:", predicted_label_props)
 
     rmse = evaluation.eval_proportions_mse(true_props, predicted_label_props)
-    print("RMSE on proportions (CC) = %0.3f" % rmse)
+    if verbose:
+        print("RMSE on proportions (CC) = %0.3f" % rmse)
 
     # if predicted probabilities are given, also evaluate the proportion estimate based on these
     if pred_probs is not None:
         predicted_prob_proportions = evaluation.compute_proportions(pred_probs, weights)
         rmse = evaluation.eval_proportions_mse(true_props, predicted_prob_proportions)
-        print("Pred (p):", predicted_prob_proportions)
-        print("RMSE on proportions (p) = %0.3f" % rmse)
+        if verbose:
+            print("Pred (p):", predicted_prob_proportions)
+            print("RMSE on proportions (p) = %0.3f" % rmse)
 
     return f1, acc
 
