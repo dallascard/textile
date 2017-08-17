@@ -393,19 +393,19 @@ def cross_train_and_eval(project_dir, subset, field_name, config_file, calib_pro
                 if use_calib_pred:
                     calib_pred_ranges = []
                     for i in range(n_calib):
+                        print(i)
                         other_items = calib_items[:]
                         other_items.pop(i)
                         calib_pred_ranges.append(ivap.estimate_probs_from_labels(project_dir, model, model_name, subset, subset, labels_df, other_items, [calib_items[i]], weights_df=None))
                     calib_pred_ranges = np.vstack(calib_pred_ranges)
-                else:
-                    calib_pred_ranges = np.vstack([calib_labels_df.values[:, 1], calib_labels_df.values[:, 1]]).T
-                print(test_pred_ranges.shape, calib_pred_ranges.shape)
-                test_pred_ranges = np.vstack([test_pred_ranges, calib_pred_ranges])
+                    test_pred_ranges = np.vstack([test_pred_ranges, calib_pred_ranges])
 
             combo = test_pred_ranges[:, 1] / (1.0 - test_pred_ranges[:, 0] + test_pred_ranges[:, 1])
 
             pred_range = np.mean(test_pred_ranges, axis=0)
             venn_estimate = np.mean(combo)
+
+
             venn_rmse = np.sqrt((venn_estimate - test_estimate)**2)
             venn_contains_test = pred_range[0] < test_estimate < pred_range[1]
             output_df.loc['Venn'] = [n_calib, venn_estimate, venn_rmse, pred_range[0], pred_range[1], venn_contains_test]
