@@ -398,7 +398,7 @@ def cross_train_and_eval(project_dir, subset, field_name, config_file, calib_pro
                         calib_pred_ranges.append(ivap.estimate_probs_from_labels(project_dir, model, model_name, subset, subset, labels_df, other_items, calib_items[i], weights_df=None))
                     calib_pred_ranges = np.vstack(calib_pred_ranges)
                 else:
-                    calib_pred_ranges = np.hstack([calib_labels_df.values[:, 1], calib_labels_df.values[:, 1]])
+                    calib_pred_ranges = np.vstack([calib_labels_df.values[:, 1], calib_labels_df.values[:, 1]]).T
                 print(test_pred_ranges.shape, calib_pred_ranges.shape)
                 test_pred_ranges = np.vstack([test_pred_ranges, calib_pred_ranges])
 
