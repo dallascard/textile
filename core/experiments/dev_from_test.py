@@ -277,14 +277,6 @@ def cross_train_and_eval(project_dir, subset, field_name, config_file, calib_pro
             model, dev_f1, dev_acc, dev_cal, acc_cfm, pvc_cfm = train.train_model_with_labels(project_dir, model_type, loss, model_name, subset, labels_df, feature_defs, weights_df=weights_df, items_to_use=calib_and_train_items_r, penalty=penalty, intercept=intercept, objective=objective, n_dev_folds=n_dev_folds, do_ensemble=do_ensemble, dh=dh, seed=seed, verbose=verbose)
             results_df.loc['cross_val_all'] = [dev_f1, dev_acc, dev_cal]
 
-            # get labels for calibration data
-            if use_calib_pred:
-                calib_predictions_df, calib_pred_probs_df = predict.predict(project_dir, model, model_name, subset, label, items_to_use=calib_items, verbose=verbose)
-            else:
-                calib_predictions_df = pd.DataFrame(np.argmax(calib_labels_df, axis=1), index=calib_labels_df.index)
-                # normalize labels to get (questionable) estimates of probabilities
-                calib_pred_probs_df = pd.DataFrame(calib_labels_df.values / np.array(np.sum(calib_labels_df.values, axis=1).reshape((n_calib, 1)), dtype=float), index=calib_labels_df.index)
-
             # get labels for test data
             test_predictions_df, test_pred_probs_df = predict.predict(project_dir, model, model_name, subset, label, items_to_use=test_items, verbose=verbose)
             f1_test, acc_test = evaluate_predictions.evaluate_predictions(test_labels_df, test_predictions_df, test_pred_probs_df, pos_label=pos_label, average=average)
@@ -295,6 +287,14 @@ def cross_train_and_eval(project_dir, subset, field_name, config_file, calib_pro
                 test_predictions = test_predictions_df.values
                 test_pred_probs = test_pred_probs_df.values
             else:
+                # get labels for calibration data
+                if use_calib_pred:
+                    calib_predictions_df, calib_pred_probs_df = predict.predict(project_dir, model, model_name, subset, label, items_to_use=calib_items, verbose=verbose)
+                else:
+                    calib_predictions_df = pd.DataFrame(np.argmax(calib_labels_df.values, axis=1), index=calib_labels_df.index)
+                    # normalize labels to get (questionable) estimates of probabilities
+                    calib_pred_probs_df = pd.DataFrame(calib_labels_df.values / np.array(np.sum(calib_labels_df.values, axis=1).reshape((n_calib, 1)), dtype=float), index=calib_labels_df.index)
+
                 test_predictions = np.r_[test_predictions_df.values, calib_predictions_df.values]
                 test_pred_probs = np.vstack([test_pred_probs_df.values, calib_pred_probs_df.values])
 
