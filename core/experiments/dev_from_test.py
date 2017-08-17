@@ -318,7 +318,7 @@ def cross_train_and_eval(project_dir, subset, field_name, config_file, calib_pro
 
             # predict on test data
             test_predictions_df, test_pred_probs_df = predict.predict(project_dir, model, model_name, subset, label, items_to_use=test_items, verbose=verbose)
-            f1_test, acc_test = evaluate_predictions.evaluate_predictions(test_labels_df, test_predictions_df, test_pred_probs, pos_label=pos_label, average=average)
+            f1_test, acc_test = evaluate_predictions.evaluate_predictions(test_labels_df, test_predictions_df, test_pred_probs_df, pos_label=pos_label, average=average)
             results_df.loc['test'] = [f1_test, acc_test, 0.0]
             results_df.to_csv(os.path.join(dirs.dir_models(project_dir), model_name, 'results.csv'))
 
