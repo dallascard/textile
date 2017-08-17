@@ -1,9 +1,11 @@
 import os
+import time
 from optparse import OptionParser
 
 from collections import Counter
 
 import numpy as np
+import matplotlib.pyplot as plt
 from sklearn.isotonic import IsotonicRegression
 
 from ..models import isotonic_regression
@@ -32,7 +34,7 @@ def estimate_probs_brute_force(project_dir, model, model_name, calib_subset, tes
     estimate_probs_from_labels(project_dir, model, model_name, calib_subset, test_subset, labels_df, calib_items, test_items, verbose)
 
 
-def estimate_probs_from_labels(project_dir, model, model_name, calib_subset, test_subset, labels_df, calib_items=None, test_items=None, verbose=False, weights_df=None):
+def estimate_probs_from_labels(project_dir, model, model_name, calib_subset, test_subset, labels_df, calib_items=None, test_items=None, verbose=False, weights_df=None, plot=False):
 
     n_items, n_classes = labels_df.shape
 
@@ -42,12 +44,16 @@ def estimate_probs_from_labels(project_dir, model, model_name, calib_subset, tes
 
     # normalize labels to just count one each
     labels = labels_df.values.copy()
+
+    # weight examples by the total number of votes they have received
+    calib_weights = labels.sum(axis=1).copy()
+
     labels = labels / np.reshape(labels.sum(axis=1), (n_items, 1))
 
-    if weights_df is not None and calib_items is not None:
-        calib_weights = np.array(weights_df.loc[calib_items].values).reshape((n_items,))
-    else:
-        calib_weights = np.ones(n_items)
+    #if weights_df is not None and calib_items is not None:
+    #    calib_weights = np.array(weights_df.loc[calib_items].values).reshape((n_items,))
+    #else:
+    #    calib_weights = np.ones(n_items)
 
     model_dir = os.path.join(dirs.dir_models(project_dir), model_name)
 
@@ -140,12 +146,14 @@ def estimate_probs_from_labels(project_dir, model, model_name, calib_subset, tes
     #test_pred_ranges2 = np.zeros((n_test, 2))
 
     for i in range(n_test):
+        if plot:
+            fig, ax = plt.subplots()
         for proposed_label in [0, 1]:
 
             all_scores = np.r_[calib_scores, test_pred_probs[i]]
             all_labels = np.r_[calib_y, proposed_label]
-            # somewhat arbitrarily assign the new item a weight equal to the max of the calibration weights
-            all_weights = np.r_[calib_weights, np.max(calib_weights)]
+            # only give the new item a weight of 1 (equivalent to a single annotation of 0 or 1)
+            all_weights = np.r_[calib_weights, 1.0]
 
             #slopes = isotonic_regression.isotonic_regression(all_scores, all_labels)
             #test_pred_ranges[i, proposed_label] = slopes[-1]
@@ -154,6 +162,21 @@ def estimate_probs_from_labels(project_dir, model, model_name, calib_subset, tes
             ir = IsotonicRegression(0, 1)
             ir.fit(all_scores, all_labels, all_weights)
             test_pred_ranges[i, proposed_label] = ir.predict([all_scores[-1]])
+
+            if plot:
+                x_vals = all_scores.copy().tolist()
+                x_vals.sort()
+                pred_vals = ir.predict(x_vals)
+                if proposed_label == 0:
+                    ax.scatter(all_scores[:-1], all_labels[:-1], s=7, alpha=0.6)
+                    ax.plot(x_vals, np.mean(all_labels[:-1]) * np.ones_like(x_vals), 'k--')
+                ax.scatter(all_scores[-1], all_labels[-1], s=7, alpha=0.6)
+                ax.plot(x_vals, pred_vals)
+        if plot:
+            ax.scatter([all_scores[-1], all_scores[-1]], test_pred_ranges[i, :], s=8)
+            ax.plot([all_scores[-1], all_scores[-1]], test_pred_ranges[i, :], 'r')
+            plt.show()
+            time.sleep(2)
 
     #print(np.sum(test_pred_ranges != test_pred_ranges2), np.size(test_pred_ranges))
     #print(np.max(np.abs(test_pred_ranges - test_pred_ranges2)))
