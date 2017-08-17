@@ -399,6 +399,7 @@ def cross_train_and_eval(project_dir, subset, field_name, config_file, calib_pro
                     calib_pred_ranges = np.vstack(calib_pred_ranges)
                 else:
                     calib_pred_ranges = np.hstack([calib_labels_df.values[:, 1], calib_labels_df.values[:, 1]])
+                print(test_pred_ranges.shape, calib_pred_ranges.shape)
                 test_pred_ranges = np.vstack([test_pred_ranges, calib_pred_ranges])
 
             combo = test_pred_ranges[:, 1] / (1.0 - test_pred_ranges[:, 0] + test_pred_ranges[:, 1])
