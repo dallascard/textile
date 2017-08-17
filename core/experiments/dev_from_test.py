@@ -321,7 +321,7 @@ def cross_train_and_eval(project_dir, subset, field_name, config_file, calib_pro
 
             # predict on calibration data
             calib_predictions_df, calib_pred_probs_df = predict.predict(project_dir, model, model_name, subset, label, items_to_use=calib_items, verbose=verbose)
-            f1_cal, acc_cal = evaluate_predictions.evaluate_predictions(calib_labels_df, calib_predictions_df, calib_pred_probs_df, pos_label=pos_label, average=average)
+            f1_cal, acc_cal = evaluate_predictions.evaluate_predictions(calib_labels_df, calib_predictions_df, calib_pred_probs_df, pos_label=pos_label, average=average, verbose=False)
             results_df.loc['calibration'] = [f1_cal, acc_cal, calib_rmse]
 
             # predict on test data
@@ -393,7 +393,7 @@ def cross_train_and_eval(project_dir, subset, field_name, config_file, calib_pro
                 if use_calib_pred:
                     calib_pred_ranges = []
                     for i in range(n_calib):
-                        other_items = calib_items.tolist()
+                        other_items = calib_items[:]
                         other_items.pop(i)
                         calib_pred_ranges.append(ivap.estimate_probs_from_labels(project_dir, model, model_name, subset, subset, labels_df, other_items, calib_items[i], weights_df=None))
                     calib_pred_ranges = np.vstack(calib_pred_ranges)

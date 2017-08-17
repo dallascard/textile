@@ -88,7 +88,6 @@ def estimate_probs_from_labels(project_dir, model, model_name, calib_subset, tes
 
     printv("Feature matrix shape: (%d, %d)" % calib_X.shape, verbose)
 
-
     calib_pred_probs = model.predict_probs(calib_X)
     n_calib, n_classes = calib_pred_probs.shape
     assert n_classes == 2
