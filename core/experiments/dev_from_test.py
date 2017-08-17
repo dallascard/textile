@@ -245,7 +245,6 @@ def cross_train_and_eval(project_dir, subset, field_name, config_file, calib_pro
             test_labels_df = labels_df.loc[test_items]
             non_train_labels_df = labels_df.loc[non_train_items]
 
-            print("Non-train estimate")
             # get the true proportion of labels in the test OR non-training data (calibration and test combined)
             if exclude_calib:
                 test_props, test_estimate, test_std = get_estimate_and_std(test_labels_df)
@@ -253,7 +252,6 @@ def cross_train_and_eval(project_dir, subset, field_name, config_file, calib_pro
                 test_props, test_estimate, test_std = get_estimate_and_std(non_train_labels_df)
             output_df.loc['test'] = [n_test, test_estimate, 0, test_estimate - 2 * test_std, test_estimate + 2 * test_std, 1]
 
-            print("Train estimate")
             # get the same estimate from training data
             train_props, train_estimate, train_std = get_estimate_and_std(train_labels_r_df)
             # compute the error of this estimate
@@ -261,7 +259,6 @@ def cross_train_and_eval(project_dir, subset, field_name, config_file, calib_pro
             train_contains_test = test_estimate > train_estimate - 2 * train_std and test_estimate < train_estimate + 2 * train_std
             output_df.loc['train'] = [n_train_r, train_estimate, train_rmse, train_estimate - 2 * train_std, train_estimate + 2 * train_std, train_contains_test]
 
-            print("Calib estimate")
             # repeat for calibration data
             calib_props, calib_estimate, calib_std = get_estimate_and_std(calib_labels_df)
             calib_rmse = np.sqrt((calib_estimate - test_estimate)**2)
@@ -319,11 +316,6 @@ def cross_train_and_eval(project_dir, subset, field_name, config_file, calib_pro
             f1_cal, acc_cal = evaluate_predictions.evaluate_predictions(calib_labels_df, calib_predictions_df, calib_pred_probs_df, pos_label=pos_label, average=average)
             results_df.loc['calibration'] = [f1_cal, acc_cal, calib_rmse]
 
-            if not use_calib_pred:
-                calib_predictions_df = pd.DataFrame(np.argmax(calib_labels_df, axis=1), index=calib_labels_df.index)
-                # normalize labels to get (questionable) estimates of probabilities
-                calib_pred_probs_df = pd.DataFrame(calib_labels_df.values / np.array(np.sum(calib_labels_df.values, axis=1).reshape((n_calib, 1)), dtype=float), index=calib_labels_df.index)
-
             # predict on test data
             test_predictions_df, test_pred_probs_df = predict.predict(project_dir, model, model_name, subset, label, items_to_use=test_items, verbose=verbose)
             f1_test, acc_test = evaluate_predictions.evaluate_predictions(test_labels_df, test_predictions_df, test_pred_probs, pos_label=pos_label, average=average)
@@ -335,6 +327,11 @@ def cross_train_and_eval(project_dir, subset, field_name, config_file, calib_pro
                 test_predictions = test_predictions_df.values
                 test_pred_probs = test_pred_probs_df.values
             else:
+                if not use_calib_pred:
+                    calib_predictions_df = pd.DataFrame(np.argmax(calib_labels_df.values, axis=1), index=calib_labels_df.index)
+                    # normalize labels to get (questionable) estimates of probabilities
+                    calib_pred_probs_df = pd.DataFrame(calib_labels_df.values / np.array(np.sum(calib_labels_df.values, axis=1).reshape((n_calib, 1)), dtype=float), index=calib_labels_df.index)
+
                 test_predictions = np.r_[test_predictions_df.values, calib_predictions_df.values]
                 test_pred_probs = np.vstack([test_pred_probs_df.values, calib_pred_probs_df.values])
 
