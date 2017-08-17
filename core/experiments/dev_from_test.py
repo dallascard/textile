@@ -109,7 +109,7 @@ def main():
     cross_train_and_eval(project_dir, subset, field_name, config_file, calib_prop, train_prop, prefix, max_folds, min_val, max_val, model_type, loss, do_ensemble, dh, label, penalty, cshift, intercept, n_dev_folds, repeats, verbose, pos_label, average, objective, seed, calib_pred, exclude_calib, alpha_min, alpha_max)
 
 
-def cross_train_and_eval(project_dir, subset, field_name, config_file, calib_prop=0.33, train_prop=1.0, prefix=None, max_folds=None, min_val=None, max_val=None, model_type='LR', loss='log', do_ensemble=False, dh=0, label='label', penalty='l2', cshift=None, intercept=True, n_dev_folds=5, repeats=1, verbose=False, pos_label=1, average='micro', objective='f1', seed=None, use_calib_pred=False, exclude_calib=False, alpha_min=0.01, alpha_max=1000):
+def cross_train_and_eval(project_dir, subset, field_name, config_file, calib_prop=0.33, train_prop=1.0, prefix=None, max_folds=None, min_val=None, max_val=None, model_type='LR', loss='log', do_ensemble=False, dh=0, label='label', penalty='l1', cshift=None, intercept=True, n_dev_folds=5, repeats=1, verbose=False, pos_label=1, average='micro', objective='f1', seed=None, use_calib_pred=False, exclude_calib=False, alpha_min=0.01, alpha_max=1000):
 
     model_basename = subset + '_' + field_name
     if prefix is not None:
