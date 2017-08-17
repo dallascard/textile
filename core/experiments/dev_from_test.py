@@ -38,6 +38,10 @@ def main():
                       help='Loss function [log|brier]: default=%default')
     parser.add_option('--dh', dest='dh', default=0,
                       help='Hidden layer size for MLP [0 for None]: default=%default')
+    parser.add_option('--alpha_min', dest='alpha_min', default=0.01,
+                      help='Minimum value of training hyperparameter: default=%default')
+    parser.add_option('--alpha_max', dest='alpha_max', default=1000,
+                      help='Maximum value of training hyperparameter: default=%default')
     parser.add_option('--ensemble', action="store_true", dest="ensemble", default=False,
                       help='Make an ensemble from cross-validation, instead of training one model: default=%default')
     parser.add_option('--exclude_calib', action="store_true", dest="exclude_calib", default=False,
@@ -80,8 +84,10 @@ def main():
         max_folds = int(max_folds)
     model_type = options.model
     loss = options.loss
-    do_ensemble = options.ensemble
     dh = int(options.dh)
+    alpha_min = float(options.alpha_min)
+    alpha_max = float(options.alpha_max)
+    do_ensemble = options.ensemble
     exclude_calib = options.exclude_calib
     calib_pred = options.calib_pred
     label = options.label
@@ -100,10 +106,10 @@ def main():
     pos_label = 1
     average = 'micro'
 
-    cross_train_and_eval(project_dir, subset, field_name, config_file, calib_prop, train_prop, prefix, max_folds, min_val, max_val, model_type, loss, do_ensemble, dh, label, penalty, cshift, intercept, n_dev_folds, repeats, verbose, pos_label, average, objective, seed, calib_pred, exclude_calib)
+    cross_train_and_eval(project_dir, subset, field_name, config_file, calib_prop, train_prop, prefix, max_folds, min_val, max_val, model_type, loss, do_ensemble, dh, label, penalty, cshift, intercept, n_dev_folds, repeats, verbose, pos_label, average, objective, seed, calib_pred, exclude_calib, alpha_min, alpha_max)
 
 
-def cross_train_and_eval(project_dir, subset, field_name, config_file, calib_prop=0.33, train_prop=1.0, prefix=None, max_folds=None, min_val=None, max_val=None, model_type='LR', loss='log', do_ensemble=False, dh=0, label='label', penalty='l2', cshift=None, intercept=True, n_dev_folds=5, repeats=1, verbose=False, pos_label=1, average='micro', objective='f1', seed=None, use_calib_pred=False, exclude_calib=False):
+def cross_train_and_eval(project_dir, subset, field_name, config_file, calib_prop=0.33, train_prop=1.0, prefix=None, max_folds=None, min_val=None, max_val=None, model_type='LR', loss='log', do_ensemble=False, dh=0, label='label', penalty='l2', cshift=None, intercept=True, n_dev_folds=5, repeats=1, verbose=False, pos_label=1, average='micro', objective='f1', seed=None, use_calib_pred=False, exclude_calib=False, alpha_min=0.01, alpha_max=1000):
 
     model_basename = subset + '_' + field_name
     if prefix is not None:
@@ -123,8 +129,10 @@ def cross_train_and_eval(project_dir, subset, field_name, config_file, calib_pro
         'max_folds': max_folds,
         'model_type': model_type,
         'loss': loss,
-        'do_ensemble': do_ensemble,
         'dh': dh,
+        'alpha_min': alpha_min,
+        'alpha_max': alpha_max,
+        'do_ensemble': do_ensemble,
         'label': label,
         'penalty': penalty,
         'cshift': cshift,
@@ -195,7 +203,7 @@ def cross_train_and_eval(project_dir, subset, field_name, config_file, calib_pro
             train_test_labels_df = pd.DataFrame(train_test_labels, index=labels_df.index, columns=[0, 1])
             # create a cshift model using the same specifiction as our model below (e.g. LR/MLP, etc.)
             model_name = model_basename + '_' + str(v) + '_' + 'cshift'
-            model, dev_f1, dev_acc, dev_cal, _, _ = train.train_model_with_labels(project_dir, model_type, loss, model_name, subset, train_test_labels_df, feature_defs, penalty=penalty, intercept=intercept, n_dev_folds=n_dev_folds, save_model=True, do_ensemble=do_ensemble, dh=dh, seed=seed, verbose=False)
+            model, dev_f1, dev_acc, dev_cal, _, _ = train.train_model_with_labels(project_dir, model_type, loss, model_name, subset, train_test_labels_df, feature_defs, penalty=penalty, alpha_min=alpha_min, alpha_max=alpha_max, intercept=intercept, n_dev_folds=n_dev_folds, save_model=True, do_ensemble=do_ensemble, dh=dh, seed=seed, verbose=False)
             print("cshift results: %0.4f f1, %0.4f acc" % (dev_f1, dev_acc))
 
             # take predictions from model on the training data
@@ -271,7 +279,7 @@ def cross_train_and_eval(project_dir, subset, field_name, config_file, calib_pro
             print("Training model on all labeled data")
             # first train a model on the training and calibration data combined
             calib_and_train_items_r = np.array(list(calib_items) + list(train_items_r))
-            model, dev_f1, dev_acc, dev_cal, acc_cfm, pvc_cfm = train.train_model_with_labels(project_dir, model_type, loss, model_name, subset, labels_df, feature_defs, weights_df=weights_df, items_to_use=calib_and_train_items_r, penalty=penalty, intercept=intercept, objective=objective, n_dev_folds=n_dev_folds, do_ensemble=do_ensemble, dh=dh, seed=seed, verbose=verbose)
+            model, dev_f1, dev_acc, dev_cal, acc_cfm, pvc_cfm = train.train_model_with_labels(project_dir, model_type, loss, model_name, subset, labels_df, feature_defs, weights_df=weights_df, items_to_use=calib_and_train_items_r, penalty=penalty, alpha_min=alpha_min, alpha_max=alpha_max, intercept=intercept, objective=objective, n_dev_folds=n_dev_folds, do_ensemble=do_ensemble, dh=dh, seed=seed, verbose=verbose)
             results_df.loc['cross_val_all'] = [dev_f1, dev_acc, dev_cal]
 
             # get labels for test data
@@ -308,7 +316,7 @@ def cross_train_and_eval(project_dir, subset, field_name, config_file, calib_pro
 
             # Now repeat for a model trained on the training data, saving the calibration data for calibration
             print("Training model on training data only")
-            model, dev_f1, dev_acc, dev_cal, acc_cfm, pvc_cfm = train.train_model_with_labels(project_dir, model_type, loss, model_name, subset, labels_df, feature_defs, weights_df=weights_df, items_to_use=train_items_r, penalty=penalty, intercept=intercept, objective=objective, n_dev_folds=n_dev_folds, do_ensemble=do_ensemble, dh=dh, seed=seed, verbose=verbose)
+            model, dev_f1, dev_acc, dev_cal, acc_cfm, pvc_cfm = train.train_model_with_labels(project_dir, model_type, loss, model_name, subset, labels_df, feature_defs, weights_df=weights_df, items_to_use=train_items_r, penalty=penalty, alpha_min=alpha_min, alpha_max=alpha_max,  intercept=intercept, objective=objective, n_dev_folds=n_dev_folds, do_ensemble=do_ensemble, dh=dh, seed=seed, verbose=verbose)
             results_df.loc['cross_val'] = [dev_f1, dev_acc, dev_cal]
 
             # predict on calibration data
@@ -337,11 +345,11 @@ def cross_train_and_eval(project_dir, subset, field_name, config_file, calib_pro
 
             # now evaluate in terms of predicted proportions
             # average the predictions (assuming binary labels)
-            cc_estimate = np.mean(test_predictions[label].values)
+            cc_estimate = np.mean(test_predictions)
             cc_rmse = np.sqrt((cc_estimate - test_estimate)**2)
 
             # average the predicted probabilities for the positive label (assuming binary labels)
-            pcc_estimate = np.mean(test_pred_probs[1].values)
+            pcc_estimate = np.mean(test_pred_probs[:, 1])
             pcc_rmse = np.sqrt((pcc_estimate - test_estimate)**2)
 
             output_df.loc['CC'] = [n_test, cc_estimate, cc_rmse, 0, 1, np.nan]
