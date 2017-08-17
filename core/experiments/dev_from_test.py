@@ -388,23 +388,29 @@ def cross_train_and_eval(project_dir, subset, field_name, config_file, calib_pro
 
             print("Venn")
             test_pred_ranges = ivap.estimate_probs_from_labels(project_dir, model, model_name, subset, subset, labels_df, calib_items, test_items, weights_df=None)
-            if not exclude_calib:
-                # try also doing IVAP on individual calibration items, using all others
-                if use_calib_pred:
-                    calib_pred_ranges = []
-                    for i in range(n_calib):
-                        print(i)
-                        other_items = calib_items[:]
-                        other_items.pop(i)
-                        calib_pred_ranges.append(ivap.estimate_probs_from_labels(project_dir, model, model_name, subset, subset, labels_df, other_items, [calib_items[i]], weights_df=None))
-                    calib_pred_ranges = np.vstack(calib_pred_ranges)
-                    test_pred_ranges = np.vstack([test_pred_ranges, calib_pred_ranges])
+            #if not exclude_calib:
+            #    # try also doing IVAP on individual calibration items, using all others
+            #    if use_calib_pred:
+            #        calib_pred_ranges = []
+            #        for i in range(n_calib):
+            #            print(i)
+            #            other_items = calib_items[:]
+            #            other_items.pop(i)
+            #            calib_pred_ranges.append(ivap.estimate_probs_from_labels(project_dir, model, model_name, subset, subset, labels_df, other_items, [calib_items[i]], weights_df=None))
+            #        calib_pred_ranges = np.vstack(calib_pred_ranges)
+            #        test_pred_ranges = np.vstack([test_pred_ranges, calib_pred_ranges])
 
             combo = test_pred_ranges[:, 1] / (1.0 - test_pred_ranges[:, 0] + test_pred_ranges[:, 1])
 
             pred_range = np.mean(test_pred_ranges, axis=0)
             venn_estimate = np.mean(combo)
 
+            if not exclude_calib:
+                if use_calib_pred:
+                    calib_estimate = np.mean(calib_pred_probs_df, axis=0)[1]
+                venn_estimate = (venn_estimate * n_test + calib_estimate * n_calib) / float(n_test + n_calib)
+                pred_range[0] = (pred_range[0] * n_test + calib_estimate * n_calib) / float(n_test + n_calib)
+                pred_range[1] = (pred_range[1] * n_test + calib_estimate * n_calib) / float(n_test + n_calib)
 
             venn_rmse = np.sqrt((venn_estimate - test_estimate)**2)
             venn_contains_test = pred_range[0] < test_estimate < pred_range[1]
@@ -413,35 +419,6 @@ def cross_train_and_eval(project_dir, subset, field_name, config_file, calib_pro
             output_filename = os.path.join(dirs.dir_models(project_dir), model_name, field_name + '_' + str(v) + '.csv')
             output_df.to_csv(output_filename)
 
-
-"""
-def expand_labels(labels, other=None):
-    weights = labels.sum(axis=1)
-    labels_list = []
-    weights_list = []
-    other_list = []
-    n_items, n_classes = labels.shape
-    for c in range(n_classes):
-        c_max = labels[:, c].max()
-        for i in range(c_max):
-            items = np.array(labels[:, c] > i)
-            labels_list.append(np.ones(np.sum(items), dtype=int) * c)
-            weights_list.append(weights[items])
-            if other is not None:
-                if other.ndim == 1:
-                    other_list.append(other[items])
-                else:
-                    other_list.append(other[items, :])
-    labels = np.hstack(labels_list)
-    weights = np.hstack(weights_list)
-    if other is None:
-        return labels, weights
-    else:
-        if other.ndim == 1:
-            return labels, weights, np.hstack(other_list)
-        else:
-            return labels, weights, np.vstack(other_list)
-"""
 
 def get_estimate_and_std(labels_df):
     n_items, n_classes = labels_df.shape
