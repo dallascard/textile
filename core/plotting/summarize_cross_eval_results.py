@@ -77,7 +77,7 @@ def main():
 
     for m_i, m in enumerate(methods):
         print(m)
-        print(mean_rmse_df[m])
+        print(max_rmse_df[m])
         print("mean = %0.4f" % mean_rmse_df[m].mean())
         #for i, loc in enumerate(mean_rmse_df.index):
         #    ax.plot([i + m_i * offset, i + m_i * offset], [min_rmse_df.loc[loc, m], max_rmse_df.loc[loc, m]], c='k', label=None, alpha=0.7)
