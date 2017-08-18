@@ -35,8 +35,8 @@ def main():
     field_vals.sort()
     n_field_vals = len(field_vals)
 
-    #methods = ['train', 'calibration', 'CC_all', 'PCC_all', 'PCC_cal', 'CC', 'PCC', 'ACC', 'ACC_int', 'PVC', 'PVC_int', 'Venn']
-    methods = ['train', 'calibration', 'CC_all', 'PCC_all', 'CC', 'PCC', 'ACC', 'ACC_int', 'PVC', 'PVC_int', 'Venn']
+    methods = ['train', 'calibration', 'CC_all', 'PCC_all', 'PCC_cal', 'CC', 'PCC', 'ACC', 'ACC_int', 'PVC', 'PVC_int', 'Venn']
+    #methods = ['train', 'calibration', 'CC_all', 'PCC_all', 'CC', 'PCC', 'ACC', 'ACC_int', 'PVC', 'PVC_int', 'Venn']
     #methods = ['nontest', 'CC', 'PCC', 'ACC_int', 'PVC_int', 'Venn']
     columns = ['N'] + methods
     mean_rmse_df = pd.DataFrame([], columns=columns)
