@@ -32,6 +32,8 @@ def main():
                       help='Minimum value of partition to test on: default=%default')
     parser.add_option('--max_val', dest='max_val', default=None,
                       help='Maximum value of partition to test on: default=%default')
+    parser.add_option('--sample', action="store_true", dest="sample", default=False,
+                      help='Sample labels instead of averaging: default=%default')
     parser.add_option('--model', dest='model', default='LR',
                       help='Model type [LR|MLP]: default=%default')
     parser.add_option('--loss', dest='loss', default='log',
@@ -78,10 +80,11 @@ def main():
     train_prop = float(options.train_prop)
     prefix = options.prefix
     max_folds = options.max_folds
-    min_val = options.min_val
-    max_val = options.max_val
     if max_folds is not None:
         max_folds = int(max_folds)
+    min_val = options.min_val
+    max_val = options.max_val
+    sample_labels = options.sample
     model_type = options.model
     loss = options.loss
     dh = int(options.dh)
@@ -106,10 +109,10 @@ def main():
     pos_label = 1
     average = 'micro'
 
-    cross_train_and_eval(project_dir, subset, field_name, config_file, calib_prop, train_prop, prefix, max_folds, min_val, max_val, model_type, loss, do_ensemble, dh, label, penalty, cshift, intercept, n_dev_folds, repeats, verbose, pos_label, average, objective, seed, calib_pred, exclude_calib, alpha_min, alpha_max)
+    cross_train_and_eval(project_dir, subset, field_name, config_file, calib_prop, train_prop, prefix, max_folds, min_val, max_val, model_type, loss, do_ensemble, dh, label, penalty, cshift, intercept, n_dev_folds, repeats, verbose, pos_label, average, objective, seed, calib_pred, exclude_calib, alpha_min, alpha_max, sample_labels)
 
 
-def cross_train_and_eval(project_dir, subset, field_name, config_file, calib_prop=0.33, train_prop=1.0, prefix=None, max_folds=None, min_val=None, max_val=None, model_type='LR', loss='log', do_ensemble=False, dh=0, label='label', penalty='l1', cshift=None, intercept=True, n_dev_folds=5, repeats=1, verbose=False, pos_label=1, average='micro', objective='f1', seed=None, use_calib_pred=False, exclude_calib=False, alpha_min=0.01, alpha_max=1000):
+def cross_train_and_eval(project_dir, subset, field_name, config_file, calib_prop=0.33, train_prop=1.0, prefix=None, max_folds=None, min_val=None, max_val=None, model_type='LR', loss='log', do_ensemble=False, dh=0, label='label', penalty='l1', cshift=None, intercept=True, n_dev_folds=5, repeats=1, verbose=False, pos_label=1, average='micro', objective='f1', seed=None, use_calib_pred=False, exclude_calib=False, alpha_min=0.01, alpha_max=1000, sample_labels=False):
 
     model_basename = subset + '_' + field_name
     if prefix is not None:
@@ -193,7 +196,6 @@ def cross_train_and_eval(project_dir, subset, field_name, config_file, calib_pro
         train_labels = labels_df.loc[train_items]
 
         # if desired, attempt to learn weights for the training data using techniques for covariate shift
-        # TODO: update this to work with ALL of the data
         if cshift is not None:
             print("Training a classifier for covariate shift")
             # start by learning to discriminate train from non-train data
@@ -248,10 +250,24 @@ def cross_train_and_eval(project_dir, subset, field_name, config_file, calib_pro
             n_test = len(test_items)
 
             print("%d %d %d" % (n_train_r, n_calib, n_test))
-            train_labels_r_df = labels_df.loc[train_items_r]
-            calib_labels_df = labels_df.loc[calib_items]
             test_labels_df = labels_df.loc[test_items]
             non_train_labels_df = labels_df.loc[non_train_items]
+
+            # if instructed, sample labels in proportion to annotations (to simulate having one label per item)
+            if sample_labels:
+                print("Sampling labels")
+                # normalize the labels
+                temp = labels_df.values / np.array(labels_df.values.sum(axis=1).reshape((n_items, 1)), dtype=float)
+                samples = np.zeros([n_items, n_classes], dtype=int)
+                for i in range(n_items):
+                    index = np.random.choice(np.arange(n_classes), size=1, p=temp[i, :])
+                    samples[i, index] = 1
+                sampled_labels_df = pd.DataFrame(samples, index=labels_df.index, columns=labels_df.columns)
+            else:
+                sampled_labels_df = labels_df
+
+            train_labels_r_df = sampled_labels_df.loc[train_items_r].copy()
+            calib_labels_df = sampled_labels_df.loc[calib_items].copy()
 
             # get the true proportion of labels in the test OR non-training data (calibration and test combined)
             if exclude_calib:
@@ -279,7 +295,7 @@ def cross_train_and_eval(project_dir, subset, field_name, config_file, calib_pro
             print("Training model on all labeled data")
             # first train a model on the training and calibration data combined
             calib_and_train_items_r = np.array(list(calib_items) + list(train_items_r))
-            model, dev_f1, dev_acc, dev_cal, acc_cfm, pvc_cfm = train.train_model_with_labels(project_dir, model_type, loss, model_name, subset, labels_df, feature_defs, weights_df=weights_df, items_to_use=calib_and_train_items_r, penalty=penalty, alpha_min=alpha_min, alpha_max=alpha_max, intercept=intercept, objective=objective, n_dev_folds=n_dev_folds, do_ensemble=do_ensemble, dh=dh, seed=seed, verbose=verbose)
+            model, dev_f1, dev_acc, dev_cal, acc_cfm, pvc_cfm = train.train_model_with_labels(project_dir, model_type, loss, model_name, subset, sampled_labels_df, feature_defs, weights_df=weights_df, items_to_use=calib_and_train_items_r, penalty=penalty, alpha_min=alpha_min, alpha_max=alpha_max, intercept=intercept, objective=objective, n_dev_folds=n_dev_folds, do_ensemble=do_ensemble, dh=dh, seed=seed, verbose=verbose)
             results_df.loc['cross_val_all'] = [dev_f1, dev_acc, dev_cal]
 
             # get labels for test data
@@ -316,7 +332,7 @@ def cross_train_and_eval(project_dir, subset, field_name, config_file, calib_pro
 
             # Now repeat for a model trained on the training data, saving the calibration data for calibration
             print("Training model on training data only")
-            model, dev_f1, dev_acc, dev_cal, acc_cfm, pvc_cfm = train.train_model_with_labels(project_dir, model_type, loss, model_name, subset, labels_df, feature_defs, weights_df=weights_df, items_to_use=train_items_r, penalty=penalty, alpha_min=alpha_min, alpha_max=alpha_max,  intercept=intercept, objective=objective, n_dev_folds=n_dev_folds, do_ensemble=do_ensemble, dh=dh, seed=seed, verbose=verbose)
+            model, dev_f1, dev_acc, dev_cal, acc_cfm, pvc_cfm = train.train_model_with_labels(project_dir, model_type, loss, model_name, subset, sampled_labels_df, feature_defs, weights_df=weights_df, items_to_use=train_items_r, penalty=penalty, alpha_min=alpha_min, alpha_max=alpha_max,  intercept=intercept, objective=objective, n_dev_folds=n_dev_folds, do_ensemble=do_ensemble, dh=dh, seed=seed, verbose=verbose)
             results_df.loc['cross_val'] = [dev_f1, dev_acc, dev_cal]
 
             # predict on calibration data
@@ -391,30 +407,15 @@ def cross_train_and_eval(project_dir, subset, field_name, config_file, calib_pro
             output_df.loc['PVC_int'] = [n_calib, pvc_estimate, pvc_rmse, np.nan, np.nan, np.nan]
 
             print("Venn")
-            test_pred_ranges = ivap.estimate_probs_from_labels(project_dir, model, model_name, subset, subset, labels_df, calib_items, test_items, weights_df=None)
-            #if not exclude_calib:
-            #    # try also doing IVAP on individual calibration items, using all others
-            #    if use_calib_pred:
-            #        calib_pred_ranges = []
-            #        for i in range(n_calib):
-            #            print(i)
-            #            other_items = calib_items[:]
-            #            other_items.pop(i)
-            #            calib_pred_ranges.append(ivap.estimate_probs_from_labels(project_dir, model, model_name, subset, subset, labels_df, other_items, [calib_items[i]], weights_df=None))
-            #        calib_pred_ranges = np.vstack(calib_pred_ranges)
-            #        test_pred_ranges = np.vstack([test_pred_ranges, calib_pred_ranges])
+            test_pred_ranges, calib_pred_ranges = ivap.estimate_probs_from_labels(project_dir, model, model_name, subset, subset, sampled_labels_df, calib_items, test_items, weights_df=None)
+
+            if not exclude_calib:
+                test_pred_ranges = np.vstack([test_pred_ranges, calib_pred_ranges])
 
             combo = test_pred_ranges[:, 1] / (1.0 - test_pred_ranges[:, 0] + test_pred_ranges[:, 1])
 
             pred_range = np.mean(test_pred_ranges, axis=0)
             venn_estimate = np.mean(combo)
-
-            if not exclude_calib:
-                if use_calib_pred:
-                    calib_estimate = np.mean(calib_pred_probs_df, axis=0)[1]
-                venn_estimate = (venn_estimate * n_test + calib_estimate * n_calib) / float(n_test + n_calib)
-                pred_range[0] = (pred_range[0] * n_test + calib_estimate * n_calib) / float(n_test + n_calib)
-                pred_range[1] = (pred_range[1] * n_test + calib_estimate * n_calib) / float(n_test + n_calib)
 
             venn_rmse = np.sqrt((venn_estimate - test_estimate)**2)
             venn_contains_test = pred_range[0] < test_estimate < pred_range[1]

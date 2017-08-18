@@ -136,11 +136,6 @@ def estimate_probs_from_labels(project_dir, model, model_name, calib_subset, tes
 
     test_pred_probs = model.predict_probs(test_X)[:, 1]
 
-    if weights_df is not None and test_items is not None:
-        test_weights = np.array(weights_df.loc[test_items].values).reshape((n_test,))
-    else:
-        test_weights = np.ones(n_test)
-
     n_test = len(test_pred_probs)
     test_pred_ranges = np.zeros((n_test, 2))
     #test_pred_ranges2 = np.zeros((n_test, 2))
@@ -178,11 +173,27 @@ def estimate_probs_from_labels(project_dir, model, model_name, calib_subset, tes
             plt.show()
             time.sleep(2)
 
+    # do the same internally for the calibration data
+    calib_pred_ranges = np.zeros((n_calib, 2))
+    for i in range(n_calib):
+        for proposed_label in [0, 1]:
+
+            all_scores = np.r_[calib_scores]
+            all_labels = np.r_[calib_y]
+            # consider changing the one label
+            all_labels[i] = proposed_label
+            all_weights = np.r_[calib_weights]
+
+            # upweight duplicate scores to force scikit learn's IR to do the right thing
+            ir = IsotonicRegression(0, 1)
+            ir.fit(all_scores, all_labels, all_weights)
+            calib_pred_ranges[i, proposed_label] = ir.predict([all_scores[i]])
+
     #print(np.sum(test_pred_ranges != test_pred_ranges2), np.size(test_pred_ranges))
     #print(np.max(np.abs(test_pred_ranges - test_pred_ranges2)))
     #print(np.mean(np.abs(test_pred_ranges - test_pred_ranges2)))
 
-    return test_pred_ranges
+    return test_pred_ranges, calib_pred_ranges
 
 
 if __name__ == '__main__':

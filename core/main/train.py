@@ -393,7 +393,7 @@ def prepare_data(X, Y, weights=None, predictions=None, loss='log'):
             labels = Y[i, :]
             # sum the total number of annotations given to this item
             total = float(labels.sum())
-            # for each possible class
+            # otherwise, duplicate items with all labels and weights
             for index, count in enumerate(labels):
                 # if there is at least one annotation for this class
                 if count > 0:
