@@ -89,7 +89,10 @@ def estimate_probs_from_labels(project_dir, model, model_name, calib_subset, tes
         calib_feature_list.append(calib_feature)
 
     features_concat = features.concatenate(calib_feature_list)
-    calib_X = features_concat.get_counts().tocsr()
+    if features_concat.sparse:
+        calib_X = features_concat.get_counts().tocsr()
+    else:
+        calib_X = features_concat.get_counts()
 
     calib_y = labels[:, 1]
 
@@ -132,7 +135,11 @@ def estimate_probs_from_labels(project_dir, model, model_name, calib_subset, tes
         test_feature_list.append(test_feature)
 
     features_concat = features.concatenate(test_feature_list)
-    test_X = features_concat.get_counts().tocsr()
+    if features_concat.sparse:
+        test_X = features_concat.get_counts().tocsr()
+    else:
+        test_X = features_concat.get_counts()
+
     n_test, _ = test_X.shape
     printv("Feature matrix shape: (%d, %d)" % calib_X.shape, verbose)
 
