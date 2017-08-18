@@ -83,7 +83,8 @@ def estimate_probs_from_labels(project_dir, model, model_name, calib_subset, tes
         idf = None
         if feature_def.transform == 'tfidf':
             idf = sig['idf']
-        calib_feature.transform(feature_def.transform, idf=idf)
+        word_vectors_prefix = sig['word_vectors_prefix']
+        calib_feature.transform(feature_def.transform, idf=idf, word_vectors_prefix=word_vectors_prefix, alpha=feature_def.alpha)
         printv("Final shape = (%d, %d)" % calib_feature.get_shape(), verbose)
         calib_feature_list.append(calib_feature)
 
@@ -125,7 +126,8 @@ def estimate_probs_from_labels(project_dir, model, model_name, calib_subset, tes
         idf = None
         if feature_def.transform == 'tfidf':
             idf = sig['idf']
-        test_feature.transform(feature_def.transform, idf=idf)
+        word_vectors_prefix = sig['word_vectors_prefix']
+        test_feature.transform(feature_def.transform, idf=idf, word_vectors_prefix=word_vectors_prefix, alpha=feature_def.alpha)
         printv("Final shape = (%d, %d)" % test_feature.get_shape(), verbose)
         test_feature_list.append(test_feature)
 
