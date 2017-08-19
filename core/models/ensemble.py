@@ -41,7 +41,7 @@ class Ensemble:
         pccs = []
         accs = []
         pvcs = []
-        for model in self._models:
+        for model in self._models.values():
             cc, pcc, acc, pvc = model.predict_proportions(X, weights)
             ccs.append(cc)
             pccs.append(pcc)

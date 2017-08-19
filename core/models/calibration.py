@@ -104,12 +104,13 @@ def cc(predictions, n_classes, weights=None):
     :n_classes: the total number of classes
     :return: a vector of predicted propotions
     """
+    n_items = len(predictions)
     if weights is None:
-        weights = np.ones_like(predictions)
+        weights = np.ones(n_items)
     pred_props = np.zeros(n_classes)
     for c in range(n_classes):
         items = predictions == c
-        pred_props[c] += weights[items]
+        pred_props[c] += np.sum(weights[items])
     return pred_props / pred_props.sum()
 
 
@@ -120,6 +121,8 @@ def pcc(predicted_probs, weights=None):
     :return: a vector of predicted propotions
     """
     n_items, n_classes = predicted_probs.shape
+    if weights is None:
+        weights = np.ones(n_items)
     pred_props = np.zeros(n_classes)
     for c in range(n_classes):
         pred_props = np.dot(predicted_probs[:, c], weights) / np.sum(weights)

@@ -27,14 +27,7 @@ def main():
     (options, args) = parser.parse_args()
 
 
-def estimate_probs_brute_force(project_dir, model, model_name, calib_subset, test_subset, label_name, calib_items=None, test_items=None, verbose=False):
-
-    label_dir = dirs.dir_labels(project_dir, calib_subset)
-    labels_df = fh.read_csv_to_df(os.path.join(label_dir, label_name + '.csv'), index_col=0, header=0)
-    estimate_probs_from_labels(project_dir, model, model_name, calib_subset, test_subset, labels_df, calib_items, test_items, verbose)
-
-
-def estimate_probs_from_labels(project_dir, full_model, model_name, test_subset, test_items=None, verbose=False, plot=False):
+def estimate_probs_from_labels(project_dir, full_model, model_name, test_subset, test_items=None, verbose=False, plot=1):
 
     #n_items, n_classes = labels_df.shape
 
@@ -150,18 +143,27 @@ def estimate_probs_from_labels(project_dir, full_model, model_name, test_subset,
         n_items, _ = test_X.shape
         n_models = full_model.get_n_models()
         test_pred_ranges = np.zeros([n_models, n_items, 2])
-        for model_i, model in enumerate(full_model._models):
-            test_pred_ranges[model_i, :, :] = get_pred_for_one_model(model, test_X)
-        # TODO: take the geometric mean here? or return all?
-    else:
-        test_pred_ranges = get_pred_for_one_model(full_model, test_X)
+        for model_i, model_name in enumerate(full_model._models.keys()):
+            print(model_name)
+            test_pred_ranges[model_i, :, :] = get_pred_for_one_model(full_model._models[model_name], test_X, plot=plot)
 
-    return test_pred_ranges
+        # TODO: take the geometric mean here? or return all?
+        geometric_means = np.zeros([n_items, 2])
+        for i in range(n_items):
+            geometric_means[i, 0] = np.exp(np.sum(np.log(test_pred_ranges[:, i, 0])) / float(n_models))
+            geometric_means[i, 1] = np.exp(np.sum(np.log(test_pred_ranges[:, i, 1])) / float(n_models))
+
+        combo = geometric_means[:, 1] / (1.0 - geometric_means[:, 0] + geometric_means[:, 1])
+    else:
+        test_pred_ranges = get_pred_for_one_model(full_model, test_X, plot=plot)
+        combo = test_pred_ranges[:, 1] / (1.0 - test_pred_ranges[:, 0] + test_pred_ranges[:, 1])
+
+    return test_pred_ranges, combo
 
 
 def get_pred_for_one_model(model, test_X, plot=False):
-    test_pred_probs = model.predict_probs(test_X)[:, 1]
-    n_test = len(test_pred_probs)
+    test_scores = model.predict_probs(test_X)[:, 1]
+    n_test = len(test_scores)
     test_pred_ranges = np.zeros((n_test, 2))
 
     venn_info = model._venn_info
@@ -170,11 +172,11 @@ def get_pred_for_one_model(model, test_X, plot=False):
     calib_weights = venn_info[:, 2]
 
     for i in range(n_test):
-        if plot:
+        if plot > 1:
             fig, ax = plt.subplots()
         for proposed_label in [0, 1]:
 
-            all_scores = np.r_[calib_scores, test_pred_probs[i]]
+            all_scores = np.r_[calib_scores, test_scores[i]]
             all_labels = np.r_[calib_y, proposed_label]
             # only give the new item a weight of 1 (equivalent to a single annotation of 0 or 1)
             all_weights = np.r_[calib_weights, 1.0]
@@ -187,7 +189,7 @@ def get_pred_for_one_model(model, test_X, plot=False):
             ir.fit(all_scores, all_labels, all_weights)
             test_pred_ranges[i, proposed_label] = ir.predict([all_scores[-1]])
 
-            if plot:
+            if plot > 1:
                 x_vals = all_scores.copy().tolist()
                 x_vals.sort()
                 pred_vals = ir.predict(x_vals)
@@ -196,11 +198,19 @@ def get_pred_for_one_model(model, test_X, plot=False):
                     ax.plot(x_vals, np.mean(all_labels[:-1]) * np.ones_like(x_vals), 'k--')
                 ax.scatter(all_scores[-1], all_labels[-1], s=7, alpha=0.6)
                 ax.plot(x_vals, pred_vals)
-        if plot:
+        if plot > 1:
             ax.scatter([all_scores[-1], all_scores[-1]], test_pred_ranges[i, :], s=8)
             ax.plot([all_scores[-1], all_scores[-1]], test_pred_ranges[i, :], 'r')
             plt.show()
             time.sleep(2)
+
+    if plot > 0:
+        for i in range(n_test):
+            if test_pred_ranges[i, 0] < test_scores[i] < test_pred_ranges[i, 1]:
+                plt.plot([i, i], [test_pred_ranges[i, 0], test_pred_ranges[i, 1]], c='g')
+            else:
+                plt.plot([i, i], [test_pred_ranges[i, 0], test_pred_ranges[i, 1]], c='r')
+        plt.scatter(np.arange(n_test), test_scores)
 
     return test_pred_ranges
 
