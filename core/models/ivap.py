@@ -27,7 +27,7 @@ def main():
     (options, args) = parser.parse_args()
 
 
-def estimate_probs_from_labels(project_dir, full_model, model_name, test_subset, test_items=None, verbose=False, plot=1):
+def estimate_probs_from_labels(project_dir, full_model, model_name, test_subset, test_items=None, verbose=False, plot=0):
 
     #n_items, n_classes = labels_df.shape
 
@@ -214,6 +214,7 @@ def get_pred_for_one_model(model, test_X, plot=False):
             else:
                 plt.plot([i, i], [test_pred_ranges[i, 0], test_pred_ranges[i, 1]], c='r')
         plt.scatter(np.arange(n_test), test_scores)
+        plt.show()
 
     return test_pred_ranges
 
