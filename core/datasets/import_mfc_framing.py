@@ -31,8 +31,8 @@ CODES = {
 def main():
     usage = "%prog project_name path/to/mfc_output.json output_prefix"
     parser = OptionParser(usage=usage)
-    parser.add_option('-y', dest='n_years', default=5,
-                      help='Number of years to group together: default=%default')
+    parser.add_option('-y', dest='year', default=2004,
+                      help='Year at which to divide data: default=%default')
     #parser.add_option('--boolarg', action="store_true", dest="boolarg", default=False,
     #                  help='Keyword argument: default=%default')
 
@@ -42,12 +42,12 @@ def main():
     data_file = args[1]
     output_prefix = args[2]
 
-    n_years = int(options.n_years)
+    threshold = int(options.year)
 
-    convert_mfc(project, data_file, output_prefix, n_years)
+    convert_mfc(project, data_file, output_prefix, threshold)
 
 
-def convert_mfc(project, data_file, output_prefix, n_years):
+def convert_mfc(project, data_file, output_prefix, threshold):
     fh.makedirs(dirs.dir_data_raw(project))
 
     data = fh.read_json(data_file)
@@ -55,6 +55,7 @@ def convert_mfc(project, data_file, output_prefix, n_years):
     sources = set()
     sections = set()
     csis = set()
+    year_group_sizes = defaultdict(int)
 
     keys = list(data.keys())
     for k in keys:
@@ -86,12 +87,15 @@ def convert_mfc(project, data_file, output_prefix, n_years):
                     annotation_counts[i][frames[i]] += 1
 
         if n_annotations > 0 and year >= 1990:
-            year_lower = int(year / n_years) * n_years
-            year_upper = year_lower + n_years - 1
-            year_group = str(year_lower) + '-' + str(year_upper)
+            if year < threshold:
+                year_group = 'pre_' + str(threshold)
+            else:
+                year_group = 'gte_' + str(threshold)
+            year_group_sizes[year_group] += 1
             sources.add(source)
             sections.add(section)
             csis.add(csi)
+
 
             output[k] = {'text': text, 'year': int(year), 'year_group': year_group, 'month': month, 'source': source}
             for i in range(1, 16):
@@ -108,6 +112,8 @@ def convert_mfc(project, data_file, output_prefix, n_years):
     csis.sort()
     for s in csis:
         print(s)
+
+    print(year_group_sizes)
 
     print("Saving %d articles" % len(output))
     output_file = os.path.join(dirs.dir_data_raw(project), output_prefix + '.json')
