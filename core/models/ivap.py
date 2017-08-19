@@ -34,21 +34,21 @@ def estimate_probs_brute_force(project_dir, model, model_name, calib_subset, tes
     estimate_probs_from_labels(project_dir, model, model_name, calib_subset, test_subset, labels_df, calib_items, test_items, verbose)
 
 
-def estimate_probs_from_labels(project_dir, model, model_name, calib_subset, test_subset, labels_df, calib_items=None, test_items=None, verbose=False, weights_df=None, plot=False):
+def estimate_probs_from_labels(project_dir, full_model, model_name, test_subset, test_items=None, verbose=False, plot=False):
 
-    n_items, n_classes = labels_df.shape
+    #n_items, n_classes = labels_df.shape
 
-    if calib_items is not None:
-        labels_df = labels_df.loc[calib_items]
-        n_items, n_classes = labels_df.shape
+    #if calib_items is not None:
+    #    labels_df = labels_df.loc[calib_items]
+    #    n_items, n_classes = labels_df.shape
 
     # normalize labels to just count one each
-    labels = labels_df.values.copy()
+    #labels = labels_df.values.copy()
 
     # weight examples by the total number of votes they have received
-    calib_weights = labels.sum(axis=1).copy()
+    #calib_weights = labels.sum(axis=1).copy()
 
-    labels = labels / np.reshape(labels.sum(axis=1), (n_items, 1))
+    #labels = labels / np.reshape(labels.sum(axis=1), (n_items, 1))
 
     #if weights_df is not None and calib_items is not None:
     #    calib_weights = np.array(weights_df.loc[calib_items].values).reshape((n_items,))
@@ -58,8 +58,9 @@ def estimate_probs_from_labels(project_dir, model, model_name, calib_subset, tes
     model_dir = os.path.join(dirs.dir_models(project_dir), model_name)
 
     feature_signatures = fh.read_json(os.path.join(model_dir, 'features.json'))
-    calib_features_dir = dirs.dir_features(project_dir, calib_subset)
+    #calib_features_dir = dirs.dir_features(project_dir, calib_subset)
 
+    """
     printv("Loading features", verbose)
     calib_feature_list = []
     for sig in feature_signatures:
@@ -103,6 +104,7 @@ def estimate_probs_from_labels(project_dir, model, model_name, calib_subset, tes
     assert n_classes == 2
 
     calib_scores = calib_pred_probs[:, 1]
+    """
 
     test_features_dir = dirs.dir_features(project_dir, test_subset)
 
@@ -141,13 +143,31 @@ def estimate_probs_from_labels(project_dir, model, model_name, calib_subset, tes
         test_X = features_concat.get_counts()
 
     n_test, _ = test_X.shape
-    printv("Feature matrix shape: (%d, %d)" % calib_X.shape, verbose)
+    printv("Feature matrix shape: (%d, %d)" % test_X.shape, verbose)
 
+
+    if full_model._model_type == 'ensemble':
+        n_items, _ = test_X.shape
+        n_models = full_model.get_n_models()
+        test_pred_ranges = np.zeros([n_models, n_items, 2])
+        for model_i, model in enumerate(full_model._models):
+            test_pred_ranges[model_i, :, :] = get_pred_for_one_model(model, test_X)
+        # TODO: take the geometric mean here? or return all?
+    else:
+        test_pred_ranges = get_pred_for_one_model(full_model, test_X)
+
+    return test_pred_ranges
+
+
+def get_pred_for_one_model(model, test_X, plot=False):
     test_pred_probs = model.predict_probs(test_X)[:, 1]
-
     n_test = len(test_pred_probs)
     test_pred_ranges = np.zeros((n_test, 2))
-    #test_pred_ranges2 = np.zeros((n_test, 2))
+
+    venn_info = model._venn_info
+    calib_y = venn_info[:, 0]
+    calib_scores = venn_info[:, 1]
+    calib_weights = venn_info[:, 2]
 
     for i in range(n_test):
         if plot:
@@ -182,27 +202,7 @@ def estimate_probs_from_labels(project_dir, model, model_name, calib_subset, tes
             plt.show()
             time.sleep(2)
 
-    # do the same internally for the calibration data
-    calib_pred_ranges = np.zeros((n_calib, 2))
-    for i in range(n_calib):
-        for proposed_label in [0, 1]:
-
-            all_scores = np.r_[calib_scores]
-            all_labels = np.r_[calib_y]
-            # consider changing the one label
-            all_labels[i] = proposed_label
-            all_weights = np.r_[calib_weights]
-
-            # upweight duplicate scores to force scikit learn's IR to do the right thing
-            ir = IsotonicRegression(0, 1)
-            ir.fit(all_scores, all_labels, all_weights)
-            calib_pred_ranges[i, proposed_label] = ir.predict([all_scores[i]])
-
-    #print(np.sum(test_pred_ranges != test_pred_ranges2), np.size(test_pred_ranges))
-    #print(np.max(np.abs(test_pred_ranges - test_pred_ranges2)))
-    #print(np.mean(np.abs(test_pred_ranges - test_pred_ranges2)))
-
-    return test_pred_ranges, calib_pred_ranges
+    return test_pred_ranges
 
 
 if __name__ == '__main__':

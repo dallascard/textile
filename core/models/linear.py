@@ -9,7 +9,7 @@ from sklearn.linear_model import LogisticRegression
 from sklearn.linear_model import LinearRegression, Lasso, Ridge
 
 from ..util import file_handling as fh
-from ..models import evaluation
+from ..models import evaluation, calibration
 
 class LinearClassifier:
     """
@@ -31,6 +31,9 @@ class LinearClassifier:
         self._train_acc = None
         self._dev_f1 = None
         self._dev_acc = None
+        self._dev_acc_cfm = None
+        self._dev_pvc_cfm = None
+        self._venn_info = None
 
         # create a variable to store the label proportions in the training data
         self._train_proportions = None
@@ -111,8 +114,14 @@ class LinearClassifier:
         if X_dev is not None and Y_dev is not None:
             dev_labels = np.argmax(Y_dev, axis=1)
             dev_pred = self.predict(X_dev)
+            dev_pred_probs = self.predict_probs(X_dev)
             self._dev_acc = evaluation.acc_score(dev_labels, dev_pred, n_classes=n_classes, weights=dev_weights)
             self._dev_f1 = evaluation.f1_score(dev_labels, dev_pred, n_classes=n_classes, weights=dev_weights)
+            self._dev_acc_cfm = calibration.compute_acc(dev_labels, dev_pred, n_classes, weights=dev_weights)
+            self._dev_pvc_cfm = calibration.compute_pvc(dev_labels, dev_pred, n_classes, weights=dev_weights)
+            if self._n_classes == 2:
+                self._venn_info = np.vstack([Y_dev[:, 1], dev_pred_probs[:, 1], dev_weights]).T
+                assert self._venn_info.shape == (len(dev_labels), 3)
 
     def predict(self, X):
         # if we've stored a default value, then that is our prediction
@@ -149,6 +158,18 @@ class LinearClassifier:
             full_probs = np.maximum(full_probs, np.zeros_like(full_probs))
             full_probs = np.minimum(full_probs, np.ones_like(full_probs))
             return full_probs
+
+    def predict_proportions(self, X=None, weights=None):
+        pred_probs = self.predict_probs(X)
+        predictions = np.argmax(pred_probs, axis=1)
+        cc = calibration.cc(predictions, self._n_classes, weights)
+        pcc = calibration.pcc(pred_probs, weights)
+        if self._n_classes == 2:
+            acc = calibration.apply_acc_binary(predictions, self._dev_acc_cfm, weights)
+        else:
+            acc = calibration.apply_acc_bounded_lstsq(predictions, self._dev_acc_cfm)
+        pvc = calibration.apply_pvc(predictions, self._dev_pvc_cfm, weights)
+        return cc, pcc, acc, pvc
 
     def get_penalty(self):
         return self._penalty
@@ -251,6 +272,7 @@ class LinearClassifier:
                   }
         fh.write_to_json(output, os.path.join(self._output_dir, self._name + '_metadata.json'), sort_keys=False)
         fh.write_to_json(self.get_col_names(), os.path.join(self._output_dir, self._name + '_col_names.json'), sort_keys=False)
+        np.savez(os.path.join(self._output_dir, self._name + '_dev_info.npz'), acc_cfm=self._dev_acc_cfm, pvc_cfm=self._dev_pvc_cfm, venn_info=self._venn_info)
 
 
 def load_from_file(model_dir, name):
@@ -266,4 +288,8 @@ def load_from_file(model_dir, name):
     classifier = LinearClassifier(alpha, loss, penalty, fit_intercept, output_dir=model_dir, name=name)
     model = joblib.load(os.path.join(model_dir, name + '.pkl'))
     classifier.set_model(model, train_proportions, col_names, n_classes)
+    dev_info = np.load(os.path.join(model_dir, name + '_dev_info.npz'))
+    classifier._dev_acc_cfm = dev_info['acc_cfm']
+    classifier._dev_pvc_cfm = dev_info['pvc_cfm']
+    classifier._venn_info = dev_info['venn_info']
     return classifier

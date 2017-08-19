@@ -99,7 +99,9 @@ def predict(project_dir, model, model_name, test_subset, label_name, items_to_us
     pred_probs_df.to_csv(os.path.join(output_dir, label_name + '_pred_probs.csv'))
     print("Done")
 
-    return predictions_df, pred_probs_df
+    pred_proportions = model.predict_proportions(X)
+
+    return predictions_df, pred_probs_df, pred_proportions
 
 
 if __name__ == '__main__':

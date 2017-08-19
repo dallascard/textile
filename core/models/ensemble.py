@@ -36,8 +36,24 @@ class Ensemble:
         tensor = np.array(pred_prob_list)
         return np.mean(tensor, axis=0)
 
+    def predict_proportions(self, X=None, weights=None):
+        ccs = []
+        pccs = []
+        accs = []
+        pvcs = []
+        for model in self._models:
+            cc, pcc, acc, pvc = model.predict_proportions(X, weights)
+            ccs.append(cc)
+            pccs.append(pcc)
+            accs.append(acc)
+            pvcs.append(pvc)
+        return np.mean(ccs), np.mean(pccs), np.mean(accs), np.mean(pvcs)
+
     def get_model_type(self):
         return self._model_type
+
+    def get_n_models(self):
+        return len(self._models)
 
     def save(self):
         filename = os.path.join(self._model_dir, self._name + '_metadata.json')
