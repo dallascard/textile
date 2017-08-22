@@ -138,23 +138,22 @@ def estimate_probs_from_labels(project_dir, full_model, model_name, test_subset,
     n_test, _ = test_X.shape
     printv("Feature matrix shape: (%d, %d)" % test_X.shape, verbose)
 
-
     if full_model._model_type == 'ensemble':
         n_items, _ = test_X.shape
         n_models = full_model.get_n_models()
-        test_pred_ranges = np.zeros([n_models, n_items, 2])
+        test_pred_ranges_all = np.zeros([n_models, n_items, 2])
         for model_i, model_name in enumerate(full_model._models.keys()):
             print(model_name)
-            test_pred_ranges[model_i, :, :] = get_pred_for_one_model(full_model._models[model_name], test_X, plot=plot)
+            test_pred_ranges_all[model_i, :, :] = get_pred_for_one_model(full_model._models[model_name], test_X, plot=plot)
 
         geometric_means = np.zeros([n_items, 2])
         for i in range(n_items):
-            geometric_means[i, 0] = np.exp(np.sum(np.log(1.0 - test_pred_ranges[:, i, 0])) / float(n_models))
-            geometric_means[i, 1] = np.exp(np.sum(np.log(test_pred_ranges[:, i, 1])) / float(n_models))
+            geometric_means[i, 0] = np.exp(np.sum(np.log(1.0 - test_pred_ranges_all[:, i, 0])) / float(n_models))
+            geometric_means[i, 1] = np.exp(np.sum(np.log(test_pred_ranges_all[:, i, 1])) / float(n_models))
 
         test_pred_ranges = np.zeros([n_items, 2])
-        test_pred_ranges[:, 1] = geometric_means[:, 1]
-        test_pred_ranges[:, 0] = 1 - geometric_means[:, 0]
+        test_pred_ranges[:, 1] = np.max(test_pred_ranges_all[:, :, 1], axis=0)
+        test_pred_ranges[:, 0] = np.min(test_pred_ranges_all[:, :, 0], axis=0)
         combo = geometric_means[:, 1] / (geometric_means[:, 0] + geometric_means[:, 1])
 
     else:
@@ -208,12 +207,14 @@ def get_pred_for_one_model(model, test_X, plot=False):
             time.sleep(2)
 
     if plot > 0:
+        order = np.argsort(test_scores)
         for i in range(n_test):
-            if test_pred_ranges[i, 0] < test_scores[i] < test_pred_ranges[i, 1]:
-                plt.plot([i, i], [test_pred_ranges[i, 0], test_pred_ranges[i, 1]], c='g')
+            j = order[i]
+            if test_pred_ranges[j, 0] < test_scores[j] < test_pred_ranges[j, 1]:
+                plt.plot([i, i], [test_pred_ranges[j, 0], test_pred_ranges[j, 1]], c='g')
             else:
-                plt.plot([i, i], [test_pred_ranges[i, 0], test_pred_ranges[i, 1]], c='r')
-        plt.scatter(np.arange(n_test), test_scores)
+                plt.plot([i, i], [test_pred_ranges[j, 0], test_pred_ranges[j, 1]], c='r')
+            plt.scatter(i, test_scores[j], c='k', alpha=0.5)
         plt.show()
 
     return test_pred_ranges

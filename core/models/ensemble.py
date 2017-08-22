@@ -47,7 +47,7 @@ class Ensemble:
             pccs.append(pcc)
             accs.append(acc)
             pvcs.append(pvc)
-        return np.mean(ccs), np.mean(pccs), np.mean(accs), np.mean(pvcs)
+        return np.mean(ccs, axis=0), np.mean(pccs, axis=0), np.mean(accs, axis=0), np.mean(pvcs, axis=0)
 
     def get_model_type(self):
         return self._model_type

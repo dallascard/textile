@@ -261,11 +261,12 @@ def cross_train_and_eval(project_dir, subset, field_name, config_file, calib_pro
             output_df.loc['train'] = [n_train_r, train_estimate, train_rmse, train_estimate - 2 * train_std, train_estimate + 2 * train_std, train_contains_test]
 
             # repeat for labeled calibration data
-            calib_props, calib_estimate, calib_std = get_estimate_and_std(calib_labels_df)
-            calib_rmse = np.sqrt((calib_estimate - test_estimate)**2)
-            # check if the test estimate is within 2 standard deviations of the estimate
-            calib_contains_test = test_estimate > calib_estimate - 2 * calib_std and calib_estimate < calib_estimate + 2 * calib_std
-            output_df.loc['calibration'] = [n_calib, calib_estimate, calib_rmse, calib_estimate - 2 * calib_std, calib_estimate + 2 * calib_std, calib_contains_test]
+            if n_calib > 0:
+                calib_props, calib_estimate, calib_std = get_estimate_and_std(calib_labels_df)
+                calib_rmse = np.sqrt((calib_estimate - test_estimate)**2)
+                # check if the test estimate is within 2 standard deviations of the estimate
+                calib_contains_test = test_estimate > calib_estimate - 2 * calib_std and calib_estimate < calib_estimate + 2 * calib_std
+                output_df.loc['calibration'] = [n_calib, calib_estimate, calib_rmse, calib_estimate - 2 * calib_std, calib_estimate + 2 * calib_std, calib_contains_test]
 
             results_df = pd.DataFrame([], columns=['f1', 'acc'])
 
@@ -359,16 +360,16 @@ def cross_train_and_eval(project_dir, subset, field_name, config_file, calib_pro
                     acc_estimate = (test_acc * n_test + calib_cc * n_calib) / float(n_test + n_calib)
                     pvc_estimate = (test_pvc * n_test + calib_cc * n_calib) / float(n_test + n_calib)
 
-            cc_rmse = np.sqrt((cc_estimate - test_estimate)**2)
-            pcc_rmse = np.sqrt((pcc_estimate - test_estimate)**2)
+            cc_rmse = np.sqrt((cc_estimate[1] - test_estimate)**2)
+            pcc_rmse = np.sqrt((pcc_estimate[1] - test_estimate)**2)
 
             #pcc_calib_estimate = np.mean(calib_pred_probs_df.values[:, 1])
             if n_calib > 0:
-                pcc_calib_rmse = np.sqrt((calib_pcc - calib_estimate)**2)
-                output_df.loc['PCC_cal'] = [n_calib, calib_pcc, pcc_calib_rmse, np.nan, np.nan, np.nan]
+                pcc_calib_rmse = np.sqrt((calib_pcc[1] - calib_estimate)**2)
+                output_df.loc['PCC_cal'] = [n_calib, calib_pcc[1], pcc_calib_rmse, np.nan, np.nan, np.nan]
 
-            output_df.loc['CC'] = [n_test, cc_estimate, cc_rmse, np.nan, np.nan, np.nan]
-            output_df.loc['PCC'] = [n_test, pcc_estimate, pcc_rmse, np.nan, np.nan, np.nan]
+            output_df.loc['CC'] = [n_test, cc_estimate[1], cc_rmse, np.nan, np.nan, np.nan]
+            output_df.loc['PCC'] = [n_test, pcc_estimate[1], pcc_rmse, np.nan, np.nan, np.nan]
 
             # expand the data so as to only have singly-labeled, weighted items
             #_, calib_labels, calib_weights, calib_predictions = train.prepare_data(np.zeros([n_calib, 2]), calib_labels_df.values, predictions=calib_predictions_df.values)
@@ -388,8 +389,8 @@ def cross_train_and_eval(project_dir, subset, field_name, config_file, calib_pro
             #print("ACC internal")
             #acc_corrected = calibration.apply_acc_binary(test_predictions, acc_cfm)
             #acc_estimate = acc_corrected[1]
-            acc_rmse = np.sqrt((acc_estimate - test_estimate) ** 2)
-            output_df.loc['ACC'] = [n_calib, acc_estimate, acc_rmse, np.nan, np.nan, np.nan]
+            acc_rmse = np.sqrt((acc_estimate[1] - test_estimate) ** 2)
+            output_df.loc['ACC'] = [n_calib, acc_estimate[1], acc_rmse, np.nan, np.nan, np.nan]
 
             """
             if n_calib > 0:
@@ -404,19 +405,22 @@ def cross_train_and_eval(project_dir, subset, field_name, config_file, calib_pro
             #print("PVC internal")
             #pvc_corrected = calibration.apply_pvc(test_predictions, pvc_cfm)
             #pvc_estimate = pvc_corrected[1]
-            pvc_rmse = np.sqrt((pvc_estimate - test_estimate) ** 2)
-            output_df.loc['PVC'] = [n_calib, pvc_estimate, pvc_rmse, np.nan, np.nan, np.nan]
+            pvc_rmse = np.sqrt((pvc_estimate[1] - test_estimate) ** 2)
+            output_df.loc['PVC'] = [n_calib, pvc_estimate[1], pvc_rmse, np.nan, np.nan, np.nan]
 
             print("Venn")
-            #models = list(model._models.values())
-            #test_pred_ranges, preds = ivap.estimate_probs_from_labels(project_dir, models[0], model_name, subset, test_items)
-            test_pred_ranges, preds = ivap.estimate_probs_from_labels(project_dir, model, model_name, subset, test_items)
+            models = list(model._models.values())
+            test_pred_ranges, test_preds = ivap.estimate_probs_from_labels(project_dir, models[0], model_name, subset, test_items)
+            #test_pred_ranges, test_preds = ivap.estimate_probs_from_labels(project_dir, model, model_name, subset, test_items)
+
+            if n_calib > 0:
+                calib_pred_ranges, calib_preds = ivap.estimate_probs_from_labels(project_dir, model, model_name, subset, calib_items)
 
             #if not exclude_calib:
             #    test_pred_ranges = np.vstack([test_pred_ranges, calib_pred_ranges])
 
             pred_range = np.mean(test_pred_ranges, axis=0)
-            venn_estimate = np.mean(preds)
+            venn_estimate = np.mean(test_preds)
 
             venn_rmse = np.sqrt((venn_estimate - test_estimate)**2)
             venn_contains_test = pred_range[0] < test_estimate < pred_range[1]

@@ -111,7 +111,7 @@ def cc(predictions, n_classes, weights=None):
     for c in range(n_classes):
         items = predictions == c
         pred_props[c] += np.sum(weights[items])
-    return pred_props / pred_props.sum()
+    return pred_props / float(pred_props.sum())
 
 
 def pcc(predicted_probs, weights=None):
@@ -125,8 +125,7 @@ def pcc(predicted_probs, weights=None):
         weights = np.ones(n_items)
     pred_props = np.zeros(n_classes)
     for c in range(n_classes):
-        pred_props = np.dot(predicted_probs[:, c], weights) / np.sum(weights)
-    #pred_props = np.mean(predicted_probs, axis=0)
+        pred_props[c] = np.dot(weights, predicted_probs[:, c]) / np.sum(weights)
     return pred_props
 
 
