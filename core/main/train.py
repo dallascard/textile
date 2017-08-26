@@ -287,6 +287,7 @@ def train_model_with_labels(project_dir, model_type, loss, model_name, subset, l
         if not save_model:
             output_dir = None
 
+        best_models = []
         fold = 1
         best_dev_f1 = 0.0
         best_dev_acc = 0.0
