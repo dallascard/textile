@@ -29,7 +29,7 @@ CODES = {
 
 
 def main():
-    usage = "%prog project_name path/to/mfc_output.json output_prefix"
+    usage = "%prog project_name path/to/mfc_output.json output_prefix raw_data_dir metadata.json"
     parser = OptionParser(usage=usage)
     parser.add_option('-y', dest='year', default=2004,
                       help='Year at which to divide data: default=%default')
@@ -41,13 +41,15 @@ def main():
     project = args[0]
     data_file = args[1]
     output_prefix = args[2]
+    raw_data_dir = args[3]
+    metadata_file = args[4]
 
     threshold = int(options.year)
 
-    convert_mfc(project, data_file, output_prefix, threshold)
+    convert_mfc(project, data_file, output_prefix, threshold, raw_data_dir, metadata_file)
 
 
-def convert_mfc(project, data_file, output_prefix, threshold):
+def convert_mfc(project, data_file, output_prefix, threshold, raw_data_dir, metadata_file):
     fh.makedirs(dirs.dir_data_raw(project))
 
     data = fh.read_json(data_file)
@@ -101,21 +103,51 @@ def convert_mfc(project, data_file, output_prefix, threshold):
             for i in range(1, 16):
                 output[k][CODES[str(i)]] = annotation_counts[i]
 
-    print("Sources")
+    #print("Sources")
     sources = list(sources)
     sources.sort()
-    for s in sources:
-        print(s)
+    #for s in sources:
+    #    print(s)
 
-    print("CSIs")
+    #print("CSIs")
     csis = list(csis)
     csis.sort()
-    for s in csis:
-        print(s)
+    #for s in csis:
+    #    print(s)
 
     print(year_group_sizes)
+    print(len(output))
 
+    print("Loading non-annotated files")
+    metadata = fh.read_json(metadata_file)
+
+    raw_files = glob.glob(os.path.join(raw_data_dir, '*.txt'))
+    for f_i, f in enumerate(raw_files):
+        if f_i % 1000 == 0 and f_i > 0:
+            print(f_i)
+        filename = os.path.split(f)[1]
+        key = filename.split('_short.txt')[0]
+        with codecs.open(f, 'r') as input_file:
+            text = input_file.read()
+        paragraphs = text.split('\n\n')
+        text = '\n'.join(paragraphs[2:])
+        year = int(metadata[key]['year'])
+
+        if year < threshold:
+            year_group = 'pre_' + str(threshold)
+        else:
+            year_group = 'gte_' + str(threshold)
+        month = int(metadata[key]['month'])
+        source = get_source(metadata[key]['source'])
+
+        if key not in output:
+            output[key] = {'text': text, 'label': {}, 'year': int(year), 'year_group': year_group, 'month': month, 'source': source}
+            year_group_sizes[year_group] += 1
+
+    print(year_group_sizes)
+    print(len(output))
     print("Saving %d articles" % len(output))
+
     output_file = os.path.join(dirs.dir_data_raw(project), output_prefix + '.json')
     fh.write_to_json(output, output_filename=output_file)
 
