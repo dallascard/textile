@@ -38,15 +38,10 @@ def main():
     ngrams = int(options.ngrams)
     display = int(options.display)
 
-    dicts = preprocess_words(project_dir, subset, ngrams=ngrams, lower=lower, lemmatize=lemmatize, fast=fast, display=display)
-
-    print("Creating features")
-    for k, v in dicts.items():
-        feature = features.create_from_dict_of_counts(k + suffix, v)
-        feature.save_feature(dirs.dir_features(project_dir, subset))
+    preprocess_words(project_dir, subset, ngrams=ngrams, lower=lower, lemmatize=lemmatize, fast=fast, display=display, suffix=suffix)
 
 
-def preprocess_words(project_dir, subset, ngrams=2, lower=False, lemmatize=False, fast=False, display=1000):
+def preprocess_words(project_dir, subset, ngrams=2, lower=False, lemmatize=False, fast=False, display=1000, suffix=''):
 
     print("Reading data")
     datafile = os.path.join(dirs.dir_data_raw(project_dir), subset + '.json')
@@ -122,7 +117,10 @@ def preprocess_words(project_dir, subset, ngrams=2, lower=False, lemmatize=False
     #    bigram_feature = features.create_from_dict_of_counts('bigrams', bigrams)
     #    bigram_feature.save_feature(dirs.dir_features(project_dir, subset))
 
-    return feature_dicts
+    print("Creating features")
+    for k, v in feature_dicts.items():
+        feature = features.create_from_dict_of_counts(k + suffix, v)
+        feature.save_feature(dirs.dir_features(project_dir, subset))
 
 
 def get_word(token):
