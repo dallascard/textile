@@ -146,7 +146,6 @@ def estimate_probs_from_labels_internal(project_dir, full_model, model_name, tes
         n_models = full_model.get_n_models()
         test_pred_ranges_all = np.zeros([n_models, n_items, 2])
         for model_i, model_name in enumerate(full_model._models.keys()):
-            print(model_name)
             test_pred_ranges_all[model_i, :, :] = get_pred_for_one_model_internal(full_model._models[model_name], test_X, plot=plot)
 
         geometric_means = np.zeros([n_items, 2])
@@ -155,8 +154,13 @@ def estimate_probs_from_labels_internal(project_dir, full_model, model_name, tes
             geometric_means[i, 1] = np.exp(np.sum(np.log(test_pred_ranges_all[:, i, 1])) / float(n_models))
 
         test_pred_ranges = np.zeros([n_items, 2])
-        test_pred_ranges[:, 1] = np.max(test_pred_ranges_all[:, :, 1], axis=0)
-        test_pred_ranges[:, 0] = np.min(test_pred_ranges_all[:, :, 0], axis=0)
+        #test_pred_ranges[:, 1] = np.max(test_pred_ranges_all[:, :, 1], axis=0)
+        #test_pred_ranges[:, 0] = np.min(test_pred_ranges_all[:, :, 0], axis=0)
+        #test_pred_ranges[:, 0] = 1.0 - geometric_means[:, 0]
+        #test_pred_ranges[:, 1] = geometric_means[:, 1]
+        test_pred_ranges[:, 1] = np.mean(test_pred_ranges_all[:, :, 1], axis=0)
+        test_pred_ranges[:, 0] = np.mean(test_pred_ranges_all[:, :, 0], axis=0)
+
         combo = geometric_means[:, 1] / (geometric_means[:, 0] + geometric_means[:, 1])
 
     else:
@@ -345,8 +349,13 @@ def estimate_probs_from_labels(project_dir, full_model, model_name, labels_df, c
             geometric_means[i, 1] = np.exp(np.sum(np.log(test_pred_ranges_all[:, i, 1])) / float(n_models))
 
         test_pred_ranges = np.zeros([n_items, 2])
-        test_pred_ranges[:, 1] = np.max(test_pred_ranges_all[:, :, 1], axis=0)
-        test_pred_ranges[:, 0] = np.min(test_pred_ranges_all[:, :, 0], axis=0)
+        #test_pred_ranges[:, 1] = np.max(test_pred_ranges_all[:, :, 1], axis=0)
+        #test_pred_ranges[:, 0] = np.min(test_pred_ranges_all[:, :, 0], axis=0)
+        #test_pred_ranges[:, 0] = 1.0 - geometric_means[:, 0]
+        #test_pred_ranges[:, 1] = geometric_means[:, 1]
+        test_pred_ranges[:, 1] = np.mean(test_pred_ranges_all[:, :, 1], axis=0)
+        test_pred_ranges[:, 0] = np.mean(test_pred_ranges_all[:, :, 0], axis=0)
+
         combo = geometric_means[:, 1] / (geometric_means[:, 0] + geometric_means[:, 1])
 
     else:
@@ -437,7 +446,6 @@ def estimate_probs_from_labels_cv(project_dir, full_model, model_name, labels_df
     feature_signatures = fh.read_json(os.path.join(model_dir, 'features.json'))
     calib_features_dir = dirs.dir_features(project_dir, calib_subset)
 
-
     printv("Loading features", verbose)
     calib_feature_list = []
     for sig in feature_signatures:
@@ -482,7 +490,10 @@ def estimate_probs_from_labels_cv(project_dir, full_model, model_name, labels_df
 
     #calib_scores = calib_pred_probs[:, 1]
 
+
     if full_model._model_type == 'ensemble':
+        props_in_range = []
+
         n_items, _ = calib_X.shape
         n_models = full_model.get_n_models()
         test_pred_ranges_all = np.zeros([n_models, n_items, 2])
@@ -494,7 +505,10 @@ def estimate_probs_from_labels_cv(project_dir, full_model, model_name, labels_df
             assert n_classes == 2
             calib_scores = calib_pred_probs[:, 1]
 
+            # check how many of the scores are in the resulting ranges
             test_pred_ranges_all[model_i, :, :] = get_pred_for_one_model_cv(calib_y, calib_scores, calib_weights, plot=plot)
+            scores_in_range = (calib_scores > test_pred_ranges_all[model_i, :, 0]) * (calib_scores < test_pred_ranges_all[model_i, :, 1])
+            props_in_range.append(str(float(np.mean(scores_in_range))))
 
         geometric_means = np.zeros([n_items, 2])
         for i in range(n_items):
@@ -502,8 +516,13 @@ def estimate_probs_from_labels_cv(project_dir, full_model, model_name, labels_df
             geometric_means[i, 1] = np.exp(np.sum(np.log(test_pred_ranges_all[:, i, 1])) / float(n_models))
 
         test_pred_ranges = np.zeros([n_items, 2])
-        test_pred_ranges[:, 1] = np.max(test_pred_ranges_all[:, :, 1], axis=0)
-        test_pred_ranges[:, 0] = np.min(test_pred_ranges_all[:, :, 0], axis=0)
+        #test_pred_ranges[:, 1] = np.max(test_pred_ranges_all[:, :, 1], axis=0)
+        #test_pred_ranges[:, 0] = np.min(test_pred_ranges_all[:, :, 0], axis=0)
+        #test_pred_ranges[:, 0] = 1.0 - geometric_means[:, 0]
+        #test_pred_ranges[:, 1] = geometric_means[:, 1]
+        test_pred_ranges[:, 1] = np.mean(test_pred_ranges_all[:, :, 1], axis=0)
+        test_pred_ranges[:, 0] = np.mean(test_pred_ranges_all[:, :, 0], axis=0)
+
         combo = geometric_means[:, 1] / (geometric_means[:, 0] + geometric_means[:, 1])
 
     else:
@@ -515,10 +534,14 @@ def estimate_probs_from_labels_cv(project_dir, full_model, model_name, labels_df
         test_pred_ranges = get_pred_for_one_model_cv(calib_y, calib_scores, calib_weights, plot=plot)
         combo = test_pred_ranges[:, 1] / (1.0 - test_pred_ranges[:, 0] + test_pred_ranges[:, 1])
 
-    return test_pred_ranges, combo
+        scores_in_range = (calib_scores > test_pred_ranges[:, 0]) * (calib_scores < test_pred_ranges[:, 1])
+        props_in_range = [str(float(np.mean(scores_in_range)))]
 
 
-def get_pred_for_one_model_cv(calib_y, calib_scores, calib_weights, plot=False):
+    return test_pred_ranges, combo, props_in_range
+
+
+def get_pred_for_one_model_cv(calib_y, calib_scores, calib_weights, plot=0):
     n_calib = len(calib_y)
     test_pred_ranges = np.zeros((n_calib, 2))
 

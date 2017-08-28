@@ -7,15 +7,14 @@
 
 from core.experiments import combo
 
-project_dir = 'projects/mfc/immigration'
+project_dir = 'projects/mfc/guncontrol'
 subset = 'pro_tone'
 model_type = 'LR'
-prefix = 'lr'
 label = 'label'
 field_name = 'year_group'
 config_file = 'config/default.json'
-do_ensemble = False
+do_ensemble = True
 
-combo.cross_train_and_eval(project_dir, subset, field_name, config_file, train_prop=1.0, calib_prop=0.0,  prefix=prefix, model_type=model_type, loss='log', do_ensemble=do_ensemble, dh=0, label=label, penalty='l1', cshift=None, intercept=True, n_dev_folds=5, repeats=1, verbose=True, pos_label=1, average='micro', objective='f1', seed=None, use_calib_pred=False, exclude_calib=True, alpha_min=0.01, alpha_max=1000)
+combo.cross_train_and_eval(project_dir, subset, field_name, config_file, train_prop=1.0, calib_prop=0.1,  model_type=model_type, loss='log', do_ensemble=do_ensemble, dh=100, label=label, penalty='l1', cshift=None, intercept=True, n_dev_folds=5, repeats=1, verbose=True, pos_label=1, average='micro', objective='f1', seed=None, alpha_min=0.01, alpha_max=1000)
 
 

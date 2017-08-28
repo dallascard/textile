@@ -7,39 +7,6 @@ from collections import defaultdict
 from ..util import dirs
 from ..util import file_handling as fh
 
-TONE_CODES = {17: 'Pro', 18: 'Neutral', 19: 'Anti'}
-
-
-SOURCES = {
-    'atlanta journal and constitution': 'Atlanta_Journal_and_Constitution',
-    'atlanta journal-constitution': 'Atlanta_Journal_and_Constitution',
-    'daily news (new york)': 'NY_Daily_News',
-    'daily news': 'NY_Daily_News',
-    'denver post': 'Denver_Post',
-    'denver post the denver post': 'Denver_Post',
-    'herald-sun (durham, n.c.)': 'Herald-Sun',
-    'herald-sun (durham, nc)': 'Herald-Sun',
-    'herald-sun': 'Herald-Sun',
-    'raleigh extra (durham, nc)': 'Herald-Sun',
-    'new york times': 'NY_Times',
-    'palm beach post (florida)': 'Palm_Beach_Post',
-    'palm beach post': 'Palm_Beach_Post',
-    'philadelphia inquirer': 'Philadelphia_Inquirer',
-    'saint paul pioneer press (minnesota)': 'St._Paul_Pioneer_Press',
-    'saint paul pioneer press': 'St._Paul_Pioneer_Press',
-    'san jose mercury news (california)': 'San_Jose_Mercury_News',
-    'san jose mercury news': 'San_Jose_Mercury_News',
-    'st. louis post-dispatch (missouri)': 'St._Louis_Post-Dispatch',
-    'st. louis post-dispatch': 'St._Louis_Post-Dispatch',
-    'st. paul pioneer press (minnesota)': 'St._Paul_Pioneer_Press',
-    'st. petersburg times (florida)': 'Tampa_Bay_Times',  # renamed
-    'st. petersburg times': 'Tampa_Bay_Times',  # renamed
-    'tampa bay times': 'Tampa_Bay_Times',
-    'usa today': 'USA_Today',
-    'washington post': 'Washington_Post',
-    'washingtonpost.com': 'Washington_Post'
-}
-
 def main():
     usage = "%prog project_name path/to/mfc_output.json output_prefix raw_data_dir metadata.json"
     parser = OptionParser(usage=usage)
