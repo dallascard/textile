@@ -33,7 +33,7 @@ def main():
     preprocess_word_vectors(project_dir, subset, word2vec_file, ref, dh)
 
 
-def preprocess_word_vectors(project_dir, subset, word2vec_file, ref, dh):
+def preprocess_word_vectors(project_dir, subset, word2vec_file, ref, dh=300):
 
     print("Loading %s" % ref)
     unigrams = features.load_from_file(dirs.dir_features(project_dir, subset), ref)
