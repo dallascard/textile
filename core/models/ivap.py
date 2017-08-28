@@ -29,6 +29,9 @@ def main():
 
 def estimate_probs_from_labels_internal(project_dir, full_model, model_name, test_subset, test_items=None, verbose=False, plot=0):
 
+    # do IVAP assuming that the dev scores to use are the ones that have been saved with the model
+
+
     #n_items, n_classes = labels_df.shape
 
     #if calib_items is not None:
@@ -221,6 +224,7 @@ def get_pred_for_one_model_internal(model, test_X, plot=False):
 
 
 def estimate_probs_from_labels(project_dir, full_model, model_name, labels_df, calib_subset, test_subset, weights_df=None, calib_items=None, test_items=None, verbose=False, plot=0):
+    # do IVAP by making new predictions on calibration data
 
     n_items, n_classes = labels_df.shape
 
@@ -282,12 +286,6 @@ def estimate_probs_from_labels(project_dir, full_model, model_name, labels_df, c
 
     printv("Feature matrix shape: (%d, %d)" % calib_X.shape, verbose)
 
-    calib_pred_probs = full_model.predict_probs(calib_X)
-    n_calib, n_classes = calib_pred_probs.shape
-    assert n_classes == 2
-
-    calib_scores = calib_pred_probs[:, 1]
-
     test_features_dir = dirs.dir_features(project_dir, test_subset)
 
     printv("Loading features", verbose)
@@ -332,8 +330,14 @@ def estimate_probs_from_labels(project_dir, full_model, model_name, labels_df, c
         n_models = full_model.get_n_models()
         test_pred_ranges_all = np.zeros([n_models, n_items, 2])
         for model_i, model_name in enumerate(full_model._models.keys()):
-            print(model_name)
-            test_pred_ranges_all[model_i, :, :] = get_pred_for_one_model(full_model._models[model_name], test_X, calib_y, calib_scores, calib_weights, plot=plot)
+
+            current_model = full_model._models[model_name]
+            calib_pred_probs = current_model.predict_probs(calib_X)
+            n_calib, n_classes = calib_pred_probs.shape
+            assert n_classes == 2
+            calib_scores = calib_pred_probs[:, 1]
+
+            test_pred_ranges_all[model_i, :, :] = get_pred_for_one_model(current_model, test_X, calib_y, calib_scores, calib_weights, plot=plot)
 
         geometric_means = np.zeros([n_items, 2])
         for i in range(n_items):
@@ -346,6 +350,11 @@ def estimate_probs_from_labels(project_dir, full_model, model_name, labels_df, c
         combo = geometric_means[:, 1] / (geometric_means[:, 0] + geometric_means[:, 1])
 
     else:
+        calib_pred_probs = full_model.predict_probs(calib_X)
+        n_calib, n_classes = calib_pred_probs.shape
+        assert n_classes == 2
+        calib_scores = calib_pred_probs[:, 1]
+
         test_pred_ranges = get_pred_for_one_model(full_model, test_X, calib_y, calib_scores, calib_weights, plot=plot)
         combo = test_pred_ranges[:, 1] / (1.0 - test_pred_ranges[:, 0] + test_pred_ranges[:, 1])
 
@@ -403,6 +412,170 @@ def get_pred_for_one_model(model, test_X, calib_y, calib_scores, calib_weights, 
 
     return test_pred_ranges
 
+
+def estimate_probs_from_labels_cv(project_dir, full_model, model_name, labels_df, calib_subset, weights_df=None, calib_items=None, verbose=False, plot=0):
+    # do IVAP by making new predictions on calibration data
+
+    n_items, n_classes = labels_df.shape
+
+    if calib_items is not None:
+        labels_df = labels_df.loc[calib_items]
+        n_items, n_classes = labels_df.shape
+
+    # normalize labels to just count one each
+    labels = labels_df.values.copy()
+    # weight examples by the total number of votes they have received
+    calib_weights = labels.sum(axis=1).copy()
+    labels = labels / np.reshape(labels.sum(axis=1), (n_items, 1))
+
+    if weights_df is not None and calib_items is not None:
+        calib_weights = np.array(weights_df.loc[calib_items].values).reshape((n_items,))
+    else:
+        calib_weights = np.ones(n_items)
+
+    model_dir = os.path.join(dirs.dir_models(project_dir), model_name)
+    feature_signatures = fh.read_json(os.path.join(model_dir, 'features.json'))
+    calib_features_dir = dirs.dir_features(project_dir, calib_subset)
+
+
+    printv("Loading features", verbose)
+    calib_feature_list = []
+    for sig in feature_signatures:
+        feature_def = features.FeatureDef(sig['name'], sig['min_df'], sig['max_fp'], sig['transform'])
+        printv("Loading %s" % feature_def, verbose)
+        name = feature_def.name
+        calib_feature = features.load_from_file(input_dir=calib_features_dir, basename=name)
+        printv("Initial shape = (%d, %d)" % calib_feature.get_shape(), verbose)
+
+        # use only a subset of the items, if given
+        if calib_items is not None:
+            all_test_items = calib_feature.get_items()
+            n_items = len(all_test_items)
+            item_index = dict(zip(all_test_items, range(n_items)))
+            indices_to_use = [item_index[i] for i in calib_items]
+            printv("Taking subset of items", verbose)
+            calib_feature = features.create_from_feature(calib_feature, indices_to_use)
+            printv("New shape = (%d, %d)" % calib_feature.get_shape(), verbose)
+        printv("Setting vocabulary", verbose)
+        calib_feature.set_terms(sig['terms'])
+        idf = None
+        if feature_def.transform == 'tfidf':
+            idf = sig['idf']
+        word_vectors_prefix = sig['word_vectors_prefix']
+        calib_feature.transform(feature_def.transform, idf=idf, word_vectors_prefix=word_vectors_prefix, alpha=feature_def.alpha)
+        printv("Final shape = (%d, %d)" % calib_feature.get_shape(), verbose)
+        calib_feature_list.append(calib_feature)
+
+    features_concat = features.concatenate(calib_feature_list)
+    if features_concat.sparse:
+        calib_X = features_concat.get_counts().tocsr()
+    else:
+        calib_X = features_concat.get_counts()
+
+    calib_y = labels[:, 1]
+
+    printv("Feature matrix shape: (%d, %d)" % calib_X.shape, verbose)
+
+    #calib_pred_probs = full_model.predict_probs(calib_X)
+    #n_calib, n_classes = calib_pred_probs.shape
+    #assert n_classes == 2
+
+    #calib_scores = calib_pred_probs[:, 1]
+
+    if full_model._model_type == 'ensemble':
+        n_items, _ = calib_X.shape
+        n_models = full_model.get_n_models()
+        test_pred_ranges_all = np.zeros([n_models, n_items, 2])
+        for model_i, model_name in enumerate(full_model._models.keys()):
+
+            current_model = full_model._models[model_name]
+            calib_pred_probs = current_model.predict_probs(calib_X)
+            n_calib, n_classes = calib_pred_probs.shape
+            assert n_classes == 2
+            calib_scores = calib_pred_probs[:, 1]
+
+            test_pred_ranges_all[model_i, :, :] = get_pred_for_one_model_cv(calib_y, calib_scores, calib_weights, plot=plot)
+
+        geometric_means = np.zeros([n_items, 2])
+        for i in range(n_items):
+            geometric_means[i, 0] = np.exp(np.sum(np.log(1.0 - test_pred_ranges_all[:, i, 0])) / float(n_models))
+            geometric_means[i, 1] = np.exp(np.sum(np.log(test_pred_ranges_all[:, i, 1])) / float(n_models))
+
+        test_pred_ranges = np.zeros([n_items, 2])
+        test_pred_ranges[:, 1] = np.max(test_pred_ranges_all[:, :, 1], axis=0)
+        test_pred_ranges[:, 0] = np.min(test_pred_ranges_all[:, :, 0], axis=0)
+        combo = geometric_means[:, 1] / (geometric_means[:, 0] + geometric_means[:, 1])
+
+    else:
+        calib_pred_probs = full_model.predict_probs(calib_X)
+        n_calib, n_classes = calib_pred_probs.shape
+        assert n_classes == 2
+        calib_scores = calib_pred_probs[:, 1]
+
+        test_pred_ranges = get_pred_for_one_model_cv(calib_y, calib_scores, calib_weights, plot=plot)
+        combo = test_pred_ranges[:, 1] / (1.0 - test_pred_ranges[:, 0] + test_pred_ranges[:, 1])
+
+    return test_pred_ranges, combo
+
+
+def get_pred_for_one_model_cv(calib_y, calib_scores, calib_weights, plot=False):
+    n_calib = len(calib_y)
+    test_pred_ranges = np.zeros((n_calib, 2))
+
+    for i in range(n_calib):
+
+        scores_copy = calib_scores.tolist()
+        y_copy = calib_y.tolist()
+        weights_copy = calib_weights.tolist()
+
+        test_score = scores_copy.pop(i)
+        y_copy.pop(i)
+        weights_copy.pop(i)
+
+        if plot > 1:
+            fig, ax = plt.subplots()
+        for proposed_label in [0, 1]:
+
+            all_scores = np.r_[scores_copy, test_score]
+            all_labels = np.r_[y_copy, proposed_label]
+            # only give the new item a weight of 1 (equivalent to a single annotation of 0 or 1)
+            all_weights = np.r_[weights_copy, 1.0]
+
+            #slopes = isotonic_regression.isotonic_regression(all_scores, all_labels)
+            #test_pred_ranges[i, proposed_label] = slopes[-1]
+
+            # upweight duplicate scores to force scikit learn's IR to do the right thing
+            ir = IsotonicRegression(0, 1)
+            ir.fit(all_scores, all_labels, all_weights)
+            test_pred_ranges[i, proposed_label] = ir.predict([all_scores[-1]])
+
+            if plot > 1:
+                x_vals = all_scores.copy().tolist()
+                x_vals.sort()
+                pred_vals = ir.predict(x_vals)
+                if proposed_label == 0:
+                    ax.scatter(all_scores[:-1], all_labels[:-1], s=7, alpha=0.6)
+                    ax.plot(x_vals, np.mean(all_labels[:-1]) * np.ones_like(x_vals), 'k--')
+                ax.scatter(all_scores[-1], all_labels[-1], s=7, alpha=0.6)
+                ax.plot(x_vals, pred_vals)
+        if plot > 1:
+            ax.scatter([all_scores[-1], all_scores[-1]], test_pred_ranges[i, :], s=8)
+            ax.plot([all_scores[-1], all_scores[-1]], test_pred_ranges[i, :], 'r')
+            plt.show()
+            time.sleep(2)
+
+    if plot > 0:
+        order = np.argsort(calib_scores)
+        for i in range(n_calib):
+            j = order[i]
+            if test_pred_ranges[j, 0] < calib_scores[j] < test_pred_ranges[j, 1]:
+                plt.plot([i, i], [test_pred_ranges[j, 0], test_pred_ranges[j, 1]], c='g')
+            else:
+                plt.plot([i, i], [test_pred_ranges[j, 0], test_pred_ranges[j, 1]], c='r')
+            plt.scatter(i, calib_scores[j], c='k', alpha=0.5)
+        plt.show()
+
+    return test_pred_ranges
 
 if __name__ == '__main__':
     main()

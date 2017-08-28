@@ -96,10 +96,9 @@ def train_model_with_labels(project_dir, model_type, loss, model_name, subset, l
     features_dir = dirs.dir_features(project_dir, subset)
     n_items, n_classes = labels_df.shape
 
-    indices_to_use = None
     if items_to_use is not None:
         item_index = dict(zip(labels_df.index, range(n_items)))
-        indices_to_use = [item_index[i] for i in items_to_use]
+        #indices_to_use = [item_index[i] for i in items_to_use]
         labels_df = labels_df.loc[items_to_use]
         n_items, n_classes = labels_df.shape
     else:
@@ -120,6 +119,9 @@ def train_model_with_labels(project_dir, model_type, loss, model_name, subset, l
         feature = features.load_from_file(input_dir=features_dir, basename=name)
         # take a subset of the rows, if requested
         printv("Initial shape = (%d, %d)" % feature.get_shape(), verbose)
+        feature_items = feature.get_items()
+        feature_item_index = dict(zip(feature_items, range(len(feature_items))))
+        indices_to_use = [feature_item_index[i] for i in items_to_use]
         if indices_to_use is not None:
             printv("Taking subset of items", verbose)
             feature = features.create_from_feature(feature, indices_to_use)
