@@ -98,7 +98,10 @@ def main():
 
 def cross_train_and_eval(project_dir, subset, field_name, config_file, calib_prop=0.2, train_prop=1.0, suffix='', model_type='LR', loss='log', do_ensemble=True, dh=0, label='label', penalty='l1', cshift=None, intercept=True, n_dev_folds=5, repeats=1, verbose=False, pos_label=1, average='micro', objective='f1', seed=None, alpha_min=0.01, alpha_max=1000, sample_labels=False):
 
-    model_basename = subset + '_' + field_name + '_' + model_type + '_' + str(train_prop) + '_' + str(calib_prop) + '_' + objective
+    model_basename = subset + '_' + field_name + '_' + model_type + '_' + penalty
+    if model_type == 'MLP':
+        model_basename += '_' + str(dh)
+    model_basename +=  '_' + str(train_prop) + '_' + str(calib_prop) + '_' + objective
     if cshift is not None:
         model_basename += '_cshift'
     model_basename += suffix
