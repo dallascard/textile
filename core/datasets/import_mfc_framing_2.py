@@ -4,10 +4,30 @@ import codecs
 from optparse import OptionParser
 from collections import defaultdict
 
+import numpy as np
+
 from ..util import dirs
 from ..util import file_handling as fh
 
-TONE_CODES = {17: 'Pro', 18: 'Neutral', 19: 'Anti'}
+FRAMES =   ["Economic",
+            "Capacity",
+            "Morality",
+            "Fairness",
+            "Legality",
+            "Policy",
+            "Crime",
+            "Security",
+            "Health",
+            "Quality",
+            "Cultural",
+            "Public",
+            "Political",
+            "External",
+            "Other"]
+
+CODES = {str(int(i+1)): f for i, f in enumerate(FRAMES)}
+
+n_frames = len(FRAMES)
 
 # same as before, but designed to work directly from the output of scripts in compuframe-coding/tools/
 
@@ -56,7 +76,7 @@ def main():
 
     project = args[0]
     data_file = args[1]
-    output_prefix = 'pro_tone'
+    output_prefix = 'framing'
     raw_data_dir = args[2]
     metadata_file = args[3]
 
@@ -77,13 +97,12 @@ def convert_mfc(project, data_file, output_prefix, threshold, raw_data_dir, meta
 
     metadata = fh.read_json(metadata_file)
 
-
     keys = list(data.keys())
     for k in keys:
         text = data[k]['text']
         paragraphs = text.split('\n\n')
         text = '\n'.join(paragraphs[2:])
-        tone_annotations = data[k]['annotations']['tone']
+        framing_annotations = data[k]['annotations']['framing']
         #year = int(data[k]['year'])
         #month = int(data[k]['month'])
         #source = data[k]['source']
@@ -91,22 +110,24 @@ def convert_mfc(project, data_file, output_prefix, threshold, raw_data_dir, meta
         #section = data[k]['section']
         #csi = data[k]['csi']
         #framing_annotations = data[k]['annotations']['framing']
-        article_tones = defaultdict(int)
-        # process tone annotations
-        for annotator, annotation_list in tone_annotations.items():
+        article_frames = np.zeros([n_frames, 2])
+        # process framing annotations
+        for annotator, annotation_list in framing_annotations.items():
+            annotator_frames = np.zeros(n_frames)
+            # look for presence of each frame
             for a in annotation_list:
-                tone = TONE_CODES[int(a['code'])]
-                if tone != 'Neutral':
-                    if tone == 'Pro':
-                        article_tones[1] += 1
-                    else:
-                        article_tones[0] += 1
+                frame = int(a['code']) - 1
+                annotator_frames[frame] = 1
+
+            # note the presence or absence of each frame for this annotator
+            article_frames[:, 1] += annotator_frames
+            article_frames[:, 0] += 1 - annotator_frames
 
         year = int(metadata[k]['year'])
         month = int(metadata[k]['month'])
         source = SOURCES[metadata[k]['source']]
 
-        if len(article_tones) > 0 and year >= 1990:
+        if np.sum(article_frames) > 0 and year >= 1990:
             if year < threshold:
                 year_group = 'pre_' + str(threshold)
             else:
@@ -119,7 +140,10 @@ def convert_mfc(project, data_file, output_prefix, threshold, raw_data_dir, meta
             #    output[k] = {'text': text, 'label': int(list(article_tones.keys())[0]), 'year': int(year), 'year_group': year_group, 'month': month, 'source': source, 'csi': csi}
 
             # keep all annotations
-            output[k] = {'text': text, 'label': article_tones, 'year': int(year), 'year_group': year_group, 'month': month, 'source': source}
+            output[k] = {'text': text, 'year': int(year), 'year_group': year_group, 'month': month, 'source': source}
+
+            for frame_i, frame in enumerate(FRAMES):
+                output[k][frame] = {0: article_frames[frame_i, 0], 1: article_frames[frame_i, 1]}
 
     print(year_group_sizes)
     print(len(output))
@@ -146,7 +170,10 @@ def convert_mfc(project, data_file, output_prefix, threshold, raw_data_dir, meta
             month = int(metadata[key]['month'])
             source = SOURCES[metadata[key]['source']]
 
-            output[key] = {'text': text, 'label': {}, 'year': int(year), 'year_group': year_group, 'month': month, 'source': source}
+            output[key] = {'text': text, 'year': int(year), 'year_group': year_group, 'month': month, 'source': source}
+            for frame_i, frame in enumerate(FRAMES):
+                output[key][frame] = {0: article_frames[frame_i, 0], 1: article_frames[frame_i, 1]}
+
             year_group_sizes[year_group] += 1
 
     print(year_group_sizes)
@@ -165,8 +192,6 @@ def get_source(source):
     else:
         source = SOURCES[source]
     return source
-
-
 
 if __name__ == '__main__':
     main()

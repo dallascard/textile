@@ -1,4 +1,5 @@
 import os
+import glob
 from optparse import OptionParser
 from collections import defaultdict
 
@@ -97,7 +98,6 @@ def convert_mfc(project, data_file, output_prefix, threshold, raw_data_dir, meta
             sources.add(source)
             sections.add(section)
             csis.add(csi)
-
 
             output[k] = {'text': text, 'year': int(year), 'year_group': year_group, 'month': month, 'source': source}
             for i in range(1, 16):
