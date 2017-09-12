@@ -352,6 +352,7 @@ def cross_train_and_eval(project_dir, subset, field_name, config_file, calib_pro
                 output_df.loc['ACC_internal_averaged'] = [n_non_train, 'train', 'nontrain', 'given', averaged_acc_estimate_internal, averaged_acc_rmse_internal, np.nan, np.nan, np.nan]
                 output_df.loc['PVC_internal_averaged'] = [n_non_train, 'train', 'nontrain', 'given', averaged_pvc_estimate_internal, averaged_pvc_rmse_internal, np.nan, np.nan, np.nan]
 
+
             # do calibration here using calibration data
             if n_calib > 0:
                 # expand the data so as to only have singly-labeled, weighted items

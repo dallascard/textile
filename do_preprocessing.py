@@ -25,11 +25,9 @@ def main():
         project = os.path.join(base_project, s)
         print(project)
         preprocess_labels.preprocess_labels(project, subset, label_name='label', metadata_fields=['year_group'])
-        #preprocess_words.preprocess_words(project, subset, lower=True)
+        preprocess_words.preprocess_words(project, subset, lower=True)
         preprocess_words.preprocess_words(project, subset, ngrams=1, lower=False, suffix='_default')
         preprocess_word_vectors.preprocess_word_vectors(project, subset, word2vec_file, ref='unigrams_default')
-
-
 
 if __name__ == '__main__':
     main()
