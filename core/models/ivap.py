@@ -146,7 +146,7 @@ def estimate_probs_from_labels_internal(project_dir, full_model, model_name, tes
         n_models = full_model.get_n_models()
         test_pred_ranges_all = np.zeros([n_models, n_items, 2])
         for model_i, model_name in enumerate(full_model._models.keys()):
-            test_pred_ranges_all[model_i, :, :] = get_pred_for_one_model_internal(full_model._models[model_name], test_X, plot=plot)
+            test_pred_ranges_all[model_i, :, :], mean_scores_in_range = get_pred_for_one_model_internal(full_model._models[model_name], test_X, plot=plot)
 
         geometric_means = np.zeros([n_items, 2])
         for i in range(n_items):
@@ -164,7 +164,7 @@ def estimate_probs_from_labels_internal(project_dir, full_model, model_name, tes
         combo = geometric_means[:, 1] / (geometric_means[:, 0] + geometric_means[:, 1])
 
     else:
-        test_pred_ranges = get_pred_for_one_model_internal(full_model, test_X, plot=plot)
+        test_pred_ranges, mean_scores_in_range = get_pred_for_one_model_internal(full_model, test_X, plot=plot)
         combo = test_pred_ranges[:, 1] / (1.0 - test_pred_ranges[:, 0] + test_pred_ranges[:, 1])
 
     return test_pred_ranges, combo
@@ -174,6 +174,7 @@ def get_pred_for_one_model_internal(model, test_X, plot=False):
     test_scores = model.predict_probs(test_X)[:, 1]
     n_test = len(test_scores)
     test_pred_ranges = np.zeros((n_test, 2))
+    scores_in_range = np.zeros(n_test)
 
     venn_info = model._venn_info
     calib_y = venn_info[:, 0]
@@ -207,6 +208,10 @@ def get_pred_for_one_model_internal(model, test_X, plot=False):
                     ax.plot(x_vals, np.mean(all_labels[:-1]) * np.ones_like(x_vals), 'k--')
                 ax.scatter(all_scores[-1], all_labels[-1], s=7, alpha=0.6)
                 ax.plot(x_vals, pred_vals)
+
+        if test_pred_ranges[i, 0] <= test_scores[i] <= test_pred_ranges[i, 1]:
+            scores_in_range[i] = 1.0
+
         if plot > 1:
             ax.scatter([all_scores[-1], all_scores[-1]], test_pred_ranges[i, :], s=8)
             ax.plot([all_scores[-1], all_scores[-1]], test_pred_ranges[i, :], 'r')
@@ -224,7 +229,7 @@ def get_pred_for_one_model_internal(model, test_X, plot=False):
             plt.scatter(i, test_scores[j], c='k', alpha=0.5)
         plt.show()
 
-    return test_pred_ranges
+    return test_pred_ranges, np.mean(scores_in_range)
 
 
 def estimate_probs_from_labels(project_dir, full_model, model_name, labels_df, calib_subset, test_subset, weights_df=None, calib_items=None, test_items=None, verbose=False, plot=0):
@@ -250,7 +255,6 @@ def estimate_probs_from_labels(project_dir, full_model, model_name, labels_df, c
     model_dir = os.path.join(dirs.dir_models(project_dir), model_name)
     feature_signatures = fh.read_json(os.path.join(model_dir, 'features.json'))
     calib_features_dir = dirs.dir_features(project_dir, calib_subset)
-
 
     printv("Loading features", verbose)
     calib_feature_list = []
@@ -330,6 +334,7 @@ def estimate_probs_from_labels(project_dir, full_model, model_name, labels_df, c
     printv("Feature matrix shape: (%d, %d)" % test_X.shape, verbose)
 
     if full_model._model_type == 'ensemble':
+        props_in_range = []
         n_items, _ = test_X.shape
         n_models = full_model.get_n_models()
         test_pred_ranges_all = np.zeros([n_models, n_items, 2])
@@ -341,7 +346,8 @@ def estimate_probs_from_labels(project_dir, full_model, model_name, labels_df, c
             assert n_classes == 2
             calib_scores = calib_pred_probs[:, 1]
 
-            test_pred_ranges_all[model_i, :, :] = get_pred_for_one_model(current_model, test_X, calib_y, calib_scores, calib_weights, plot=plot)
+            test_pred_ranges_all[model_i, :, :], mean_scores_in_range = get_pred_for_one_model(current_model, test_X, calib_y, calib_scores, calib_weights, plot=plot)
+            props_in_range.append(str(mean_scores_in_range))
 
         geometric_means = np.zeros([n_items, 2])
         for i in range(n_items):
@@ -364,16 +370,18 @@ def estimate_probs_from_labels(project_dir, full_model, model_name, labels_df, c
         assert n_classes == 2
         calib_scores = calib_pred_probs[:, 1]
 
-        test_pred_ranges = get_pred_for_one_model(full_model, test_X, calib_y, calib_scores, calib_weights, plot=plot)
+        test_pred_ranges, mean_scores_in_range = get_pred_for_one_model(full_model, test_X, calib_y, calib_scores, calib_weights, plot=plot)
+        props_in_range = [str(mean_scores_in_range)]
         combo = test_pred_ranges[:, 1] / (1.0 - test_pred_ranges[:, 0] + test_pred_ranges[:, 1])
 
-    return test_pred_ranges, combo
+    return test_pred_ranges, combo, props_in_range
 
 
 def get_pred_for_one_model(model, test_X, calib_y, calib_scores, calib_weights, plot=False):
     test_scores = model.predict_probs(test_X)[:, 1]
     n_test = len(test_scores)
     test_pred_ranges = np.zeros((n_test, 2))
+    scores_in_range = np.zeros(n_test)
 
     for i in range(n_test):
         if plot > 1:
@@ -402,6 +410,10 @@ def get_pred_for_one_model(model, test_X, calib_y, calib_scores, calib_weights, 
                     ax.plot(x_vals, np.mean(all_labels[:-1]) * np.ones_like(x_vals), 'k--')
                 ax.scatter(all_scores[-1], all_labels[-1], s=7, alpha=0.6)
                 ax.plot(x_vals, pred_vals)
+
+        if test_pred_ranges[i, 0] <= test_scores[i] <= test_pred_ranges[i, 1]:
+            scores_in_range[i] = 1.0
+
         if plot > 1:
             ax.scatter([all_scores[-1], all_scores[-1]], test_pred_ranges[i, :], s=8)
             ax.plot([all_scores[-1], all_scores[-1]], test_pred_ranges[i, :], 'r')
@@ -419,7 +431,7 @@ def get_pred_for_one_model(model, test_X, calib_y, calib_scores, calib_weights, 
             plt.scatter(i, test_scores[j], c='k', alpha=0.5)
         plt.show()
 
-    return test_pred_ranges
+    return test_pred_ranges, float(np.mean(scores_in_range))
 
 
 def estimate_probs_from_labels_cv(project_dir, full_model, model_name, labels_df, calib_subset, weights_df=None, calib_items=None, verbose=False, plot=0):
@@ -490,7 +502,6 @@ def estimate_probs_from_labels_cv(project_dir, full_model, model_name, labels_df
 
     #calib_scores = calib_pred_probs[:, 1]
 
-
     if full_model._model_type == 'ensemble':
         props_in_range = []
 
@@ -536,7 +547,6 @@ def estimate_probs_from_labels_cv(project_dir, full_model, model_name, labels_df
 
         scores_in_range = (calib_scores > test_pred_ranges[:, 0]) * (calib_scores < test_pred_ranges[:, 1])
         props_in_range = [str(float(np.mean(scores_in_range)))]
-
 
     return test_pred_ranges, combo, props_in_range
 

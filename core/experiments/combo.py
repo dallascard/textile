@@ -40,6 +40,8 @@ def main():
     #                  help='Use predictions on calibration items, rather than given labels: default=%default')
     parser.add_option('--label', dest='label', default='label',
                       help='Label name: default=%default')
+    parser.add_option('--pos_label', dest='pos_label', default=1,
+                      help='Positive label (for f1): default=%default')
     parser.add_option('--cshift', dest='cshift', default=None,
                       help='Covariate shift method [None]: default=%default')
     parser.add_option('--penalty', dest='penalty', default='l1',
@@ -78,6 +80,7 @@ def main():
     #exclude_calib = options.exclude_calib
     #calib_pred = options.calib_pred
     label = options.label
+    pos_label = int(options.pos_label)
     penalty = options.penalty
     cshift = options.cshift
     objective = options.objective
@@ -90,7 +93,6 @@ def main():
         np.random.seed(seed)
     verbose = options.verbose
 
-    pos_label = 1
     average = 'micro'
 
     cross_train_and_eval(project_dir, subset, field_name, config_file, calib_prop, train_prop, suffix, model_type, loss, do_ensemble, dh, label, penalty, cshift, intercept, n_dev_folds, repeats, verbose, pos_label, average, objective, seed, alpha_min, alpha_max, sample_labels)
@@ -290,7 +292,7 @@ def cross_train_and_eval(project_dir, subset, field_name, config_file, calib_pro
 
             results_df = pd.DataFrame([], columns=['f1', 'acc'])
 
-            # Now repeat for a model trained on the training data, saving the calibration data for calibration
+            # Now train a model on the training data, saving the calibration data for calibration
             print("Training model on training data only")
             model, dev_f1, dev_acc = train.train_model_with_labels(project_dir, model_type, loss, model_name, subset, sampled_labels_df, feature_defs, weights_df=weights_df, items_to_use=train_items_r, penalty=penalty, alpha_min=alpha_min, alpha_max=alpha_max,  intercept=intercept, objective=objective, n_dev_folds=n_dev_folds, do_ensemble=do_ensemble, dh=dh, seed=seed, verbose=verbose)
             results_df.loc['cross_val'] = [dev_f1, dev_acc]
@@ -407,9 +409,9 @@ def cross_train_and_eval(project_dir, subset, field_name, config_file, calib_pro
 
                 # Venn prediction using proper calibration data
                 print("Venn calibration")
-                calib_pred_ranges, calib_preds, props_in_range = ivap.estimate_probs_from_labels_cv(project_dir, model, model_name, sampled_labels_df, subset, calib_items=calib_items)
+                calib_pred_ranges, calib_preds, calib_props_in_range = ivap.estimate_probs_from_labels_cv(project_dir, model, model_name, sampled_labels_df, subset, calib_items=calib_items)
                 print("Venn test")
-                test_pred_ranges, test_preds = ivap.estimate_probs_from_labels(project_dir, model, model_name, sampled_labels_df, subset, subset, calib_items=calib_items, test_items=test_items)
+                test_pred_ranges, test_preds, test_props_in_range = ivap.estimate_probs_from_labels(project_dir, model, model_name, sampled_labels_df, subset, subset, calib_items=calib_items, test_items=test_items)
 
                 nontrain_pred_ranges = np.vstack([calib_pred_ranges, test_pred_ranges])
                 nontrain_preds = np.r_[calib_preds, test_preds]
@@ -430,9 +432,9 @@ def cross_train_and_eval(project_dir, subset, field_name, config_file, calib_pro
 
                 output_df.loc['Venn_averaged'] = [n_non_train, 'train', 'nontrain', 'given', averaged_venn_estimate, averaged_venn_rmse, averaged_lower, averaged_upper, venn_contains_test]
 
-                fh.write_list_to_text(props_in_range, os.path.join(dirs.dir_models(project_dir), model_name, 'venn_props_in_range.csv'))
+                fh.write_list_to_text(calib_props_in_range, os.path.join(dirs.dir_models(project_dir), model_name, 'venn_calib_props_in_range.csv'))
+                fh.write_list_to_text(test_props_in_range, os.path.join(dirs.dir_models(project_dir), model_name, 'venn_test_props_in_range.csv'))
                 results_df.to_csv(os.path.join(dirs.dir_models(project_dir), model_name, 'accuracy.csv'))
-
 
             # now train a model on the training and calibration data combined
             print("Training model on all labeled data")

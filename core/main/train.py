@@ -231,7 +231,8 @@ def train_model_with_labels(project_dir, model_type, loss, model_name, subset, l
                 dev_acc = evaluation.acc_score(y_dev_vector, dev_predictions, n_classes, weights=w_dev)
                 dev_proportions = evaluation.compute_proportions(Y_dev, w_dev)
                 pred_proportions = evaluation.compute_proportions(dev_pred_probs, w_dev)
-                dev_cal_rmse = evaluation.eval_proportions_mse(dev_proportions, pred_proportions)
+                #dev_cal_rmse = evaluation.eval_proportions_mse(dev_proportions, pred_proportions)
+                dev_cal_rmse = evaluation.evaluate_calibration_mse(y_dev_vector, dev_pred_probs)
 
                 mean_train_f1s[alpha_i] += train_f1 / float(n_dev_folds)
                 mean_dev_f1s[alpha_i] += dev_f1 / float(n_dev_folds)
@@ -320,7 +321,8 @@ def train_model_with_labels(project_dir, model_type, loss, model_name, subset, l
             dev_acc = evaluation.acc_score(y_dev_vector, dev_predictions, n_classes, weights=w_dev)
             dev_proportions = evaluation.compute_proportions(Y_dev, w_dev)
             pred_proportions = evaluation.compute_proportions(dev_pred_probs, w_dev)
-            dev_cal_rmse = evaluation.eval_proportions_mse(dev_proportions, pred_proportions)
+            #dev_cal_rmse = evaluation.eval_proportions_mse(dev_proportions, pred_proportions)
+            dev_cal_rmse = evaluation.evaluate_calibration_mse(y_dev_vector, dev_pred_probs)
 
             best_dev_f1 += dev_f1 / float(n_dev_folds)
             best_dev_acc += dev_acc / float(n_dev_folds)
