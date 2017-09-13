@@ -97,6 +97,8 @@ def convert_mfc(project, data_file, output_prefix, threshold, raw_data_dir, meta
 
     metadata = fh.read_json(metadata_file)
 
+    total_frames = np.zeros(n_frames)
+
     keys = list(data.keys())
     for k in keys:
         text = data[k]['text']
@@ -134,6 +136,7 @@ def convert_mfc(project, data_file, output_prefix, threshold, raw_data_dir, meta
                 year_group = 'gte_' + str(threshold)
             year_group_sizes[year_group] += 1
             sources.add(source)
+            total_frames += article_frames[:, 1]
 
             # only keep unanimous annotations
             #if len(article_tones) == 1:
@@ -182,6 +185,10 @@ def convert_mfc(project, data_file, output_prefix, threshold, raw_data_dir, meta
     print("Saving %d articles" % len(output))
     output_file = os.path.join(dirs.dir_data_raw(project), output_prefix + '.json')
     fh.write_to_json(output, output_filename=output_file)
+
+    total_frames = total_frames / float(len(output))
+    for f_i, f in enumerate(FRAMES):
+        print(f, total_frames[f_i])
 
 
 def get_source(source):

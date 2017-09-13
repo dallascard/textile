@@ -40,8 +40,6 @@ def main():
     #                  help='Use predictions on calibration items, rather than given labels: default=%default')
     parser.add_option('--label', dest='label', default='label',
                       help='Label name: default=%default')
-    parser.add_option('--pos_label', dest='pos_label', default=1,
-                      help='Positive label (for f1): default=%default')
     parser.add_option('--cshift', dest='cshift', default=None,
                       help='Covariate shift method [None|classify]: default=%default')
     parser.add_option('--penalty', dest='penalty', default='l1',
@@ -80,7 +78,6 @@ def main():
     #exclude_calib = options.exclude_calib
     #calib_pred = options.calib_pred
     label = options.label
-    pos_label = int(options.pos_label)
     penalty = options.penalty
     cshift = options.cshift
     objective = options.objective
@@ -95,10 +92,10 @@ def main():
 
     average = 'micro'
 
-    cross_train_and_eval(project_dir, subset, field_name, config_file, calib_prop, train_prop, suffix, model_type, loss, do_ensemble, dh, label, penalty, cshift, intercept, n_dev_folds, repeats, verbose, pos_label, average, objective, seed, alpha_min, alpha_max, sample_labels)
+    cross_train_and_eval(project_dir, subset, field_name, config_file, calib_prop, train_prop, suffix, model_type, loss, do_ensemble, dh, label, penalty, cshift, intercept, n_dev_folds, repeats, verbose, average, objective, seed, alpha_min, alpha_max, sample_labels)
 
 
-def cross_train_and_eval(project_dir, subset, field_name, config_file, calib_prop=0.2, train_prop=1.0, suffix='', model_type='LR', loss='log', do_ensemble=True, dh=0, label='label', penalty='l1', cshift=None, intercept=True, n_dev_folds=5, repeats=1, verbose=False, pos_label=1, average='micro', objective='f1', seed=None, alpha_min=0.01, alpha_max=1000, sample_labels=False):
+def cross_train_and_eval(project_dir, subset, field_name, config_file, calib_prop=0.2, train_prop=1.0, suffix='', model_type='LR', loss='log', do_ensemble=True, dh=100, label='label', penalty='l1', cshift=None, intercept=True, n_dev_folds=5, repeats=1, verbose=False, average='micro', objective='f1', seed=None, alpha_min=0.01, alpha_max=1000, sample_labels=False):
 
     model_basename = subset + '_' + field_name + '_' + model_type + '_' + penalty
     if model_type == 'MLP':
@@ -132,7 +129,6 @@ def cross_train_and_eval(project_dir, subset, field_name, config_file, calib_pro
         'objective': objective,
         'n_dev_folds': n_dev_folds,
         'repeats': repeats,
-        'pos_label': pos_label,
         'average': average,
         #'use_calib_pred': use_calib_pred,
         #'exclude_calib': exclude_calib,
@@ -285,6 +281,11 @@ def cross_train_and_eval(project_dir, subset, field_name, config_file, calib_pro
             output_df.loc['train'] = [n_train_r, 'train', 'train', 'n/a', train_estimate, train_rmse, np.nan, np.nan, np.nan]
 
             print("target proportions: (%0.3f, %0.3f); train proportions: %0.3f" % (target_estimate - 2 * target_std, target_estimate + 2 * target_std, train_estimate))
+
+            if train_estimate > 0.5:
+                pos_label = 0
+            else:
+                pos_label = 1
 
             # repeat for labeled calibration data
             if n_calib > 0:
