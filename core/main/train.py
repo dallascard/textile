@@ -226,8 +226,8 @@ def train_model_with_labels(project_dir, model_type, loss, model_name, subset, l
                 #alpha_acc_cfms.append(calibration.compute_acc(y_dev_vector, dev_predictions, n_classes, weights=w_dev))
                 #alpha_pvc_cfms.append(calibration.compute_pvc(y_dev_vector, dev_predictions, n_classes, weights=w_dev))
 
-                train_f1 = evaluation.f1_score(y_train_vector, train_predictions, n_classes, weights=w_train)
-                dev_f1 = evaluation.f1_score(y_dev_vector, dev_predictions, n_classes, weights=w_dev)
+                train_f1 = evaluation.f1_score(y_train_vector, train_predictions, n_classes, pos_label=pos_label, weights=w_train)
+                dev_f1 = evaluation.f1_score(y_dev_vector, dev_predictions, n_classes, pos_label=pos_label, weights=w_dev)
                 dev_acc = evaluation.acc_score(y_dev_vector, dev_predictions, n_classes, weights=w_dev)
                 dev_proportions = evaluation.compute_proportions(Y_dev, w_dev)
                 pred_proportions = evaluation.compute_proportions(dev_pred_probs, w_dev)
@@ -317,7 +317,7 @@ def train_model_with_labels(project_dir, model_type, loss, model_name, subset, l
 
             y_dev_vector = np.argmax(Y_dev, axis=1)
 
-            dev_f1 = evaluation.f1_score(y_dev_vector, dev_predictions, n_classes, weights=w_dev)
+            dev_f1 = evaluation.f1_score(y_dev_vector, dev_predictions, n_classes, pos_label=pos_label, weights=w_dev)
             dev_acc = evaluation.acc_score(y_dev_vector, dev_predictions, n_classes, weights=w_dev)
             dev_proportions = evaluation.compute_proportions(Y_dev, w_dev)
             pred_proportions = evaluation.compute_proportions(dev_pred_probs, w_dev)
