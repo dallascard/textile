@@ -43,7 +43,7 @@ def main():
     parser.add_option('--pos_label', dest='pos_label', default=1,
                       help='Positive label (for f1): default=%default')
     parser.add_option('--cshift', dest='cshift', default=None,
-                      help='Covariate shift method [None]: default=%default')
+                      help='Covariate shift method [None|classify]: default=%default')
     parser.add_option('--penalty', dest='penalty', default='l1',
                       help='Regularization type: default=%default')
     parser.add_option('--no_intercept', action="store_true", dest="no_intercept", default=False,
@@ -181,10 +181,14 @@ def cross_train_and_eval(project_dir, subset, field_name, config_file, calib_pro
             train_test_labels = np.zeros((n_items, 2), dtype=int)
             train_test_labels[train_selector, 0] = 1
             train_test_labels[non_train_selector, 1] = 1
+            if np.sum(train_test_labels[:, 0]) < np.sum(train_test_labels[:, 1]):
+                cshift_pos_label = 0
+            else:
+                cshift_pos_label = 1
             train_test_labels_df = pd.DataFrame(train_test_labels, index=labels_df.index, columns=[0, 1])
             # create a cshift model using the same specifiction as our model below (e.g. LR/MLP, etc.)
             model_name = model_basename + '_' + str(v) + '_' + 'cshift'
-            model, dev_f1, dev_acc = train.train_model_with_labels(project_dir, model_type, loss, model_name, subset, train_test_labels_df, feature_defs, penalty=penalty, alpha_min=alpha_min, alpha_max=alpha_max, intercept=intercept, n_dev_folds=n_dev_folds, save_model=True, do_ensemble=do_ensemble, dh=dh, seed=seed, pos_label=pos_label, verbose=False)
+            model, dev_f1, dev_acc = train.train_model_with_labels(project_dir, model_type, loss, model_name, subset, train_test_labels_df, feature_defs, penalty=penalty, alpha_min=alpha_min, alpha_max=alpha_max, intercept=intercept, n_dev_folds=n_dev_folds, save_model=True, do_ensemble=do_ensemble, dh=dh, seed=seed, pos_label=cshift_pos_label, verbose=False)
             print("cshift results: %0.4f f1, %0.4f acc" % (dev_f1, dev_acc))
 
             # take predictions from model on the training data
