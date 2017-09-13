@@ -13,7 +13,7 @@ class MLP:
     """
     Multilayer perceptron (representing documents as weighted sums of word vectors)
     """
-    def __init__(self, dimensions, loss_function='log', nonlinearity='tanh', penalty=None, reg_strength=1e-3, output_dir=None, name='model'):
+    def __init__(self, dimensions, loss_function='log', nonlinearity='tanh', penalty=None, reg_strength=1e-3, output_dir=None, name='model', pos_label=1):
         self._model_type = 'MLP'
         self._dimensions = dimensions[:]
         self._loss_function = loss_function
@@ -26,6 +26,7 @@ class MLP:
         else:
             self._output_dir = output_dir
         self._name = name
+        self._pos_label = pos_label
         self._train_f1 = None
         self._train_acc = None
         self._dev_f1 = None
@@ -73,20 +74,20 @@ class MLP:
             self._model = None
         else:
             model_filename = os.path.join(self._output_dir, self._name + '.ckpt')
-            self._model = tf_MLP(self._dimensions,  model_filename, loss_function=self._loss_function, penalty=self._penalty, reg_strength=self._reg_strength, nonlinearity=self._nonlinearity, seed=seed)
+            self._model = tf_MLP(self._dimensions,  model_filename, loss_function=self._loss_function, penalty=self._penalty, reg_strength=self._reg_strength, nonlinearity=self._nonlinearity, seed=seed, pos_label=self._pos_label)
             self._model.train(X_train, Y_train, X_dev, Y_dev, train_weights, dev_weights)
 
         # do a quick evaluation and store the results internally
         train_pred = self.predict(X_train)
         self._train_acc = evaluation.acc_score(train_labels, train_pred, n_classes=n_classes, weights=train_weights)
-        self._train_f1 = evaluation.f1_score(train_labels, train_pred, n_classes=n_classes, weights=train_weights)
+        self._train_f1 = evaluation.f1_score(train_labels, train_pred, n_classes=n_classes, pos_label=self._pos_label, weights=train_weights)
 
         if X_dev is not None and Y_dev is not None:
             dev_labels = np.argmax(Y_dev, axis=1)
             dev_pred = self.predict(X_dev)
             dev_pred_probs = self.predict_probs(X_dev)
             self._dev_acc = evaluation.acc_score(dev_labels, dev_pred, n_classes=n_classes, weights=dev_weights)
-            self._dev_f1 = evaluation.f1_score(dev_labels, dev_pred, n_classes=n_classes, weights=dev_weights)
+            self._dev_f1 = evaluation.f1_score(dev_labels, dev_pred, n_classes=n_classes, pos_label=self._pos_label, weights=dev_weights)
             self._dev_acc_cfm = calibration.compute_acc(dev_labels, dev_pred, n_classes, weights=dev_weights)
             self._dev_pvc_cfm = calibration.compute_pvc(dev_labels, dev_pred, n_classes, weights=dev_weights)
             if self._n_classes == 2:
@@ -195,6 +196,7 @@ class MLP:
                   'nonlinearity': self._nonlinearity,
                   'reg_strength': self.get_reg_strength(),
                   'penalty': self.get_penalty(),
+                  'pos_label': self._pos_label,
                   'n_classes': self.get_n_classes(),
                   'train_proportions': self.get_train_proportions(),
                   'train_f1': self._train_f1,
@@ -211,14 +213,15 @@ def load_from_file(model_dir, name):
     dimensions = input['dimensions']
     penalty = input['penalty']
     reg_strength = float(input['reg_strength'])
+    pos_label = int(input['pos_label'])
     n_classes = int(input['n_classes'])
     train_proportions = input['train_proportions']
     loss_function = input['loss_function']
     nonlinearity = input['nonlinearity']
 
-    classifier = MLP(dimensions, loss_function, nonlinearity, penalty, reg_strength, model_dir, name=name)
+    classifier = MLP(dimensions, loss_function, nonlinearity, penalty, reg_strength, model_dir, name=name, pos_label=pos_label)
     model_filename = os.path.join(model_dir, name + '.ckpt')
-    model = tf_MLP(dimensions, model_filename, loss_function, penalty, reg_strength, nonlinearity)
+    model = tf_MLP(dimensions, model_filename, loss_function, penalty, reg_strength, nonlinearity, pos_label=pos_label)
     classifier.set_model(model, train_proportions, n_classes)
     dev_info = np.load(os.path.join(model_dir, name + '_dev_info.npz'))
     classifier._dev_acc_cfm = dev_info['acc_cfm']
@@ -230,7 +233,7 @@ def load_from_file(model_dir, name):
 class tf_MLP:
 
     # TODO: optionally add embedding layer, or embedding updates, or attention over embeddings
-    def __init__(self, dimensions, filename, loss_function='log', penalty=None, reg_strength=0.1, nonlinearity='tanh', seed=None):
+    def __init__(self, dimensions, filename, loss_function='log', penalty=None, reg_strength=0.1, nonlinearity='tanh', seed=None, pos_label=1):
         """
         Create an MLP in tensorflow, using a softmax on the final layer
         """
@@ -242,6 +245,7 @@ class tf_MLP:
         self.reg_strength = reg_strength
         self.nonlinearity = nonlinearity
         self.filename = filename
+        self.pos_label = pos_label
 
         # create model
         self.x = tf.placeholder(tf.float32, shape=[None, dimensions[0]])
@@ -339,7 +343,7 @@ class tf_MLP:
                     scores = sess.run(self.scores_out, feed_dict=feed_dict)
                     predictions.append(np.argmax(scores, axis=1))
                 dev_acc = evaluation.acc_score(np.argmax(Y_dev, axis=1), predictions, n_classes=n_classes, weights=w_dev)
-                dev_f1 = evaluation.f1_score(np.argmax(Y_dev, axis=1), predictions, n_classes=n_classes, weights=w_dev)
+                dev_f1 = evaluation.f1_score(np.argmax(Y_dev, axis=1), predictions, n_classes=n_classes, pos_label=self.pos_label, weights=w_dev)
                 print("Validation accuracy: %0.4f; f1: %0.4f" % (dev_acc, dev_f1))
 
                 if dev_f1 > best_dev_f1:

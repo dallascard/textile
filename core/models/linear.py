@@ -15,7 +15,7 @@ class LinearClassifier:
     """
     Wrapper class for logistic regression from sklearn
     """
-    def __init__(self, alpha, loss_function='log', penalty='l2', fit_intercept=True, output_dir=None, name='model'):
+    def __init__(self, alpha, loss_function='log', penalty='l2', fit_intercept=True, output_dir=None, name='model', pos_label=1):
         self._model_type = 'LR'
         self._alpha = alpha
         self._loss_function = loss_function
@@ -27,6 +27,7 @@ class LinearClassifier:
         else:
             self._output_dir = output_dir
         self._name = name
+        self._pos_label = pos_label
         self._train_f1 = None
         self._train_acc = None
         self._dev_f1 = None
@@ -109,14 +110,14 @@ class LinearClassifier:
         # do a quick evaluation and store the results internally
         train_pred = self.predict(X_train)
         self._train_acc = evaluation.acc_score(train_labels, train_pred, n_classes=n_classes, weights=train_weights)
-        self._train_f1 = evaluation.f1_score(train_labels, train_pred, n_classes=n_classes, weights=train_weights)
+        self._train_f1 = evaluation.f1_score(train_labels, train_pred, n_classes=n_classes, pos_label=self._pos_label, weights=train_weights)
 
         if X_dev is not None and Y_dev is not None:
             dev_labels = np.argmax(Y_dev, axis=1)
             dev_pred = self.predict(X_dev)
             dev_pred_probs = self.predict_probs(X_dev)
             self._dev_acc = evaluation.acc_score(dev_labels, dev_pred, n_classes=n_classes, weights=dev_weights)
-            self._dev_f1 = evaluation.f1_score(dev_labels, dev_pred, n_classes=n_classes, weights=dev_weights)
+            self._dev_f1 = evaluation.f1_score(dev_labels, dev_pred, n_classes=n_classes, pos_label=self._pos_label, weights=dev_weights)
             self._dev_acc_cfm = calibration.compute_acc(dev_labels, dev_pred, n_classes, weights=dev_weights)
             self._dev_pvc_cfm = calibration.compute_pvc(dev_labels, dev_pred, n_classes, weights=dev_weights)
             if self._n_classes == 2:

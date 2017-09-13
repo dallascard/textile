@@ -184,7 +184,7 @@ def cross_train_and_eval(project_dir, subset, field_name, config_file, calib_pro
             train_test_labels_df = pd.DataFrame(train_test_labels, index=labels_df.index, columns=[0, 1])
             # create a cshift model using the same specifiction as our model below (e.g. LR/MLP, etc.)
             model_name = model_basename + '_' + str(v) + '_' + 'cshift'
-            model, dev_f1, dev_acc = train.train_model_with_labels(project_dir, model_type, loss, model_name, subset, train_test_labels_df, feature_defs, penalty=penalty, alpha_min=alpha_min, alpha_max=alpha_max, intercept=intercept, n_dev_folds=n_dev_folds, save_model=True, do_ensemble=do_ensemble, dh=dh, seed=seed, verbose=False)
+            model, dev_f1, dev_acc = train.train_model_with_labels(project_dir, model_type, loss, model_name, subset, train_test_labels_df, feature_defs, penalty=penalty, alpha_min=alpha_min, alpha_max=alpha_max, intercept=intercept, n_dev_folds=n_dev_folds, save_model=True, do_ensemble=do_ensemble, dh=dh, seed=seed, pos_label=pos_label, verbose=False)
             print("cshift results: %0.4f f1, %0.4f acc" % (dev_f1, dev_acc))
 
             # take predictions from model on the training data
@@ -294,7 +294,7 @@ def cross_train_and_eval(project_dir, subset, field_name, config_file, calib_pro
 
             # Now train a model on the training data, saving the calibration data for calibration
             print("Training model on training data only")
-            model, dev_f1, dev_acc = train.train_model_with_labels(project_dir, model_type, loss, model_name, subset, sampled_labels_df, feature_defs, weights_df=weights_df, items_to_use=train_items_r, penalty=penalty, alpha_min=alpha_min, alpha_max=alpha_max,  intercept=intercept, objective=objective, n_dev_folds=n_dev_folds, do_ensemble=do_ensemble, dh=dh, seed=seed, verbose=verbose)
+            model, dev_f1, dev_acc = train.train_model_with_labels(project_dir, model_type, loss, model_name, subset, sampled_labels_df, feature_defs, weights_df=weights_df, items_to_use=train_items_r, penalty=penalty, alpha_min=alpha_min, alpha_max=alpha_max,  intercept=intercept, objective=objective, n_dev_folds=n_dev_folds, do_ensemble=do_ensemble, dh=dh, seed=seed, pos_label=pos_label, verbose=verbose)
             results_df.loc['cross_val'] = [dev_f1, dev_acc]
 
             # predict on calibration data
@@ -440,7 +440,7 @@ def cross_train_and_eval(project_dir, subset, field_name, config_file, calib_pro
             # now train a model on the training and calibration data combined
             print("Training model on all labeled data")
             calib_and_train_items_r = np.array(list(calib_items) + list(train_items_r))
-            model, dev_f1, dev_acc = train.train_model_with_labels(project_dir, model_type, loss, model_name, subset, sampled_labels_df, feature_defs, weights_df=weights_df, items_to_use=calib_and_train_items_r, penalty=penalty, alpha_min=alpha_min, alpha_max=alpha_max, intercept=intercept, objective=objective, n_dev_folds=n_dev_folds, do_ensemble=do_ensemble, dh=dh, seed=seed, verbose=verbose)
+            model, dev_f1, dev_acc = train.train_model_with_labels(project_dir, model_type, loss, model_name, subset, sampled_labels_df, feature_defs, weights_df=weights_df, items_to_use=calib_and_train_items_r, penalty=penalty, alpha_min=alpha_min, alpha_max=alpha_max, intercept=intercept, objective=objective, n_dev_folds=n_dev_folds, do_ensemble=do_ensemble, dh=dh, seed=seed, pos_label=pos_label, verbose=verbose)
             results_df.loc['cross_val_all'] = [dev_f1, dev_acc]
 
             # get labels for test data

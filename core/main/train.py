@@ -91,7 +91,7 @@ def train_model(project_dir, model_type, loss, model_name, subset, label, featur
 def train_model_with_labels(project_dir, model_type, loss, model_name, subset, labels_df, feature_defs, weights_df=None,
                             items_to_use=None, penalty='l2', alpha_min=0.01, alpha_max=1000, n_alphas=8, intercept=True,
                             objective='f1', n_dev_folds=5, save_model=True, do_ensemble=False, dh=0, seed=None,
-                            verbose=True):
+                            pos_label=1, verbose=True):
 
     features_dir = dirs.dir_features(project_dir, subset)
     n_items, n_classes = labels_df.shape
@@ -200,7 +200,7 @@ def train_model_with_labels(project_dir, model_type, loss, model_name, subset, l
             alpha_models[alpha] = []
 
             for train_indices, dev_indices in kfold.split(X):
-                model = linear.LinearClassifier(alpha, loss_function=loss, penalty=penalty, fit_intercept=intercept, output_dir=output_dir, name='temp')
+                model = linear.LinearClassifier(alpha, loss_function=loss, penalty=penalty, fit_intercept=intercept, output_dir=output_dir, name='temp', pos_label=pos_label)
 
                 X_train = X[train_indices, :]
                 Y_train = Y[train_indices, :]
@@ -277,7 +277,7 @@ def train_model_with_labels(project_dir, model_type, loss, model_name, subset, l
 
         else:
             printv("Training full model", verbose)
-            full_model = linear.LinearClassifier(best_alpha, loss_function=loss, penalty=penalty, fit_intercept=intercept, output_dir=output_dir, name=model_name)
+            full_model = linear.LinearClassifier(best_alpha, loss_function=loss, penalty=penalty, fit_intercept=intercept, output_dir=output_dir, name=model_name, pos_label=pos_label)
             X, Y, w = prepare_data(X, Y, weights, loss=loss)
             full_model.fit(X, Y, train_weights=w, col_names=col_names)
             full_model.save()
@@ -298,7 +298,7 @@ def train_model_with_labels(project_dir, model_type, loss, model_name, subset, l
         for train_indices, dev_indices in kfold.split(X):
             print("Starting fold %d" % fold)
             name = model_name + '_' + str(fold)
-            model = mlp.MLP(dimensions=dimensions, loss_function=loss, nonlinearity='tanh', penalty=penalty, reg_strength=0, output_dir=output_dir, name=name)
+            model = mlp.MLP(dimensions=dimensions, loss_function=loss, nonlinearity='tanh', penalty=penalty, reg_strength=0, output_dir=output_dir, name=name, pos_label=pos_label)
 
             X_train = X[train_indices, :]
             Y_train = Y[train_indices, :]
