@@ -199,8 +199,10 @@ def train_model_with_labels(project_dir, model_type, loss, model_name, subset, l
         for alpha_i, alpha in enumerate(alphas):
             alpha_models[alpha] = []
 
+            fold = 1
             for train_indices, dev_indices in kfold.split(X):
-                model = linear.LinearClassifier(alpha, loss_function=loss, penalty=penalty, fit_intercept=intercept, output_dir=output_dir, name='temp', pos_label=pos_label)
+                name = model_name + '_' + str(fold)
+                model = linear.LinearClassifier(alpha, loss_function=loss, penalty=penalty, fit_intercept=intercept, output_dir=output_dir, name=name, pos_label=pos_label)
 
                 X_train = X[train_indices, :]
                 Y_train = Y[train_indices, :]
@@ -239,6 +241,7 @@ def train_model_with_labels(project_dir, model_type, loss, model_name, subset, l
                 mean_dev_acc[alpha_i] += dev_acc / float(n_dev_folds)
                 mean_dev_cal[alpha_i] += dev_cal_rmse / float(n_dev_folds)
                 mean_model_size[alpha_i] += model.get_model_size() / float(n_dev_folds)
+                fold += 1
 
             print("%d\t%0.2f\t%.1f\t%0.3f\t%0.3f\t%0.3f\t%0.3f" % (alpha_i, alpha, mean_model_size[alpha_i], mean_train_f1s[alpha_i], mean_dev_f1s[alpha_i], mean_dev_acc[alpha_i], mean_dev_cal[alpha_i]))
 
