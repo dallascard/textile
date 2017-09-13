@@ -286,6 +286,7 @@ def cross_train_and_eval(project_dir, subset, field_name, config_file, calib_pro
                 pos_label = 0
             else:
                 pos_label = 1
+            print("Using %d as the positive label" % pos_label)
 
             # repeat for labeled calibration data
             if n_calib > 0:

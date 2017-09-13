@@ -13,9 +13,9 @@ def main():
                       help='Field to split on: default=%default')
     parser.add_option('--config', dest='config', default='default.json',
                       help='Field to split on: default=%default')
-    parser.add_option('-p', dest='calib_prop', default=0.2,
+    parser.add_option('-p', dest='calib_prop', default=0.1,
                       help='Proportion of test data to use for calibration: default=%default')
-    parser.add_option('-t', dest='train_prop', default=1.0,
+    parser.add_option('-t', dest='train_prop', default=0.9,
                       help='Proportion of training data to use for training: default=%default')
     parser.add_option('--penalty', dest='penalty', default='l2',
                       help='Regularization type: default=%default')
