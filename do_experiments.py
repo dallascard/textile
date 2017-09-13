@@ -5,7 +5,7 @@ from core.experiments import combo
 
 
 def main():
-    usage = "%prog subset"
+    usage = "%prog project subset"
     parser = OptionParser(usage=usage)
     parser.add_option('--label', dest='label', default='label',
                       help='Label name: default=%default')
@@ -25,7 +25,8 @@ def main():
     #                  help='Size of word vectors: default=%default')
 
     (options, args) = parser.parse_args()
-    subset = args[0]
+    project = args[0]
+    subset = args[1]
 
     label = options.label
     field_name = options.field_name
@@ -35,23 +36,18 @@ def main():
     penalty = options.penalty
     repeats = int(options.repeats)
 
-    base_project = os.path.join('projects', 'mfc')
-    subprojects = ['climate', 'guncontrol', 'immigration', 'samesex', 'smoking']
-    for s in subprojects:
-        project = os.path.join(base_project, s)
-        print(project)
-        combo.cross_train_and_eval(project, subset, field_name, config_file, calib_prop, train_prop, suffix='',
-                                   model_type='LR', label=label, penalty=penalty, repeats=repeats,
-                                   objective='f1')
-        combo.cross_train_and_eval(project, subset, field_name, config_file, calib_prop, train_prop, suffix='',
-                                   model_type='LR', label=label, penalty=penalty, repeats=repeats,
-                                   objective='calibration')
-        combo.cross_train_and_eval(project, subset, field_name, config_file, calib_prop, train_prop, suffix='',
-                                   model_type='LR', label=label, penalty=penalty, repeats=repeats,
-                                   objective='f1', cshift='classify')
-        combo.cross_train_and_eval(project, subset, field_name, config_file, calib_prop, train_prop, suffix='',
-                                   model_type='LR', label=label, penalty=penalty, repeats=repeats,
-                                   objective='calibration', cshift='classify')
+    combo.cross_train_and_eval(project, subset, field_name, config_file, calib_prop, train_prop, suffix='',
+                               model_type='LR', label=label, penalty=penalty, repeats=repeats,
+                               objective='f1')
+    combo.cross_train_and_eval(project, subset, field_name, config_file, calib_prop, train_prop, suffix='',
+                               model_type='LR', label=label, penalty=penalty, repeats=repeats,
+                               objective='calibration')
+    combo.cross_train_and_eval(project, subset, field_name, config_file, calib_prop, train_prop, suffix='',
+                               model_type='LR', label=label, penalty=penalty, repeats=repeats,
+                               objective='f1', cshift='classify')
+    combo.cross_train_and_eval(project, subset, field_name, config_file, calib_prop, train_prop, suffix='',
+                               model_type='LR', label=label, penalty=penalty, repeats=repeats,
+                               objective='calibration', cshift='classify')
 
 if __name__ == '__main__':
     main()
