@@ -295,7 +295,7 @@ class tf_MLP:
         self.initializer = tf.global_variables_initializer()
         self.saver = tf.train.Saver()
 
-    def train(self, X_train, Y_train, X_dev, Y_dev, w_train=None, w_dev=None, display_period=500, min_epochs=10, patience=5):
+    def train(self, X_train, Y_train, X_dev, Y_dev, w_train=None, w_dev=None, display_period=500, min_epochs=10, patience=8):
         done = False
         best_dev_f1 = 0
 
