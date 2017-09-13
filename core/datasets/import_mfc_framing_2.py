@@ -179,7 +179,7 @@ def convert_mfc(project, data_file, output_prefix, threshold, raw_data_dir, meta
 
             output[key] = {'text': text, 'year': int(year), 'year_group': year_group, 'month': month, 'source': source}
             for frame_i, frame in enumerate(FRAMES):
-                output[key][frame] = {0: 0, 1: 0}
+                output[key][frame] = {}
 
             year_group_sizes[year_group] += 1
 
