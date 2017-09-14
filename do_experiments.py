@@ -17,7 +17,7 @@ def main():
                       help='Proportion of training data to use for training: default=%default')
     parser.add_option('--penalty', dest='penalty', default='l2',
                       help='Regularization type: default=%default')
-    parser.add_option('-r', dest='repeats', default=3,
+    parser.add_option('-r', dest='repeats', default=5,
                       help='Repeats: default=%default')
 
     (options, args) = parser.parse_args()
