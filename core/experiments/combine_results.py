@@ -33,7 +33,7 @@ def main():
     calib_prop = str(float(options.calib_prop))
 
     # basic LR f1: combining subset, label, repetitions, and pre/post date
-    basename = '*_year_group_LR_l2_' + train_prop + '_' + calib_prop + '_' + objective
+    basename = '*_LR_l2_' + train_prop + '_' + calib_prop + '_' + objective
     if cshift is not None:
         basename += '_cshift'
     basename += '_*_????_?'
