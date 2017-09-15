@@ -14,8 +14,12 @@ def main():
                       help='Objective [f1|calibration]: default=%default')
     parser.add_option('--cshift', dest='cshift', default=None,
                       help='cshift [None|classify]: default=%default')
+    parser.add_option('-t', dest='train_prop', default=0.9,
+                      help='Train prop: default=%default')
     parser.add_option('-p', dest='calib_prop', default=0.1,
                       help='Calibration prop: default=%default')
+    parser.add_option('--base', dest='base', default='mfc',
+                      help='base [mfc|amazon]: default=%default')
 
     #parser.add_option('--boolarg', action="store_true", dest="boolarg", default=False,
     #                  help='Keyword argument: default=%default')
@@ -25,10 +29,11 @@ def main():
 
     objective = options.objective
     cshift = options.cshift
+    train_prop = str(float(options.train_prop))
     calib_prop = str(float(options.calib_prop))
 
     # basic LR f1: combining subset, label, repetitions, and pre/post date
-    basename = '*_year_group_LR_l2_0.9_' + calib_prop + '_' + objective
+    basename = '*_year_group_LR_l2_' + train_prop + '_' + calib_prop + '_' + objective
     if cshift is not None:
         basename += '_cshift'
     basename += '_*_????_?'
