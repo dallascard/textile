@@ -526,7 +526,7 @@ def estimate_probs_from_labels_cv(project_dir, full_model, model_name, labels_df
             ir.fit(calib_scores, calib_y, calib_weights)
             calib_pred = ir.predict(calib_scores)
             n_levels = len(set(calib_pred))
-            list_of_n_levels.append(n_levels)
+            list_of_n_levels.append(str(n_levels))
 
         geometric_means = np.zeros([n_items, 2])
         for i in range(n_items):
@@ -560,7 +560,7 @@ def estimate_probs_from_labels_cv(project_dir, full_model, model_name, labels_df
         ir.fit(calib_scores, calib_y, calib_weights)
         calib_pred = ir.predict(calib_scores)
         n_levels = len(set(calib_pred))
-        list_of_n_levels.append(n_levels)
+        list_of_n_levels.append(str(n_levels))
 
     return test_pred_ranges, combo, props_in_range, list_of_n_levels
 
