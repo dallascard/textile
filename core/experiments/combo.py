@@ -54,6 +54,8 @@ def main():
                       help='Number of repeats with random calibration/test splits: default=%default')
     parser.add_option('--seed', dest='seed', default=None,
                       help='Random seed (None=random): default=%default')
+    parser.add_option('--run_all', action="store_true", dest="run_all", default=False,
+                      help='Run models using combined train and calibration data: default=%default')
     parser.add_option('--verbose', action="store_true", dest="verbose", default=False,
                       help='Print more output: default=%default')
 
@@ -88,14 +90,15 @@ def main():
     if options.seed is not None:
         seed = int(seed)
         np.random.seed(seed)
+    run_all = options.run_all
     verbose = options.verbose
 
     average = 'micro'
 
-    cross_train_and_eval(project_dir, subset, field_name, config_file, calib_prop, train_prop, suffix, model_type, loss, do_ensemble, dh, label, penalty, cshift, intercept, n_dev_folds, repeats, verbose, average, objective, seed, alpha_min, alpha_max, sample_labels)
+    cross_train_and_eval(project_dir, subset, field_name, config_file, calib_prop, train_prop, suffix, model_type, loss, do_ensemble, dh, label, penalty, cshift, intercept, n_dev_folds, repeats, verbose, average, objective, seed, alpha_min, alpha_max, sample_labels, run_all)
 
 
-def cross_train_and_eval(project_dir, subset, field_name, config_file, calib_prop=0.2, train_prop=1.0, suffix='', model_type='LR', loss='log', do_ensemble=True, dh=100, label='label', penalty='l1', cshift=None, intercept=True, n_dev_folds=5, repeats=1, verbose=False, average='micro', objective='f1', seed=None, alpha_min=0.01, alpha_max=1000, sample_labels=False):
+def cross_train_and_eval(project_dir, subset, field_name, config_file, calib_prop=0.2, train_prop=1.0, suffix='', model_type='LR', loss='log', do_ensemble=True, dh=100, label='label', penalty='l1', cshift=None, intercept=True, n_dev_folds=5, repeats=1, verbose=False, average='micro', objective='f1', seed=None, alpha_min=0.01, alpha_max=1000.0, sample_labels=False, run_all=False):
 
     model_basename = subset + '_' + label + '_' + field_name + '_' + model_type + '_' + penalty
     if model_type == 'MLP':
@@ -445,74 +448,75 @@ def cross_train_and_eval(project_dir, subset, field_name, config_file, calib_pro
                 results_df.to_csv(os.path.join(dirs.dir_models(project_dir), model_name, 'accuracy.csv'))
 
             # now train a model on the training and calibration data combined
-            print("Training model on all labeled data")
-            calib_and_train_items_r = np.array(list(calib_items) + list(train_items_r))
-            model, dev_f1, dev_acc = train.train_model_with_labels(project_dir, model_type, loss, model_name, subset, sampled_labels_df, feature_defs, weights_df=weights_df, items_to_use=calib_and_train_items_r, penalty=penalty, alpha_min=alpha_min, alpha_max=alpha_max, intercept=intercept, objective=objective, n_dev_folds=n_dev_folds, do_ensemble=do_ensemble, dh=dh, seed=seed, pos_label=pos_label, verbose=verbose)
-            results_df.loc['cross_val_all'] = [dev_f1, dev_acc]
+            if run_all:
+                print("Training model on all labeled data")
+                calib_and_train_items_r = np.array(list(calib_items) + list(train_items_r))
+                model, dev_f1, dev_acc = train.train_model_with_labels(project_dir, model_type, loss, model_name, subset, sampled_labels_df, feature_defs, weights_df=weights_df, items_to_use=calib_and_train_items_r, penalty=penalty, alpha_min=alpha_min, alpha_max=alpha_max, intercept=intercept, objective=objective, n_dev_folds=n_dev_folds, do_ensemble=do_ensemble, dh=dh, seed=seed, pos_label=pos_label, verbose=verbose)
+                results_df.loc['cross_val_all'] = [dev_f1, dev_acc]
 
-            # get labels for test data
-            test_predictions_df, test_pred_probs_df, test_pred_proportions = predict.predict(project_dir, model, model_name, subset, label, items_to_use=test_items, verbose=verbose)
-            f1_test, acc_test = evaluate_predictions.evaluate_predictions(test_labels_df, test_predictions_df, test_pred_probs_df, pos_label=pos_label, average=average)
-            test_cc_estimate, test_pcc_estimate, test_acc_estimate_internal, test_pvc_estimate_internal = test_pred_proportions
-            results_df.loc['test_all'] = [f1_test, acc_test]
+                # get labels for test data
+                test_predictions_df, test_pred_probs_df, test_pred_proportions = predict.predict(project_dir, model, model_name, subset, label, items_to_use=test_items, verbose=verbose)
+                f1_test, acc_test = evaluate_predictions.evaluate_predictions(test_labels_df, test_predictions_df, test_pred_probs_df, pos_label=pos_label, average=average)
+                test_cc_estimate, test_pcc_estimate, test_acc_estimate_internal, test_pvc_estimate_internal = test_pred_proportions
+                results_df.loc['test_all'] = [f1_test, acc_test]
 
-            nontrain_predictions_df, nontrain_pred_probs_df, nontrain_pred_proportions = predict.predict(project_dir, model, model_name, subset, label, items_to_use=non_train_items, verbose=verbose)
-            nontrain_cc_estimate, nontrain_pcc_estimate, nontrain_acc_estimate_internal, nontrain_pvc_estimate_internal = nontrain_pred_proportions
+                nontrain_predictions_df, nontrain_pred_probs_df, nontrain_pred_proportions = predict.predict(project_dir, model, model_name, subset, label, items_to_use=non_train_items, verbose=verbose)
+                nontrain_cc_estimate, nontrain_pcc_estimate, nontrain_acc_estimate_internal, nontrain_pvc_estimate_internal = nontrain_pred_proportions
 
-            cc_rmse = np.sqrt((nontrain_cc_estimate[1] - target_estimate)**2)
-            pcc_rmse = np.sqrt((nontrain_pcc_estimate[1] - target_estimate)**2)
+                cc_rmse = np.sqrt((nontrain_cc_estimate[1] - target_estimate)**2)
+                pcc_rmse = np.sqrt((nontrain_pcc_estimate[1] - target_estimate)**2)
 
-            output_df.loc['CC_nontrain_all'] = [n_non_train, 'nontest', 'nontrain', 'predicted', nontrain_cc_estimate[1], cc_rmse, np.nan, np.nan, np.nan]
-            output_df.loc['PCC_nontrain_all'] = [n_non_train, 'nontest', 'nontrain', 'predicted', nontrain_pcc_estimate[1], pcc_rmse, np.nan, np.nan, np.nan]
+                output_df.loc['CC_nontrain_all'] = [n_non_train, 'nontest', 'nontrain', 'predicted', nontrain_cc_estimate[1], cc_rmse, np.nan, np.nan, np.nan]
+                output_df.loc['PCC_nontrain_all'] = [n_non_train, 'nontest', 'nontrain', 'predicted', nontrain_pcc_estimate[1], pcc_rmse, np.nan, np.nan, np.nan]
 
-            if n_calib > 0:
-                averaged_cc_estimate = (test_cc_estimate[1] * n_test + calib_estimate * n_calib) / float(n_test + n_calib)
-                averaged_pcc_estimate = (test_pcc_estimate[1] * n_test + calib_estimate * n_calib) / float(n_test + n_calib)
+                if n_calib > 0:
+                    averaged_cc_estimate = (test_cc_estimate[1] * n_test + calib_estimate * n_calib) / float(n_test + n_calib)
+                    averaged_pcc_estimate = (test_pcc_estimate[1] * n_test + calib_estimate * n_calib) / float(n_test + n_calib)
 
-                averaged_cc_rmse = np.sqrt((averaged_cc_estimate - target_estimate)**2)
-                averaged_pcc_rmse = np.sqrt((averaged_pcc_estimate - target_estimate)**2)
+                    averaged_cc_rmse = np.sqrt((averaged_cc_estimate - target_estimate)**2)
+                    averaged_pcc_rmse = np.sqrt((averaged_pcc_estimate - target_estimate)**2)
 
-                output_df.loc['CC_nontrain_averaged_all'] = [n_non_train, 'nontest', 'nontrain', 'given', averaged_cc_estimate, averaged_cc_rmse, np.nan, np.nan, np.nan]
-                output_df.loc['PCC_nontrain_averaged_all'] = [n_non_train, 'nontest', 'nontrain', 'given', averaged_pcc_estimate, averaged_pcc_rmse, np.nan, np.nan, np.nan]
+                    output_df.loc['CC_nontrain_averaged_all'] = [n_non_train, 'nontest', 'nontrain', 'given', averaged_cc_estimate, averaged_cc_rmse, np.nan, np.nan, np.nan]
+                    output_df.loc['PCC_nontrain_averaged_all'] = [n_non_train, 'nontest', 'nontrain', 'given', averaged_pcc_estimate, averaged_pcc_rmse, np.nan, np.nan, np.nan]
 
-            nontrain_acc_rmse_internal = np.sqrt((nontrain_acc_estimate_internal[1] - target_estimate) ** 2)
-            nontrain_pvc_rmse_internal = np.sqrt((nontrain_pvc_estimate_internal[1] - target_estimate) ** 2)
+                nontrain_acc_rmse_internal = np.sqrt((nontrain_acc_estimate_internal[1] - target_estimate) ** 2)
+                nontrain_pvc_rmse_internal = np.sqrt((nontrain_pvc_estimate_internal[1] - target_estimate) ** 2)
 
-            output_df.loc['ACC_internal_all'] = [n_non_train, 'nontest', 'nontrain', 'predicted', nontrain_acc_estimate_internal[1], nontrain_acc_rmse_internal, np.nan, np.nan, np.nan]
-            output_df.loc['PVC_internal_all'] = [n_non_train, 'nontest', 'nontrain', 'predicted', nontrain_pvc_estimate_internal[1], nontrain_pvc_rmse_internal, np.nan, np.nan, np.nan]
+                output_df.loc['ACC_internal_all'] = [n_non_train, 'nontest', 'nontrain', 'predicted', nontrain_acc_estimate_internal[1], nontrain_acc_rmse_internal, np.nan, np.nan, np.nan]
+                output_df.loc['PVC_internal_all'] = [n_non_train, 'nontest', 'nontrain', 'predicted', nontrain_pvc_estimate_internal[1], nontrain_pvc_rmse_internal, np.nan, np.nan, np.nan]
 
-            if n_calib > 0:
-                averaged_acc_estimate_internal = (test_acc_estimate_internal[1] * n_test + calib_estimate * n_calib) / float(n_test + n_calib)
-                averaged_pvc_estimate_internal = (test_pvc_estimate_internal[1] * n_test + calib_estimate * n_calib) / float(n_test + n_calib)
-                averaged_acc_rmse_internal = np.sqrt((averaged_acc_estimate_internal - target_estimate) ** 2)
-                averaged_pvc_rmse_internal = np.sqrt((averaged_pvc_estimate_internal - target_estimate) ** 2)
+                if n_calib > 0:
+                    averaged_acc_estimate_internal = (test_acc_estimate_internal[1] * n_test + calib_estimate * n_calib) / float(n_test + n_calib)
+                    averaged_pvc_estimate_internal = (test_pvc_estimate_internal[1] * n_test + calib_estimate * n_calib) / float(n_test + n_calib)
+                    averaged_acc_rmse_internal = np.sqrt((averaged_acc_estimate_internal - target_estimate) ** 2)
+                    averaged_pvc_rmse_internal = np.sqrt((averaged_pvc_estimate_internal - target_estimate) ** 2)
 
-                output_df.loc['ACC_internal_averaged_all'] = [n_non_train, 'nontest', 'nontrain', 'given', averaged_acc_estimate_internal, averaged_acc_rmse_internal, np.nan, np.nan, np.nan]
-                output_df.loc['PVC_internal_averaged_all'] = [n_non_train, 'nontest', 'nontrain', 'given', averaged_pvc_estimate_internal, averaged_pvc_rmse_internal, np.nan, np.nan, np.nan]
+                    output_df.loc['ACC_internal_averaged_all'] = [n_non_train, 'nontest', 'nontrain', 'given', averaged_acc_estimate_internal, averaged_acc_rmse_internal, np.nan, np.nan, np.nan]
+                    output_df.loc['PVC_internal_averaged_all'] = [n_non_train, 'nontest', 'nontrain', 'given', averaged_pvc_estimate_internal, averaged_pvc_rmse_internal, np.nan, np.nan, np.nan]
 
-            print("Venn internal nontrain")
-            nontrain_pred_ranges_internal, nontrain_preds_internal = ivap.estimate_probs_from_labels_internal(project_dir, model, model_name, subset, non_train_items)
+                print("Venn internal nontrain")
+                nontrain_pred_ranges_internal, nontrain_preds_internal = ivap.estimate_probs_from_labels_internal(project_dir, model, model_name, subset, non_train_items)
 
-            pred_range = np.mean(nontrain_pred_ranges_internal, axis=0)
-            venn_estimate = np.mean(nontrain_preds_internal)
+                pred_range = np.mean(nontrain_pred_ranges_internal, axis=0)
+                venn_estimate = np.mean(nontrain_preds_internal)
 
-            venn_rmse = np.sqrt((venn_estimate - target_estimate)**2)
-            venn_contains_test = pred_range[0] < target_estimate < pred_range[1]
-            output_df.loc['Venn_internal_all'] = [n_non_train, 'nontest', 'nontrain', 'predicted', venn_estimate, venn_rmse, pred_range[0], pred_range[1], venn_contains_test]
-
-            if n_calib > 0:
-                print("Venn internal test")
-                test_pred_ranges_internal, test_preds_internal = ivap.estimate_probs_from_labels_internal(project_dir, model, model_name, subset, test_items)
-
-                pred_range = np.mean(test_pred_ranges_internal, axis=0)
-                venn_estimate = (np.mean(test_preds_internal) * n_test + calib_estimate * n_calib) / float(n_test + n_calib)
                 venn_rmse = np.sqrt((venn_estimate - target_estimate)**2)
+                venn_contains_test = pred_range[0] < target_estimate < pred_range[1]
+                output_df.loc['Venn_internal_all'] = [n_non_train, 'nontest', 'nontrain', 'predicted', venn_estimate, venn_rmse, pred_range[0], pred_range[1], venn_contains_test]
 
-                averaged_lower = (pred_range[0] * n_test + (calib_estimate - 2 * calib_std) * n_calib) / float(n_test + n_calib)
-                averaged_upper = (pred_range[1] * n_test + (calib_estimate + 2 * calib_std) * n_calib) / float(n_test + n_calib)
-                venn_contains_test = averaged_lower < target_estimate < averaged_upper
+                if n_calib > 0:
+                    print("Venn internal test")
+                    test_pred_ranges_internal, test_preds_internal = ivap.estimate_probs_from_labels_internal(project_dir, model, model_name, subset, test_items)
 
-                output_df.loc['Venn_internal_averaged_all'] = [n_non_train, 'nontest', 'nontrain', 'given', venn_estimate, venn_rmse, averaged_lower, averaged_upper, venn_contains_test]
+                    pred_range = np.mean(test_pred_ranges_internal, axis=0)
+                    venn_estimate = (np.mean(test_preds_internal) * n_test + calib_estimate * n_calib) / float(n_test + n_calib)
+                    venn_rmse = np.sqrt((venn_estimate - target_estimate)**2)
+
+                    averaged_lower = (pred_range[0] * n_test + (calib_estimate - 2 * calib_std) * n_calib) / float(n_test + n_calib)
+                    averaged_upper = (pred_range[1] * n_test + (calib_estimate + 2 * calib_std) * n_calib) / float(n_test + n_calib)
+                    venn_contains_test = averaged_lower < target_estimate < averaged_upper
+
+                    output_df.loc['Venn_internal_averaged_all'] = [n_non_train, 'nontest', 'nontrain', 'given', venn_estimate, venn_rmse, averaged_lower, averaged_upper, venn_contains_test]
 
             results_df.to_csv(os.path.join(dirs.dir_models(project_dir), model_name, 'accuracy.csv'))
             output_df.to_csv(os.path.join(dirs.dir_models(project_dir), model_name, 'results.csv'))
