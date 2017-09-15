@@ -19,6 +19,9 @@ def main():
                       help='Regularization type: default=%default')
     parser.add_option('-r', dest='repeats', default=5,
                       help='Repeats: default=%default')
+    parser.add_option('--model', dest='model', default='LR',
+                      help='Model type [LR|MLP]: default=%default')
+
 
     (options, args) = parser.parse_args()
     project = args[0]
@@ -29,22 +32,23 @@ def main():
     train_prop = float(options.train_prop)
     penalty = options.penalty
     repeats = int(options.repeats)
+    model_type = options.model
 
     pairs = [('pro_tone', 'label'), ('framing', 'Economic'), ('framing', 'Legality'), ('framing', 'Health'), ('framing', 'Political')]
 
     for subset, label in pairs:
         print("\n\nStarting", subset, label)
         combo.cross_train_and_eval(project, subset, field_name, config_file, calib_prop, train_prop, suffix='',
-                                   model_type='LR', label=label, penalty=penalty, repeats=repeats,
+                                   model_type=model_type, label=label, penalty=penalty, repeats=repeats,
                                    objective='f1')
         combo.cross_train_and_eval(project, subset, field_name, config_file, calib_prop, train_prop, suffix='',
-                                   model_type='LR', label=label, penalty=penalty, repeats=repeats,
+                                   model_type=model_type, label=label, penalty=penalty, repeats=repeats,
                                    objective='calibration')
         combo.cross_train_and_eval(project, subset, field_name, config_file, calib_prop, train_prop, suffix='',
-                                   model_type='LR', label=label, penalty=penalty, repeats=repeats,
+                                   model_type=model_type, label=label, penalty=penalty, repeats=repeats,
                                    objective='f1', cshift='classify')
         combo.cross_train_and_eval(project, subset, field_name, config_file, calib_prop, train_prop, suffix='',
-                                   model_type='LR', label=label, penalty=penalty, repeats=repeats,
+                                   model_type=model_type, label=label, penalty=penalty, repeats=repeats,
                                    objective='calibration', cshift='classify')
 
 if __name__ == '__main__':
