@@ -18,8 +18,8 @@ def main():
     parser = OptionParser(usage=usage)
     parser.add_option('-t', dest='train_prop', default=1.0,
                       help='Proportion of training data to use: default=%default')
-    parser.add_option('-p', dest='calib_prop', default=0.0,
-                      help='Proportion of test data to use for calibration: default=%default')
+    parser.add_option('--n_calib', dest='n_calib', default=0,
+                      help='Number of test instances to use for calibration: default=%default')
     parser.add_option('--sample', action="store_true", dest="sample", default=False,
                       help='Sample labels instead of averaging: default=%default')
     parser.add_option('--suffix', dest='suffix', default='',
@@ -67,7 +67,7 @@ def main():
     config_file = args[3]
 
     train_prop = float(options.train_prop)
-    calib_prop = float(options.calib_prop)
+    n_calib = int(options.n_calib)
     sample_labels = options.sample
     suffix = options.suffix
     model_type = options.model
@@ -95,15 +95,15 @@ def main():
 
     average = 'micro'
 
-    cross_train_and_eval(project_dir, subset, field_name, config_file, calib_prop, train_prop, suffix, model_type, loss, do_ensemble, dh, label, penalty, cshift, intercept, n_dev_folds, repeats, verbose, average, objective, seed, alpha_min, alpha_max, sample_labels, run_all)
+    cross_train_and_eval(project_dir, subset, field_name, config_file, n_calib, train_prop, suffix, model_type, loss, do_ensemble, dh, label, penalty, cshift, intercept, n_dev_folds, repeats, verbose, average, objective, seed, alpha_min, alpha_max, sample_labels, run_all)
 
 
-def cross_train_and_eval(project_dir, subset, field_name, config_file, calib_prop=0.2, train_prop=1.0, suffix='', model_type='LR', loss='log', do_ensemble=True, dh=100, label='label', penalty='l1', cshift=None, intercept=True, n_dev_folds=5, repeats=1, verbose=False, average='micro', objective='f1', seed=None, alpha_min=0.01, alpha_max=1000.0, sample_labels=False, run_all=False):
+def cross_train_and_eval(project_dir, subset, field_name, config_file, n_calib=0, train_prop=1.0, suffix='', model_type='LR', loss='log', do_ensemble=True, dh=100, label='label', penalty='l1', cshift=None, intercept=True, n_dev_folds=5, repeats=1, verbose=False, average='micro', objective='f1', seed=None, alpha_min=0.01, alpha_max=1000.0, sample_labels=False, run_all=False):
 
     model_basename = subset + '_' + label + '_' + field_name + '_' + model_type + '_' + penalty
     if model_type == 'MLP':
         model_basename += '_' + str(dh)
-    model_basename +=  '_' + str(train_prop) + '_' + str(calib_prop) + '_' + objective
+    model_basename +=  '_' + str(train_prop) + '_' + str(n_calib) + '_' + objective
     if cshift is not None:
         model_basename += '_cshift'
     model_basename += suffix
@@ -116,7 +116,7 @@ def cross_train_and_eval(project_dir, subset, field_name, config_file, calib_pro
         'subset': subset,
         'field_name': field_name,
         'config_file': config_file,
-        'calib_prop': calib_prop,
+        'n_calib': n_calib,
         'train_prop': train_prop,
         'suffix': suffix,
         'model_type': model_type,
@@ -246,8 +246,12 @@ def cross_train_and_eval(project_dir, subset, field_name, config_file, calib_pro
             model_name = model_basename + '_' + str(v) + '_' + str(r)
 
             # now, divide the non-train data into a calibration and a test set
-            n_calib = int(calib_prop * n_non_train)
+            #n_calib = int(calib_prop * n_non_train)
             np.random.shuffle(non_train_items)
+            if n_calib > n_non_train:
+                n_calib = int(n_non_train / 2)
+                print("Warning!!: only %d non-train items; using 1/2 for calibration" % n_non_train)
+
             calib_items = non_train_items[:n_calib]
             test_items = non_train_items[n_calib:]
             n_test = len(test_items)
