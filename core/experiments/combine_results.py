@@ -20,6 +20,9 @@ def main():
                       help='Calibration prop: default=%default')
     parser.add_option('--base', dest='base', default='mfc',
                       help='base [mfc|amazon]: default=%default')
+    parser.add_option('--model', dest='model', default='LR',
+                      help='model type [LR|MLP]: default=%default')
+
 
     #parser.add_option('--boolarg', action="store_true", dest="boolarg", default=False,
     #                  help='Keyword argument: default=%default')
@@ -32,9 +35,10 @@ def main():
     train_prop = str(float(options.train_prop))
     calib_prop = str(float(options.calib_prop))
     base = options.base
+    model_type = options.model
 
     # basic LR f1: combining subset, label, repetitions, and pre/post date
-    basename = '*_LR_l2_' + train_prop + '_' + calib_prop + '_' + objective
+    basename = '*_' + model_type + '_l2_' + train_prop + '_' + calib_prop + '_' + objective
     if cshift is not None:
         basename += '_cshift'
     if base == 'mfc':
@@ -43,7 +47,7 @@ def main():
         basename += '_????_?'
 
     print(basename)
-    files = glob(os.path.join('projects', base, '*', 'models', basename, 'results.csv'))
+    files = glob(os.path.join('projects', base, 'climate', 'models', basename, 'results.csv'))
     files.sort()
     n_files = len(files)
 
