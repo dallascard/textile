@@ -179,6 +179,7 @@ def get_pred_for_one_model_internal(model, test_X, plot=False):
     venn_info = model._venn_info
     calib_y = venn_info[:, 0]
     calib_scores = venn_info[:, 1]
+    # TODO: check what weights I'm using here!
     calib_weights = venn_info[:, 2]
 
     for i in range(n_test):
@@ -243,10 +244,9 @@ def estimate_probs_from_labels(project_dir, full_model, model_name, labels_df, c
 
     # normalize labels to just count one each
     labels = labels_df.values.copy()
-    # weight examples by the total number of votes they have received
-    calib_weights = labels.sum(axis=1).copy()
     labels = labels / np.reshape(labels.sum(axis=1), (n_items, 1))
 
+    # weight all examples evenly, assuming that I'm using my version of IR
     if weights_df is not None and calib_items is not None:
         calib_weights = np.array(weights_df.loc[calib_items].values).reshape((n_items,))
     else:
@@ -445,10 +445,9 @@ def estimate_probs_from_labels_cv(project_dir, full_model, model_name, labels_df
 
     # normalize labels to just count one each
     labels = labels_df.values.copy()
-    # weight examples by the total number of votes they have received
-    calib_weights = labels.sum(axis=1).copy()
     labels = labels / np.reshape(labels.sum(axis=1), (n_items, 1))
 
+    # weight all examples evenly, assuming that I'm using my version of IR
     if weights_df is not None and calib_items is not None:
         calib_weights = np.array(weights_df.loc[calib_items].values).reshape((n_items,))
     else:
@@ -502,6 +501,7 @@ def estimate_probs_from_labels_cv(project_dir, full_model, model_name, labels_df
 
     #calib_scores = calib_pred_probs[:, 1]
 
+    list_of_n_levels = []
     if full_model._model_type == 'ensemble':
         props_in_range = []
 
@@ -520,6 +520,13 @@ def estimate_probs_from_labels_cv(project_dir, full_model, model_name, labels_df
             test_pred_ranges_all[model_i, :, :] = get_pred_for_one_model_cv(calib_y, calib_scores, calib_weights, plot=plot)
             scores_in_range = (calib_scores > test_pred_ranges_all[model_i, :, 0]) * (calib_scores < test_pred_ranges_all[model_i, :, 1])
             props_in_range.append(str(float(np.mean(scores_in_range))))
+
+            # fit a quick isotonic regression to the calibration data here, to see how many levels there are:
+            ir = IsotonicRegression(0, 1)
+            ir.fit(calib_scores, calib_y, calib_weights)
+            calib_pred = ir.predict(calib_scores)
+            n_levels = len(set(calib_pred))
+            list_of_n_levels.append(n_levels)
 
         geometric_means = np.zeros([n_items, 2])
         for i in range(n_items):
@@ -548,7 +555,14 @@ def estimate_probs_from_labels_cv(project_dir, full_model, model_name, labels_df
         scores_in_range = (calib_scores > test_pred_ranges[:, 0]) * (calib_scores < test_pred_ranges[:, 1])
         props_in_range = [str(float(np.mean(scores_in_range)))]
 
-    return test_pred_ranges, combo, props_in_range
+        # fit a quick isotonic regression to the calibration data here, to see how many levels there are:
+        ir = IsotonicRegression(0, 1)
+        ir.fit(calib_scores, calib_y, calib_weights)
+        calib_pred = ir.predict(calib_scores)
+        n_levels = len(set(calib_pred))
+        list_of_n_levels.append(n_levels)
+
+    return test_pred_ranges, combo, props_in_range, list_of_n_levels
 
 
 def get_pred_for_one_model_cv(calib_y, calib_scores, calib_weights, plot=0):

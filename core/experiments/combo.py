@@ -416,7 +416,7 @@ def cross_train_and_eval(project_dir, subset, field_name, config_file, calib_pro
 
                 # Venn prediction using proper calibration data
                 print("Venn calibration")
-                calib_pred_ranges, calib_preds, calib_props_in_range = ivap.estimate_probs_from_labels_cv(project_dir, model, model_name, sampled_labels_df, subset, calib_items=calib_items)
+                calib_pred_ranges, calib_preds, calib_props_in_range, list_of_n_levels = ivap.estimate_probs_from_labels_cv(project_dir, model, model_name, sampled_labels_df, subset, calib_items=calib_items)
                 print("Venn test")
                 test_pred_ranges, test_preds, test_props_in_range = ivap.estimate_probs_from_labels(project_dir, model, model_name, sampled_labels_df, subset, subset, calib_items=calib_items, test_items=test_items)
 
@@ -441,6 +441,7 @@ def cross_train_and_eval(project_dir, subset, field_name, config_file, calib_pro
 
                 fh.write_list_to_text(calib_props_in_range, os.path.join(dirs.dir_models(project_dir), model_name, 'venn_calib_props_in_range.csv'))
                 fh.write_list_to_text(test_props_in_range, os.path.join(dirs.dir_models(project_dir), model_name, 'venn_test_props_in_range.csv'))
+                fh.write_list_to_text(list_of_n_levels, os.path.join(dirs.dir_models(project_dir), model_name, 'list_of_n_levels.csv'))
                 results_df.to_csv(os.path.join(dirs.dir_models(project_dir), model_name, 'accuracy.csv'))
 
             # now train a model on the training and calibration data combined
