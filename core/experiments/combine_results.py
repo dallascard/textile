@@ -24,11 +24,11 @@ def main():
     n_files = len(files)
 
     results = fh.read_csv_to_df(files[0])
-    df = pd.DataFrame(results[['estimate', 'contains_test']].copy())
+    df = pd.DataFrame(results[['estimate', 'RMSE', 'contains_test']].copy())
 
     for f in files[1:]:
         results = fh.read_csv_to_df(f)
-        df += results[['estimate', 'contains_test']]
+        df += results[['estimate', 'RMSE', 'contains_test']]
 
     df = df / float(n_files)
 
