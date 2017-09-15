@@ -230,7 +230,7 @@ def cross_train_and_eval(project_dir, subset, field_name, config_file, n_calib=0
         print("Starting repeats")
         # repeat the following process multiple times with different random splits of train / calibration / test data
         for r in range(repeats):
-
+            print("* Repetition %d *" % r)
             # next, take a random subset of the training data (and ignore the rest), to simulate fewer annotated items
             if train_prop < 1.0:
                 np.random.shuffle(train_items)
