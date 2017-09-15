@@ -519,7 +519,7 @@ def estimate_probs_from_labels_cv(project_dir, full_model, model_name, labels_df
             # check how many of the scores are in the resulting ranges
             test_pred_ranges_all[model_i, :, :] = get_pred_for_one_model_cv(calib_y, calib_scores, calib_weights, plot=plot)
             scores_in_range = (calib_scores > test_pred_ranges_all[model_i, :, 0]) * (calib_scores < test_pred_ranges_all[model_i, :, 1])
-            props_in_range.append(str(float(np.mean(scores_in_range))))
+            props_in_range.append(str(np.mean(scores_in_range)))
 
             # fit a quick isotonic regression to the calibration data here, to see how many levels there are:
             ir = IsotonicRegression(0, 1)
