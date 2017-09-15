@@ -108,7 +108,6 @@ def train_model_with_labels(project_dir, model_type, loss, model_name, subset, l
         weights = np.array(weights_df.loc[items_to_use].values).reshape(n_items,)
     else:
         weights = np.ones(n_items)
-    print("weights shape", weights.shape)
 
     printv("loading features", verbose)
     feature_list = []
