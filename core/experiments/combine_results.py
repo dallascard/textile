@@ -19,7 +19,7 @@ def main():
     (options, args) = parser.parse_args()
 
     # basic LR f1: combining subset, label, repetitions, and pre/post date
-    files = glob(os.path.join('projects', 'mfc', '*', '*_year_group_LR_l2_0.9_0.1_f1_*', 'results.csv'))
+    files = glob(os.path.join('projects', 'mfc', 'samesex', '*_year_group_LR_l2_0.9_0.1_f1_*', 'results.csv'))
     files.sort()
     n_files = len(files)
 
