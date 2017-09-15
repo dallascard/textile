@@ -31,15 +31,19 @@ def main():
     cshift = options.cshift
     train_prop = str(float(options.train_prop))
     calib_prop = str(float(options.calib_prop))
+    base = options.base
 
     # basic LR f1: combining subset, label, repetitions, and pre/post date
     basename = '*_LR_l2_' + train_prop + '_' + calib_prop + '_' + objective
     if cshift is not None:
         basename += '_cshift'
-    basename += '_*_????_?'
+    if base == 'mfc':
+        basename += '_*_????_?'
+    elif base == 'amazon':
+        basename += '_????_?'
 
     print(basename)
-    files = glob(os.path.join('projects', 'mfc', '*', 'models', basename, 'results.csv'))
+    files = glob(os.path.join('projects', base, '*', 'models', basename, 'results.csv'))
     files.sort()
     n_files = len(files)
 
