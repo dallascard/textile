@@ -57,7 +57,7 @@ def evaluate_predictions(labels_df, predictions_df, pred_probs_df=None, pos_labe
     assert np.all(labels_df.index == predictions_df.index)
     n_items, n_classes = labels_df.shape
     labels = labels_df.values
-    print(predictions_df.shape)
+    #print(predictions_df.shape)
     predictions = predictions_df.values.reshape((n_items,))
 
     if pred_probs_df is None:
