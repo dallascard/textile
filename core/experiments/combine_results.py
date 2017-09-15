@@ -22,6 +22,8 @@ def main():
                       help='base [mfc|amazon]: default=%default')
     parser.add_option('--model', dest='model', default='LR',
                       help='model type [LR|MLP]: default=%default')
+    parser.add_option('--dh', dest='dh', default=100,
+                      help='Hidden dimension for MLP: default=%default')
 
 
     #parser.add_option('--boolarg', action="store_true", dest="boolarg", default=False,
@@ -36,9 +38,13 @@ def main():
     calib_prop = str(float(options.calib_prop))
     base = options.base
     model_type = options.model
+    dh = str(int(options.dh))
 
     # basic LR f1: combining subset, label, repetitions, and pre/post date
-    basename = '*_' + model_type + '_l2_' + train_prop + '_' + calib_prop + '_' + objective
+    basename = '*_' + model_type
+    if model_type == 'MLP':
+        basename += '_' + dh
+    basename += '_l2_' + train_prop + '_' + calib_prop + '_' + objective
     if cshift is not None:
         basename += '_cshift'
     if base == 'mfc':
