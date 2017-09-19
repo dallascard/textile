@@ -76,6 +76,7 @@ def main():
     n_train = []
     CC_nontrain = []
     PCC_nontrain = []
+    n_train_means = []
     CC_means = []
     PCC_means = []
     for t in train_props:
@@ -114,7 +115,7 @@ def main():
 
         mean_df = mean_df / float(n_files)
 
-        n_train.append(float(t))
+        n_train_means.append(float(t))
         CC_means.append(mean_df.loc['CC_nontrain', 'RMSE'])
         PCC_means.append(mean_df.loc['PCC_nontrain', 'RMSE'])
 
@@ -123,8 +124,8 @@ def main():
     print(PCC_nontrain)
     plt.scatter(n_train, CC_nontrain)
     plt.scatter(n_train, PCC_nontrain)
-    plt.scatter(n_train, CC_means)
-    plt.scatter(n_train, PCC_means)
+    plt.scatter(n_train_means, CC_means)
+    plt.scatter(n_train_means, PCC_means)
     plt.savefig('test.pdf')
     #plt.show()
 
