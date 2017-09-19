@@ -20,6 +20,8 @@ def main():
                       help='base [mfc|amazon]: default=%default')
     parser.add_option('--subset', dest='subset', default='*',
                       help='Subset of base (e.g. immigration: default=%default')
+    parser.add_option('--label', dest='label', default='*',
+                      help='Label (e.g. Economic: default=%default')
     #parser.add_option('--partition', dest='partition', default='*',
     #                  help='Partition for mfc (e.g. pre: default=%default')
     parser.add_option('--model', dest='model', default='LR',
@@ -41,12 +43,13 @@ def main():
     calib_prop = str(float(options.calib_prop))
     base = options.base
     subset = options.subset
+    label = options.label
     model_type = options.model
     dh = str(int(options.dh))
 
     # basic LR f1: combining subset, label, repetitions, and pre/post date
     #basename = '*_' + model_type
-    basename = 'pro_tone_*_' + model_type + '_l2'
+    basename = '*_' + label + '_' + model_type + '_l2'
     if model_type == 'MLP':
         basename += '_' + dh
     basename += '_' + train_prop + '_' + calib_prop + '_' + objective
