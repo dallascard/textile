@@ -57,7 +57,9 @@ def main():
         basename += '_????_?'
 
     print(basename)
-    files = glob(os.path.join('projects', base, '*', 'models', basename, 'results.csv'))
+    search_string = os.path.join('projects', base, '*', 'models', basename, 'results.csv')
+    print(search_string)
+    files = glob(search_string)
     files.sort()
     n_files = len(files)
 
