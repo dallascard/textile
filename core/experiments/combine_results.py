@@ -40,7 +40,7 @@ def main():
     objective = options.objective
     cshift = options.cshift
     train_prop = str(float(options.train_prop))
-    calib_prop = str(float(options.calib_prop))
+    n_calib = str(int(options.n_calib))
     base = options.base
     subset = options.subset
     label = options.label
@@ -52,7 +52,7 @@ def main():
     basename = '*_' + label + '_' + model_type + '_l2'
     if model_type == 'MLP':
         basename += '_' + dh
-    basename += '_' + train_prop + '_' + calib_prop + '_' + objective
+    basename += '_' + train_prop + '_' + n_calib + '_' + objective
     if cshift is not None:
         basename += '_cshift'
     if base == 'mfc':
