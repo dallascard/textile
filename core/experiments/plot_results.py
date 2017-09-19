@@ -103,14 +103,13 @@ def main():
         for f in files[1:]:
             print(f)
             results = fh.read_csv_to_df(f)
-            df += results[['N', 'estimate', 'RMSE', 'contains_test']]
+            #df += results[['N', 'estimate', 'RMSE', 'contains_test']]
+            df = results[['N', 'estimate', 'RMSE', 'contains_test']]
             n_train.append(float(t))
             CC_nontrain.append(df.loc['CC_nontrain', 'RMSE'])
             PCC_nontrain.append(df.loc['PCC_nontrain', 'RMSE'])
-            if df.loc['CC_nontrain', 'RMSE'] > 1.0:
-                print(df)
 
-        df = df / float(n_files)
+        #df = df / float(n_files)
 
         #n_train.append(df.loc['train', 'N'])
         #CC_nontrain.append(df.loc['CC_nontrain', 'RMSE'])
