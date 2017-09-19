@@ -119,7 +119,7 @@ def main():
         mean_df = mean_df / float(n_files)
 
         #n_train_means.append(float(t))
-        n_train_means.append(df.loc['train', 'N'])
+        n_train_means.append(mean_df.loc['train', 'N'])
         CC_means.append(mean_df.loc['CC_nontrain', 'RMSE'])
         PCC_means.append(mean_df.loc['PCC_nontrain', 'RMSE'])
 
@@ -130,7 +130,7 @@ def main():
     plt.scatter(n_train, PCC_nontrain, alpha=0.5)
     plt.scatter(n_train_means, CC_means)
     plt.scatter(n_train_means, PCC_means, alpha=0.5)
-    plt.plot(np.array(n_train_means), np.array(PCC_means), alpha=0.5, label=objective)
+    #plt.plot(np.array(n_train_means), np.array(PCC_means), alpha=0.5, label=objective)
     plt.legend()
     plt.savefig('test.pdf')
     #plt.show()
