@@ -18,6 +18,10 @@ def main():
                       help='Calibration prop: default=%default')
     parser.add_option('--base', dest='base', default='mfc',
                       help='base [mfc|amazon]: default=%default')
+    parser.add_option('--subset', dest='subset', default='*',
+                      help='Subset of base (e.g. immigration: default=%default')
+    #parser.add_option('--partition', dest='partition', default='*',
+    #                  help='Partition for mfc (e.g. pre: default=%default')
     parser.add_option('--model', dest='model', default='LR',
                       help='model type [LR|MLP]: default=%default')
     parser.add_option('--objective', dest='objective', default='f1',
@@ -36,6 +40,7 @@ def main():
     train_prop = str(float(options.train_prop))
     calib_prop = str(float(options.calib_prop))
     base = options.base
+    subset = options.subset
     model_type = options.model
     dh = str(int(options.dh))
 
@@ -48,12 +53,12 @@ def main():
     if cshift is not None:
         basename += '_cshift'
     if base == 'mfc':
-        basename += '_*_????_?'
+        basename += '_???_????_?'
     elif base == 'amazon':
         basename += '_????_?'
 
     print(basename)
-    files = glob(os.path.join('projects', base, '*', 'models', basename, 'results.csv'))
+    files = glob(os.path.join('projects', base, subset, 'models', basename, 'results.csv'))
     files.sort()
     n_files = len(files)
 
