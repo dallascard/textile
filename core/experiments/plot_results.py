@@ -89,7 +89,7 @@ def main():
         if cshift is not None:
             basename += '_cshift'
         if base == 'mfc':
-            basename += '_*_????_?'
+            basename += '_???_????_?'
         elif base == 'amazon':
             basename += '_????_?'
 
@@ -120,7 +120,7 @@ def main():
         mean_df = mean_df / float(n_files)
 
         #n_train_means.append(float(t))
-        n_train.append(df.loc['train', 'N'])
+        n_train_means.append(df.loc['train', 'N'])
         CC_means.append(mean_df.loc['CC_nontrain', 'RMSE'])
         PCC_means.append(mean_df.loc['PCC_nontrain', 'RMSE'])
 
