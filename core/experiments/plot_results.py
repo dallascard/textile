@@ -59,7 +59,7 @@ def main():
         basename += '_????_?'
 
     print(basename)
-    search_string = os.path.join('projects', base, '*', 'models', basename, 'results.csv')
+    search_string = os.path.join('projects', base, 'samesex', 'models', basename, 'results.csv')
     print(search_string)
     files = glob(search_string)
     files.sort()
