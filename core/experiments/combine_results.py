@@ -14,8 +14,8 @@ def main():
                       help='cshift [None|classify]: default=%default')
     parser.add_option('-t', dest='train_prop', default=0.9,
                       help='Train prop: default=%default')
-    parser.add_option('-p', dest='calib_prop', default=0.1,
-                      help='Calibration prop: default=%default')
+    parser.add_option('--n_calib', dest='n_calib', default=100,
+                      help='Number of calibration instances: default=%default')
     parser.add_option('--base', dest='base', default='mfc',
                       help='base [mfc|amazon]: default=%default')
     parser.add_option('--subset', dest='subset', default='*',
