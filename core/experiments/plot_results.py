@@ -76,6 +76,8 @@ def main():
     n_train = []
     CC_nontrain = []
     PCC_nontrain = []
+    CC_means = []
+    PCC_means = []
     for t in train_props:
         basename = '*_' + model_type + '_' + penalty
         if model_type == 'MLP':
@@ -96,6 +98,7 @@ def main():
         print(files[0])
         results = fh.read_csv_to_df(files[0])
         df = pd.DataFrame(results[['N', 'estimate', 'RMSE', 'contains_test']].copy())
+        mean_df = pd.DataFrame(results[['N', 'estimate', 'RMSE', 'contains_test']].copy())
         n_train.append(float(t))
         CC_nontrain.append(df.loc['CC_nontrain', 'RMSE'])
         PCC_nontrain.append(df.loc['PCC_nontrain', 'RMSE'])
@@ -103,23 +106,25 @@ def main():
         for f in files[1:]:
             print(f)
             results = fh.read_csv_to_df(f)
-            #df += results[['N', 'estimate', 'RMSE', 'contains_test']]
             df = results[['N', 'estimate', 'RMSE', 'contains_test']]
+            mean_df += results[['N', 'estimate', 'RMSE', 'contains_test']]
             n_train.append(float(t))
             CC_nontrain.append(df.loc['CC_nontrain', 'RMSE'])
             PCC_nontrain.append(df.loc['PCC_nontrain', 'RMSE'])
 
-        #df = df / float(n_files)
+        mean_df = mean_df / float(n_files)
 
-        #n_train.append(df.loc['train', 'N'])
-        #CC_nontrain.append(df.loc['CC_nontrain', 'RMSE'])
-        #PCC_nontrain.append(df.loc['PCC_nontrain', 'RMSE'])
+        n_train.append(float(t))
+        CC_means.append(mean_df.loc['CC_nontrain', 'RMSE'])
+        PCC_means.append(mean_df.loc['PCC_nontrain', 'RMSE'])
 
     print(n_train)
     print(CC_nontrain)
     print(PCC_nontrain)
     plt.scatter(n_train, CC_nontrain)
     plt.scatter(n_train, PCC_nontrain)
+    plt.scatter(n_train, CC_means)
+    plt.scatter(n_train, PCC_means)
     plt.savefig('test.pdf')
     #plt.show()
 
