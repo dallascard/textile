@@ -14,14 +14,12 @@ from ..util import file_handling as fh
 def main():
     usage = "%prog "
     parser = OptionParser(usage=usage)
-    parser.add_option('--cshift', dest='cshift', default=None,
-                      help='cshift [None|classify]: default=%default')
-    #parser.add_option('-t', dest='train_prop', default=0.9,
-    #                  help='Train prop: default=%default')
     parser.add_option('--n_calib', dest='n_calib', default=100,
                       help='Number of calibration items used: default=%default')
     parser.add_option('--base', dest='base', default='mfc',
                       help='base [mfc|amazon]: default=%default')
+    parser.add_option('--subset', dest='subset', default='*',
+                      help='Restrict to a single subset (e.g. immigration): default=%default')
     parser.add_option('--model', dest='model', default='LR',
                       help='model type [LR|MLP]: default=%default')
     parser.add_option('--penalty', dest='penalty', default='l2',
@@ -30,6 +28,8 @@ def main():
                       help='objective [f1|calibration]: default=%default')
     parser.add_option('--dh', dest='dh', default=100,
                       help='Hidden dimension for MLP: default=%default')
+    parser.add_option('--cshift', dest='cshift', default=None,
+                      help='cshift [None|classify]: default=%default')
 
     (options, args) = parser.parse_args()
 
@@ -38,6 +38,7 @@ def main():
     #n_calib = str(int(options.n_calib))
     n_calib = str(int(options.n_calib))
     base = options.base
+    subset = options.subset
     model_type = options.model
     penalty = options.penalty
     dh = str(int(options.dh))
@@ -59,7 +60,7 @@ def main():
         basename += '_????_?'
 
     print(basename)
-    search_string = os.path.join('projects', base, 'samesex', 'models', basename, 'results.csv')
+    search_string = os.path.join('projects', base, subset, 'models', basename, 'results.csv')
     print(search_string)
     files = glob(search_string)
     files.sort()
@@ -94,7 +95,7 @@ def main():
             basename += '_????_?'
 
         print(basename)
-        files = glob(os.path.join('projects', base, '*', 'models', basename, 'results.csv'))
+        files = glob(os.path.join('projects', base, subset, 'models', basename, 'results.csv'))
         files.sort()
         n_files = len(files)
 
