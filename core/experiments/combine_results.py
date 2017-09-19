@@ -10,8 +10,6 @@ from ..util import file_handling as fh
 def main():
     usage = "%prog"
     parser = OptionParser(usage=usage)
-    parser.add_option('--objective', dest='objective', default='f1',
-                      help='Objective [f1|calibration]: default=%default')
     parser.add_option('--cshift', dest='cshift', default=None,
                       help='cshift [None|classify]: default=%default')
     parser.add_option('-t', dest='train_prop', default=0.9,
@@ -22,13 +20,14 @@ def main():
                       help='base [mfc|amazon]: default=%default')
     parser.add_option('--model', dest='model', default='LR',
                       help='model type [LR|MLP]: default=%default')
+    parser.add_option('--objective', dest='objective', default='f1',
+                      help='objective [f1|calibration]: default=%default')
     parser.add_option('--dh', dest='dh', default=100,
                       help='Hidden dimension for MLP: default=%default')
 
 
     #parser.add_option('--boolarg', action="store_true", dest="boolarg", default=False,
     #                  help='Keyword argument: default=%default')
-
 
     (options, args) = parser.parse_args()
 
@@ -54,7 +53,7 @@ def main():
         basename += '_????_?'
 
     print(basename)
-    files = glob(os.path.join('projects', base, 'climate', 'models', basename, 'results.csv'))
+    files = glob(os.path.join('projects', base, '*', 'models', basename, 'results.csv'))
     files.sort()
     n_files = len(files)
 
