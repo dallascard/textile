@@ -119,13 +119,13 @@ def main():
         CC_means.append(mean_df.loc['CC_nontrain', 'RMSE'])
         PCC_means.append(mean_df.loc['PCC_nontrain', 'RMSE'])
 
-    print(n_train)
-    print(CC_nontrain)
-    print(PCC_nontrain)
     plt.scatter(n_train, CC_nontrain)
     plt.scatter(n_train, PCC_nontrain)
     plt.scatter(n_train_means, CC_means)
     plt.scatter(n_train_means, PCC_means)
+    print(n_train_means)
+    print(CC_means)
+    print(PCC_means)
     plt.savefig('test.pdf')
     #plt.show()
 
