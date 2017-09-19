@@ -70,7 +70,7 @@ def main():
         print(match.group(1))
         train_props.append(match.group(1))
 
-    train_props = set(train_props)
+    train_props = list(set(train_props))
     print(train_props)
 
     n_train = []
@@ -96,23 +96,23 @@ def main():
         print(files[0])
         results = fh.read_csv_to_df(files[0])
         df = pd.DataFrame(results[['N', 'estimate', 'RMSE', 'contains_test']].copy())
-        #n_train.append(df.loc['train', 'N'])
-        #CC_nontrain.append(df.loc['CC_nontrain', 'RMSE'])
-        #PCC_nontrain.append(df.loc['PCC_nontrain', 'RMSE'])
+        n_train.append(float(t))
+        CC_nontrain.append(df.loc['CC_nontrain', 'RMSE'])
+        PCC_nontrain.append(df.loc['PCC_nontrain', 'RMSE'])
 
         for f in files[1:]:
             print(f)
             results = fh.read_csv_to_df(f)
             df += results[['N', 'estimate', 'RMSE', 'contains_test']]
-            #n_train.append(df.loc['train', 'N'])
-            #CC_nontrain.append(df.loc['CC_nontrain', 'RMSE'])
-            #PCC_nontrain.append(df.loc['PCC_nontrain', 'RMSE'])
+            n_train.append(float(t))
+            CC_nontrain.append(df.loc['CC_nontrain', 'RMSE'])
+            PCC_nontrain.append(df.loc['PCC_nontrain', 'RMSE'])
 
         df = df / float(n_files)
 
-        n_train.append(df.loc['train', 'N'])
-        CC_nontrain.append(df.loc['CC_nontrain', 'RMSE'])
-        PCC_nontrain.append(df.loc['PCC_nontrain', 'RMSE'])
+        #n_train.append(df.loc['train', 'N'])
+        #CC_nontrain.append(df.loc['CC_nontrain', 'RMSE'])
+        #PCC_nontrain.append(df.loc['PCC_nontrain', 'RMSE'])
 
     print(n_train)
     print(CC_nontrain)
