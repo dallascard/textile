@@ -78,6 +78,23 @@ def main():
 
     print(df)
 
+    # repeat for accuracy / f1
+    files = glob(os.path.join('projects', base, subset, 'models', basename, 'accuracy.csv'))
+    files.sort()
+    n_files = len(files)
+
+    print(files[0])
+    results = fh.read_csv_to_df(files[0])
+    df = results.copy()
+
+    for f in files[1:]:
+        print(f)
+        results = fh.read_csv_to_df(f)
+        df += results
+
+    df = df / float(n_files)
+    print(df)
+
 
 if __name__ == '__main__':
     main()
