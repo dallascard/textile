@@ -125,7 +125,7 @@ def main():
         print(CC_means)
         print(PCC_means)
         #plt.scatter(n_train, CC_nontrain)
-        plt.scatter(n_train, PCC_nontrain, alpha=-0.5)
+        plt.scatter(n_train, PCC_nontrain, alpha=0.5)
         #plt.scatter(n_train_means, CC_means)
         plt.scatter(n_train_means, PCC_means, alpha=0.5)
         plt.plot(np.array(n_train_means), np.array(PCC_means), alpha=0.5, label=objective)
