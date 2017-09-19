@@ -49,7 +49,7 @@ def main():
 
     # basic LR f1: combining subset, label, repetitions, and pre/post date
     #basename = '*_' + model_type
-    basename = '*_' + label + '_' + model_type + '_l2'
+    basename = '*_' + label + '_*_' + model_type + '_l2'
     if model_type == 'MLP':
         basename += '_' + dh
     basename += '_' + train_prop + '_' + n_calib + '_' + objective
