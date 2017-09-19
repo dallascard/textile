@@ -3,6 +3,7 @@ import re
 from glob import glob
 from optparse import OptionParser
 
+import numpy as np
 import pandas as pd
 import matplotlib.pyplot as plt
 
@@ -77,9 +78,9 @@ def main():
         n_train = []
         CC_nontrain = []
         PCC_nontrain = []
-        n_train_means = []
-        CC_means = []
-        PCC_means = []
+        n_train_means = [0]
+        CC_means = [0]
+        PCC_means = [0]
         for t in train_props:
             basename = '*_' + model_type + '_' + penalty
             if model_type == 'MLP':
@@ -127,7 +128,7 @@ def main():
         plt.scatter(n_train, PCC_nontrain, alpha=-0.5)
         #plt.scatter(n_train_means, CC_means)
         plt.scatter(n_train_means, PCC_means, alpha=0.5)
-        plt.plot(n_train_means, PCC_means, alpha=0.5, label=objective)
+        plt.plot(np.array(n_train_means), np.array(PCC_means), alpha=0.5, label=objective)
     plt.legend()
     plt.savefig('test.pdf')
     #plt.show()
