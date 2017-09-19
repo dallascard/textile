@@ -68,9 +68,7 @@ def main():
 
     train_props = []
     for f in files:
-        print(f)
         match = re.match(r'.*' + penalty + r'_([0-9]+\.[0-9]+)_.*', f)
-        print(match.group(1))
         train_props.append(match.group(1))
 
     train_props = list(set(train_props))
