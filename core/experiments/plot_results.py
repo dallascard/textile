@@ -17,7 +17,7 @@ def main():
                       help='cshift [None|classify]: default=%default')
     #parser.add_option('-t', dest='train_prop', default=0.9,
     #                  help='Train prop: default=%default')
-    parser.add_option('--n_calib', dest='n_calib', default=0.1,
+    parser.add_option('--n_calib', dest='n_calib', default=100,
                       help='Number of calibration items used: default=%default')
     parser.add_option('--base', dest='base', default='mfc',
                       help='base [mfc|amazon]: default=%default')
@@ -35,7 +35,7 @@ def main():
     objective = options.objective
     cshift = options.cshift
     #n_calib = str(int(options.n_calib))
-    n_calib = str(float(options.n_calib))
+    n_calib = str(int(options.n_calib))
     base = options.base
     model_type = options.model
     penalty = options.penalty
