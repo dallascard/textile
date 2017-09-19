@@ -74,7 +74,7 @@ def main():
     CC_nontrain = []
     PCC_nontrain = []
     for t in train_props:
-        basename = 'pro_tone_*_' + model_type + '_l2'
+        basename = '*_' + model_type + '_' + penalty
         if model_type == 'MLP':
             basename += '_' + dh
         basename += '_' + t + '_' + n_calib + '_' + objective
