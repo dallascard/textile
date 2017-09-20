@@ -318,14 +318,16 @@ def cross_train_and_eval(project_dir, subset, field_name, config_file, n_calib=0
                 f1_cal, acc_cal = evaluate_predictions.evaluate_predictions(calib_labels_df, calib_predictions_df, calib_pred_probs_df, pos_label=pos_label, average=average, verbose=False)
                 true_calib_vector = np.argmax(calib_labels_df.as_matrix(), axis=1)
                 calib_cal_rmse = evaluation.evaluate_calibration_rmse(true_calib_vector, calib_pred_probs_df.as_matrix())
-                results_df.loc['calibration'] = [f1_cal, acc_cal, calib_cal_rmse, calib_rmse]
+                calib_cal_rmse_overall = evaluation.evaluate_calibration_rmse(true_calib_vector, calib_pred_probs_df.as_matrix(), min_bins=1, max_bins=1)
+                results_df.loc['calibration'] = [f1_cal, acc_cal, calib_cal_rmse, calib_cal_rmse_overall]
 
             # predict on test data
             test_predictions_df, test_pred_probs_df, test_pred_proportions = predict.predict(project_dir, model, model_name, subset, label, items_to_use=test_items, verbose=verbose)
             f1_test, acc_test = evaluate_predictions.evaluate_predictions(test_labels_df, test_predictions_df, test_pred_probs_df, pos_label=pos_label, average=average)
             true_test_vector = np.argmax(test_labels_df.as_matrix(), axis=1)
             test_cal_rmse = evaluation.evaluate_calibration_rmse(true_test_vector, test_pred_probs_df.as_matrix())
-            results_df.loc['test'] = [f1_test, acc_test, test_cal_rmse]
+            test_cal_rmse_overall = evaluation.evaluate_calibration_rmse(true_test_vector, test_pred_probs_df.as_matrix(), min_bins=1, max_bins=1)
+            results_df.loc['test'] = [f1_test, acc_test, test_cal_rmse, test_cal_rmse_overall]
             test_cc_estimate, test_pcc_estimate, test_acc_estimate_internal, test_pvc_estimate_internal = test_pred_proportions
 
             # predict on calibration and test data combined
