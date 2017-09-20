@@ -180,10 +180,11 @@ def train_model_with_labels(project_dir, model_type, loss, model_name, subset, l
     mean_train_f1s = np.zeros(n_alphas)
     mean_dev_f1s = np.zeros(n_alphas)
     mean_dev_acc = np.zeros(n_alphas)
-    mean_dev_cal = np.zeros(n_alphas)
+    mean_dev_cal = np.zeros(n_alphas)  # track the calibration across the range of probabilities (using bins)
+    mean_dev_cal_overall = np.zeros(n_alphas)  # track the calibration overall
     mean_model_size = np.zeros(n_alphas)
 
-    print("%s\t%s\t%s\t%s\t%s\t%s\t%s" % ('iter', 'alpha', 'size', 'f1_trn', 'f1_dev', 'acc_dev', 'dev_cal'))
+    print("%s\t%s\t%s\t%s\t%s\t%s\t%s\t%s" % ('iter', 'alpha', 'size', 'f1_trn', 'f1_dev', 'acc_dev', 'dev_cal', 'dev_cal_overall'))
 
     model = None
     model_ensemble = None
@@ -233,20 +234,18 @@ def train_model_with_labels(project_dir, model_type, loss, model_name, subset, l
                 dev_acc = evaluation.acc_score(y_dev_vector, dev_predictions, n_classes, weights=w_dev)
                 dev_proportions = evaluation.compute_proportions(Y_dev, w_dev)
                 pred_proportions = evaluation.compute_proportions(dev_pred_probs, w_dev)
-                #dev_cal_rmse = evaluation.eval_proportions_mse(dev_proportions, pred_proportions)
-                dev_cal_rmse = evaluation.evaluate_calibration_mse(y_dev_vector, dev_pred_probs)
+                dev_cal_rmse_overall = evaluation.eval_proportions_rmse(dev_proportions, pred_proportions)
+                dev_cal_rmse = evaluation.evaluate_calibration_rmse(y_dev_vector, dev_pred_probs)
 
                 mean_train_f1s[alpha_i] += train_f1 / float(n_dev_folds)
                 mean_dev_f1s[alpha_i] += dev_f1 / float(n_dev_folds)
                 mean_dev_acc[alpha_i] += dev_acc / float(n_dev_folds)
                 mean_dev_cal[alpha_i] += dev_cal_rmse / float(n_dev_folds)
+                mean_dev_cal_overall[alpha_i] += dev_cal_rmse_overall / float(n_dev_folds)
                 mean_model_size[alpha_i] += model.get_model_size() / float(n_dev_folds)
                 fold += 1
 
-            print("%d\t%0.2f\t%.1f\t%0.3f\t%0.3f\t%0.3f\t%0.3f" % (alpha_i, alpha, mean_model_size[alpha_i], mean_train_f1s[alpha_i], mean_dev_f1s[alpha_i], mean_dev_acc[alpha_i], mean_dev_cal[alpha_i]))
-
-            #acc_cfms.append(np.mean(alpha_acc_cfms, axis=0))
-            #pvc_cfms.append(np.mean(alpha_pvc_cfms, axis=0))
+            print("%d\t%0.2f\t%.1f\t%0.3f\t%0.3f\t%0.3f\t%0.3f\t%0.3f" % (alpha_i, alpha, mean_model_size[alpha_i], mean_train_f1s[alpha_i], mean_dev_f1s[alpha_i], mean_dev_acc[alpha_i], mean_dev_cal[alpha_i], mean_dev_cal_overall[alpha_i]))
 
         if objective == 'f1':
             best_alpha_index = mean_dev_f1s.argmax()
@@ -260,7 +259,8 @@ def train_model_with_labels(project_dir, model_type, loss, model_name, subset, l
         best_dev_f1 = mean_dev_f1s[best_alpha_index]
         best_dev_acc = mean_dev_acc[best_alpha_index]
         best_dev_cal = mean_dev_cal[best_alpha_index]
-        print("Best: alpha = %.3f, dev f1 = %.3f, dev cal = %.3f" % (best_alpha, best_dev_f1, best_dev_cal))
+        best_dev_cal_overall = mean_dev_cal_overall[best_alpha_index]
+        print("Best: alpha = %.3f, dev f1 = %.3f, dev cal = %.3f, dev cal overall = %0.3f" % (best_alpha, best_dev_f1, best_dev_cal, best_dev_cal_overall))
 
         best_models = alpha_models[best_alpha]
         print("Number of best models = %d" % len(best_models))
@@ -300,6 +300,7 @@ def train_model_with_labels(project_dir, model_type, loss, model_name, subset, l
         best_dev_f1 = 0.0
         best_dev_acc = 0.0
         best_dev_cal = 0.0
+        best_dev_cal_overall = 0.0
         for train_indices, dev_indices in kfold.split(X):
             print("Starting fold %d" % fold)
             name = model_name + '_' + str(fold)
@@ -326,12 +327,13 @@ def train_model_with_labels(project_dir, model_type, loss, model_name, subset, l
             dev_acc = evaluation.acc_score(y_dev_vector, dev_predictions, n_classes, weights=w_dev)
             dev_proportions = evaluation.compute_proportions(Y_dev, w_dev)
             pred_proportions = evaluation.compute_proportions(dev_pred_probs, w_dev)
-            #dev_cal_rmse = evaluation.eval_proportions_mse(dev_proportions, pred_proportions)
-            dev_cal_rmse = evaluation.evaluate_calibration_mse(y_dev_vector, dev_pred_probs)
+            dev_cal_rmse_overall = evaluation.eval_proportions_rmse(dev_proportions, pred_proportions)
+            dev_cal_rmse = evaluation.evaluate_calibration_rmse(y_dev_vector, dev_pred_probs)
 
             best_dev_f1 += dev_f1 / float(n_dev_folds)
             best_dev_acc += dev_acc / float(n_dev_folds)
             best_dev_cal += dev_cal_rmse / float(n_dev_folds)
+            best_dev_cal_overall += dev_cal_rmse_overall / float(n_dev_folds)
 
             #acc_cfm = calibration.compute_acc(y_dev_vector, dev_predictions, n_classes, weights=w_dev)
             #pvc_cfm = calibration.compute_pvc(y_dev_vector, dev_predictions, n_classes, weights=w_dev)
@@ -371,7 +373,7 @@ def train_model_with_labels(project_dir, model_type, loss, model_name, subset, l
         best_pvc_cfm = None
     """
 
-    return full_model, best_dev_f1, best_dev_acc, best_dev_cal
+    return full_model, best_dev_f1, best_dev_acc, best_dev_cal, best_dev_cal_overall
 
 
 def prepare_data(X, Y, weights=None, predictions=None, loss='log'):

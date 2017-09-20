@@ -62,7 +62,7 @@ def evaluate_proportions_mse(labels, predictions, n_classes, weights=None, verbo
 """
 
 
-def evaluate_calibration_mse_bins(true_labels, pred_probs, n_bins=5):
+def evaluate_calibration_rmse_bins(true_labels, pred_probs, n_bins=5):
     n_items, n_classes = pred_probs.shape
     if n_items < n_bins:
         n_bins = n_items
@@ -82,13 +82,13 @@ def evaluate_calibration_mse_bins(true_labels, pred_probs, n_bins=5):
             mse = (mean_bin_labels - mean_bin_probs)**2
             mse_sum += mse
 
-    mse = np.sqrt(mse_sum/float(n_bins)/float(n_classes))
+    rmse = np.sqrt(mse_sum/float(n_bins)/float(n_classes))
 
-    return mse
+    return rmse
 
 
-def evaluate_calibration_mse(true_labels, pred_probs, min_bins=3, max_bins=5):
-    return np.mean([evaluate_calibration_mse_bins(true_labels, pred_probs, n_bins) for n_bins in range(min_bins, max_bins+1)])
+def evaluate_calibration_rmse(true_labels, pred_probs, min_bins=3, max_bins=5):
+    return np.mean([evaluate_calibration_rmse_bins(true_labels, pred_probs, n_bins) for n_bins in range(min_bins, max_bins+1)])
 
 
 def mean_mae(true_props, pred_props):
@@ -99,7 +99,7 @@ def eval_proportions(true_probs, pred_probs, metric):
     if metric == 'kld':
         eval_func = eval_proportions_kld
     elif metric == 'mse':
-        eval_func = eval_proportions_mse
+        eval_func = eval_proportions_rmse
     elif metric == 'mae':
         eval_func = eval_proportions_mae
     else:
@@ -107,7 +107,7 @@ def eval_proportions(true_probs, pred_probs, metric):
     return eval_func(true_probs, pred_probs)
 
 
-def eval_proportions_mse(true_props, pred_props):
+def eval_proportions_rmse(true_props, pred_props):
     return np.sqrt(np.mean((np.array(true_props) - np.array(pred_props))**2))
 
 
