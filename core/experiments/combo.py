@@ -304,7 +304,7 @@ def cross_train_and_eval(project_dir, subset, field_name, config_file, n_calib=0
                 calib_contains_test = target_estimate > calib_estimate - 2 * calib_std and calib_estimate < calib_estimate + 2 * calib_std
                 output_df.loc['calibration'] = [n_calib, 'calibration', 'nontrain', 'given', calib_estimate, calib_rmse, calib_estimate - 2 * calib_std, calib_estimate + 2 * calib_std, calib_contains_test]
 
-            results_df = pd.DataFrame([], columns=['f1', 'acc', 'calibration', 'calib rmse'])
+            results_df = pd.DataFrame([], columns=['f1', 'acc', 'calibration', 'calib overall'])
 
             # Now train a model on the training data, saving the calibration data for calibration
             print("Training model on training data only")
@@ -318,7 +318,7 @@ def cross_train_and_eval(project_dir, subset, field_name, config_file, n_calib=0
                 f1_cal, acc_cal = evaluate_predictions.evaluate_predictions(calib_labels_df, calib_predictions_df, calib_pred_probs_df, pos_label=pos_label, average=average, verbose=False)
                 true_calib_vector = np.argmax(calib_labels_df.as_matrix(), axis=1)
                 calib_cal_rmse = evaluation.evaluate_calibration_rmse(true_calib_vector, calib_pred_probs_df.as_matrix())
-                results_df.loc['calibration'] = [f1_cal, acc_cal, calib_cal_rmse]
+                results_df.loc['calibration'] = [f1_cal, acc_cal, calib_cal_rmse, calib_rmse]
 
             # predict on test data
             test_predictions_df, test_pred_probs_df, test_pred_proportions = predict.predict(project_dir, model, model_name, subset, label, items_to_use=test_items, verbose=verbose)
