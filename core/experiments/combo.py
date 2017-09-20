@@ -7,8 +7,9 @@ import pandas as pd
 from core.util import file_handling as fh
 from core.preprocessing import features
 from core.main import train, predict, evaluate_predictions
-from core.models import calibration, ivap
+from core.models import calibration, ivap, evaluation
 from core.util import dirs
+
 
 
 
@@ -187,7 +188,7 @@ def cross_train_and_eval(project_dir, subset, field_name, config_file, n_calib=0
             train_test_labels_df = pd.DataFrame(train_test_labels, index=labels_df.index, columns=[0, 1])
             # create a cshift model using the same specifiction as our model below (e.g. LR/MLP, etc.)
             model_name = model_basename + '_' + str(v) + '_' + 'cshift'
-            model, dev_f1, dev_acc = train.train_model_with_labels(project_dir, model_type, loss, model_name, subset, train_test_labels_df, feature_defs, penalty=penalty, alpha_min=alpha_min, alpha_max=alpha_max, intercept=intercept, n_dev_folds=n_dev_folds, save_model=True, do_ensemble=do_ensemble, dh=dh, seed=seed, pos_label=cshift_pos_label, verbose=False)
+            model, dev_f1, dev_acc, dev_cal = train.train_model_with_labels(project_dir, model_type, loss, model_name, subset, train_test_labels_df, feature_defs, penalty=penalty, alpha_min=alpha_min, alpha_max=alpha_max, intercept=intercept, n_dev_folds=n_dev_folds, save_model=True, do_ensemble=do_ensemble, dh=dh, seed=seed, pos_label=cshift_pos_label, verbose=False)
             print("cshift results: %0.4f f1, %0.4f acc" % (dev_f1, dev_acc))
 
             # take predictions from model on the training data
@@ -303,24 +304,28 @@ def cross_train_and_eval(project_dir, subset, field_name, config_file, n_calib=0
                 calib_contains_test = target_estimate > calib_estimate - 2 * calib_std and calib_estimate < calib_estimate + 2 * calib_std
                 output_df.loc['calibration'] = [n_calib, 'calibration', 'nontrain', 'given', calib_estimate, calib_rmse, calib_estimate - 2 * calib_std, calib_estimate + 2 * calib_std, calib_contains_test]
 
-            results_df = pd.DataFrame([], columns=['f1', 'acc'])
+            results_df = pd.DataFrame([], columns=['f1', 'acc', 'calibration'])
 
             # Now train a model on the training data, saving the calibration data for calibration
             print("Training model on training data only")
-            model, dev_f1, dev_acc = train.train_model_with_labels(project_dir, model_type, loss, model_name, subset, sampled_labels_df, feature_defs, weights_df=weights_df, items_to_use=train_items_r, penalty=penalty, alpha_min=alpha_min, alpha_max=alpha_max,  intercept=intercept, objective=objective, n_dev_folds=n_dev_folds, do_ensemble=do_ensemble, dh=dh, seed=seed, pos_label=pos_label, verbose=verbose)
-            results_df.loc['cross_val'] = [dev_f1, dev_acc]
+            model, dev_f1, dev_acc, dev_cal = train.train_model_with_labels(project_dir, model_type, loss, model_name, subset, sampled_labels_df, feature_defs, weights_df=weights_df, items_to_use=train_items_r, penalty=penalty, alpha_min=alpha_min, alpha_max=alpha_max,  intercept=intercept, objective=objective, n_dev_folds=n_dev_folds, do_ensemble=do_ensemble, dh=dh, seed=seed, pos_label=pos_label, verbose=verbose)
+            results_df.loc['cross_val'] = [dev_f1, dev_acc, dev_cal]
 
             # predict on calibration data
             if n_calib > 0:
                 calib_predictions_df, calib_pred_probs_df, calib_pred_proportions = predict.predict(project_dir, model, model_name, subset, label, items_to_use=calib_items, verbose=verbose)
                 calib_cc, calib_pcc, calib_acc, calib_pvc = calib_pred_proportions
                 f1_cal, acc_cal = evaluate_predictions.evaluate_predictions(calib_labels_df, calib_predictions_df, calib_pred_probs_df, pos_label=pos_label, average=average, verbose=False)
-                results_df.loc['calibration'] = [f1_cal, acc_cal]
+                true_calib_vector = np.argmax(calib_labels_df.as_matrix(), axis=1)
+                calib_cal_rmse = evaluation.evaluate_calibration_mse(true_calib_vector, calib_pred_probs_df.as_matrix())
+                results_df.loc['calibration'] = [f1_cal, acc_cal, calib_cal_rmse]
 
             # predict on test data
             test_predictions_df, test_pred_probs_df, test_pred_proportions = predict.predict(project_dir, model, model_name, subset, label, items_to_use=test_items, verbose=verbose)
             f1_test, acc_test = evaluate_predictions.evaluate_predictions(test_labels_df, test_predictions_df, test_pred_probs_df, pos_label=pos_label, average=average)
-            results_df.loc['test'] = [f1_test, acc_test]
+            true_test_vector = np.argmax(test_labels_df.as_matrix(), axis=1)
+            test_cal_rmse = evaluation.evaluate_calibration_mse(true_test_vector, test_pred_probs_df.as_matrix())
+            results_df.loc['test'] = [f1_test, acc_test, test_cal_rmse]
             test_cc_estimate, test_pcc_estimate, test_acc_estimate_internal, test_pvc_estimate_internal = test_pred_proportions
 
             # predict on calibration and test data combined
@@ -455,14 +460,17 @@ def cross_train_and_eval(project_dir, subset, field_name, config_file, n_calib=0
             if run_all:
                 print("Training model on all labeled data")
                 calib_and_train_items_r = np.array(list(calib_items) + list(train_items_r))
-                model, dev_f1, dev_acc = train.train_model_with_labels(project_dir, model_type, loss, model_name, subset, sampled_labels_df, feature_defs, weights_df=weights_df, items_to_use=calib_and_train_items_r, penalty=penalty, alpha_min=alpha_min, alpha_max=alpha_max, intercept=intercept, objective=objective, n_dev_folds=n_dev_folds, do_ensemble=do_ensemble, dh=dh, seed=seed, pos_label=pos_label, verbose=verbose)
-                results_df.loc['cross_val_all'] = [dev_f1, dev_acc]
+                model, dev_f1, dev_acc, dev_cal = train.train_model_with_labels(project_dir, model_type, loss, model_name, subset, sampled_labels_df, feature_defs, weights_df=weights_df, items_to_use=calib_and_train_items_r, penalty=penalty, alpha_min=alpha_min, alpha_max=alpha_max, intercept=intercept, objective=objective, n_dev_folds=n_dev_folds, do_ensemble=do_ensemble, dh=dh, seed=seed, pos_label=pos_label, verbose=verbose)
+                results_df.loc['cross_val_all'] = [dev_f1, dev_acc, dev_cal]
 
                 # get labels for test data
                 test_predictions_df, test_pred_probs_df, test_pred_proportions = predict.predict(project_dir, model, model_name, subset, label, items_to_use=test_items, verbose=verbose)
                 f1_test, acc_test = evaluate_predictions.evaluate_predictions(test_labels_df, test_predictions_df, test_pred_probs_df, pos_label=pos_label, average=average)
                 test_cc_estimate, test_pcc_estimate, test_acc_estimate_internal, test_pvc_estimate_internal = test_pred_proportions
-                results_df.loc['test_all'] = [f1_test, acc_test]
+                true_test_vector = np.argmax(test_labels_df.as_matrix(), axis=1)
+                test_cal_rmse = evaluation.evaluate_calibration_mse(true_test_vector, test_pred_probs_df.as_matrix())
+                results_df.loc['test'] = [f1_test, acc_test, test_cal_rmse]
+                results_df.loc['test_all'] = [f1_test, acc_test, test_cal_rmse]
 
                 nontrain_predictions_df, nontrain_pred_probs_df, nontrain_pred_proportions = predict.predict(project_dir, model, model_name, subset, label, items_to_use=non_train_items, verbose=verbose)
                 nontrain_cc_estimate, nontrain_pcc_estimate, nontrain_acc_estimate_internal, nontrain_pvc_estimate_internal = nontrain_pred_proportions
