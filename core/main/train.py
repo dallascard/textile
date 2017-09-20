@@ -219,6 +219,7 @@ def train_model_with_labels(project_dir, model_type, loss, model_name, subset, l
                 dev_pred_probs = model.predict_probs(X_dev)
 
                 alpha_models[alpha].append(model)
+                #print("Adding model to list for %.4f; new length = %d" % alpha, len(alpha_models[alpha]))
 
                 y_train_vector = np.argmax(Y_train, axis=1)
                 y_dev_vector = np.argmax(Y_dev, axis=1)
@@ -262,9 +263,11 @@ def train_model_with_labels(project_dir, model_type, loss, model_name, subset, l
         print("Best: alpha = %.3f, dev f1 = %.3f, dev cal = %.3f" % (best_alpha, best_dev_f1, best_dev_cal))
 
         best_models = alpha_models[best_alpha]
+        print("Number of best models = %d" % len(best_models))
 
         if save_model:
-            for model_i in range(len(best_models)):
+            print("Saving models")
+            for model in best_models:
                 model.save()
 
         if do_ensemble:
@@ -368,7 +371,7 @@ def train_model_with_labels(project_dir, model_type, loss, model_name, subset, l
         best_pvc_cfm = None
     """
 
-    return full_model, best_dev_f1, best_dev_acc
+    return full_model, best_dev_f1, best_dev_acc, best_dev_cal
 
 
 def prepare_data(X, Y, weights=None, predictions=None, loss='log'):
