@@ -79,8 +79,10 @@ def main():
     venn_av_upper = results.loc['Venn_averaged', '95ucl']
     venn_outside_error = 0
     n_outside = 0
+    venn_inside = results.loc['Venn_averaged', 'contains_test']
 
-    print(venn_av_lower, target_prop, venn_av_upper)
+    if venn_inside == 0:
+        print(venn_av_lower, target_prop, venn_av_upper)
 
     if not (venn_av_lower < target_prop < venn_av_upper):
         venn_outside_error += max(venn_av_lower - target_prop, target_prop - venn_av_upper)
@@ -97,8 +99,10 @@ def main():
         venn_av_upper = results.loc['Venn_averaged', '95ucl']
         venn_outside_error = 0
         n_outside = 0
+        venn_inside = results.loc['Venn_averaged', 'contains_test']
 
-        print(venn_av_lower, target_prop, venn_av_upper)
+        if venn_inside == 0:
+            print(venn_av_lower, target_prop, venn_av_upper)
 
         if not (venn_av_lower < target_prop < venn_av_upper):
             venn_outside_error += max(venn_av_lower - target_prop, target_prop - venn_av_upper)
