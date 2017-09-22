@@ -82,9 +82,9 @@ def main():
     venn_inside = results.loc['Venn_averaged', 'contains_test']
 
     if venn_inside == 0:
-        print(venn_av_lower, target_prop, venn_av_upper, venn_av_lower < target_prop < venn_av_upper)
         venn_outside_error += max(venn_av_lower - target_prop, target_prop - venn_av_upper)
         n_outside += 1
+        print(venn_av_lower, target_prop, venn_av_upper, venn_av_lower < target_prop < venn_av_upper, venn_outside_error, n_outside)
 
 
     for f in files[1:]:
@@ -100,10 +100,9 @@ def main():
         venn_inside = results.loc['Venn_averaged', 'contains_test']
 
         if venn_inside == 0:
-            print(venn_av_lower, target_prop, venn_av_upper, venn_av_lower < target_prop < venn_av_upper)
             venn_outside_error += max(venn_av_lower - target_prop, target_prop - venn_av_upper)
             n_outside += 1
-
+            print(venn_av_lower, target_prop, venn_av_upper, venn_av_lower < target_prop < venn_av_upper, venn_outside_error, n_outside)
 
     df = df / float(n_files)
     if n_outside > 0:
