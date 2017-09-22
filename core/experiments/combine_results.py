@@ -145,7 +145,7 @@ def main():
         venn_rmses.append(results.loc['Venn', 'RMSE'])
         venn_widths.append(results.loc['Venn', '95ucl'] - results.loc['Venn', '95lcl'])
         cal_error_estimate = results.loc['PCC_cal', 'estimate'] - results.loc['calibration', 'estimate']
-        adj_errors.append(results.loc['PCC_nontrain', 'estimate'] - cal_error_estimate - results.loc['target', 'estimate'])
+        adj_errors.append(np.abs(results.loc['PCC_nontrain', 'estimate'] - cal_error_estimate - results.loc['target', 'estimate']))
 
         file_dir, _ = os.path.split(f)
         accuracy_file = os.path.join(file_dir, 'accuracy.csv')
