@@ -81,8 +81,10 @@ def main():
     n_outside = 0
     calib_rmses = []
     calib_widths = []
-    PCC_nontrain_rmses = []
     PCC_cal_rmses = []
+    PCC_cal_overestimates = []
+    PCC_nontrain_rmses = []
+    PCC_nontrain_overestimates = []
     venn_rmses = []
     venn_widths = []
     cv_cals = []
@@ -101,8 +103,10 @@ def main():
 
     calib_rmses.append(results.loc['calibration', 'RMSE'])
     calib_widths.append(results.loc['calibration', '95ucl'] - results.loc['calibration', '95lcl'])
-    PCC_nontrain_rmses.append(results.loc['PCC_nontrain', 'RMSE'])
     PCC_cal_rmses.append(results.loc['PCC_cal', 'RMSE'])
+    PCC_nontrain_rmses.append(results.loc['PCC_nontrain', 'RMSE'])
+    PCC_cal_overestimates.append(results.loc['PCC_cal', 'estimate'] - results.loc['calibration', 'estimate'])
+    PCC_nontrain_overestimates.append(results.loc['PCC_nontrain', 'estimate'] - results.loc['target', 'estimate'])
     venn_rmses.append(results.loc['Venn', 'RMSE'])
     venn_widths.append(results.loc['Venn_averaged', '95ucl'] - results.loc['Venn_averaged', '95lcl'])
 
@@ -164,14 +168,22 @@ def main():
 
     corr, p_val = pearsonr(PCC_nontrain_rmses, PCC_cal_rmses)
     print("PCC correlation (with PCC_cal) = %0.4f" % corr)
+
+    corr, p_val = pearsonr(PCC_nontrain_overestimates, PCC_cal_overestimates)
+    print("PCC correlation (with PCC_cal) = %0.4f" % corr)
+
     corr, p_val = pearsonr(venn_rmses, PCC_cal_rmses)
     print("Venn correlation (with PCC_cal) = %0.4f" % corr)
 
-    plt.scatter(PCC_cal_rmses, PCC_nontrain_rmses)
-    plt.plot((np.min(PCC_cal_rmses), np.max(PCC_cal_rmses)), (np.min(PCC_nontrain_rmses), np.max(PCC_nontrain_rmses)))
-    plt.xlabel('PCC_cal_rmse')
-    plt.ylabel('PCC_nontrain_rmse')
+    #plt.scatter(PCC_cal_rmses, PCC_nontrain_rmses)
+    plt.scatter(PCC_cal_overestimates, PCC_nontrain_overestimates)
+    plt.plot((np.min(PCC_cal_overestimates), np.max(PCC_cal_overestimates)), (np.min(PCC_nontrain_overestimates), np.max(PCC_nontrain_overestimates)))
+    #plt.plot((np.min(PCC_cal_rmses), np.max(PCC_cal_rmses)), (np.min(PCC_nontrain_rmses), np.max(PCC_nontrain_rmses)))
+    #plt.xlabel('PCC_cal_rmse')
+    #plt.ylabel('PCC_nontrain_rmse')
     #plt.savefig('test.pdf')
+    plt.xlabel('PCC_cal_overestimate')
+    plt.ylabel('PCC_nontrain_overestimate')
     plt.show()
 
     # repeat for accuracy / f1
