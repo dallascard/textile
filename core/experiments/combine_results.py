@@ -2,6 +2,7 @@ import os
 from glob import glob
 from optparse import OptionParser
 
+import numpy as np
 import pandas as pd
 from scipy.stats import pearsonr
 
@@ -75,7 +76,7 @@ def main():
     results = fh.read_csv_to_df(files[0])
     df = pd.DataFrame(results[['estimate', 'RMSE', 'contains_test']].copy())
 
-    venn_outside_error = 0
+    venn_outside_errors = []
     n_outside = 0
     calib_rmses = []
     PCC_nontrain_rmses = []
@@ -89,7 +90,7 @@ def main():
     venn_inside = results.loc['Venn_averaged', 'contains_test']
 
     if venn_inside == 0:
-        venn_outside_error += max(venn_av_lower - target_prop, target_prop - venn_av_upper)
+        venn_outside_errors.append(max(venn_av_lower - target_prop, target_prop - venn_av_upper))
         n_outside += 1
         print(venn_av_lower, target_prop, venn_av_upper, venn_av_lower < target_prop < venn_av_upper, venn_outside_error, n_outside)
 
@@ -98,7 +99,7 @@ def main():
     PCC_cal_rmses.append(results.loc['PCC_cal', 'RMSE'])
     Venn_rmses.append(results.loc['Venn', 'RMSE'])
 
-    file_dir, basename = os.path.split(files[0])
+    file_dir, _ = os.path.split(files[0])
     accuracy_file = os.path.join(file_dir, 'accuracy.csv')
     accuracy_df = fh.read_csv_to_df(accuracy_file)
     cv_cals.append(accuracy_df.loc['cross_val', 'calibration'])
@@ -114,27 +115,25 @@ def main():
         venn_inside = results.loc['Venn_averaged', 'contains_test']
 
         if venn_inside == 0:
-            venn_outside_error += max(venn_av_lower - target_prop, target_prop - venn_av_upper)
+            venn_outside_errors.append(max(venn_av_lower - target_prop, target_prop - venn_av_upper))
             n_outside += 1
-            print(venn_av_lower, target_prop, venn_av_upper, venn_av_lower < target_prop < venn_av_upper, venn_outside_error, n_outside)
 
         calib_rmses.append(results.loc['calibration', 'RMSE'])
         PCC_nontrain_rmses.append(results.loc['PCC_nontrain', 'RMSE'])
         PCC_cal_rmses.append(results.loc['PCC_cal', 'RMSE'])
         Venn_rmses.append(results.loc['Venn', 'RMSE'])
 
-        file_dir, basename = os.path.split(f)
+        file_dir, _ = os.path.split(f)
         accuracy_file = os.path.join(file_dir, 'accuracy.csv')
         accuracy_df = fh.read_csv_to_df(accuracy_file)
         cv_cals.append(accuracy_df.loc['cross_val', 'calibration'])
 
     df = df / float(n_files)
-    if n_outside > 0:
-        venn_outside_error /= float(n_outside)
 
     print(df)
     print("n_outside: %d" % n_outside)
-    print("mean venn outside error = %0.6f" % venn_outside_error)
+    print("mean venn outside error = %0.6f" % np.mean(venn_outside_errors))
+    print(" max venn outside error = %0.6f" % np.max(venn_outside_errors))
 
     corr, p_val = pearsonr(PCC_nontrain_rmses, cv_cals)
     print("PCC correlation (with cv_cal) = %0.4f" % corr)
@@ -142,7 +141,6 @@ def main():
     print("PCC correlation (with PCC_cal) = %0.4f" % corr)
     corr, p_val = pearsonr(Venn_rmses, PCC_cal_rmses)
     print("Venn correlation (with PCC_cal) = %0.4f" % corr)
-
 
 
     # repeat for accuracy / f1
