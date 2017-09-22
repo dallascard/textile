@@ -138,6 +138,9 @@ def main():
         accuracy_file = os.path.join(file_dir, 'accuracy.csv')
         accuracy_df = fh.read_csv_to_df(accuracy_file)
         cv_cals.append(accuracy_df.loc['cross_val', 'calibration'])
+        cv_f1s.append(accuracy_df.loc['cross_val', 'f1'])
+        calibration_cals.append(accuracy_df.loc['calibration', 'calibration'])
+        calibration_f1s.append(accuracy_df.loc['calibration', 'f1'])
 
     df = df / float(n_files)
 
@@ -162,7 +165,6 @@ def main():
     print("PCC correlation (with PCC_cal) = %0.4f" % corr)
     corr, p_val = pearsonr(venn_rmses, PCC_cal_rmses)
     print("Venn correlation (with PCC_cal) = %0.4f" % corr)
-
 
     # repeat for accuracy / f1
     files = glob(os.path.join('projects', base, subset, 'models', basename, 'accuracy.csv'))
