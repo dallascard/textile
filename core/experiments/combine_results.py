@@ -171,7 +171,8 @@ def main():
     plt.plot((np.min(PCC_cal_rmses), np.max(PCC_cal_rmses)), (np.min(PCC_nontrain_rmses), np.max(PCC_nontrain_rmses)))
     plt.xlabel('PCC_cal_rmse')
     plt.ylabel('PCC_nontrain_rmse')
-    plt.savefig('test.pdf')
+    #plt.savefig('test.pdf')
+    plt.show()
 
     # repeat for accuracy / f1
     files = glob(os.path.join('projects', base, subset, 'models', basename, 'accuracy.csv'))
