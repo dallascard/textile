@@ -180,7 +180,7 @@ def main():
     #plt.scatter(PCC_cal_rmses, PCC_nontrain_rmses)
     plt.scatter(PCC_cal_overestimates, PCC_nontrain_overestimates)
     #plt.plot((np.min(PCC_cal_overestimates), np.max(PCC_cal_overestimates)), (np.min(PCC_nontrain_overestimates), np.max(PCC_nontrain_overestimates)))
-    plt.plot((-3, 3), (-3, 3))
+    plt.plot((-0.3, 0.3), (-0.3, 0.3))
     #plt.plot((np.min(PCC_cal_rmses), np.max(PCC_cal_rmses)), (np.min(PCC_nontrain_rmses), np.max(PCC_nontrain_rmses)))
     #plt.xlabel('PCC_cal_rmse')
     #plt.ylabel('PCC_nontrain_rmse')
