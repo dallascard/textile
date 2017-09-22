@@ -100,7 +100,7 @@ def main():
     PCC_nontrain_rmses.append(results.loc['PCC_nontrain', 'RMSE'])
     PCC_cal_rmses.append(results.loc['PCC_cal', 'RMSE'])
     venn_rmses.append(results.loc['Venn', 'RMSE'])
-    venn_widths.append(results.loc['Venn', '95ucl'] - results.loc['Venn', '95lcl'])
+    venn_widths.append(results.loc['Venn_averaged', '95ucl'] - results.loc['Venn_averaged', '95lcl'])
 
     file_dir, _ = os.path.split(files[0])
     accuracy_file = os.path.join(file_dir, 'accuracy.csv')
@@ -125,7 +125,7 @@ def main():
         calib_widths.append(results.loc['calibration', '95ucl'] - results.loc['calibration', '95lcl'])
         PCC_nontrain_rmses.append(results.loc['PCC_nontrain', 'RMSE'])
         PCC_cal_rmses.append(results.loc['PCC_cal', 'RMSE'])
-        venn_outside_errors.append(results.loc['Venn', 'RMSE'])
+        venn_rmses.append(results.loc['Venn', 'RMSE'])
         venn_widths.append(results.loc['Venn', '95ucl'] - results.loc['Venn', '95lcl'])
 
         file_dir, _ = os.path.split(f)
