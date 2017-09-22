@@ -26,6 +26,8 @@ def main():
     #                  help='Partition for mfc (e.g. pre: default=%default')
     parser.add_option('--model', dest='model', default='LR',
                       help='model type [LR|MLP]: default=%default')
+    parser.add_option('--penalty', dest='penalty', default='l1',
+                      help='Regularization type [l1|l2]: default=%default')
     parser.add_option('--objective', dest='objective', default='f1',
                       help='objective [f1|calibration]: default=%default')
     parser.add_option('--dh', dest='dh', default=100,
@@ -45,11 +47,12 @@ def main():
     subset = options.subset
     label = options.label
     model_type = options.model
+    penalty = options.penalty
     dh = str(int(options.dh))
 
     # basic LR f1: combining subset, label, repetitions, and pre/post date
     #basename = '*_' + model_type
-    basename = '*_' + label + '_*_' + model_type + '_l2'
+    basename = '*_' + label + '_*_' + model_type + '_' + penalty
     if model_type == 'MLP':
         basename += '_' + dh
     basename += '_' + train_prop + '_' + n_calib + '_' + objective
