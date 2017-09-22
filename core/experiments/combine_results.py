@@ -93,7 +93,7 @@ def main():
         n_outside += 1
         print(venn_av_lower, target_prop, venn_av_upper, venn_av_lower < target_prop < venn_av_upper, venn_outside_error, n_outside)
 
-    calib_rmses.append(results.loc['calib', 'RMSE'])
+    calib_rmses.append(results.loc['calibration', 'RMSE'])
     PCC_nontrain_rmses.append(results.loc['PCC_nontrain', 'RMSE'])
     PCC_cal_rmses.append(results.loc['PCC_cal', 'RMSE'])
     Venn_rmses.append(results.loc['Venn', 'RMSE'])
@@ -118,7 +118,7 @@ def main():
             n_outside += 1
             print(venn_av_lower, target_prop, venn_av_upper, venn_av_lower < target_prop < venn_av_upper, venn_outside_error, n_outside)
 
-        calib_rmses.append(results.loc['calib' 'RMSE'])
+        calib_rmses.append(results.loc['calibration', 'RMSE'])
         PCC_nontrain_rmses.append(results.loc['PCC_nontrain', 'RMSE'])
         PCC_cal_rmses.append(results.loc['PCC_cal', 'RMSE'])
         Venn_rmses.append(results.loc['Venn', 'RMSE'])
