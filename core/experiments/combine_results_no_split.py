@@ -49,11 +49,12 @@ def main():
     basename = '*_' + label + '_*_' + model_type + '_' + penalty
     if model_type == 'MLP':
         basename += '_' + dh
-    basename += '_' + n_train + '_' + objective
-    if base == 'mfc':
-        basename += '_???_????_?'
-    elif base == 'amazon':
-        basename += '_????_?'
+    basename += '_' + n_train + '_' + objective + '_nosplit_?'
+    #if base == 'mfc':
+    #    basename += '_???_????_?'
+    #elif base == 'amazon':
+    #    basename += '_????_?'
+
 
     print(basename)
     files = glob(os.path.join('projects', base, subset, 'models', basename, 'results.csv'))
