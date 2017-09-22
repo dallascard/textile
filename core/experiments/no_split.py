@@ -197,7 +197,7 @@ def cross_train_and_eval(project_dir, subset, config_file, n_train=500, suffix='
         # compute the error of this estimate
         train_rmse = np.sqrt((train_estimate - target_estimate)**2)
         train_contains_test = target_estimate > train_estimate - 2 * train_std and target_estimate < train_estimate + 2 * train_std
-        output_df.loc['train'] = [n_train, 'train', 'train', 'n/a', train_estimate, train_rmse, np.nan, np.nan, np.nan]
+        output_df.loc['train'] = [n_train, 'train', 'train', 'n/a', train_estimate, train_rmse, train_estimate - 2 * train_std, train_estimate + 2 * train_std, train_contains_test]
 
         print("target proportions: (%0.3f, %0.3f); train proportions: %0.3f" % (target_estimate - 2 * target_std, target_estimate + 2 * target_std, train_estimate))
 
@@ -265,8 +265,8 @@ def cross_train_and_eval(project_dir, subset, config_file, n_train=500, suffix='
         venn_estimate = (np.mean(test_preds_internal) * n_test + train_estimate * n_train) / float(n_test + n_train)
         venn_rmse = np.sqrt((venn_estimate - target_estimate)**2)
 
-        averaged_lower = (pred_range[0] * n_test + (train_estimate - 2 * train_std) * n_calib) / float(n_test + n_train)
-        averaged_upper = (pred_range[1] * n_test + (train_estimate + 2 * train_std) * n_calib) / float(n_test + n_train)
+        averaged_lower = (pred_range[0] * n_test + (train_estimate - 2 * train_std) * n_train) / float(n_test + n_train)
+        averaged_upper = (pred_range[1] * n_test + (train_estimate + 2 * train_std) * n_train) / float(n_test + n_train)
         venn_contains_test = averaged_lower < target_estimate < averaged_upper
 
         output_df.loc['Venn_internal_averaged'] = [n_items, 'train', 'all', 'given', venn_estimate, venn_rmse, averaged_lower, averaged_upper, venn_contains_test]
