@@ -56,6 +56,8 @@ def main():
     if model_type == 'MLP':
         basename += '_' + dh
     basename += '_' + train_prop + '_' + n_calib + '_' + objective
+    if model_type == 'MLP':
+        basename += '_r?'
     if cshift is not None:
         basename += '_cshift'
     if base == 'mfc':
