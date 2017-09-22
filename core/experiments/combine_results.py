@@ -102,7 +102,8 @@ def main():
 
 
     df = df / float(n_files)
-    venn_outside_error /= float(n_outside)
+    if n_outside > 0:
+        venn_outside_error /= float(n_outside)
 
     print(df)
     print("mean venn outside error = %0.4f" % venn_outside_error)
