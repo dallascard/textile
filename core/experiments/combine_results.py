@@ -74,14 +74,38 @@ def main():
     results = fh.read_csv_to_df(files[0])
     df = pd.DataFrame(results[['estimate', 'RMSE', 'contains_test']].copy())
 
+    target_prop = results.loc['target', 'estimate']
+    venn_av_lower = results.loc['Venn_averaged', '95lcl']
+    venn_av_upper = results.loc['Venn_averaged', '95ucl']
+    venn_outside_error = 0
+    n_outside = 0
+
+    if not venn_av_lower < target_prop < venn_av_upper:
+        venn_outside_error += max(venn_av_lower - target_prop, target_prop - venn_av_upper)
+        n_outside += 1
+
+
     for f in files[1:]:
         print(f)
         results = fh.read_csv_to_df(f)
         df += results[['estimate', 'RMSE', 'contains_test']]
 
+        target_prop = results.loc['target', 'estimate']
+        venn_av_lower = results.loc['Venn_averaged', '95lcl']
+        venn_av_upper = results.loc['Venn_averaged', '95ucl']
+        venn_outside_error = 0
+        n_outside = 0
+
+        if not venn_av_lower < target_prop < venn_av_upper:
+            venn_outside_error += max(venn_av_lower - target_prop, target_prop - venn_av_upper)
+            n_outside += 1
+
+
     df = df / float(n_files)
+    venn_outside_error /= float(n_outside)
 
     print(df)
+    print("mean venn outside error = %0.4f" % venn_outside_error)
 
     # repeat for accuracy / f1
     files = glob(os.path.join('projects', base, subset, 'models', basename, 'accuracy.csv'))
