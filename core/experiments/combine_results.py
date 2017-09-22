@@ -5,6 +5,7 @@ from optparse import OptionParser
 import numpy as np
 import pandas as pd
 from scipy.stats import pearsonr
+import matplotlib.pyplot as plt
 
 from ..util import file_handling as fh
 
@@ -165,6 +166,12 @@ def main():
     print("PCC correlation (with PCC_cal) = %0.4f" % corr)
     corr, p_val = pearsonr(venn_rmses, PCC_cal_rmses)
     print("Venn correlation (with PCC_cal) = %0.4f" % corr)
+
+    plt.scatter(PCC_cal_rmses, PCC_nontrain_rmses)
+    plt.plot((np.min(PCC_cal_rmses), np.max(PCC_cal_rmses)), (np.min(PCC_nontrain_rmses), np.max(PCC_nontrain_rmses)))
+    plt.xlabel('PCC_cal_rmse')
+    plt.ylabel('PCC_nontrain_rmse')
+    plt.savefig('test.pdf')
 
     # repeat for accuracy / f1
     files = glob(os.path.join('projects', base, subset, 'models', basename, 'accuracy.csv'))
