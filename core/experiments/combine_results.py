@@ -124,9 +124,9 @@ def main():
     calibration_f1s.append(accuracy_df.loc['calibration', 'f1'])
 
     venn_range_file = os.path.join(file_dir, 'venn_calib_props_in_range.csv')
-    venn_calib_in_range_df = fh.read_csv_to_df(venn_range_file, header=-1, index_col=-1)
-    print(venn_calib_in_range_df)
-    venn_calib_in_range_vals.append(venn_calib_in_range_df.mean())
+    venn_calib_in_range_list = [float(f) for f in fh.read_text(venn_range_file)]
+    print(venn_calib_in_range_list)
+    venn_calib_in_range_vals.append(np.mean(venn_calib_in_range_list))
 
     venn_levels_file = os.path.join(file_dir, 'list_of_n_levels.csv')
     venn_levels_df = fh.read_csv_to_df(venn_levels_file, header=-1, index_col=-1)
