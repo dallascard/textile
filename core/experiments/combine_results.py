@@ -80,7 +80,7 @@ def main():
     venn_outside_error = 0
     n_outside = 0
 
-    if not venn_av_lower < target_prop < venn_av_upper:
+    if not (venn_av_lower < target_prop < venn_av_upper):
         venn_outside_error += max(venn_av_lower - target_prop, target_prop - venn_av_upper)
         n_outside += 1
 
@@ -96,7 +96,7 @@ def main():
         venn_outside_error = 0
         n_outside = 0
 
-        if not venn_av_lower < target_prop < venn_av_upper:
+        if not (venn_av_lower < target_prop < venn_av_upper):
             venn_outside_error += max(venn_av_lower - target_prop, target_prop - venn_av_upper)
             n_outside += 1
 
