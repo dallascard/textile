@@ -79,6 +79,7 @@ def main():
     n_outside = 0
     PCC_nontrain_rmses = []
     PCC_cal_rmses = []
+    Venn_rmses = []
 
     target_prop = results.loc['target', 'estimate']
     venn_av_lower = results.loc['Venn_averaged', '95lcl']
@@ -92,6 +93,7 @@ def main():
 
     PCC_nontrain_rmses.append(results.loc['PCC_nontrain', 'RMSE'])
     PCC_cal_rmses.append(results.loc['PCC_cal', 'RMSE'])
+    Venn_rmses.append(results.loc['Venn', 'RMSE'])
 
     for f in files[1:]:
         print(f)
@@ -110,6 +112,7 @@ def main():
 
         PCC_nontrain_rmses.append(results.loc['PCC_nontrain', 'RMSE'])
         PCC_cal_rmses.append(results.loc['PCC_cal', 'RMSE'])
+        Venn_rmses.append(results.loc['Venn', 'RMSE'])
 
 
     df = df / float(n_files)
@@ -122,6 +125,8 @@ def main():
 
     corr, p_val = pearsonr(PCC_nontrain_rmses, PCC_cal_rmses)
     print("PCC correlation = %0.4f" % corr)
+    corr, p_val = pearsonr(Venn_rmses, PCC_cal_rmses)
+    print("Venn correlation (with PCC_cal) = %0.4f" % corr)
 
     # repeat for accuracy / f1
     files = glob(os.path.join('projects', base, subset, 'models', basename, 'accuracy.csv'))
