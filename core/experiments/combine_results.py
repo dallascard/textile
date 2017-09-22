@@ -209,16 +209,16 @@ def main():
     print("Venn correlation (with venn levels) = %0.4f" % corr)
 
     #plt.scatter(PCC_cal_rmses, PCC_nontrain_rmses)
-    plt.scatter(PCC_cal_overestimates, PCC_nontrain_overestimates)
+    #plt.scatter(PCC_cal_overestimates, PCC_nontrain_overestimates)
     #plt.plot((np.min(PCC_cal_overestimates), np.max(PCC_cal_overestimates)), (np.min(PCC_nontrain_overestimates), np.max(PCC_nontrain_overestimates)))
-    plt.plot((-0.3, 0.3), (-0.3, 0.3))
+    #plt.plot((-0.3, 0.3), (-0.3, 0.3))
     #plt.plot((np.min(PCC_cal_rmses), np.max(PCC_cal_rmses)), (np.min(PCC_nontrain_rmses), np.max(PCC_nontrain_rmses)))
     #plt.xlabel('PCC_cal_rmse')
     #plt.ylabel('PCC_nontrain_rmse')
     #plt.savefig('test.pdf')
-    plt.xlabel('PCC_cal_overestimate')
-    plt.ylabel('PCC_nontrain_overestimate')
-    plt.show()
+    #plt.xlabel('PCC_cal_overestimate')
+    #plt.ylabel('PCC_nontrain_overestimate')
+    #plt.show()
 
     # repeat for accuracy / f1
     files = glob(os.path.join('projects', base, subset, 'models', basename, 'accuracy.csv'))
