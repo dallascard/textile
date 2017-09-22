@@ -86,7 +86,6 @@ def main():
         n_outside += 1
         print(venn_av_lower, target_prop, venn_av_upper, venn_av_lower < target_prop < venn_av_upper, venn_outside_error, n_outside)
 
-
     for f in files[1:]:
         print(f)
         results = fh.read_csv_to_df(f)
@@ -95,8 +94,6 @@ def main():
         target_prop = results.loc['target', 'estimate']
         venn_av_lower = results.loc['Venn_averaged', '95lcl']
         venn_av_upper = results.loc['Venn_averaged', '95ucl']
-        venn_outside_error = 0
-        n_outside = 0
         venn_inside = results.loc['Venn_averaged', 'contains_test']
 
         if venn_inside == 0:
