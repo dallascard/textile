@@ -106,7 +106,8 @@ def main():
         venn_outside_error /= float(n_outside)
 
     print(df)
-    print("mean venn outside error = %0.4f" % venn_outside_error)
+    print("n_outside: %d" % n_outside)
+    print("mean venn outside error = %0.6f" % venn_outside_error)
 
     # repeat for accuracy / f1
     files = glob(os.path.join('projects', base, subset, 'models', basename, 'accuracy.csv'))
