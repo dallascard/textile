@@ -93,12 +93,12 @@ def main():
         n_outside += 1
         print(venn_av_lower, target_prop, venn_av_upper, venn_av_lower < target_prop < venn_av_upper, venn_outside_error, n_outside)
 
-    calib_rmses.append(results.loc['calib' 'RMSE'])
+    calib_rmses.append(results.loc['calib', 'RMSE'])
     PCC_nontrain_rmses.append(results.loc['PCC_nontrain', 'RMSE'])
     PCC_cal_rmses.append(results.loc['PCC_cal', 'RMSE'])
     Venn_rmses.append(results.loc['Venn', 'RMSE'])
 
-    file_dir, basename = os.path.split(f)
+    file_dir, basename = os.path.split(files[0])
     accuracy_file = os.path.join(file_dir, 'accuracy.csv')
     accuracy_df = fh.read_csv_to_df(accuracy_file)
     cv_cals.append(accuracy_df.loc['cross_val', 'calibration'])
