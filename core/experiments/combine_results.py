@@ -91,6 +91,7 @@ def main():
     cv_f1s = []
     calibration_cals = []
     calibration_f1s = []
+    adj_errors = []
 
     target_prop = results.loc['target', 'estimate']
     venn_av_lower = results.loc['Venn_averaged', '95lcl']
@@ -109,6 +110,8 @@ def main():
     PCC_nontrain_overestimates.append(results.loc['PCC_nontrain', 'estimate'] - results.loc['target', 'estimate'])
     venn_rmses.append(results.loc['Venn', 'RMSE'])
     venn_widths.append(results.loc['Venn_averaged', '95ucl'] - results.loc['Venn_averaged', '95lcl'])
+    cal_error_estimate = results.loc['PCC_cal', 'estimate'] - results.loc['calibration', 'estimate']
+    adj_errors.append(results.loc['PCC_nontrain', 'estimate'] - cal_error_estimate - results.loc['target', 'estimate'])
 
     file_dir, _ = os.path.split(files[0])
     accuracy_file = os.path.join(file_dir, 'accuracy.csv')
@@ -117,6 +120,7 @@ def main():
     cv_f1s.append(accuracy_df.loc['cross_val', 'f1'])
     calibration_cals.append(accuracy_df.loc['calibration', 'calibration'])
     calibration_f1s.append(accuracy_df.loc['calibration', 'f1'])
+
 
     for f in files[1:]:
         print(f)
@@ -140,6 +144,8 @@ def main():
         PCC_nontrain_overestimates.append(results.loc['PCC_nontrain', 'estimate'] - results.loc['target', 'estimate'])
         venn_rmses.append(results.loc['Venn', 'RMSE'])
         venn_widths.append(results.loc['Venn', '95ucl'] - results.loc['Venn', '95lcl'])
+        cal_error_estimate = results.loc['PCC_cal', 'estimate'] - results.loc['calibration', 'estimate']
+        adj_errors.append(results.loc['PCC_nontrain', 'estimate'] - cal_error_estimate - results.loc['target', 'estimate'])
 
         file_dir, _ = os.path.split(f)
         accuracy_file = os.path.join(file_dir, 'accuracy.csv')
@@ -152,6 +158,7 @@ def main():
     df = df / float(n_files)
 
     print(df)
+    print("Mean adjusted error rmse = %0.5f" % np.mean(adj_errors))
     print("n_outside: %d" % n_outside)
     print("mean venn outside error = %0.6f" % np.mean(venn_outside_errors))
     print(" max venn outside error = %0.6f" % np.max(venn_outside_errors))
