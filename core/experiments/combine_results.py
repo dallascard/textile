@@ -79,9 +79,11 @@ def main():
     venn_outside_errors = []
     n_outside = 0
     calib_rmses = []
+    calib_widths = []
     PCC_nontrain_rmses = []
     PCC_cal_rmses = []
-    Venn_rmses = []
+    venn_rmses = []
+    venn_widths = []
     cv_cals = []
 
     target_prop = results.loc['target', 'estimate']
@@ -92,12 +94,13 @@ def main():
     if venn_inside == 0:
         venn_outside_errors.append(max(venn_av_lower - target_prop, target_prop - venn_av_upper))
         n_outside += 1
-        print(venn_av_lower, target_prop, venn_av_upper, venn_av_lower < target_prop < venn_av_upper, venn_outside_error, n_outside)
 
     calib_rmses.append(results.loc['calibration', 'RMSE'])
+    calib_widths.append(results.loc['calibration', '95ucl'] - results.loc['calibration', '95lcl'])
     PCC_nontrain_rmses.append(results.loc['PCC_nontrain', 'RMSE'])
     PCC_cal_rmses.append(results.loc['PCC_cal', 'RMSE'])
-    Venn_rmses.append(results.loc['Venn', 'RMSE'])
+    venn_rmses.append(results.loc['Venn', 'RMSE'])
+    venn_widths.append(results.loc['Venn', '95ucl'] - results.loc['Venn', '95lcl'])
 
     file_dir, _ = os.path.split(files[0])
     accuracy_file = os.path.join(file_dir, 'accuracy.csv')
@@ -119,9 +122,11 @@ def main():
             n_outside += 1
 
         calib_rmses.append(results.loc['calibration', 'RMSE'])
+        calib_widths.append(results.loc['calibration', '95ucl'] - results.loc['calibration', '95lcl'])
         PCC_nontrain_rmses.append(results.loc['PCC_nontrain', 'RMSE'])
         PCC_cal_rmses.append(results.loc['PCC_cal', 'RMSE'])
-        Venn_rmses.append(results.loc['Venn', 'RMSE'])
+        venn_outside_errors.append(results.loc['Venn', 'RMSE'])
+        venn_widths.append(results.loc['Venn', '95ucl'] - results.loc['Venn', '95lcl'])
 
         file_dir, _ = os.path.split(f)
         accuracy_file = os.path.join(file_dir, 'accuracy.csv')
@@ -134,12 +139,14 @@ def main():
     print("n_outside: %d" % n_outside)
     print("mean venn outside error = %0.6f" % np.mean(venn_outside_errors))
     print(" max venn outside error = %0.6f" % np.max(venn_outside_errors))
+    print("mean calib width = %0.4f" % np.mean(calib_widths))
+    print("mean venn widths = %0.6f" % np.mean(venn_widths))
 
     corr, p_val = pearsonr(PCC_nontrain_rmses, cv_cals)
     print("PCC correlation (with cv_cal) = %0.4f" % corr)
     corr, p_val = pearsonr(PCC_nontrain_rmses, PCC_cal_rmses)
     print("PCC correlation (with PCC_cal) = %0.4f" % corr)
-    corr, p_val = pearsonr(Venn_rmses, PCC_cal_rmses)
+    corr, p_val = pearsonr(venn_rmses, PCC_cal_rmses)
     print("Venn correlation (with PCC_cal) = %0.4f" % corr)
 
 
@@ -148,12 +155,12 @@ def main():
     files.sort()
     n_files = len(files)
 
-    print(files[0])
+    #print(files[0])
     results = fh.read_csv_to_df(files[0])
     df = results.copy()
 
     for f in files[1:]:
-        print(f)
+        #print(f)
         results = fh.read_csv_to_df(f)
         df += results
 
