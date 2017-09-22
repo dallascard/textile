@@ -77,9 +77,11 @@ def main():
 
     venn_outside_error = 0
     n_outside = 0
+    calib_rmses = []
     PCC_nontrain_rmses = []
     PCC_cal_rmses = []
     Venn_rmses = []
+    cv_cals = []
 
     target_prop = results.loc['target', 'estimate']
     venn_av_lower = results.loc['Venn_averaged', '95lcl']
@@ -91,9 +93,15 @@ def main():
         n_outside += 1
         print(venn_av_lower, target_prop, venn_av_upper, venn_av_lower < target_prop < venn_av_upper, venn_outside_error, n_outside)
 
+    calib_rmses.append(results.loc['calib' 'RMSE'])
     PCC_nontrain_rmses.append(results.loc['PCC_nontrain', 'RMSE'])
     PCC_cal_rmses.append(results.loc['PCC_cal', 'RMSE'])
     Venn_rmses.append(results.loc['Venn', 'RMSE'])
+
+    file_dir, basename = os.path.split(f)
+    accuracy_file = os.path.join(file_dir, 'accuracy.csv')
+    accuracy_df = fh.read_csv_to_df(accuracy_file)
+    cv_cals.append(accuracy_df.loc['cross_val', 'calibration'])
 
     for f in files[1:]:
         print(f)
@@ -110,10 +118,15 @@ def main():
             n_outside += 1
             print(venn_av_lower, target_prop, venn_av_upper, venn_av_lower < target_prop < venn_av_upper, venn_outside_error, n_outside)
 
+        calib_rmses.append(results.loc['calib' 'RMSE'])
         PCC_nontrain_rmses.append(results.loc['PCC_nontrain', 'RMSE'])
         PCC_cal_rmses.append(results.loc['PCC_cal', 'RMSE'])
         Venn_rmses.append(results.loc['Venn', 'RMSE'])
 
+        file_dir, basename = os.path.split(f)
+        accuracy_file = os.path.join(file_dir, 'accuracy.csv')
+        accuracy_df = fh.read_csv_to_df(accuracy_file)
+        cv_cals.append(accuracy_df.loc['cross_val', 'calibration'])
 
     df = df / float(n_files)
     if n_outside > 0:
@@ -123,10 +136,14 @@ def main():
     print("n_outside: %d" % n_outside)
     print("mean venn outside error = %0.6f" % venn_outside_error)
 
+    corr, p_val = pearsonr(PCC_nontrain_rmses, cv_cals)
+    print("PCC correlation (with cv_cal) = %0.4f" % corr)
     corr, p_val = pearsonr(PCC_nontrain_rmses, PCC_cal_rmses)
-    print("PCC correlation = %0.4f" % corr)
+    print("PCC correlation (with PCC_cal) = %0.4f" % corr)
     corr, p_val = pearsonr(Venn_rmses, PCC_cal_rmses)
     print("Venn correlation (with PCC_cal) = %0.4f" % corr)
+
+
 
     # repeat for accuracy / f1
     files = glob(os.path.join('projects', base, subset, 'models', basename, 'accuracy.csv'))
