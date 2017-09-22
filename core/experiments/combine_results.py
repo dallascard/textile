@@ -120,8 +120,8 @@ def main():
     accuracy_df = fh.read_csv_to_df(accuracy_file)
     cv_cals.append(accuracy_df.loc['cross_val', 'calibration'])
     cv_f1s.append(accuracy_df.loc['cross_val', 'f1'])
-    calibration_cals.append(accuracy_df.loc['calibration', 'calibration'])
-    calibration_f1s.append(accuracy_df.loc['calibration', 'f1'])
+    #calibration_cals.append(accuracy_df.loc['calibration', 'calibration'])
+    #calibration_f1s.append(accuracy_df.loc['calibration', 'f1'])
 
     venn_range_file = os.path.join(file_dir, 'venn_calib_props_in_range.csv')
     venn_calib_in_range_list = [float(f) for f in fh.read_text(venn_range_file)]
@@ -162,8 +162,8 @@ def main():
         accuracy_df = fh.read_csv_to_df(accuracy_file)
         cv_cals.append(accuracy_df.loc['cross_val', 'calibration'])
         cv_f1s.append(accuracy_df.loc['cross_val', 'f1'])
-        calibration_cals.append(accuracy_df.loc['calibration', 'calibration'])
-        calibration_f1s.append(accuracy_df.loc['calibration', 'f1'])
+        #calibration_cals.append(accuracy_df.loc['calibration', 'calibration'])
+        #calibration_f1s.append(accuracy_df.loc['calibration', 'f1'])
 
         venn_range_file = os.path.join(file_dir, 'venn_calib_props_in_range.csv')
         venn_calib_in_range_list = [float(f) for f in fh.read_text(venn_range_file)]
