@@ -3,6 +3,7 @@ from glob import glob
 from optparse import OptionParser
 
 import pandas as pd
+from scipy.stats import pearsonr
 
 from ..util import file_handling as fh
 
@@ -74,17 +75,23 @@ def main():
     results = fh.read_csv_to_df(files[0])
     df = pd.DataFrame(results[['estimate', 'RMSE', 'contains_test']].copy())
 
+    venn_outside_error = 0
+    n_outside = 0
+    PCC_nontrain_rmses = []
+    PCC_cal_rmses = []
+
     target_prop = results.loc['target', 'estimate']
     venn_av_lower = results.loc['Venn_averaged', '95lcl']
     venn_av_upper = results.loc['Venn_averaged', '95ucl']
-    venn_outside_error = 0
-    n_outside = 0
     venn_inside = results.loc['Venn_averaged', 'contains_test']
 
     if venn_inside == 0:
         venn_outside_error += max(venn_av_lower - target_prop, target_prop - venn_av_upper)
         n_outside += 1
         print(venn_av_lower, target_prop, venn_av_upper, venn_av_lower < target_prop < venn_av_upper, venn_outside_error, n_outside)
+
+    PCC_nontrain_rmses.append(results.loc['PCC_nontrain', 'RMSE'])
+    PCC_cal_rmses.append(results.loc['PCC_cal', 'RMSE'])
 
     for f in files[1:]:
         print(f)
@@ -101,6 +108,10 @@ def main():
             n_outside += 1
             print(venn_av_lower, target_prop, venn_av_upper, venn_av_lower < target_prop < venn_av_upper, venn_outside_error, n_outside)
 
+        PCC_nontrain_rmses.append(results.loc['PCC_nontrain', 'RMSE'])
+        PCC_cal_rmses.append(results.loc['PCC_cal', 'RMSE'])
+
+
     df = df / float(n_files)
     if n_outside > 0:
         venn_outside_error /= float(n_outside)
@@ -108,6 +119,9 @@ def main():
     print(df)
     print("n_outside: %d" % n_outside)
     print("mean venn outside error = %0.6f" % venn_outside_error)
+
+    corr, p_val = pearsonr(PCC_nontrain_rmses, PCC_cal_rmses)
+    print("PCC correlation = %0.4f" % corr)
 
     # repeat for accuracy / f1
     files = glob(os.path.join('projects', base, subset, 'models', basename, 'accuracy.csv'))
