@@ -92,6 +92,8 @@ def main():
     calibration_cals = []
     calibration_f1s = []
     adj_errors = []
+    venn_calib_in_range_vals = []
+    venn_levels_vals = []
 
     target_prop = results.loc['target', 'estimate']
     venn_av_lower = results.loc['Venn_averaged', '95lcl']
@@ -120,6 +122,14 @@ def main():
     cv_f1s.append(accuracy_df.loc['cross_val', 'f1'])
     calibration_cals.append(accuracy_df.loc['calibration', 'calibration'])
     calibration_f1s.append(accuracy_df.loc['calibration', 'f1'])
+
+    venn_range_file = os.path.join(file_dir, 'venn_calib_props_in_range.json')
+    venn_calib_in_range_list = fh.read_json(venn_range_file)
+    venn_calib_in_range_vals.append(np.mean(venn_calib_in_range_list))
+
+    venn_levels_file = os.path.join(file_dir, 'list_of_n_levels.json')
+    venn_levels = fh.read_json(venn_levels_file)
+    venn_levels_vals.append(np.mean(venn_levels))
 
 
     for f in files[1:]:
@@ -155,6 +165,14 @@ def main():
         calibration_cals.append(accuracy_df.loc['calibration', 'calibration'])
         calibration_f1s.append(accuracy_df.loc['calibration', 'f1'])
 
+        venn_range_file = os.path.join(file_dir, 'venn_calib_props_in_range.json')
+        venn_calib_in_range_list = fh.read_json(venn_range_file)
+        venn_calib_in_range_vals.append(np.mean(venn_calib_in_range_list))
+
+        venn_levels_file = os.path.join(file_dir, 'list_of_n_levels.json')
+        venn_levels = fh.read_json(venn_levels_file)
+        venn_levels_vals.append(np.mean(venn_levels))
+
     df = df / float(n_files)
 
     print(df)
@@ -183,6 +201,12 @@ def main():
 
     corr, p_val = pearsonr(venn_rmses, PCC_cal_rmses)
     print("Venn correlation (with PCC_cal) = %0.4f" % corr)
+
+    corr, p_val = pearsonr(venn_rmses, venn_calib_in_range_vals)
+    print("Venn correlation (with venn calib in range) = %0.4f" % corr)
+
+    corr, p_val = pearsonr(venn_rmses, venn_levels_vals)
+    print("Venn correlation (with venn levels) = %0.4f" % corr)
 
     #plt.scatter(PCC_cal_rmses, PCC_nontrain_rmses)
     plt.scatter(PCC_cal_overestimates, PCC_nontrain_overestimates)
