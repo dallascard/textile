@@ -23,7 +23,6 @@ def main():
 
     config_file = os.path.join('config', options.config)
     n_train = int(options.n_train)
-    n_calib = int(options.n_calib)
     penalty = options.penalty
     repeats = int(options.repeats)
     model_type = options.model
