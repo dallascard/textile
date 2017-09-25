@@ -23,7 +23,7 @@ def main():
     #base_project = os.path.join('projects', 'mfc')
     #subprojects = ['climate', 'guncontrol', 'immigration', 'samesex', 'smoking']
 
-    pairs = [('pro_tone', 'lable'), ('framing', 'Economic'), ('framing', 'Legality'), ('framing', 'Health'), ('framing', 'Political')]
+    pairs = [('pro_tone', 'label'), ('framing', 'Economic'), ('framing', 'Legality'), ('framing', 'Health'), ('framing', 'Political')]
     for subset, label in pairs:
         preprocess_labels.preprocess_labels(project, subset, label_name=label, metadata_fields=['year_group'])
 
