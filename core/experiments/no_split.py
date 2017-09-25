@@ -8,6 +8,7 @@ from core.util import file_handling as fh
 from core.preprocessing import features
 from core.main import train, predict, evaluate_predictions
 from core.models import calibration, ivap, evaluation
+from core.experiments import combo
 from core.util import dirs
 
 
@@ -186,18 +187,18 @@ def cross_train_and_eval(project_dir, subset, config_file, n_train=500, suffix='
         train_labels_df = sampled_labels_df.loc[train_items].copy()
 
         # get the true proportion of labels in the test OR non-training data (calibration and test combined)
-        target_props, target_estimate, target_std = get_estimate_and_std(labels_df)
+        target_props, target_estimate, target_std = combo.get_estimate_and_std(labels_df)
         output_df.loc['target'] = [n_test, 'n/a', 'all', 'given', target_estimate, 0, target_estimate - 2 * target_std, target_estimate + 2 * target_std, np.nan]
 
         # get the same estimate from training data
-        train_props, train_estimate, train_std = get_estimate_and_std(train_labels_df)
+        train_props, train_estimate, train_std = combo.get_estimate_and_std(train_labels_df)
         # compute the error of this estimate
         train_rmse = np.sqrt((train_estimate - target_estimate)**2)
         train_contains_test = target_estimate > train_estimate - 2 * train_std and target_estimate < train_estimate + 2 * train_std
         output_df.loc['train'] = [n_train, 'train', 'train', 'n/a', train_estimate, train_rmse, train_estimate - 2 * train_std, train_estimate + 2 * train_std, train_contains_test]
 
         # do a test using the number of annotations rather than the number of items
-        train_props2, train_estimate2, train_std2 = get_estimate_and_std(train_labels_df, use_n_annotations=True)
+        train_props2, train_estimate2, train_std2 = combo.get_estimate_and_std(train_labels_df, use_n_annotations=True)
         # compute the error of this estimate
         train_rmse2 = np.sqrt((train_estimate2 - target_estimate)**2)
         train_contains_test2 = target_estimate > train_estimate2 - 2 * train_std2 and target_estimate < train_estimate2 + 2 * train_std2
@@ -278,25 +279,6 @@ def cross_train_and_eval(project_dir, subset, config_file, n_train=500, suffix='
         results_df.to_csv(os.path.join(dirs.dir_models(project_dir), model_name, 'accuracy.csv'))
         output_df.to_csv(os.path.join(dirs.dir_models(project_dir), model_name, 'results.csv'))
 
-
-def get_estimate_and_std(labels_df, use_n_annotations=False):
-    n_items, n_classes = labels_df.shape
-    assert n_classes == 2
-    labels = labels_df.values.copy()
-
-    if use_n_annotations:
-        n = np.sum(labels)
-    else:
-        n = n_items
-
-    # normalize the labels across classes
-    labels = labels / np.reshape(labels.sum(axis=1), (len(labels), 1))
-    # take the mean
-    props = np.mean(labels, axis=0)
-    estimate = props[1]
-    # estimate the variance by pretending this is a binomial distribution
-    std = np.sqrt(estimate * (1 - estimate) / float(n))
-    return props, estimate, std
 
 
 if __name__ == '__main__':

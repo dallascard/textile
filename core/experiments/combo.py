@@ -542,14 +542,19 @@ def get_estimate_and_std(labels_df, use_n_annotations=False):
     labels = labels_df.values.copy()
 
     if use_n_annotations:
+        # treat each annotation as a separate sample
         n = np.sum(labels)
+        # take the mean of all annotations
+        props = np.mean(labels, axis=0)
     else:
+        # treat each document as a separate sample with a single label
         n = n_items
+        # normalize the labels across classes
+        labels = labels / np.reshape(labels.sum(axis=1), (len(labels), 1))
+        # take the mean across items
+        props = np.mean(labels, axis=0)
 
-    # normalize the labels across classes
-    labels = labels / np.reshape(labels.sum(axis=1), (len(labels), 1))
-    # take the mean
-    props = np.mean(labels, axis=0)
+    # get the estimated probability of a positive label
     estimate = props[1]
     # estimate the variance by pretending this is a binomial distribution
     std = np.sqrt(estimate * (1 - estimate) / float(n))
