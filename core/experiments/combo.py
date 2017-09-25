@@ -549,7 +549,7 @@ def get_estimate_and_std(labels_df, use_n_annotations=False):
         # treat each annotation as a separate sample
         n = np.sum(labels)
         # take the mean of all annotations
-        props = np.mean(labels, axis=0)
+        props = np.sum(labels, axis=0) / float(n)
     else:
         # treat each document as a separate sample with a single label
         n = n_items
