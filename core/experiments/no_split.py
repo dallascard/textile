@@ -11,9 +11,6 @@ from core.models import calibration, ivap, evaluation
 from core.util import dirs
 
 
-
-
-
 def main():
     usage = "%prog project_dir subset config.json "
     parser = OptionParser(usage=usage)
