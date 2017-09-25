@@ -17,7 +17,7 @@ from core.util import dirs
 def main():
     usage = "%prog project_dir subset cross_field_name config.json "
     parser = OptionParser(usage=usage)
-    parser.add_option('-t', dest='train_prop', default=1.0,
+    parser.add_option('--n_train', dest='n_train', default=100,
                       help='Proportion of training data to use: default=%default')
     parser.add_option('--n_calib', dest='n_calib', default=0,
                       help='Number of test instances to use for calibration: default=%default')
@@ -67,7 +67,7 @@ def main():
     field_name = args[2]
     config_file = args[3]
 
-    train_prop = float(options.train_prop)
+    n_train = int(options.n_train)
     n_calib = int(options.n_calib)
     sample_labels = options.sample
     suffix = options.suffix
@@ -96,15 +96,15 @@ def main():
 
     average = 'micro'
 
-    cross_train_and_eval(project_dir, subset, field_name, config_file, n_calib, train_prop, suffix, model_type, loss, do_ensemble, dh, label, penalty, cshift, intercept, n_dev_folds, repeats, verbose, average, objective, seed, alpha_min, alpha_max, sample_labels, run_all)
+    cross_train_and_eval(project_dir, subset, field_name, config_file, n_calib, n_train, suffix, model_type, loss, do_ensemble, dh, label, penalty, cshift, intercept, n_dev_folds, repeats, verbose, average, objective, seed, alpha_min, alpha_max, sample_labels, run_all)
 
 
-def cross_train_and_eval(project_dir, subset, field_name, config_file, n_calib=0, train_prop=1.0, suffix='', model_type='LR', loss='log', do_ensemble=True, dh=100, label='label', penalty='l1', cshift=None, intercept=True, n_dev_folds=5, repeats=1, verbose=False, average='micro', objective='f1', seed=None, alpha_min=0.01, alpha_max=1000.0, sample_labels=False, run_all=False):
+def cross_train_and_eval(project_dir, subset, field_name, config_file, n_calib=0, n_train=100, suffix='', model_type='LR', loss='log', do_ensemble=True, dh=100, label='label', penalty='l1', cshift=None, intercept=True, n_dev_folds=5, repeats=1, verbose=False, average='micro', objective='f1', seed=None, alpha_min=0.01, alpha_max=1000.0, sample_labels=False, run_all=False):
 
     model_basename = subset + '_' + label + '_' + field_name + '_' + model_type + '_' + penalty
     if model_type == 'MLP':
         model_basename += '_' + str(dh)
-    model_basename +=  '_' + str(train_prop) + '_' + str(n_calib) + '_' + objective
+    model_basename +=  '_' + str(n_train) + '_' + str(n_calib) + '_' + objective
     if cshift is not None:
         model_basename += '_cshift'
     model_basename += suffix
@@ -118,7 +118,7 @@ def cross_train_and_eval(project_dir, subset, field_name, config_file, n_calib=0
         'field_name': field_name,
         'config_file': config_file,
         'n_calib': n_calib,
-        'train_prop': train_prop,
+        'n_train': n_train,
         'suffix': suffix,
         'model_type': model_type,
         'loss': loss,
@@ -160,14 +160,14 @@ def cross_train_and_eval(project_dir, subset, field_name, config_file, n_calib=0
         train_selector = metadata[field_name] != v
         train_subset = metadata[train_selector]
         train_items = list(train_subset.index)
-        n_train = len(train_items)
+        n_train_cshift = len(train_items)
 
         non_train_selector = metadata[field_name] == v
         non_train_subset = metadata[non_train_selector]
         non_train_items = non_train_subset.index.tolist()
-        n_non_train = len(non_train_items)
+        n_non_train_cshift = len(non_train_items)
 
-        print("Train: %d, non-train: %d" % (n_train, n_non_train))
+        print("Train: %d, non-train: %d" % (n_train_cshift, n_non_train_cshift))
 
         # load all labels
         label_dir = dirs.dir_labels(project_dir, subset)
@@ -197,7 +197,7 @@ def cross_train_and_eval(project_dir, subset, field_name, config_file, n_calib=0
             print("Min: %0.4f" % train_test_probs_df[1].min())
             print("Max: %0.4f" % train_test_probs_df[1].max())
             # use the estimated probability of each item being a training item to compute item weights
-            weights = n_train / float(n_non_train) * (1.0/train_test_probs_df[0].values - 1)
+            weights = n_train_cshift / float(n_non_train_cshift) * (1.0/train_test_probs_df[0].values - 1)
             # print a summary of the weights from just the training items
             print("Min weight: %0.4f" % weights[train_selector].min())
             print("Ave weight: %0.4f" % weights[train_selector].mean())
@@ -220,8 +220,6 @@ def cross_train_and_eval(project_dir, subset, field_name, config_file, n_calib=0
         labeled_items = set(labels_df.index)
 
         train_items = [i for i in train_items if i in labeled_items]
-        n_train = len(train_items)
-
         non_train_items = [i for i in non_train_items if i in labeled_items]
         n_non_train = len(non_train_items)
 
@@ -233,12 +231,8 @@ def cross_train_and_eval(project_dir, subset, field_name, config_file, n_calib=0
         for r in range(repeats):
             print("* Repetition %d *" % r)
             # next, take a random subset of the training data (and ignore the rest), to simulate fewer annotated items
-            if train_prop < 1.0:
-                np.random.shuffle(train_items)
-                train_items_r = np.random.choice(train_items, size=int(n_train * train_prop), replace=False)
-            else:
-                train_items_r = train_items.copy()
-                np.random.shuffle(train_items_r)
+            np.random.shuffle(train_items)
+            train_items_r = np.random.choice(train_items, size=n_train, replace=False)
             n_train_r = len(train_items_r)
 
             # create a data frame to hold a summary of the results
