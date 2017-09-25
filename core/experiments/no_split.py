@@ -45,9 +45,9 @@ def main():
                       help='Use to fit a model with no intercept: default=%default')
     parser.add_option('--objective', dest='objective', default='f1',
                       help='Objective for choosing best alpha [calibration|f1]: default=%default')
-    parser.add_option('--n_dev_folds', dest='n_dev_folds', default=3,
+    parser.add_option('--n_dev_folds', dest='n_dev_folds', default=5,
                       help='Number of dev folds for tuning regularization: default=%default')
-    parser.add_option('--repeats', dest='repeats', default=1,
+    parser.add_option('--repeats', dest='repeats', default=3,
                       help='Number of repeats with random calibration/test splits: default=%default')
     parser.add_option('--seed', dest='seed', default=None,
                       help='Random seed (None=random): default=%default')
