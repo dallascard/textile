@@ -9,7 +9,7 @@ def main():
     parser = OptionParser(usage=usage)
     parser.add_option('--config', dest='config', default='default.json',
                       help='Field to split on: default=%default')
-    parser.add_option('--n_train', dest='train_prop', default=100,
+    parser.add_option('--n_train', dest='n_train', default=100,
                       help='Proportion of training data to use for training: default=%default')
     parser.add_option('--penalty', dest='penalty', default='l2',
                       help='Regularization type: default=%default')
