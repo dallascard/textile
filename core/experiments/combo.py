@@ -43,7 +43,7 @@ def main():
                       help='Label name: default=%default')
     parser.add_option('--cshift', dest='cshift', default=None,
                       help='Covariate shift method [None|classify]: default=%default')
-    parser.add_option('--penalty', dest='penalty', default='l1',
+    parser.add_option('--penalty', dest='penalty', default='l2',
                       help='Regularization type: default=%default')
     parser.add_option('--no_intercept', action="store_true", dest="no_intercept", default=False,
                       help='Use to fit a model with no intercept: default=%default')

@@ -29,7 +29,7 @@ def main():
     #                  help='Partition for mfc (e.g. pre: default=%default')
     parser.add_option('--model', dest='model', default='LR',
                       help='model type [LR|MLP]: default=%default')
-    parser.add_option('--penalty', dest='penalty', default='l1',
+    parser.add_option('--penalty', dest='penalty', default='l2',
                       help='Regularization type [l1|l2]: default=%default')
     parser.add_option('--objective', dest='objective', default='f1',
                       help='objective [f1|calibration]: default=%default')
