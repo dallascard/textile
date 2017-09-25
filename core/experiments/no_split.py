@@ -285,7 +285,7 @@ def get_estimate_and_std(labels_df, use_n_annotations=False):
     labels = labels_df.values.copy()
 
     if use_n_annotations:
-        n = np.sum(labels.values)
+        n = np.sum(labels)
     else:
         n = n_items
 
