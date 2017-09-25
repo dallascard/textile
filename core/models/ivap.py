@@ -251,7 +251,7 @@ def get_pred_for_one_model_internal(model, test_X, plot=False):
     return test_pred_ranges
 
 
-def estimate_probs_from_labels(project_dir, full_model, model_name, labels_df, calib_subset, test_subset, weights_df=None, calib_items=None, test_items=None, verbose=False, plot=0):
+def estimate_probs_from_labels(project_dir, full_model, model_name, labels_df, calib_subset, test_subset, weights_df=None, calib_items=None, test_items=None, verbose=False, plot=False):
     # do IVAP by making new predictions on calibration data
 
     n_items, n_classes = labels_df.shape
@@ -364,8 +364,7 @@ def estimate_probs_from_labels(project_dir, full_model, model_name, labels_df, c
             assert n_classes == 2
             calib_scores = calib_pred_probs[:, 1]
 
-            test_pred_ranges_all[model_i, :, :], mean_scores_in_range = get_pred_for_one_model(current_model, test_X, calib_y, calib_scores, calib_weights, plot=plot)
-            props_in_range.append(str(mean_scores_in_range))
+            test_pred_ranges_all[model_i, :, :] = get_pred_for_one_model(current_model, test_X, calib_y, calib_scores, calib_weights, plot=plot)
 
         geometric_means = np.zeros([n_items, 2])
         for i in range(n_items):
@@ -388,11 +387,10 @@ def estimate_probs_from_labels(project_dir, full_model, model_name, labels_df, c
         assert n_classes == 2
         calib_scores = calib_pred_probs[:, 1]
 
-        test_pred_ranges, mean_scores_in_range = get_pred_for_one_model(full_model, test_X, calib_y, calib_scores, calib_weights, plot=plot)
-        props_in_range = [str(mean_scores_in_range)]
+        test_pred_ranges = get_pred_for_one_model(full_model, test_X, calib_y, calib_scores, calib_weights, plot=plot)
         combo = test_pred_ranges[:, 1] / (1.0 - test_pred_ranges[:, 0] + test_pred_ranges[:, 1])
 
-    return test_pred_ranges, combo, props_in_range
+    return test_pred_ranges, combo
 
 
 def get_pred_for_one_model(model, test_X, calib_y, calib_scores, calib_weights, plot=False):
@@ -401,58 +399,76 @@ def get_pred_for_one_model(model, test_X, calib_y, calib_scores, calib_weights, 
     test_pred_ranges = np.zeros((n_test, 2))
     scores_in_range = np.zeros(n_test)
 
-    for i in range(n_test):
-        if plot > 1:
-            fig, ax = plt.subplots()
-        for proposed_label in [0, 1]:
+    # get the set of unique scores in the calibration set
+    calib_scores_sorted = np.sort(list(set(calib_scores)))
+    n_calib_sorted = len(calib_scores_sorted)
 
-            all_scores = np.r_[calib_scores, test_scores[i]]
+    # create a set of exemplar test points that fall between the calibration points
+    exemplars = []
+    exemplars.append(calib_scores_sorted[0]-1)
+    for i in range(n_calib_sorted-1):
+        exemplars.append((calib_scores_sorted[i] + calib_scores_sorted[i+1])/2.0)
+    exemplars.append(calib_scores_sorted[-1]+1)
+    n_exemplars = len(exemplars)
+
+    calib_sorted_ranges = np.zeros((n_calib_sorted, 2))
+    exemplar_ranges = np.zeros((n_exemplars, 2))
+
+    # get the IR outputs if we repeat a calibration point
+    for i in range(n_calib_sorted):
+        for proposed_label in [0, 1]:
+            all_scores = np.r_[calib_scores, calib_scores_sorted[i]]
             all_labels = np.r_[calib_y, proposed_label]
             # only give the new item a weight of 1 (equivalent to a single annotation of 0 or 1)
             all_weights = np.r_[calib_weights, 1.0]
 
-            #slopes = isotonic_regression.isotonic_regression(all_scores, all_labels)
-            #test_pred_ranges[i, proposed_label] = slopes[-1]
-
-            # upweight duplicate scores to force scikit learn's IR to do the right thing
             ir = IsotonicRegression(0, 1)
             ir.fit(all_scores, all_labels, all_weights)
-            test_pred_ranges[i, proposed_label] = ir.predict([all_scores[-1]])
+            calib_sorted_ranges[i, proposed_label] = ir.predict([all_scores[-1]])
 
-            if plot > 1:
-                x_vals = all_scores.copy().tolist()
-                x_vals.sort()
-                pred_vals = ir.predict(x_vals)
-                if proposed_label == 0:
-                    ax.scatter(all_scores[:-1], all_labels[:-1], s=7, alpha=0.6)
-                    ax.plot(x_vals, np.mean(all_labels[:-1]) * np.ones_like(x_vals), 'k--')
-                ax.scatter(all_scores[-1], all_labels[-1], s=7, alpha=0.6)
-                ax.plot(x_vals, pred_vals)
+    # get the IR outputs for points in between
+    for i in range(n_exemplars):
+        for proposed_label in [0, 1]:
+
+            all_scores = np.r_[calib_scores, exemplars[i]]
+            all_labels = np.r_[calib_y, proposed_label]
+            # only give the new item a weight of 1 (equivalent to a single annotation of 0 or 1)
+            all_weights = np.r_[calib_weights, 1.0]
+
+            ir = IsotonicRegression(0, 1)
+            ir.fit(all_scores, all_labels, all_weights)
+            exemplar_ranges[i, proposed_label] = ir.predict([all_scores[-1]])
+
+    if plot:
+        fig, ax = plt.subplots()
+        ax.scatter(calib_scores, calib_y, c='k')
+        for i in range(n_calib_sorted):
+            ax.plot((calib_scores_sorted[i], calib_scores_sorted[i]), (calib_sorted_ranges[i, 0], calib_sorted_ranges[i, 1]), c='b')
+        for i in range(1, n_exemplars-1):
+            ax.plot((exemplars[i], exemplars[i]), (exemplar_ranges[i, 0], exemplar_ranges[i, 1]), c='g')
 
         if test_pred_ranges[i, 0] <= test_scores[i] <= test_pred_ranges[i, 1]:
             scores_in_range[i] = 1.0
-
-        if plot > 1:
-            ax.scatter([all_scores[-1], all_scores[-1]], test_pred_ranges[i, :], s=8)
-            ax.plot([all_scores[-1], all_scores[-1]], test_pred_ranges[i, :], 'r')
-            plt.show()
-            time.sleep(2)
-
-    if plot > 0:
-        order = np.argsort(test_scores)
-        for i in range(n_test):
-            j = order[i]
-            if test_pred_ranges[j, 0] < test_scores[j] < test_pred_ranges[j, 1]:
-                plt.plot([i, i], [test_pred_ranges[j, 0], test_pred_ranges[j, 1]], c='g')
-            else:
-                plt.plot([i, i], [test_pred_ranges[j, 0], test_pred_ranges[j, 1]], c='r')
-            plt.scatter(i, test_scores[j], c='k', alpha=0.5)
         plt.show()
 
-    return test_pred_ranges, float(np.mean(scores_in_range))
+    # check which interval each test point falls into
+    for i in range(n_test):
+        index = bisect.bisect_left(calib_scores_sorted, test_scores[i])
+        # if it is beyond the end of the test point, use the last exemplar
+        if index == n_calib_sorted:
+            test_pred_ranges[i, :] = exemplar_ranges[index, :]
+        # otherwise, if the score is equal to a calibration score, use that
+        elif test_scores[i] == calib_scores_sorted[index]:
+            test_pred_ranges[i, :] = calib_sorted_ranges[index, :]
+        # otherwise, use the corresponding exemplar
+        else:
+            test_pred_ranges[i, :] = exemplar_ranges[index, :]
+
+    return test_pred_ranges
 
 
-def estimate_probs_from_labels_cv(project_dir, full_model, model_name, labels_df, calib_subset, weights_df=None, calib_items=None, verbose=False, plot=0):
+
+def estimate_probs_from_labels_cv(project_dir, full_model, model_name, labels_df, calib_subset, weights_df=None, calib_items=None, verbose=False, plot=False):
     # do IVAP by making new predictions on calibration data
 
     n_items, n_classes = labels_df.shape
