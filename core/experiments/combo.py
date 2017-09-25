@@ -298,6 +298,12 @@ def cross_train_and_eval(project_dir, subset, field_name, config_file, n_calib=0
                 calib_contains_test = target_estimate > calib_estimate - 2 * calib_std and calib_estimate < calib_estimate + 2 * calib_std
                 output_df.loc['calibration'] = [n_calib, 'calibration', 'nontrain', 'given', calib_estimate, calib_rmse, calib_estimate - 2 * calib_std, calib_estimate + 2 * calib_std, calib_contains_test]
 
+                # do a test using the number of annotations rather than the number of items
+                calib_props2, calib_estimate2, calib_std2 = get_estimate_and_std(calib_labels_df, use_n_annotations=True)
+                calib_rmse2 = np.sqrt((calib_estimate2 - target_estimate)**2)
+                calib_contains_test2 = target_estimate > calib_estimate2 - 2 * calib_std2 and calib_estimate < calib_estimate2 + 2 * calib_std2
+                output_df.loc['calibration_n_annotations'] = [n_calib, 'calibration', 'nontrain', 'given', calib_estimate2, calib_rmse2, calib_estimate2 - 2 * calib_std2, calib_estimate2 + 2 * calib_std2, calib_contains_test2]
+
             results_df = pd.DataFrame([], columns=['f1', 'acc', 'calibration', 'calib overall'])
 
             # Now train a model on the training data, saving the calibration data for calibration
@@ -530,10 +536,15 @@ def cross_train_and_eval(project_dir, subset, field_name, config_file, n_calib=0
             output_df.to_csv(os.path.join(dirs.dir_models(project_dir), model_name, 'results.csv'))
 
 
-def get_estimate_and_std(labels_df):
+def get_estimate_and_std(labels_df, use_n_annotations=False):
     n_items, n_classes = labels_df.shape
     assert n_classes == 2
     labels = labels_df.values.copy()
+
+    if use_n_annotations:
+        n = np.sum(labels.values())
+    else:
+        n = n_items
 
     # normalize the labels across classes
     labels = labels / np.reshape(labels.sum(axis=1), (len(labels), 1))
@@ -541,7 +552,7 @@ def get_estimate_and_std(labels_df):
     props = np.mean(labels, axis=0)
     estimate = props[1]
     # estimate the variance by pretending this is a binomial distribution
-    std = np.sqrt(estimate * (1 - estimate) / float(n_items))
+    std = np.sqrt(estimate * (1 - estimate) / float(n))
     return props, estimate, std
 
 

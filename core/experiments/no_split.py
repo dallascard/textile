@@ -196,6 +196,13 @@ def cross_train_and_eval(project_dir, subset, config_file, n_train=500, suffix='
         train_contains_test = target_estimate > train_estimate - 2 * train_std and target_estimate < train_estimate + 2 * train_std
         output_df.loc['train'] = [n_train, 'train', 'train', 'n/a', train_estimate, train_rmse, train_estimate - 2 * train_std, train_estimate + 2 * train_std, train_contains_test]
 
+        # do a test using the number of annotations rather than the number of items
+        train_props2, train_estimate2, train_std2 = get_estimate_and_std(train_labels_df, use_n_annotations=True)
+        # compute the error of this estimate
+        train_rmse2 = np.sqrt((train_estimate2 - target_estimate)**2)
+        train_contains_test2 = target_estimate > train_estimate2 - 2 * train_std2 and target_estimate < train_estimate2 + 2 * train_std2
+        output_df.loc['train_n_annotations'] = [n_train, 'train', 'train', 'n/a', train_estimate2, train_rmse2, train_estimate2 - 2 * train_std2, train_estimate2 + 2 * train_std2, train_contains_test2]
+
         print("target proportions: (%0.3f, %0.3f); train proportions: %0.3f" % (target_estimate - 2 * target_std, target_estimate + 2 * target_std, train_estimate))
 
         if train_estimate > 0.5:
@@ -272,10 +279,15 @@ def cross_train_and_eval(project_dir, subset, config_file, n_train=500, suffix='
         output_df.to_csv(os.path.join(dirs.dir_models(project_dir), model_name, 'results.csv'))
 
 
-def get_estimate_and_std(labels_df):
+def get_estimate_and_std(labels_df, use_n_annotations=False):
     n_items, n_classes = labels_df.shape
     assert n_classes == 2
     labels = labels_df.values.copy()
+
+    if use_n_annotations:
+        n = np.sum(labels.values())
+    else:
+        n = n_items
 
     # normalize the labels across classes
     labels = labels / np.reshape(labels.sum(axis=1), (len(labels), 1))
@@ -283,7 +295,7 @@ def get_estimate_and_std(labels_df):
     props = np.mean(labels, axis=0)
     estimate = props[1]
     # estimate the variance by pretending this is a binomial distribution
-    std = np.sqrt(estimate * (1 - estimate) / float(n_items))
+    std = np.sqrt(estimate * (1 - estimate) / float(n))
     return props, estimate, std
 
 
