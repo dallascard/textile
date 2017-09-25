@@ -17,7 +17,7 @@ def main():
                       help='Number of test instances to use for calibration: default=%default')
     parser.add_option('--penalty', dest='penalty', default='l2',
                       help='Regularization type: default=%default')
-    parser.add_option('-r', dest='repeats', default=5,
+    parser.add_option('-r', dest='repeats', default=3,
                       help='Repeats: default=%default')
     parser.add_option('--model', dest='model', default='LR',
                       help='Model type [LR|MLP]: default=%default')
