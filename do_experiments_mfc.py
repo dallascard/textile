@@ -12,7 +12,7 @@ def main():
     parser.add_option('--config', dest='config', default='default.json',
                       help='Field to split on: default=%default')
     parser.add_option('--n_train', dest='n_train', default=100,
-                      help='Proportion of training data to use for training: default=%default')
+                      help='Number of training instances to use (0 for all): default=%default')
     parser.add_option('--n_calib', dest='n_calib', default=100,
                       help='Number of test instances to use for calibration: default=%default')
     parser.add_option('--penalty', dest='penalty', default='l2',

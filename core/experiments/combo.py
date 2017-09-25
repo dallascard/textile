@@ -18,8 +18,8 @@ def main():
     usage = "%prog project_dir subset cross_field_name config.json "
     parser = OptionParser(usage=usage)
     parser.add_option('--n_train', dest='n_train', default=100,
-                      help='Proportion of training data to use: default=%default')
-    parser.add_option('--n_calib', dest='n_calib', default=0,
+                      help='Number of training instances to use (0 for all): default=%default')
+    parser.add_option('--n_calib', dest='n_calib', default=100,
                       help='Number of test instances to use for calibration: default=%default')
     parser.add_option('--sample', action="store_true", dest="sample", default=False,
                       help='Sample labels instead of averaging: default=%default')
@@ -231,8 +231,12 @@ def cross_train_and_eval(project_dir, subset, field_name, config_file, n_calib=0
         for r in range(repeats):
             print("* Repetition %d *" % r)
             # next, take a random subset of the training data (and ignore the rest), to simulate fewer annotated items
-            np.random.shuffle(train_items)
-            train_items_r = np.random.choice(train_items, size=n_train, replace=False)
+            if n_train > 0:
+                np.random.shuffle(train_items)
+                train_items_r = np.random.choice(train_items, size=n_train, replace=False)
+            else:
+                train_items_r = train_items
+
             n_train_r = len(train_items_r)
 
             # create a data frame to hold a summary of the results
