@@ -84,7 +84,6 @@ def main():
     df = results.copy()
 
     for f in files[1:]:
-        print(f)
         results = fh.read_csv_to_df(f)
         df += results
 
