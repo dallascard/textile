@@ -254,7 +254,7 @@ def cross_train_and_eval(project_dir, subset, config_file, n_train=500, suffix='
         output_df.loc['PVC_internal'] = [n_items, 'train', 'all', 'predicted', all_pvc_estimate_internal[1], all_pvc_rmse_internal, np.nan, np.nan, np.nan]
 
         print("Venn internal all")
-        all_pred_ranges_internal, all_preds_internal = ivap.estimate_probs_from_labels_internal(project_dir, model, model_name, subset, labeled_items)
+        all_pred_ranges_internal, all_preds_internal = ivap.estimate_probs_from_labels_internal(project_dir, model, model_name, subset, labeled_items, plot=True)
 
         pred_range = np.mean(all_pred_ranges_internal, axis=0)
         venn_estimate = np.mean(all_preds_internal)
