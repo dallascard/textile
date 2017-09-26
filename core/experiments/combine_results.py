@@ -81,6 +81,7 @@ def main():
     n_outside = 0
     calib_rmses = []
     calib_widths = []
+    calib_widths_n_annotations = []
     PCC_cal_rmses = []
     PCC_cal_overestimates = []
     PCC_nontrain_rmses = []
@@ -106,6 +107,7 @@ def main():
 
     calib_rmses.append(results.loc['calibration', 'RMSE'])
     calib_widths.append(results.loc['calibration', '95ucl'] - results.loc['calibration', '95lcl'])
+    calib_widths_n_annotations.append(results.loc['calibration_n_annotations', '95ucl'] - results.loc['calibration_n_annotations', '95lcl'])
     PCC_cal_rmses.append(results.loc['PCC_cal', 'RMSE'])
     PCC_nontrain_rmses.append(results.loc['PCC_nontrain', 'RMSE'])
     PCC_cal_overestimates.append(results.loc['PCC_cal', 'estimate'] - results.loc['calibration', 'estimate'])
@@ -148,6 +150,7 @@ def main():
 
         calib_rmses.append(results.loc['calibration', 'RMSE'])
         calib_widths.append(results.loc['calibration', '95ucl'] - results.loc['calibration', '95lcl'])
+        calib_widths_n_annotations.append(results.loc['calibration_n_annotations', '95ucl'] - results.loc['calibration_n_annotations', '95lcl'])
         PCC_cal_rmses.append(results.loc['PCC_cal', 'RMSE'])
         PCC_nontrain_rmses.append(results.loc['PCC_nontrain', 'RMSE'])
         PCC_cal_overestimates.append(results.loc['PCC_cal', 'estimate'] - results.loc['calibration', 'estimate'])
@@ -180,7 +183,8 @@ def main():
     print("n_outside: %d" % n_outside)
     print("mean venn outside error = %0.6f" % np.mean(venn_outside_errors))
     print(" max venn outside error = %0.6f" % np.max(venn_outside_errors))
-    print("mean calib width = %0.4f" % np.mean(calib_widths))
+    print("mean calib (n_items) width = %0.4f" % np.mean(calib_widths))
+    print("mean calib (n_annot) width = %0.4f" % np.mean(calib_widths_n_annotations))
     print("mean venn widths = %0.6f" % np.mean(venn_widths))
 
     corr, p_val = pearsonr(PCC_nontrain_rmses, cv_cals)
