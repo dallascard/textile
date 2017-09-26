@@ -41,6 +41,8 @@ def main():
     penalty = options.penalty
     dh = str(int(options.dh))
 
+    fig, ax = plt.subplots()
+
     # basic LR f1: combining subset, label, repetitions, and pre/post date
     #basename = '*_' + model_type
     for objective in ['f1', 'calibration']:
@@ -119,13 +121,13 @@ def main():
         print(n_train_means)
         print(CC_means)
         print(PCC_means)
-        plt.scatter(n_train_values, CC_nontrain)
-        plt.scatter(n_train_values, PCC_nontrain, alpha=0.5)
-        plt.scatter(n_train_values, CC_means)
-        plt.scatter(n_train_values, PCC_means, alpha=0.5)
+        ax.scatter(n_train_values, CC_nontrain)
+        ax.scatter(n_train_values, PCC_nontrain, alpha=0.5)
+        ax.scatter(n_train_values, CC_means)
+        ax.scatter(n_train_values, PCC_means, alpha=0.5)
         #plt.plot(np.array(n_train_means), np.array(PCC_means), alpha=0.5, label=objective)
 
-    plt.legend()
+    ax.legend()
     plt.savefig('test.pdf')
     #plt.show()
 
