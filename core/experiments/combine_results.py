@@ -15,7 +15,7 @@ def main():
     parser = OptionParser(usage=usage)
     parser.add_option('--cshift', dest='cshift', default=None,
                       help='cshift [None|classify]: default=%default')
-    parser.add_option('-t', dest='train_prop', default=0.9,
+    parser.add_option('--n_train', dest='n_train', default=100,
                       help='Train prop: default=%default')
     parser.add_option('--n_calib', dest='n_calib', default=100,
                       help='Number of calibration instances: default=%default')
@@ -44,7 +44,7 @@ def main():
 
     objective = options.objective
     cshift = options.cshift
-    train_prop = str(float(options.train_prop))
+    n_train = str(int(options.n_train))
     n_calib = str(int(options.n_calib))
     base = options.base
     subset = options.subset
@@ -58,7 +58,7 @@ def main():
     basename = '*_' + label + '_*_' + model_type + '_' + penalty
     if model_type == 'MLP':
         basename += '_' + dh
-    basename += '_' + train_prop + '_' + n_calib + '_' + objective
+    basename += '_' + n_train + '_' + n_calib + '_' + objective
     if model_type == 'MLP':
         basename += '_r?'
     if cshift is not None:
