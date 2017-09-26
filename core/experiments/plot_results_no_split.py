@@ -33,7 +33,6 @@ def main():
 
     (options, args) = parser.parse_args()
 
-    n_train = str(int(options.n_train))
     sampled = options.sample
     base = options.base
     subset = options.subset
