@@ -80,7 +80,14 @@ def main():
 
     print(files[0])
     results = fh.read_csv_to_df(files[0])
-    df = pd.DataFrame(results[['estimate', 'RMSE', 'contains_test']].copy())
+    df = pd.DataFrame(columns=['estimate', 'MAE', 'MSE', 'contains_test'])
+    #df = pd.DataFrame(results[['estimate', 'RMSE', 'contains_test']].copy())
+    target_estimate = results.loc['target', 'estimate']
+    for loc in results.index:
+        df.loc[loc, 'estimate'] = results.loc[loc, 'estimate']
+        df.loc[loc, 'MAE'] = results.loc[loc, 'RMSE']
+        df.loc[loc, 'contains_test'] = results.loc[loc, 'contains_test']
+        df.loc[loc, 'MSE'] = (results.loc[loc, 'estimate'] - target_estimate) ** 2
 
     venn_outside_errors = []
     n_outside = 0
@@ -138,11 +145,17 @@ def main():
     venn_levels_list = [float(f) for f in fh.read_text(venn_levels_file)]
     venn_levels_vals.append(np.mean(venn_levels_list))
 
-
     for f in files[1:]:
         print(f)
         results = fh.read_csv_to_df(f)
-        df += results[['estimate', 'RMSE', 'contains_test']]
+        #df += results[['estimate', 'RMSE', 'contains_test']]
+
+        target_estimate = results.loc['target', 'estimate']
+        for loc in results.index:
+            df.loc[loc, 'estimate'] += results.loc[loc, 'estimate']
+            df.loc[loc, 'MAE'] += results.loc[loc, 'RMSE']
+            df.loc[loc, 'contains_test'] += results.loc[loc, 'contains_test']
+            df.loc[loc, 'MSE'] += (results.loc[loc, 'estimate'] - target_estimate) ** 2
 
         target_prop = results.loc['target', 'estimate']
         venn_av_lower = results.loc['Venn_averaged', '95lcl']

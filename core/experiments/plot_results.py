@@ -14,12 +14,22 @@ from ..util import file_handling as fh
 def main():
     usage = "%prog "
     parser = OptionParser(usage=usage)
+    parser.add_option('--cshift', dest='cshift', default=None,
+                      help='cshift [None|classify]: default=%default')
+    parser.add_option('--n_train', dest='n_train', default=100,
+                      help='Train prop: default=%default')
     parser.add_option('--n_calib', dest='n_calib', default=100,
-                      help='Number of calibration items used: default=%default')
+                      help='Number of calibration instances: default=%default')
+    parser.add_option('--sample', action="store_true", dest="sample", default=False,
+                      help='Sample labels instead of averaging: default=%default')
     parser.add_option('--base', dest='base', default='mfc',
                       help='base [mfc|amazon]: default=%default')
     parser.add_option('--subset', dest='subset', default='*',
                       help='Restrict to a single subset (e.g. immigration): default=%default')
+    parser.add_option('--label', dest='label', default='*',
+                      help='Label (e.g. Economic: default=%default')
+    #parser.add_option('--partition', dest='partition', default='*',
+    #                  help='Partition for mfc (e.g. pre: default=%default')
     parser.add_option('--model', dest='model', default='LR',
                       help='model type [LR|MLP]: default=%default')
     parser.add_option('--penalty', dest='penalty', default='l2',
@@ -28,17 +38,19 @@ def main():
                       help='objective [f1|calibration]: default=%default')
     parser.add_option('--dh', dest='dh', default=100,
                       help='Hidden dimension for MLP: default=%default')
-    parser.add_option('--cshift', dest='cshift', default=None,
-                      help='cshift [None|classify]: default=%default')
+
+    (options, args) = parser.parse_args()
 
     (options, args) = parser.parse_args()
 
     objective = options.objective
     cshift = options.cshift
-    #n_calib = str(int(options.n_calib))
+    n_train = str(int(options.n_train))
     n_calib = str(int(options.n_calib))
+    sample_labels = options.sample
     base = options.base
     subset = options.subset
+    label = options.label
     model_type = options.model
     penalty = options.penalty
     dh = str(int(options.dh))
@@ -46,16 +58,19 @@ def main():
     # basic LR f1: combining subset, label, repetitions, and pre/post date
     #basename = '*_' + model_type
     for objective in ['f1', 'calibration']:
-        basename = '*_' + model_type + '_' + penalty
+
+        basename = '*_' + label + '_*_' + model_type + '_' + penalty
         if model_type == 'MLP':
             basename += '_' + dh
-        #basename += '_' + train_prop + '_' + calib_prop + '_' + objective
-        #basename += '_*_' + objective
-        basename += '_*_' + n_calib + '_' + objective
+        basename += '_' + n_train + '_' + n_calib + '_' + objective
+        if model_type == 'MLP':
+            basename += '_r?'
         if cshift is not None:
             basename += '_cshift'
+        if sample_labels:
+            basename += '_sampled'
         if base == 'mfc':
-            basename += '_*_????_?'
+            basename += '_???_????_?'
         elif base == 'amazon':
             basename += '_????_?'
 
