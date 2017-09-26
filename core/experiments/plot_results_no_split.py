@@ -5,7 +5,12 @@ from optparse import OptionParser
 
 import numpy as np
 import pandas as pd
+
+# import Agg to avoid network display problems
+import matplotlib as mpl
+mpl.use('Agg')
 import matplotlib.pyplot as plt
+
 
 
 from ..util import file_handling as fh
