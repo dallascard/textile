@@ -188,8 +188,6 @@ def main():
     corr, p_val = pearsonr(PCC_nontrain_rmses, cv_f1s)
     print("PCC correlation (with cv_f1s) = %0.4f" % corr)
 
-    corr, p_val = pearsonr(PCC_nontrain_rmses, calibration_cals)
-    print("PCC correlation (with calib calibration) = %0.4f" % corr)
     corr, p_val = pearsonr(PCC_nontrain_rmses, calibration_f1s)
     print("PCC correlation (with calib f1s) = %0.4f" % corr)
 
