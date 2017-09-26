@@ -54,7 +54,7 @@ def main():
         basename += '_' + dh
     basename += '_' + n_train + '_' + objective
     if sampled:
-        basename += 'sampled'
+        basename += '_sampled'
     basename += '_nosplit_?'
     #if base == 'mfc':
     #    basename += '_???_????_?'
