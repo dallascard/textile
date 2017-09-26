@@ -96,8 +96,8 @@ def main():
             mean_df = pd.DataFrame(results[['N', 'estimate', 'RMSE', 'contains_test']].copy())
             #n_train.append(float(t))
             #n_train.append(df.loc['train', 'N'])
-            CC_nontrain.append(df.loc['CC_nontrain', 'RMSE'])
-            PCC_nontrain.append(df.loc['PCC_nontrain', 'RMSE'])
+            CC_nontrain.append(df.loc['CC_nontrain_averaged', 'RMSE'])
+            PCC_nontrain.append(df.loc['PCC_nontrain_averaged', 'RMSE'])
 
             for f in files[1:]:
                 print(f)
@@ -106,15 +106,15 @@ def main():
                 mean_df += results[['N', 'estimate', 'RMSE', 'contains_test']]
                 #n_train.append(float(t))
                 #n_train.append(df.loc['train', 'N'])
-                CC_nontrain.append(df.loc['CC_nontrain', 'RMSE'])
-                PCC_nontrain.append(df.loc['PCC_nontrain', 'RMSE'])
+                CC_nontrain.append(df.loc['CC_nontrain_averaged', 'RMSE'])
+                PCC_nontrain.append(df.loc['PCC_nontrain_averaged', 'RMSE'])
 
             mean_df = mean_df / float(n_files)
 
             #n_train_means.append(float(t))
             n_train_means.append(mean_df.loc['train', 'N'])
-            CC_means.append(mean_df.loc['CC_nontrain', 'RMSE'])
-            PCC_means.append(mean_df.loc['PCC_nontrain', 'RMSE'])
+            CC_means.append(mean_df.loc['CC_nontrain_averaged', 'RMSE'])
+            PCC_means.append(mean_df.loc['PCC_nontrain_averaged', 'RMSE'])
 
         print(n_train_means)
         print(CC_means)
