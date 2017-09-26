@@ -66,8 +66,8 @@ def main():
             match = re.match(r'.*' + penalty + r'_([0-9]+)_*', f)
             n_train_values.append(match.group(1))
 
-        train_props = list(set(train_props))
-        print(train_props)
+        n_train_values = list(set(n_train_values))
+        print(n_train_values)
 
         n_train = []
         CC_nontrain = []
