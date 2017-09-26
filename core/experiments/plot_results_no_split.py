@@ -60,6 +60,7 @@ def main():
         files = glob(search_string)
         files.sort()
         n_files = len(files)
+        print(files)
 
         n_train_values = []
         for f in files:
