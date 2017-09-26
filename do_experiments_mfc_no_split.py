@@ -11,6 +11,8 @@ def main():
                       help='Field to split on: default=%default')
     parser.add_option('--n_train', dest='n_train', default=100,
                       help='Proportion of training data to use for training: default=%default')
+    parser.add_option('--sample', action="store_true", dest="sample", default=False,
+                      help='Sample labels instead of averaging: default=%default')
     parser.add_option('--penalty', dest='penalty', default='l2',
                       help='Regularization type: default=%default')
     parser.add_option('-r', dest='repeats', default=3,
@@ -23,6 +25,7 @@ def main():
 
     config_file = os.path.join('config', options.config)
     n_train = int(options.n_train)
+    sample_labels = options.sample
     penalty = options.penalty
     repeats = int(options.repeats)
     model_type = options.model
@@ -33,10 +36,10 @@ def main():
         print("\n\nStarting", subset, label)
         no_split.cross_train_and_eval(project, subset, config_file, n_train, suffix='',
                                    model_type=model_type, label=label, penalty=penalty, repeats=repeats,
-                                   objective='f1')
+                                   objective='f1', sample_labels=sample_labels)
         no_split.cross_train_and_eval(project, subset, config_file, n_train, suffix='',
                                    model_type=model_type, label=label, penalty=penalty, repeats=repeats,
-                                   objective='calibration')
+                                   objective='calibration', sample_labels=sample_labels)
 
 if __name__ == '__main__':
     main()
