@@ -64,9 +64,10 @@ def main():
         n_train_values = []
         for f in files:
             match = re.match(r'.*' + penalty + r'_([0-9]+)_*', f)
-            n_train_values.append(match.group(1))
+            n_train_values.append(int(match.group(1)))
 
         n_train_values = list(set(n_train_values))
+        n_train_values.sort()
         print(n_train_values)
 
         n_train = []
@@ -79,7 +80,7 @@ def main():
             basename = '*_' + label + '_*_' + model_type + '_' + penalty
             if model_type == 'MLP':
                 basename += '_' + dh
-            basename += '_' + n_train + '_' + objective
+            basename += '_' + str(n_train) + '_' + objective
             if sampled:
                 basename += '_sampled'
             basename += '_nosplit_?'
@@ -94,7 +95,7 @@ def main():
             df = pd.DataFrame(results[['N', 'estimate', 'RMSE', 'contains_test']].copy())
             mean_df = pd.DataFrame(results[['N', 'estimate', 'RMSE', 'contains_test']].copy())
             #n_train.append(float(t))
-            n_train.append(df.loc['train', 'N'])
+            #n_train.append(df.loc['train', 'N'])
             CC_nontrain.append(df.loc['CC_nontrain', 'RMSE'])
             PCC_nontrain.append(df.loc['PCC_nontrain', 'RMSE'])
 
@@ -104,7 +105,7 @@ def main():
                 df = results[['N', 'estimate', 'RMSE', 'contains_test']]
                 mean_df += results[['N', 'estimate', 'RMSE', 'contains_test']]
                 #n_train.append(float(t))
-                n_train.append(df.loc['train', 'N'])
+                #n_train.append(df.loc['train', 'N'])
                 CC_nontrain.append(df.loc['CC_nontrain', 'RMSE'])
                 PCC_nontrain.append(df.loc['PCC_nontrain', 'RMSE'])
 
@@ -118,10 +119,10 @@ def main():
         print(n_train_means)
         print(CC_means)
         print(PCC_means)
-        plt.scatter(n_train, CC_nontrain)
-        plt.scatter(n_train, PCC_nontrain, alpha=0.5)
-        plt.scatter(n_train_means, CC_means)
-        plt.scatter(n_train_means, PCC_means, alpha=0.5)
+        plt.scatter(n_train_values, CC_nontrain)
+        plt.scatter(n_train_values, PCC_nontrain, alpha=0.5)
+        plt.scatter(n_train_values, CC_means)
+        plt.scatter(n_train_values, PCC_means, alpha=0.5)
         #plt.plot(np.array(n_train_means), np.array(PCC_means), alpha=0.5, label=objective)
 
     plt.legend()
