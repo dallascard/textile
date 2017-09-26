@@ -14,18 +14,14 @@ from ..util import file_handling as fh
 def main():
     usage = "%prog "
     parser = OptionParser(usage=usage)
-    parser.add_option('--cshift', dest='cshift', default=None,
-                      help='cshift [None|classify]: default=%default')
-    parser.add_option('--n_train', dest='n_train', default=100,
+    parser.add_option('--n_train', dest='n_train', default=500,
                       help='Train prop: default=%default')
-    parser.add_option('--n_calib', dest='n_calib', default=100,
-                      help='Number of calibration instances: default=%default')
     parser.add_option('--sample', action="store_true", dest="sample", default=False,
                       help='Sample labels instead of averaging: default=%default')
     parser.add_option('--base', dest='base', default='mfc',
                       help='base [mfc|amazon]: default=%default')
     parser.add_option('--subset', dest='subset', default='*',
-                      help='Restrict to a single subset (e.g. immigration): default=%default')
+                      help='Subset of base (e.g. immigration: default=%default')
     parser.add_option('--label', dest='label', default='*',
                       help='Label (e.g. Economic: default=%default')
     #parser.add_option('--partition', dest='partition', default='*',
@@ -38,16 +34,13 @@ def main():
                       help='objective [f1|calibration]: default=%default')
     parser.add_option('--dh', dest='dh', default=100,
                       help='Hidden dimension for MLP: default=%default')
-
     (options, args) = parser.parse_args()
 
     (options, args) = parser.parse_args()
 
     objective = options.objective
-    cshift = options.cshift
     n_train = str(int(options.n_train))
-    n_calib = str(int(options.n_calib))
-    sample_labels = options.sample
+    sampled = options.sample
     base = options.base
     subset = options.subset
     label = options.label
@@ -62,17 +55,10 @@ def main():
         basename = '*_' + label + '_*_' + model_type + '_' + penalty
         if model_type == 'MLP':
             basename += '_' + dh
-        basename += '_' + n_train + '_' + n_calib + '_' + objective
-        if model_type == 'MLP':
-            basename += '_r?'
-        if cshift is not None:
-            basename += '_cshift'
-        if sample_labels:
+        basename += '_' + n_train + '_' + objective
+        if sampled:
             basename += '_sampled'
-        if base == 'mfc':
-            basename += '_???_????_?'
-        elif base == 'amazon':
-            basename += '_????_?'
+        basename += '_nosplit_?'
 
         print(basename)
         search_string = os.path.join('projects', base, subset, 'models', basename, 'results.csv')
@@ -96,20 +82,13 @@ def main():
         CC_means = [0]
         PCC_means = [0]
         for t in train_props:
-            basename = '*_' + model_type + '_' + penalty
+            basename = '*_' + label + '_*_' + model_type + '_' + penalty
             if model_type == 'MLP':
                 basename += '_' + dh
-            basename += '_' + t + '_' + n_calib + '_' + objective
-            if model_type == 'MLP':
-                basename += '_r?'
-            if cshift is not None:
-                basename += '_cshift'
-            if sample_labels:
+            basename += '_' + n_train + '_' + objective
+            if sampled:
                 basename += '_sampled'
-            if base == 'mfc':
-                basename += '_???_????_?'
-            elif base == 'amazon':
-                basename += '_????_?'
+            basename += '_nosplit_?'
 
             print(basename)
             files = glob(os.path.join('projects', base, subset, 'models', basename, 'results.csv'))
