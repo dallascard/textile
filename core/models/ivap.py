@@ -253,7 +253,6 @@ def get_pred_for_one_model_internal(model, test_X, plot=False):
 
 def estimate_probs_from_labels(project_dir, full_model, model_name, labels_df, calib_subset, test_subset, weights_df=None, calib_items=None, test_items=None, verbose=False, plot=False):
     # do IVAP by making new predictions on calibration data
-
     n_items, n_classes = labels_df.shape
 
     if calib_items is not None:
