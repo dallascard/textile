@@ -19,6 +19,8 @@ def main():
                       help='Train prop: default=%default')
     parser.add_option('--n_calib', dest='n_calib', default=100,
                       help='Number of calibration instances: default=%default')
+    parser.add_option('--sample', action="store_true", dest="sample", default=False,
+                      help='Sample labels instead of averaging: default=%default')
     parser.add_option('--base', dest='base', default='mfc',
                       help='base [mfc|amazon]: default=%default')
     parser.add_option('--subset', dest='subset', default='*',
@@ -46,6 +48,7 @@ def main():
     cshift = options.cshift
     n_train = str(int(options.n_train))
     n_calib = str(int(options.n_calib))
+    sample_labels = options.sample
     base = options.base
     subset = options.subset
     label = options.label
@@ -63,6 +66,8 @@ def main():
         basename += '_r?'
     if cshift is not None:
         basename += '_cshift'
+    if sample_labels:
+        basename += '_sampled'
     if base == 'mfc':
         basename += '_???_????_?'
     elif base == 'amazon':

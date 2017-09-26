@@ -12,6 +12,8 @@ def main():
     parser = OptionParser(usage=usage)
     parser.add_option('--n_train', dest='n_train', default=500,
                       help='Train prop: default=%default')
+    parser.add_option('--sample', action="store_true", dest="sample", default=False,
+                      help='Sample labels instead of averaging: default=%default')
     parser.add_option('--base', dest='base', default='mfc',
                       help='base [mfc|amazon]: default=%default')
     parser.add_option('--subset', dest='subset', default='*',
@@ -37,6 +39,7 @@ def main():
 
     objective = options.objective
     n_train = str(int(options.n_train))
+    sampled = options.sample
     base = options.base
     subset = options.subset
     label = options.label
@@ -49,7 +52,10 @@ def main():
     basename = '*_' + label + '_*_' + model_type + '_' + penalty
     if model_type == 'MLP':
         basename += '_' + dh
-    basename += '_' + n_train + '_' + objective + '_nosplit_?'
+    basename += '_' + n_train + '_' + objective
+    if sampled:
+        basename += 'sampled'
+    basename += '_nosplit_?'
     #if base == 'mfc':
     #    basename += '_???_????_?'
     #elif base == 'amazon':
