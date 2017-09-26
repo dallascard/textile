@@ -14,8 +14,6 @@ from ..util import file_handling as fh
 def main():
     usage = "%prog "
     parser = OptionParser(usage=usage)
-    parser.add_option('--n_train', dest='n_train', default=500,
-                      help='Train prop: default=%default')
     parser.add_option('--sample', action="store_true", dest="sample", default=False,
                       help='Sample labels instead of averaging: default=%default')
     parser.add_option('--base', dest='base', default='mfc',
@@ -30,15 +28,11 @@ def main():
                       help='model type [LR|MLP]: default=%default')
     parser.add_option('--penalty', dest='penalty', default='l2',
                       help='Regularization type [l1|l2]: default=%default')
-    parser.add_option('--objective', dest='objective', default='f1',
-                      help='objective [f1|calibration]: default=%default')
     parser.add_option('--dh', dest='dh', default=100,
                       help='Hidden dimension for MLP: default=%default')
-    (options, args) = parser.parse_args()
 
     (options, args) = parser.parse_args()
 
-    objective = options.objective
     n_train = str(int(options.n_train))
     sampled = options.sample
     base = options.base
@@ -51,7 +45,7 @@ def main():
     # basic LR f1: combining subset, label, repetitions, and pre/post date
     #basename = '*_' + model_type
     for objective in ['f1', 'calibration']:
-
+        n_train = '*'
         basename = '*_' + label + '_*_' + model_type + '_' + penalty
         if model_type == 'MLP':
             basename += '_' + dh
@@ -67,10 +61,10 @@ def main():
         files.sort()
         n_files = len(files)
 
-        train_props = []
+        n_train_values = []
         for f in files:
-            match = re.match(r'.*' + penalty + r'_([0-9]+\.[0-9]+)_.*', f)
-            train_props.append(match.group(1))
+            match = re.match(r'.*' + penalty + r'_([0-9]+)_*', f)
+            n_train_values.append(match.group(1))
 
         train_props = list(set(train_props))
         print(train_props)
@@ -81,7 +75,7 @@ def main():
         n_train_means = [0]
         CC_means = [0]
         PCC_means = [0]
-        for t in train_props:
+        for n_train in n_train_values:
             basename = '*_' + label + '_*_' + model_type + '_' + penalty
             if model_type == 'MLP':
                 basename += '_' + dh
