@@ -107,6 +107,8 @@ def cross_train_and_eval(project_dir, subset, field_name, config_file, n_calib=0
     model_basename +=  '_' + str(n_train) + '_' + str(n_calib) + '_' + objective
     if cshift is not None:
         model_basename += '_cshift'
+    if sample_labels:
+        model_basename += '_sampled'
     model_basename += suffix
 
     # save the experiment parameters to a log file

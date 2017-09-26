@@ -5,7 +5,7 @@
 #from core.main import train
 
 
-from core.experiments import no_split
+from core.experiments import combo
 
 project_dir = 'projects/mfc/samesex'
 subset = 'pro_tone'
@@ -14,7 +14,8 @@ label = 'label'
 #field_name = 'year_group'
 config_file = 'config/default.json'
 do_ensemble = True
+sample_labels = True
 
-no_split.cross_train_and_eval(project_dir, subset, config_file, n_train=200,  model_type=model_type, loss='log', do_ensemble=do_ensemble, dh=100, label=label, penalty='l2', intercept=True, n_dev_folds=5, repeats=1, verbose=True, average='micro', objective='f1', seed=None, alpha_min=0.01, alpha_max=1000)
+combo.cross_train_and_eval(project_dir, subset, 'year_group', config_file, n_calib=100, n_train=200,  model_type=model_type, loss='log', do_ensemble=do_ensemble, dh=100, label=label, penalty='l2', intercept=True, n_dev_folds=5, repeats=1, verbose=True, average='micro', objective='f1', seed=None, alpha_min=0.01, alpha_max=1000, sample_labels=sample_labels)
 
 

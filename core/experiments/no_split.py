@@ -100,6 +100,8 @@ def cross_train_and_eval(project_dir, subset, config_file, n_train=500, suffix='
     if model_type == 'MLP':
         model_basename += '_' + str(dh)
     model_basename += '_' + str(n_train) + '_' + objective
+    if sample_labels:
+        model_basename += '_sampled'
     model_basename += suffix
 
     # save the experiment parameters to a log file
