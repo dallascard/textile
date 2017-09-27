@@ -115,6 +115,8 @@ def main():
         PCC_means = []
         SRS_means = []
         Venn_means = []
+        SRS_maxes = []
+        Venn_maxes = []
         x = []
         n_train_means = []
 
@@ -148,6 +150,7 @@ def main():
             results = fh.read_csv_to_df(files[0])
             df = pd.DataFrame(results[['N', 'estimate', 'RMSE', 'contains_test']].copy())
             mean_df = pd.DataFrame(results[['N', 'estimate', 'RMSE', 'contains_test']].copy())
+            max_df = pd.DataFrame(results[['N', 'estimate', 'RMSE', 'contains_test']].copy())
             x.append(val)
             CC_nontrain.append(df.loc['CC_nontrain_averaged', 'RMSE'])
             PCC_nontrain.append(df.loc['PCC_nontrain_averaged', 'RMSE'])
@@ -159,6 +162,7 @@ def main():
                 results = fh.read_csv_to_df(f)
                 df = results[['N', 'estimate', 'RMSE', 'contains_test']]
                 mean_df += results[['N', 'estimate', 'RMSE', 'contains_test']]
+                max_df = np.maximum(max_df, results[['N', 'estimate', 'RMSE', 'contains_test']])
                 x.append(val)
                 CC_nontrain.append(df.loc['CC_nontrain_averaged', 'RMSE'])
                 PCC_nontrain.append(df.loc['PCC_nontrain_averaged', 'RMSE'])
@@ -171,7 +175,9 @@ def main():
             CC_means.append(mean_df.loc['CC_nontrain_averaged', 'RMSE'])
             PCC_means.append(mean_df.loc['PCC_nontrain_averaged', 'RMSE'])
             SRS_means.append(mean_df.loc['calibration', 'RMSE'])
-            Venn_means.append(mean_df.loc['Venn_averaged', 'RMSE'])
+            Venn_means.append(mean_df.loc['Venn', 'RMSE'])
+            SRS_maxes.append(max_df.loc['calibration', 'RMSE'])
+            Venn_maxes.append(max_df.loc['Venn', 'RMSE'])
 
         print(n_train_means)
         print(CC_means)

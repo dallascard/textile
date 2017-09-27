@@ -170,10 +170,10 @@ def main():
             CC_means.append(mean_df.loc['CC_nontrain_averaged', 'RMSE'])
             PCC_means.append(mean_df.loc['PCC_nontrain_averaged', 'RMSE'])
             SRS_means.append(mean_df.loc['calibration', 'RMSE'])
-            Venn_means.append(mean_df.loc['Venn_averaged', 'RMSE'])
+            Venn_means.append(mean_df.loc['Venn', 'RMSE'])
 
             SRS_maxes.append(max_df.loc['calibration', 'RMSE'])
-            Venn_maxes.append(max_df.loc['Venn_averaged', 'RMSE'])
+            Venn_maxes.append(max_df.loc['Venn', 'RMSE'])
 
         print(n_train_means)
         print(CC_means)
