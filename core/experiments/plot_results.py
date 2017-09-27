@@ -97,15 +97,21 @@ def main():
         print(files)
 
         n_train_values = []
+        n_calib_values = []
         for f in files:
             match = re.match(r'.*' + penalty + r'_([0-9]+)_([0-9]+)_*', f)
             n_train_values.append(int(match.group(1)))
+            n_calib_values.append(int(match.group(2)))
 
         n_train_values = list(set(n_train_values))
         n_train_values.sort()
         print(n_train_values)
-        if base == 'mfc':
-            n_train_values = [100, 200, 400, 800]
+
+        n_calib_values = list(set(n_calib_values))
+        n_calib_values.sort()
+        print(n_calib_values)
+        #if base == 'mfc':
+        #    n_train_values = [100, 200, 400, 800]
         #elif base == 'amazon':
         #    n_train_values = [200, 800, 3200, 6400]
 
@@ -119,11 +125,22 @@ def main():
         Venn_means = []
         x = []
         n_train_means = []
-        for n_train_val in n_train_values:
+        if n_train == '*':
+            target_values = n_train_values
+        elif n_calib == '*':
+            target_values = n_calib_values
+        for val in target_values:
+
             basename = '*_' + label + '_*_' + model_type + '_' + penalty
             if model_type == 'MLP':
                 basename += '_' + dh
-            basename += '_' + str(n_train_val) + '_' + str(n_calib) + '_' + objective
+            if n_train == '*':
+                n_train_val = val
+                n_calib_val = '*'
+            elif n_calib == '*':
+                n_train_val = '*'
+                n_calib_val = val
+            basename += '_' + str(n_train_val) + '_' + str(n_calib_val) + '_' + objective
             if model_type == 'MLP':
                 basename += '_r?'
             if cshift is not None:
@@ -144,7 +161,7 @@ def main():
             results = fh.read_csv_to_df(files[0])
             df = pd.DataFrame(results[['N', 'estimate', 'RMSE', 'contains_test']].copy())
             mean_df = pd.DataFrame(results[['N', 'estimate', 'RMSE', 'contains_test']].copy())
-            x.append(n_train_val)
+            x.append(val)
             CC_nontrain.append(df.loc['CC_nontrain_averaged', 'RMSE'])
             PCC_nontrain.append(df.loc['PCC_nontrain_averaged', 'RMSE'])
             SRS.append(df.loc['calibration', 'RMSE'])
@@ -155,7 +172,7 @@ def main():
                 results = fh.read_csv_to_df(f)
                 df = results[['N', 'estimate', 'RMSE', 'contains_test']]
                 mean_df += results[['N', 'estimate', 'RMSE', 'contains_test']]
-                x.append(n_train_val)
+                x.append(val)
                 CC_nontrain.append(df.loc['CC_nontrain_averaged', 'RMSE'])
                 PCC_nontrain.append(df.loc['PCC_nontrain_averaged', 'RMSE'])
                 SRS.append(df.loc['calibration', 'RMSE'])
@@ -163,7 +180,7 @@ def main():
 
             mean_df = mean_df / float(n_files)
 
-            n_train_means.append(int(n_train_val))
+            n_train_means.append(int(val))
             CC_means.append(mean_df.loc['CC_nontrain_averaged', 'RMSE'])
             PCC_means.append(mean_df.loc['PCC_nontrain_averaged', 'RMSE'])
             SRS_means.append(mean_df.loc['calibration', 'RMSE'])
