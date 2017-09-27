@@ -112,8 +112,8 @@ def main():
         print(n_calib_values)
         #if base == 'mfc':
         #    n_train_values = [100, 200, 400, 800]
-        #elif base == 'amazon':
-        #    n_train_values = [200, 800, 3200, 6400]
+        if base == 'amazon':
+            n_calib_values = [100, 400, 1600, 3200]
 
         CC_nontrain = []
         PCC_nontrain = []
@@ -203,7 +203,8 @@ def main():
         #ax.scatter(x, PCC_nontrain, c=colors[1], alpha=0.5, s=10)
         ax.plot(n_train_means, PCC_means, label=name, alpha=0.5)
 
-        ax.plot(n_train_means, Venn_means,  label='Venn' + objective[:3], alpha=0.5)
+        if objective == 'f1':
+            ax.plot(n_train_means, Venn_means,  label='Venn' + objective[:3], alpha=0.5)
 
         if objective == 'calibration':
             #ax.scatter(x, SRS, c=colors[2], alpha=0.5, s=10)
