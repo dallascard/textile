@@ -3,6 +3,7 @@ import re
 from glob import glob
 from optparse import OptionParser
 
+import seaborn
 import numpy as np
 import pandas as pd
 
@@ -158,35 +159,35 @@ def main():
         print(n_train_means)
         print(CC_means)
         print(PCC_means)
-        if objective == 'f1':
-            colors = ['blue', 'orange', 'green', 'cyan']
-            name = 'PCC acc'
-        else:
-            colors = ['black', 'green', 'red', 'yellow']
-            name = 'PCC cal'
+        CB6 = ['#1b9e77', '#d95f02', '#7570b3', '#e7298a', '#66a61e', '#e6ab02']
 
         dot_size = 5
         linewidth=2
         if objective == 'f1':
-            ax.scatter(np.array(x)-24, CC_nontrain, c=colors[0], alpha=0.5, s=dot_size)
-            ax.plot(n_train_means, CC_means, label='CC', c=colors[0], alpha=0.5, linewidth=linewidth)
+            ax.scatter(np.array(x)-24, CC_nontrain, c=CB6[0], alpha=0.5, s=dot_size)
+            ax.plot(n_train_means, CC_means, label='CC', c=CB6[0], linewidth=linewidth)
             #ax.plot(n_train_means, np.array(CC_means) + np.array(CC_stds), linestyle='dashed', c=colors[0], label='CC (+1std)', alpha=0.5)
 
         #ax.scatter(x, PCC_nontrain, c=colors[1], alpha=0.5, s=10)
         if objective == 'f1':
-            ax.scatter(np.array(x)-8, PCC_nontrain, c=colors[1], alpha=0.5, s=dot_size)
+            ax.scatter(np.array(x)-8, PCC_nontrain, c=CB6[1], alpha=0.5, s=dot_size)
+            ax.plot(n_train_means, PCC_means, label='PCC (acc)', c=CB6[1], linewidth=linewidth)
         else:
-            ax.scatter(np.array(x)+8, PCC_nontrain, c=colors[1], alpha=0.5, s=dot_size)
-        ax.plot(n_train_means, PCC_means, label=name, alpha=0.5, c=colors[1], linewidth=linewidth)
+            ax.scatter(np.array(x)+8, PCC_nontrain, c=CB6[2], alpha=0.5, s=dot_size)
+            ax.plot(n_train_means, PCC_means, label='PCC (cal)', c=CB6[2], linewidth=linewidth)
         #ax.plot(n_train_means, np.array(PCC_means) + np.array(PCC_stds), label=name + ' (+1std)', linestyle='dashed', alpha=0.5, c=colors[1])
         #ax.plot(n_train_means, PCC_maxes, label=name + ' (max)', linestyle='dashed', alpha=0.5)
 
         #ax.plot(n_train_means, Venn_means,  label='Venn' + objective[:3], alpha=0.5)
 
         if objective == 'calibration':
-            ax.scatter(np.array(x)+24, SRS, c=colors[2], alpha=0.5, s=dot_size)
-            ax.plot(n_train_means, SRS_means,  label='SRS', alpha=0.5, c=colors[2], linewidth=linewidth)
+            ax.scatter(np.array(x)+24, SRS, c=CB6[3], alpha=0.5, s=dot_size)
+            ax.plot(n_train_means, SRS_means,  label='SRS', c=CB6[3], linewidth=linewidth)
             #ax.plot(n_train_means, np.array(SRS_means) + np.array(SRS_stds), label='SRS' + ' (+1std)', linestyle='dashed', alpha=0.5, c=colors[2])
+
+    ax.set_xlabel('Number of training instances (L)')
+    ax.set_ylabel('Mean absolute error')
+    ax.set_ylim(-0.01, 0.35)
 
     ax.legend()
     fig.savefig('test.pdf')
