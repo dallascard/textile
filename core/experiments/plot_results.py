@@ -113,8 +113,8 @@ def main():
         n_calib_values = list(set(n_calib_values))
         n_calib_values.sort()
         print(n_calib_values)
-        #if base == 'mfc':
-        #    n_train_values = [100, 200, 400, 800]
+        if base == 'mfc':
+            n_train_values = [100, 200, 400, 800]
         if base == 'amazon':
             n_calib_values = [100, 200, 400, 800]
 
@@ -200,12 +200,11 @@ def main():
             name = 'PCC cal'
 
         #ax.scatter(x, PCC_nontrain, c=colors[1], alpha=0.5, s=10)
-        ax.scatter(n_train_means, PCC_means, label=name, alpha=0.5)
+        ax.plot(n_train_means, PCC_means, label=name, alpha=0.5)
 
         if objective == 'f1':
-            ax.scatter(n_train_means, Venn_means,  label='Venn', alpha=0.5)
-        ax.scatter(n_train_means, SRS_means,  label='SRS', alpha=0.5)
-
+            ax.plot(n_train_means, Venn_means,  label='Venn', alpha=0.5)
+            ax.plot(n_train_means, SRS_means,  label='SRS', alpha=0.5)
 
     ax.legend()
     fig.savefig('test.pdf')
