@@ -5,6 +5,7 @@ from optparse import OptionParser
 
 import numpy as np
 import pandas as pd
+from scipy.stats import levene
 
 # import Agg to avoid network display problems
 import matplotlib as mpl
@@ -128,13 +129,16 @@ def main():
         SRS_stds = []
         Venn_stds = []
 
+        SRS_values = {}
+        Venn_values = {}
 
         x = []
         n_train_means = []
         target_values = n_calib_values
 
         for val in target_values:
-
+            SRS_values[val] = []
+            Venn_values[val] = []
             basename = '*_' + label + '_*_' + model_type + '_' + penalty
             if model_type == 'MLP':
                 basename += '_' + dh
@@ -167,6 +171,8 @@ def main():
             PCC_nontrain.append(df.loc['PCC_nontrain', 'RMSE'])
             SRS.append(df.loc['calibration', 'RMSE'])
             Venn.append(df.loc[venn_target, 'RMSE'])
+            SRS_values[val].append(df.loc['calibration', 'RMSE'])
+            Venn_values[val].append(df.loc[venn_target, 'RMSE'])
 
             for f in files[1:]:
                 print(f)
@@ -179,6 +185,8 @@ def main():
                 PCC_nontrain.append(df.loc['PCC_nontrain', 'RMSE'])
                 SRS.append(df.loc['calibration', 'RMSE'])
                 Venn.append(df.loc[venn_target, 'RMSE'])
+                SRS_values[val].append(df.loc['calibration', 'RMSE'])
+                Venn_values[val].append(df.loc[venn_target, 'RMSE'])
 
             mean_df = mean_df / float(n_files)
             sq_mean_df = sq_mean_df / float(n_files)
@@ -214,6 +222,9 @@ def main():
             ax.scatter(np.array(x)+offset, Venn, c=CB6[5], alpha=0.5, s=dot_size)
             ax.plot(n_train_means, Venn_means,  label='IVAP', c=CB6[5], linewidth=linewidth)
             ax.plot(n_train_means, np.array(Venn_means) + np.array(Venn_stds),  label='SRS', c=CB6[5], linestyle='dashed')
+
+            for val in target_values:
+                print(val, levene(SRS_values[val], Venn_values[val]))
 
     ax.set_xlabel('Number of calibration instances (C)')
     ax.set_ylabel('Mean absolute error')
