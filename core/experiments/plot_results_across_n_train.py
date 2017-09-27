@@ -17,7 +17,7 @@ from ..util import file_handling as fh
 
 
 def main():
-    usage = "%prog "
+    usage = "%prog output_file.pdf"
     parser = OptionParser(usage=usage)
     parser.add_option('--cshift', dest='cshift', default=None,
                       help='cshift [None|classify]: default=%default')
@@ -41,6 +41,8 @@ def main():
                       help='Hidden dimension for MLP: default=%default')
 
     (options, args) = parser.parse_args()
+
+    output_file = args[0]
 
     cshift = options.cshift
     n_calib = options.n_calib
@@ -229,9 +231,8 @@ def main():
     else:
         ax.set_ylim(-0.01, 0.2)
 
-
     ax.legend(loc='upper right')
-    fig.savefig('test.pdf')
+    fig.savefig(output_file, bbox_inches='tight')
 
 if __name__ == '__main__':
     main()

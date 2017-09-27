@@ -17,7 +17,7 @@ from ..util import file_handling as fh
 
 
 def main():
-    usage = "%prog "
+    usage = "%prog output_file.pdf"
     parser = OptionParser(usage=usage)
     parser.add_option('--sample', action="store_true", dest="sample", default=False,
                       help='Sample labels instead of averaging: default=%default')
@@ -37,6 +37,7 @@ def main():
                       help='Hidden dimension for MLP: default=%default')
 
     (options, args) = parser.parse_args()
+    output_file = args[0]
 
     sampled = options.sample
     base = options.base
@@ -201,7 +202,7 @@ def main():
         ax.set_ylim(-0.01, 0.2)
 
     ax.legend()
-    fig.savefig('test.pdf')
+    fig.savefig(output_file, bbox_inches='tight')
 
 if __name__ == '__main__':
     main()
