@@ -83,6 +83,7 @@ def main():
         CC_means = [0]
         PCC_means = [0]
         x = []
+        n_train_means = []
         for n_train in n_train_values:
             basename = '*_' + label + '_*_' + model_type + '_' + penalty
             if model_type == 'MLP':
@@ -119,8 +120,8 @@ def main():
 
             mean_df = mean_df / float(n_files)
 
-            #n_train_means.append(float(t))
-            n_train_means.append(mean_df.loc['train', 'N'])
+            n_train_means.append(int(n_train))
+            #n_train_means.append(mean_df.loc['train', 'N'])
             CC_means.append(mean_df.loc['CC_nontrain_averaged', 'RMSE'])
             PCC_means.append(mean_df.loc['PCC_nontrain_averaged', 'RMSE'])
 
@@ -129,8 +130,8 @@ def main():
         print(PCC_means)
         ax.scatter(x, CC_nontrain)
         ax.scatter(x, PCC_nontrain, alpha=0.5)
-        ax.scatter(n_train_values, CC_means)
-        ax.scatter(n_train_values, PCC_means, alpha=0.5)
+        ax.scatter(n_train_means, CC_means)
+        ax.scatter(n_train_means, PCC_means, alpha=0.5)
         #plt.plot(np.array(n_train_means), np.array(PCC_means), alpha=0.5, label=objective)
 
     ax.legend()
