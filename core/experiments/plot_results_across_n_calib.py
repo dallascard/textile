@@ -181,6 +181,7 @@ def main():
                 Venn.append(df.loc[venn_target, 'RMSE'])
 
             mean_df = mean_df / float(n_files)
+            sq_mean_df = sq_mean_df / float(n_files)
 
             n_train_means.append(int(val))
             PCC_means.append(mean_df.loc['PCC_nontrain', 'RMSE'])
