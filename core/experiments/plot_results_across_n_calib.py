@@ -185,7 +185,7 @@ def main():
             ax.plot([np.min(n_train_means), np.max(n_train_means)], [np.mean(PCC_means), np.mean(PCC_means)], label='PCC (acc)', c=CB6[2], linewidth=linewidth, linestyle='dashed')
 
         if objective == 'calibration':
-            ax.scatter(np.array(x)-offset, PCC_nontrain, c=CB6[3], alpha=0.5, s=dot_size)
+            ax.scatter(np.array(x)-2*offset, PCC_nontrain, c=CB6[3], alpha=0.5, s=dot_size)
             ax.plot([np.min(n_train_means), np.max(n_train_means)], [np.mean(PCC_means), np.mean(PCC_means)], label='PCC (cal)', c=CB6[3], linewidth=linewidth, linestyle='dashed')
 
         if objective == 'f1':
