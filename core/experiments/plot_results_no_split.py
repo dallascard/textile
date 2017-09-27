@@ -80,8 +80,8 @@ def main():
         CC_nontrain = []
         PCC_nontrain = []
         n_train_means = [0]
-        CC_means = [0]
-        PCC_means = [0]
+        CC_means = []
+        PCC_means = []
         x = []
         n_train_means = []
         for n_train in n_train_values:
@@ -103,6 +103,7 @@ def main():
             df = pd.DataFrame(results[['N', 'estimate', 'RMSE', 'contains_test']].copy())
             mean_df = pd.DataFrame(results[['N', 'estimate', 'RMSE', 'contains_test']].copy())
             x.append(n_train)
+            #n_train_means.append(n_train)
             #n_train.append(df.loc['train', 'N'])
             CC_nontrain.append(df.loc['CC_nontrain_averaged', 'RMSE'])
             PCC_nontrain.append(df.loc['PCC_nontrain_averaged', 'RMSE'])
