@@ -194,10 +194,11 @@ def main():
 
         #ax.scatter(x, PCC_nontrain, c=colors[1], alpha=0.5, s=10)
         ax.plot(n_train_means, PCC_means, label=name, alpha=0.5)
+        ax.plot(n_train_means, PCC_maxes, linestyle='dashed', label=name + ' (max)', alpha=0.5)
 
         if objective == 'f1':
             ax.plot(n_train_means, Venn_means,  label='Venn', alpha=0.5)
-            ax.plot([np.min(n_train_means), np.max(n_train_means)], [np.mean(SRS_means), np.mean(SRS_means)], 'k--', label='SRS', alpha=0.5)
+            ax.plot([np.min(n_train_means), np.max(n_train_means)], [np.mean(SRS_means), np.mean(SRS_means)], linestyle='dashed', label='SRS', alpha=0.5)
 
             ax.plot(n_train_means, Venn_maxes,  label='Venn (max)', alpha=0.5)
             ax.plot([np.min(n_train_means), np.max(n_train_means)], [np.mean(SRS_maxes), np.mean(SRS_maxes)], linestyle='dashed', label='SRS (max)', alpha=0.5)
