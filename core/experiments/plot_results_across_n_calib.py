@@ -100,8 +100,8 @@ def main():
         n_calib_values.sort()
         print(n_calib_values)
 
-        #if base == 'amazon':
-        #    n_calib_values = [50, 100, 400]
+        if base == 'amazon':
+            n_calib_values = [50, 75, 100, 400]
 
         CC_nontrain = []
         PCC_nontrain = []
