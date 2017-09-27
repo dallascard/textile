@@ -132,8 +132,8 @@ def main():
         ax.scatter(x, CC_nontrain, c='orange', alpha=0.5, s=10)
         ax.scatter(x, PCC_nontrain, c='blue', alpha=0.5, s=10)
         ax.scatter(n_train_means, CC_means, c='orange', alpha=0.5, s=20)
-        ax.plot(n_train_means, CC_means, c='blue', label='CC', alpha=0.5)
-        ax.scatter(n_train_means, PCC_means, c='orange', alpha=0.5, s=20)
+        ax.scatter(n_train_means, PCC_means, c='blue', alpha=0.5, s=20)
+        ax.plot(n_train_means, CC_means, c='orange', label='CC', alpha=0.5)
         ax.plot(n_train_means, PCC_means, c='blue', label='PCC', alpha=0.5)
         #plt.plot(np.array(n_train_means), np.array(PCC_means), alpha=0.5, label=objective)
 
