@@ -104,8 +104,8 @@ def main():
         n_train_values = list(set(n_train_values))
         n_train_values.sort()
         print(n_train_values)
-        #if base == 'mfc':
-        #    n_train_values = [100, 200, 400, 800, 1600]
+        if base == 'mfc':
+            n_train_values = [100, 200, 400, 800]
         #elif base == 'amazon':
         #    n_train_values = [200, 800, 3200, 6400]
 
