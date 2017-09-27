@@ -123,7 +123,7 @@ def main():
             basename = '*_' + label + '_*_' + model_type + '_' + penalty
             if model_type == 'MLP':
                 basename += '_' + dh
-            basename += '_' + n_train + '_' + n_calib + '_' + objective
+            basename += '_' + str(n_train) + '_' + str(n_calib) + '_' + objective
             if model_type == 'MLP':
                 basename += '_r?'
             if cshift is not None:
