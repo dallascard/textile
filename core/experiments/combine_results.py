@@ -87,7 +87,7 @@ def main():
 
     print(files[0])
     results = fh.read_csv_to_df(files[0])
-    df = pd.DataFrame(columns=['estimate', 'MAE', 'MSE', 'contains_test'])
+    df = pd.DataFrame(columns=['estimate', 'MAE', 'MSE', 'contains_test', 'max_MAE'])
     #df = pd.DataFrame(results[['estimate', 'RMSE', 'contains_test']].copy())
     target_estimate = results.loc['target', 'estimate']
     for loc in results.index:
@@ -95,6 +95,7 @@ def main():
         df.loc[loc, 'MAE'] = results.loc[loc, 'RMSE']
         df.loc[loc, 'contains_test'] = results.loc[loc, 'contains_test']
         df.loc[loc, 'MSE'] = (results.loc[loc, 'estimate'] - target_estimate) ** 2
+        df.loc[loc, 'max_MAE'] = results.loc[loc, 'RMSE']
 
     venn_outside_errors = []
     n_outside = 0
@@ -163,6 +164,7 @@ def main():
             df.loc[loc, 'MAE'] += results.loc[loc, 'RMSE']
             df.loc[loc, 'contains_test'] += results.loc[loc, 'contains_test']
             df.loc[loc, 'MSE'] += (results.loc[loc, 'estimate'] - target_estimate) ** 2
+            df.loc[loc, 'max_MAE'] = max(df.loc[loc, 'max_MAE'], results.loc[loc, 'RMSE'])
 
         target_prop = results.loc['target', 'estimate']
         venn_av_lower = results.loc['Venn_averaged', '95lcl']
