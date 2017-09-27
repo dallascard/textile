@@ -223,7 +223,7 @@ def main():
 
     ax.set_xlabel('Number of training instances (L)')
     ax.set_ylabel('Mean absolute error')
-    ax.set_ylim(-0.01, 0.5)
+    ax.set_ylim(-0.01, 0.4)
 
     ax.legend()
     fig.savefig('test.pdf')
