@@ -166,7 +166,7 @@ def main():
             name = 'PCC cal'
 
         if objective == 'f1':
-            ax.scatter(np.array(x)-10, CC_nontrain, c=colors[0], alpha=0.5, s=10)
+            ax.scatter(np.array(x)-15, CC_nontrain, c=colors[0], alpha=0.5, s=10)
             ax.plot(n_train_means, CC_means, label='CC', c=colors[0], alpha=0.5)
             #ax.plot(n_train_means, np.array(CC_means) + np.array(CC_stds), linestyle='dashed', c=colors[0], label='CC (+1std)', alpha=0.5)
 
@@ -174,7 +174,7 @@ def main():
         if objective == 'f1':
             ax.scatter(np.array(x)-5, CC_nontrain, c=colors[1], alpha=0.5, s=10)
         else:
-            ax.scatter(np.array(x), CC_nontrain, c=colors[1], alpha=0.5, s=10)
+            ax.scatter(np.array(x)+5, CC_nontrain, c=colors[1], alpha=0.5, s=10)
         ax.plot(n_train_means, PCC_means, label=name, alpha=0.5, c=colors[1])
         #ax.plot(n_train_means, np.array(PCC_means) + np.array(PCC_stds), label=name + ' (+1std)', linestyle='dashed', alpha=0.5, c=colors[1])
         #ax.plot(n_train_means, PCC_maxes, label=name + ' (max)', linestyle='dashed', alpha=0.5)
@@ -182,7 +182,7 @@ def main():
         #ax.plot(n_train_means, Venn_means,  label='Venn' + objective[:3], alpha=0.5)
 
         if objective == 'calibration':
-            ax.scatter(np.array(x)+5, SRS, c=colors[2], alpha=0.5, s=10)
+            ax.scatter(np.array(x)+15, SRS, c=colors[2], alpha=0.5, s=10)
             ax.plot(n_train_means, SRS_means,  label='SRS', alpha=0.5, c=colors[2])
             #ax.plot(n_train_means, np.array(SRS_means) + np.array(SRS_stds), label='SRS' + ' (+1std)', linestyle='dashed', alpha=0.5, c=colors[2])
 
