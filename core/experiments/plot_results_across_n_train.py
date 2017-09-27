@@ -230,7 +230,7 @@ def main():
         ax.set_ylim(-0.01, 0.2)
 
 
-    ax.legend()
+    ax.legend(loc='upper right')
     fig.savefig('test.pdf')
 
 if __name__ == '__main__':

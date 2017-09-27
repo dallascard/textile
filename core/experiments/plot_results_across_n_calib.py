@@ -217,11 +217,11 @@ def main():
         if objective == 'f1':
             ax.scatter(np.array(x), SRS, c=CB6[4], alpha=0.5, s=dot_size)
             ax.plot(n_train_means, SRS_means,  label='SRS', c=CB6[4], linewidth=linewidth)
-            ax.plot(n_train_means, np.array(SRS_means) + np.array(SRS_stds),  label='SRS', c=CB6[4], linestyle='dashed')
+            #ax.plot(n_train_means, np.array(SRS_means) + np.array(SRS_stds),  label='SRS', c=CB6[4], linestyle='dashed')
 
             ax.scatter(np.array(x)+offset, Venn, c=CB6[5], alpha=0.5, s=dot_size)
             ax.plot(n_train_means, Venn_means,  label='IVAP', c=CB6[5], linewidth=linewidth)
-            ax.plot(n_train_means, np.array(Venn_means) + np.array(Venn_stds),  label='SRS', c=CB6[5], linestyle='dashed')
+            #ax.plot(n_train_means, np.array(Venn_means) + np.array(Venn_stds),  label='SRS', c=CB6[5], linestyle='dashed')
 
             for val in target_values:
                 print(val, levene(SRS_values[val], Venn_values[val], center='median'))
