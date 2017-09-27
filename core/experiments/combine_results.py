@@ -203,7 +203,13 @@ def main():
         venn_levels_list = [float(f) for f in fh.read_text(venn_levels_file)]
         venn_levels_vals.append(np.mean(venn_levels_list))
 
-    df = df / float(n_files)
+    #df = df / float(n_files)
+    df['estimate'] = df['estimate'] / float(n_files)
+    df['MAE'] = df['MAE'] / float(n_files)
+    df['MSE'] = df['MSE'] / float(n_files)
+    df['contains_test'] = df['contains_test'] / float(n_files)
+
+
 
     print(df)
     print("Mean adjusted error rmse = %0.5f" % np.mean(adj_errors))
