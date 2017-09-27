@@ -76,6 +76,7 @@ def main():
         n_train_values = list(set(n_train_values))
         n_train_values.sort()
         print(n_train_values)
+        n_train_values = [200, 800, 3200, 6400]
 
         CC_nontrain = []
         PCC_nontrain = []
@@ -141,13 +142,12 @@ def main():
             colors = ['black', 'magenta', 'red']
             name = 'PCC cal'
 
-        ax.scatter(x, SRS, c=colors[2], alpha=0.5, s=10)
-        ax.plot(n_train_means, SRS_means, c=colors[2], label='SRS' + objective[:3], alpha=0.5)
-
         if objective == 'f1':
-
             ax.scatter(x, CC_nontrain, c=colors[0], alpha=0.5, s=10)
             ax.plot(n_train_means, CC_means, c=colors[0], label='CC', alpha=0.5)
+        else:
+            ax.scatter(x, SRS, c=colors[2], alpha=0.5, s=10)
+            ax.plot(n_train_means, SRS_means, c=colors[2], label='SRS', alpha=0.5)
 
         ax.scatter(x, PCC_nontrain, c=colors[1], alpha=0.5, s=10)
         ax.plot(n_train_means, PCC_means, c=colors[1], label=name, alpha=0.5)
