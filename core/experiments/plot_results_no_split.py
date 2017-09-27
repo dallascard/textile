@@ -165,17 +165,17 @@ def main():
 
         #ax.scatter(x, PCC_nontrain, c=colors[1], alpha=0.5, s=10)
         ax.plot(n_train_means, PCC_means, label=name, alpha=0.5)
-        ax.plot(n_train_means, PCC_maxes, label=name + ' (max)', linestyle='dashed', alpha=0.5)
+        #ax.plot(n_train_means, PCC_maxes, label=name + ' (max)', linestyle='dashed', alpha=0.5)
 
         #ax.plot(n_train_means, Venn_means,  label='Venn' + objective[:3], alpha=0.5)
 
         #if objective == 'calibration':
         #ax.scatter(x, SRS, c=colors[2], alpha=0.5, s=10)
         ax.plot(n_train_means, SRS_means,  label='SRS' + objective[:3], alpha=0.5)
-        ax.plot(n_train_means, Venn_means,  label='Venn' + objective[:3], alpha=0.5)
+        #ax.plot(n_train_means, Venn_means,  label='Venn' + objective[:3], alpha=0.5)
 
-        ax.plot(n_train_means, SRS_maxes,  label='SRS (max)' + objective[:3], linestyle='dashed', alpha=0.5)
-        ax.plot(n_train_means, Venn_maxes,  label='Venn (max)' + objective[:3], linestyle='dashed', alpha=0.5)
+        #ax.plot(n_train_means, SRS_maxes,  label='SRS (max)' + objective[:3], linestyle='dashed', alpha=0.5)
+        #ax.plot(n_train_means, Venn_maxes,  label='Venn (max)' + objective[:3], linestyle='dashed', alpha=0.5)
 
     ax.legend()
     fig.savefig('test.pdf')
