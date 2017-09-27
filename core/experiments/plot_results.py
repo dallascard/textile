@@ -201,8 +201,7 @@ def main():
 
         if objective == 'f1':
             ax.plot(n_train_means, Venn_means,  label='Venn', alpha=0.5)
-
-        ax.plot(n_train_means, SRS_means,  label='SRS' + objective[:3], alpha=0.5)
+            ax.plot(n_train_means, SRS_means,  label='SRS', alpha=0.5)
 
     ax.legend()
     fig.savefig('test.pdf')
