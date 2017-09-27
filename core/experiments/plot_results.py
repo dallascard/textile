@@ -63,12 +63,12 @@ def main():
     if n_train is None:
         n_train = '*'
     else:
-        n_train = int(n_train)
+        n_train = str(int(n_train))
 
     if n_calib is None:
         n_calib = '*'
     else:
-        n_calib = int(n_calib)
+        n_calib = str(int(n_calib))
 
     # basic LR f1: combining subset, label, repetitions, and pre/post date
     #basename = '*_' + model_type
