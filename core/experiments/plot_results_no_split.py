@@ -85,6 +85,8 @@ def main():
         PCC_means = []
         SRS = []
         SRS_means = []
+        Venn = []
+        Venn_means = []
         x = []
         n_train_means = []
         for n_train in n_train_values:
@@ -111,6 +113,7 @@ def main():
             CC_nontrain.append(df.loc['CC_nontrain_averaged', 'RMSE'])
             PCC_nontrain.append(df.loc['PCC_nontrain_averaged', 'RMSE'])
             SRS.append(df.loc['train', 'RMSE'])
+            Venn.append(df.loc['Venn_internal_averaged', 'RMSE'])
 
             for f in files[1:]:
                 print(f)
@@ -123,6 +126,7 @@ def main():
                 CC_nontrain.append(df.loc['CC_nontrain_averaged', 'RMSE'])
                 PCC_nontrain.append(df.loc['PCC_nontrain_averaged', 'RMSE'])
                 SRS.append(df.loc['train', 'RMSE'])
+                Venn.append(df.loc['Venn_internal_averaged', 'RMSE'])
 
             mean_df = mean_df / float(n_files)
 
@@ -131,26 +135,30 @@ def main():
             CC_means.append(mean_df.loc['CC_nontrain_averaged', 'RMSE'])
             PCC_means.append(mean_df.loc['PCC_nontrain_averaged', 'RMSE'])
             SRS_means.append(mean_df.loc['train', 'RMSE'])
+            Venn_means.append(mean_df.loc['Venn_internal_averaged', 'RMSE'])
 
         print(n_train_means)
         print(CC_means)
         print(PCC_means)
         if objective == 'f1':
-            colors = ['blue', 'orange', 'green']
+            colors = ['blue', 'orange', 'green', 'cyan']
             name = 'PCC acc'
         else:
-            colors = ['black', 'green', 'red']
+            colors = ['black', 'green', 'red', 'yellow']
             name = 'PCC cal'
 
         if objective == 'f1':
             #ax.scatter(x, CC_nontrain, c=colors[0], alpha=0.5, s=10)
-            ax.plot(n_train_means, CC_means, c=colors[0], label='CC', alpha=0.5)
-        else:
-            #ax.scatter(x, SRS, c=colors[2], alpha=0.5, s=10)
-            ax.plot(n_train_means, SRS_means, c=colors[2], label='SRS', alpha=0.5)
+            ax.plot(n_train_means, CC_means, label='CC', alpha=0.5)
 
         #ax.scatter(x, PCC_nontrain, c=colors[1], alpha=0.5, s=10)
-        ax.plot(n_train_means, PCC_means, c=colors[1], label=name, alpha=0.5)
+        ax.plot(n_train_means, PCC_means, label=name, alpha=0.5)
+
+        ax.plot(n_train_means, Venn_means,  label='Venn' + objective[:3], alpha=0.5)
+
+        if objective == 'calibration':
+            #ax.scatter(x, SRS, c=colors[2], alpha=0.5, s=10)
+            ax.plot(n_train_means, SRS_means,  label='SRS', alpha=0.5)
 
     ax.legend()
     fig.savefig('test.pdf')
