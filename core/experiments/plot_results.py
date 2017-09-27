@@ -136,9 +136,9 @@ def main():
                 basename += '_' + dh
             if n_train == '*':
                 n_train_val = val
-                n_calib_val = '*'
+                n_calib_val = n_calib
             elif n_calib == '*':
-                n_train_val = '*'
+                n_train_val = n_train
                 n_calib_val = val
             basename += '_' + str(n_train_val) + '_' + str(n_calib_val) + '_' + objective
             if model_type == 'MLP':
