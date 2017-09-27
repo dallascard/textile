@@ -200,11 +200,11 @@ def main():
             name = 'PCC cal'
 
         #ax.scatter(x, PCC_nontrain, c=colors[1], alpha=0.5, s=10)
-        ax.plot(n_train_means, PCC_means, label=name, alpha=0.5)
+        ax.scatter(n_train_means, PCC_means, label=name, alpha=0.5)
 
         if objective == 'f1':
-            ax.plot(n_train_means, Venn_means,  label='Venn', alpha=0.5)
-            ax.plot(n_train_means, SRS_means,  label='SRS', alpha=0.5)
+            ax.scatter(n_train_means, Venn_means,  label='Venn', alpha=0.5)
+            ax.scatter(n_train_means, SRS_means,  label='SRS', alpha=0.5)
 
     ax.legend()
     fig.savefig('test.pdf')
