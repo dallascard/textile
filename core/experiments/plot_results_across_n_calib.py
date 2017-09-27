@@ -178,16 +178,17 @@ def main():
         CB6 = ['#1b9e77', '#d95f02', '#7570b3', '#e7298a', '#66a61e', '#e6ab02']
         dot_size = 5
         linewidth = 2
+        offset = 5
 
         if objective == 'calibration':
-            ax.scatter(np.array(x)-18, PCC_nontrain, c=CB6[3], alpha=0.5, s=dot_size)
+            ax.scatter(np.array(x)-offset, PCC_nontrain, c=CB6[3], alpha=0.5, s=dot_size)
             ax.plot(n_train_means, PCC_means, label='PCC (cal)', c=CB6[3], linewidth=linewidth)
 
         if objective == 'f1':
             ax.scatter(np.array(x), SRS, c=CB6[4], alpha=0.5, s=dot_size)
             ax.plot(n_train_means, SRS_means,  label='SRS', c=CB6[4], linewidth=linewidth)
 
-            ax.scatter(np.array(x)+18, Venn, c=CB6[5], alpha=0.5, s=dot_size)
+            ax.scatter(np.array(x)+offset, Venn, c=CB6[5], alpha=0.5, s=dot_size)
             ax.plot(n_train_means, Venn_means,  label='IVAP', c=CB6[5], linewidth=linewidth)
 
 
