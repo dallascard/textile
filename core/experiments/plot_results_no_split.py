@@ -156,7 +156,7 @@ def main():
         #ax.scatter(x, PCC_nontrain, c=colors[1], alpha=0.5, s=10)
         ax.plot(n_train_means, PCC_means, label=name, alpha=0.5)
 
-        ax.plot(n_train_means, Venn_means,  label='Venn' + objective[:3], alpha=0.5)
+        #ax.plot(n_train_means, Venn_means,  label='Venn' + objective[:3], alpha=0.5)
 
         if objective == 'calibration':
             #ax.scatter(x, SRS, c=colors[2], alpha=0.5, s=10)

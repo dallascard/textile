@@ -5,7 +5,12 @@ from optparse import OptionParser
 
 import numpy as np
 import pandas as pd
+
+# import Agg to avoid network display problems
+import matplotlib as mpl
+mpl.use('Agg')
 import matplotlib.pyplot as plt
+
 
 
 from ..util import file_handling as fh
@@ -16,16 +21,16 @@ def main():
     parser = OptionParser(usage=usage)
     parser.add_option('--cshift', dest='cshift', default=None,
                       help='cshift [None|classify]: default=%default')
-    parser.add_option('--n_train', dest='n_train', default=100,
+    parser.add_option('--n_train', dest='n_train', default=None,
                       help='Train prop: default=%default')
-    parser.add_option('--n_calib', dest='n_calib', default=100,
+    parser.add_option('--n_calib', dest='n_calib', default=None,
                       help='Number of calibration instances: default=%default')
     parser.add_option('--sample', action="store_true", dest="sample", default=False,
                       help='Sample labels instead of averaging: default=%default')
     parser.add_option('--base', dest='base', default='mfc',
                       help='base [mfc|amazon]: default=%default')
     parser.add_option('--subset', dest='subset', default='*',
-                      help='Restrict to a single subset (e.g. immigration): default=%default')
+                      help='Subset of base (e.g. immigration: default=%default')
     parser.add_option('--label', dest='label', default='*',
                       help='Label (e.g. Economic: default=%default')
     #parser.add_option('--partition', dest='partition', default='*',
@@ -41,12 +46,10 @@ def main():
 
     (options, args) = parser.parse_args()
 
-    (options, args) = parser.parse_args()
-
     objective = options.objective
     cshift = options.cshift
-    n_train = str(int(options.n_train))
-    n_calib = str(int(options.n_calib))
+    n_train = options.n_train
+    n_calib = options.n_calib
     sample_labels = options.sample
     base = options.base
     subset = options.subset
@@ -55,10 +58,21 @@ def main():
     penalty = options.penalty
     dh = str(int(options.dh))
 
+    fig, ax = plt.subplots()
+
+    if n_train is None:
+        n_train = '*'
+    else:
+        n_train = int(n_train)
+
+    if n_calib is None:
+        n_calib = '*'
+    else:
+        n_calib = int(n_calib)
+
     # basic LR f1: combining subset, label, repetitions, and pre/post date
     #basename = '*_' + model_type
-    for objective in ['f1', 'calibration']:
-
+    for objective_i, objective in enumerate(['f1', 'calibration']):
         basename = '*_' + label + '_*_' + model_type + '_' + penalty
         if model_type == 'MLP':
             basename += '_' + dh
@@ -80,26 +94,36 @@ def main():
         files = glob(search_string)
         files.sort()
         n_files = len(files)
+        print(files)
 
-        train_props = []
+        n_train_values = []
         for f in files:
-            match = re.match(r'.*' + penalty + r'_([0-9]+\.[0-9]+)_.*', f)
-            train_props.append(match.group(1))
+            match = re.match(r'.*' + penalty + r'_([0-9]+)_([0-9]+)_*', f)
+            n_train_values.append(int(match.group(1)))
 
-        train_props = list(set(train_props))
-        print(train_props)
+        n_train_values = list(set(n_train_values))
+        n_train_values.sort()
+        print(n_train_values)
+        #if base == 'mfc':
+        #    n_train_values = [100, 200, 400, 800, 1600]
+        #elif base == 'amazon':
+        #    n_train_values = [200, 800, 3200, 6400]
 
-        n_train = []
         CC_nontrain = []
         PCC_nontrain = []
-        n_train_means = [0]
-        CC_means = [0]
-        PCC_means = [0]
-        for t in train_props:
-            basename = '*_' + model_type + '_' + penalty
+        SRS = []
+        Venn = []
+        CC_means = []
+        PCC_means = []
+        SRS_means = []
+        Venn_means = []
+        x = []
+        n_train_means = []
+        for n_train in n_train_values:
+            basename = '*_' + label + '_*_' + model_type + '_' + penalty
             if model_type == 'MLP':
                 basename += '_' + dh
-            basename += '_' + t + '_' + n_calib + '_' + objective
+            basename += '_' + n_train + '_' + n_calib + '_' + objective
             if model_type == 'MLP':
                 basename += '_r?'
             if cshift is not None:
@@ -120,40 +144,61 @@ def main():
             results = fh.read_csv_to_df(files[0])
             df = pd.DataFrame(results[['N', 'estimate', 'RMSE', 'contains_test']].copy())
             mean_df = pd.DataFrame(results[['N', 'estimate', 'RMSE', 'contains_test']].copy())
-            #n_train.append(float(t))
-            n_train.append(df.loc['train', 'N'])
-            CC_nontrain.append(df.loc['CC_nontrain', 'RMSE'])
-            PCC_nontrain.append(df.loc['PCC_nontrain', 'RMSE'])
+            x.append(n_train)
+            #n_train_means.append(n_train)
+            #n_train.append(df.loc['train', 'N'])
+            CC_nontrain.append(df.loc['CC_nontrain_averaged', 'RMSE'])
+            PCC_nontrain.append(df.loc['PCC_nontrain_averaged', 'RMSE'])
+            SRS.append(df.loc['train', 'RMSE'])
+            Venn.append(df.loc['Venn_internal_averaged', 'RMSE'])
 
             for f in files[1:]:
                 print(f)
                 results = fh.read_csv_to_df(f)
                 df = results[['N', 'estimate', 'RMSE', 'contains_test']]
                 mean_df += results[['N', 'estimate', 'RMSE', 'contains_test']]
+                x.append(n_train)
                 #n_train.append(float(t))
-                n_train.append(df.loc['train', 'N'])
-                CC_nontrain.append(df.loc['CC_nontrain', 'RMSE'])
-                PCC_nontrain.append(df.loc['PCC_nontrain', 'RMSE'])
+                #n_train.append(df.loc['train', 'N'])
+                CC_nontrain.append(df.loc['CC_nontrain_averaged', 'RMSE'])
+                PCC_nontrain.append(df.loc['PCC_nontrain_averaged', 'RMSE'])
+                SRS.append(df.loc['train', 'RMSE'])
+                Venn.append(df.loc['Venn_internal_averaged', 'RMSE'])
 
             mean_df = mean_df / float(n_files)
 
-            #n_train_means.append(float(t))
-            n_train_means.append(mean_df.loc['train', 'N'])
-            CC_means.append(mean_df.loc['CC_nontrain', 'RMSE'])
-            PCC_means.append(mean_df.loc['PCC_nontrain', 'RMSE'])
+            n_train_means.append(int(n_train))
+            #n_train_means.append(mean_df.loc['train', 'N'])
+            CC_means.append(mean_df.loc['CC_nontrain_averaged', 'RMSE'])
+            PCC_means.append(mean_df.loc['PCC_nontrain_averaged', 'RMSE'])
+            SRS_means.append(mean_df.loc['train', 'RMSE'])
+            Venn_means.append(mean_df.loc['Venn_internal_averaged', 'RMSE'])
 
         print(n_train_means)
         print(CC_means)
         print(PCC_means)
-        plt.scatter(n_train, CC_nontrain)
-        plt.scatter(n_train, PCC_nontrain, alpha=0.5)
-        plt.scatter(n_train_means, CC_means)
-        plt.scatter(n_train_means, PCC_means, alpha=0.5)
-        #plt.plot(np.array(n_train_means), np.array(PCC_means), alpha=0.5, label=objective)
+        if objective == 'f1':
+            colors = ['blue', 'orange', 'green', 'cyan']
+            name = 'PCC acc'
+        else:
+            colors = ['black', 'green', 'red', 'yellow']
+            name = 'PCC cal'
 
-    plt.legend()
-    plt.savefig('test.pdf')
-    #plt.show()
+        if objective == 'f1':
+            #ax.scatter(x, CC_nontrain, c=colors[0], alpha=0.5, s=10)
+            ax.plot(n_train_means, CC_means, label='CC', alpha=0.5)
+
+        #ax.scatter(x, PCC_nontrain, c=colors[1], alpha=0.5, s=10)
+        ax.plot(n_train_means, PCC_means, label=name, alpha=0.5)
+
+        #ax.plot(n_train_means, Venn_means,  label='Venn' + objective[:3], alpha=0.5)
+
+        if objective == 'calibration':
+            #ax.scatter(x, SRS, c=colors[2], alpha=0.5, s=10)
+            ax.plot(n_train_means, SRS_means,  label='SRS', alpha=0.5)
+
+    ax.legend()
+    fig.savefig('test.pdf')
 
 if __name__ == '__main__':
     main()
