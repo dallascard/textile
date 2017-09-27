@@ -102,8 +102,8 @@ def main():
         n_calib_values = list(set(n_calib_values))
         n_calib_values.sort()
         print(n_calib_values)
-        #if base == 'mfc':
-        #    n_train_values = [200, 400, 800]
+        if base == 'mfc':
+            n_train_values = [100, 200, 400, 800, 1600]
         if base == 'amazon':
             n_calib_values = [100, 200, 400, 800]
 
@@ -197,7 +197,7 @@ def main():
             ax.plot(n_train_means, ACC_means, label='ACC', c=CB6[0], linewidth=linewidth)
 
             ax.scatter(np.array(x)-9, CC, c=CB6[1], alpha=0.5, s=dot_size)
-            ax.plot(n_train_means, CC_means, label='ACC', c=CB6[1], linewidth=linewidth)
+            ax.plot(n_train_means, CC_means, label='CC', c=CB6[1], linewidth=linewidth)
 
         if objective == 'f1':
             ax.scatter(np.array(x)+9, PCC_nontrain, c=CB6[2], alpha=0.5, s=dot_size)
@@ -220,6 +220,10 @@ def main():
             #ax.plot(n_train_means, Venn_maxes,  label='Venn (max)', alpha=0.5)
             #ax.plot([np.min(n_train_means), np.max(n_train_means)], [np.mean(SRS_maxes), np.mean(SRS_maxes)], linestyle='dashed', label='SRS (max)', alpha=0.5)
         """
+
+    ax.set_xlabel('Number of training instances (L)')
+    ax.set_ylabel('Mean absolute error')
+    ax.set_ylim(-0.01, 0.5)
 
     ax.legend()
     fig.savefig('test.pdf')
