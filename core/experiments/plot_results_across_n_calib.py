@@ -193,7 +193,10 @@ def main():
 
     ax.set_xlabel('Number of calibration instances (C)')
     ax.set_ylabel('Mean absolute error')
-    ax.set_ylim(-0.01, 0.4)
+    if base == 'mfc':
+        ax.set_ylim(-0.01, 0.4)
+    else:
+        ax.set_ylim(-0.01, 0.2)
 
     ax.legend()
     fig.savefig('test.pdf')
