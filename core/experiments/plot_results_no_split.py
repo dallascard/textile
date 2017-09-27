@@ -169,8 +169,8 @@ def main():
         dot_size = 5
         linewidth=2
         if objective == 'f1':
-            ax.scatter(np.array(x)-36, ACC_nontrain, c=CB6[0], alpha=0.5, s=dot_size)
-            ax.plot(n_train_means, ACC_means, label='ACC', c=CB6[0], linewidth=linewidth)
+            #ax.scatter(np.array(x)-36, ACC_nontrain, c=CB6[0], alpha=0.5, s=dot_size)
+            #ax.plot(n_train_means, ACC_means, label='ACC', c=CB6[0], linewidth=linewidth)
 
             ax.scatter(np.array(x)-18, CC_nontrain, c=CB6[1], alpha=0.5, s=dot_size)
             ax.plot(n_train_means, CC_means, label='CC', c=CB6[1], linewidth=linewidth)
