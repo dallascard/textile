@@ -105,6 +105,7 @@ def main():
 
         CC_nontrain = []
         PCC_nontrain = []
+        PCC_maxes = []
         SRS = []
         Venn = []
         Venn_maxes = []
@@ -171,6 +172,7 @@ def main():
             PCC_means.append(mean_df.loc['PCC_nontrain_averaged', 'RMSE'])
             SRS_means.append(mean_df.loc['calibration', 'RMSE'])
             Venn_means.append(mean_df.loc['Venn', 'RMSE'])
+            PCC_maxes.append(max_df.loc['PCC_nontrain_averaged', 'RMSE'])
 
             SRS_maxes.append(max_df.loc['calibration', 'RMSE'])
             Venn_maxes.append(max_df.loc['Venn', 'RMSE'])
@@ -187,6 +189,7 @@ def main():
 
         #ax.scatter(x, PCC_nontrain, c=colors[1], alpha=0.5, s=10)
         ax.plot([np.min(n_train_means), np.max(n_train_means)], [np.mean(PCC_means), np.mean(PCC_means)], label=name, alpha=0.5)
+        ax.plot([np.min(n_train_means), np.max(n_train_means)], [np.mean(PCC_maxes), np.mean(PCC_maxes)], label=name + ' (max)', alpha=0.5)
 
         if objective == 'f1':
             ax.plot(n_train_means, Venn_means,  label='Venn', alpha=0.5)
