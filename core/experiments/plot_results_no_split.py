@@ -136,7 +136,7 @@ def main():
         #plt.plot(np.array(n_train_means), np.array(PCC_means), alpha=0.5, label=objective)
 
     ax.legend()
-    plt.savefig('test.pdf')
+    fig.savefig('test.pdf')
     #plt.show()
 
 if __name__ == '__main__':
