@@ -148,8 +148,8 @@ def main():
             mean_df = pd.DataFrame(results[['N', 'estimate', 'RMSE', 'contains_test']].copy())
             max_df = pd.DataFrame(results[['N', 'estimate', 'RMSE', 'contains_test']].copy())
             x.append(val)
-            CC_nontrain.append(df.loc['CC_nontrain_averaged', 'RMSE'])
-            PCC_nontrain.append(df.loc['PCC_nontrain_averaged', 'RMSE'])
+            CC_nontrain.append(df.loc['CC_nontrain', 'RMSE'])
+            PCC_nontrain.append(df.loc['PCC_nontrain', 'RMSE'])
             SRS.append(df.loc['calibration', 'RMSE'])
             Venn.append(df.loc['Venn_averaged', 'RMSE'])
 
@@ -160,10 +160,10 @@ def main():
                 mean_df += results[['N', 'estimate', 'RMSE', 'contains_test']]
                 max_df = np.maximum(max_df, results[['N', 'estimate', 'RMSE', 'contains_test']].values)
                 x.append(val)
-                CC_nontrain.append(df.loc['CC_nontrain_averaged', 'RMSE'])
-                PCC_nontrain.append(df.loc['PCC_nontrain_averaged', 'RMSE'])
+                CC_nontrain.append(df.loc['CC_nontrain', 'RMSE'])
+                PCC_nontrain.append(df.loc['PCC_nontrain', 'RMSE'])
                 SRS.append(df.loc['calibration', 'RMSE'])
-                Venn.append(df.loc['Venn_averaged', 'RMSE'])
+                Venn.append(df.loc['Venn', 'RMSE'])
 
             mean_df = mean_df / float(n_files)
 
@@ -172,10 +172,11 @@ def main():
             PCC_means.append(mean_df.loc['PCC_nontrain_averaged', 'RMSE'])
             SRS_means.append(mean_df.loc['calibration', 'RMSE'])
             Venn_means.append(mean_df.loc['Venn', 'RMSE'])
-            PCC_maxes.append(max_df.loc['PCC_nontrain_averaged', 'RMSE'])
 
             SRS_maxes.append(max_df.loc['calibration', 'RMSE'])
             Venn_maxes.append(max_df.loc['Venn', 'RMSE'])
+            PCC_maxes.append(max_df.loc['PCC_nontrain', 'RMSE'])
+
 
         print(n_train_means)
         print(CC_means)
