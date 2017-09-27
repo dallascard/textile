@@ -171,7 +171,7 @@ def main():
 
         #ax.scatter(x, PCC_nontrain, c=colors[1], alpha=0.5, s=10)
         ax.plot(n_train_means, PCC_means, label=name, alpha=0.5, c=colors[1])
-        ax.plot(n_train_means, PCC_means + PCC_stds, label=name, alpha=0.5, c=colors[1])
+        ax.plot(n_train_means, np.array(PCC_means) + np.array(PCC_stds), label=name + ' (+1std)', linestyle='dashed', alpha=0.5, c=colors[1])
         #ax.plot(n_train_means, PCC_maxes, label=name + ' (max)', linestyle='dashed', alpha=0.5)
 
         #ax.plot(n_train_means, Venn_means,  label='Venn' + objective[:3], alpha=0.5)
