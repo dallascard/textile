@@ -101,7 +101,7 @@ def main():
         print(n_calib_values)
 
         if base == 'amazon':
-            n_calib_values = [50, 75, 100, 400]
+            n_calib_values = [25, 50, 75, 100, 200, 400, 800]
 
         #CC_nontrain = []
         PCC_nontrain = []
