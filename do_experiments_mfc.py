@@ -47,12 +47,12 @@ def main():
         combo.cross_train_and_eval(project, subset, field_name, config_file, n_calib, n_train, suffix='',
                                    model_type=model_type, label=label, penalty=penalty, repeats=repeats,
                                    objective='calibration', sample_labels=sample_labels)
-        combo.cross_train_and_eval(project, subset, field_name, config_file, n_calib, n_train, suffix='',
-                                   model_type=model_type, label=label, penalty=penalty, repeats=repeats,
-                                   objective='f1', cshift='classify', sample_labels=sample_labels)
-        combo.cross_train_and_eval(project, subset, field_name, config_file, n_calib, n_train, suffix='',
-                                   model_type=model_type, label=label, penalty=penalty, repeats=repeats,
-                                   objective='calibration', cshift='classify', sample_labels=sample_labels)
+        #combo.cross_train_and_eval(project, subset, field_name, config_file, n_calib, n_train, suffix='',
+        #                           model_type=model_type, label=label, penalty=penalty, repeats=repeats,
+        #                           objective='f1', cshift='classify', sample_labels=sample_labels)
+        #combo.cross_train_and_eval(project, subset, field_name, config_file, n_calib, n_train, suffix='',
+        #                           model_type=model_type, label=label, penalty=penalty, repeats=repeats,
+        #                           objective='calibration', cshift='classify', sample_labels=sample_labels)
 
 if __name__ == '__main__':
     main()
