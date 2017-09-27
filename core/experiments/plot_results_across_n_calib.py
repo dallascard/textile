@@ -161,7 +161,7 @@ def main():
             results = fh.read_csv_to_df(files[0])
             df = pd.DataFrame(results[['N', 'estimate', 'RMSE', 'contains_test']].copy())
             mean_df = pd.DataFrame(results[['N', 'estimate', 'RMSE', 'contains_test']].copy())
-            sq_mean_df = pd.DataFrame(results[['N', 'estimate', 'RMSE', 'contains_test']].value ** 2, index=mean_df.index, columns=mean_df.columns)
+            sq_mean_df = pd.DataFrame(results[['N', 'estimate', 'RMSE', 'contains_test']].values ** 2, index=mean_df.index, columns=mean_df.columns)
             max_df = pd.DataFrame(results[['N', 'estimate', 'RMSE', 'contains_test']].copy())
             x.append(val)
             PCC_nontrain.append(df.loc['PCC_nontrain', 'RMSE'])
