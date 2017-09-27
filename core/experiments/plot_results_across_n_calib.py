@@ -148,7 +148,7 @@ def main():
             x.append(val)
             PCC_nontrain.append(df.loc['PCC_nontrain', 'RMSE'])
             SRS.append(df.loc['calibration', 'RMSE'])
-            Venn.append(df.loc['Venn_averaged', 'RMSE'])
+            Venn.append(df.loc['Venn_internal_averaged', 'RMSE'])
 
             for f in files[1:]:
                 print(f)
@@ -159,14 +159,14 @@ def main():
                 x.append(val)
                 PCC_nontrain.append(df.loc['PCC_nontrain', 'RMSE'])
                 SRS.append(df.loc['calibration', 'RMSE'])
-                Venn.append(df.loc['Venn', 'RMSE'])
+                Venn.append(df.loc['Venn_internal_averaged', 'RMSE'])
 
             mean_df = mean_df / float(n_files)
 
             n_train_means.append(int(val))
             PCC_means.append(mean_df.loc['PCC_nontrain_averaged', 'RMSE'])
             SRS_means.append(mean_df.loc['calibration', 'RMSE'])
-            Venn_means.append(mean_df.loc['Venn', 'RMSE'])
+            Venn_means.append(mean_df.loc['Venn_internal_averaged', 'RMSE'])
 
             #SRS_maxes.append(max_df.loc['calibration', 'RMSE'])
             #Venn_maxes.append(max_df.loc['Venn', 'RMSE'])
