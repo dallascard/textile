@@ -152,6 +152,7 @@ def main():
 
             CC_stds.append(np.sqrt(sq_mean_df.loc['CC_nontrain_averaged', 'RMSE'] - mean_df.loc['CC_nontrain_averaged', 'RMSE']**2))
             PCC_stds.append(np.sqrt(sq_mean_df.loc['PCC_nontrain_averaged', 'RMSE'] - mean_df.loc['PCC_nontrain_averaged', 'RMSE']**2))
+            SRS_stds.append(np.sqrt(sq_mean_df.loc['train', 'RMSE'] - mean_df.loc['train', 'RMSE']**2))
 
 
         print(n_train_means)
@@ -178,7 +179,8 @@ def main():
 
         if objective == 'calibration':
             #ax.scatter(x, SRS, c=colors[2], alpha=0.5, s=10)
-            ax.plot(n_train_means, SRS_means,  label='SRS', alpha=0.5)
+            ax.plot(n_train_means, SRS_means,  label='SRS', alpha=0.5, c=colors[2])
+            ax.plot(n_train_means, np.array(SRS_means) + np.array(SRS_stds), label='SRS' + ' (+1std)', linestyle='dashed', alpha=0.5, c=colors[2])
             #ax.plot(n_train_means, Venn_means,  label='Venn' + objective[:3], alpha=0.5)
             #ax.plot(n_train_means, SRS_maxes,  label='SRS (max)' + objective[:3], linestyle='dashed', alpha=0.5)
             #ax.plot(n_train_means, Venn_maxes,  label='Venn (max)' + objective[:3], linestyle='dashed', alpha=0.5)
