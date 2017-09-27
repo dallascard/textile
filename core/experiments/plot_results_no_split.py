@@ -139,17 +139,17 @@ def main():
             colors = ['blue', 'orange', 'green']
             name = 'PCC acc'
         else:
-            colors = ['black', 'magenta', 'red']
+            colors = ['black', 'green', 'red']
             name = 'PCC cal'
 
         if objective == 'f1':
-            ax.scatter(x, CC_nontrain, c=colors[0], alpha=0.5, s=10)
+            #ax.scatter(x, CC_nontrain, c=colors[0], alpha=0.5, s=10)
             ax.plot(n_train_means, CC_means, c=colors[0], label='CC', alpha=0.5)
         else:
-            ax.scatter(x, SRS, c=colors[2], alpha=0.5, s=10)
+            #ax.scatter(x, SRS, c=colors[2], alpha=0.5, s=10)
             ax.plot(n_train_means, SRS_means, c=colors[2], label='SRS', alpha=0.5)
 
-        ax.scatter(x, PCC_nontrain, c=colors[1], alpha=0.5, s=10)
+        #ax.scatter(x, PCC_nontrain, c=colors[1], alpha=0.5, s=10)
         ax.plot(n_train_means, PCC_means, c=colors[1], label=name, alpha=0.5)
 
     ax.legend()
