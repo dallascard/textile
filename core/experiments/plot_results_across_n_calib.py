@@ -107,6 +107,8 @@ def main():
         PCC_nontrain = []
         SRS = []
         Venn = []
+        Venn_maxes = []
+        SRS_maxes = []
         CC_means = []
         PCC_means = []
         SRS_means = []
@@ -143,6 +145,7 @@ def main():
             results = fh.read_csv_to_df(files[0])
             df = pd.DataFrame(results[['N', 'estimate', 'RMSE', 'contains_test']].copy())
             mean_df = pd.DataFrame(results[['N', 'estimate', 'RMSE', 'contains_test']].copy())
+            max_df = pd.DataFrame(results[['N', 'estimate', 'RMSE', 'contains_test']].copy())
             x.append(val)
             CC_nontrain.append(df.loc['CC_nontrain_averaged', 'RMSE'])
             PCC_nontrain.append(df.loc['PCC_nontrain_averaged', 'RMSE'])
@@ -154,6 +157,7 @@ def main():
                 results = fh.read_csv_to_df(f)
                 df = results[['N', 'estimate', 'RMSE', 'contains_test']]
                 mean_df += results[['N', 'estimate', 'RMSE', 'contains_test']]
+                max_df = np.maximum(max_df, results[['N', 'estimate', 'RMSE', 'contains_test']].values)
                 x.append(val)
                 CC_nontrain.append(df.loc['CC_nontrain_averaged', 'RMSE'])
                 PCC_nontrain.append(df.loc['PCC_nontrain_averaged', 'RMSE'])
@@ -167,6 +171,9 @@ def main():
             PCC_means.append(mean_df.loc['PCC_nontrain_averaged', 'RMSE'])
             SRS_means.append(mean_df.loc['calibration', 'RMSE'])
             Venn_means.append(mean_df.loc['Venn_averaged', 'RMSE'])
+
+            SRS_maxes.append(max_df.loc['calibration', 'RMSE'])
+            Venn_maxes.append(max_df.loc['Venn_averaged', 'RMSE'])
 
         print(n_train_means)
         print(CC_means)
@@ -184,6 +191,10 @@ def main():
         if objective == 'f1':
             ax.plot(n_train_means, Venn_means,  label='Venn', alpha=0.5)
             ax.plot(n_train_means, SRS_means,  label='SRS', alpha=0.5)
+
+            ax.plot(n_train_means, Venn_maxes,  label='Venn (max)', alpha=0.5)
+            ax.plot(n_train_means, SRS_maxes,  label='SRS (max)', alpha=0.5)
+
 
     ax.legend()
     fig.savefig('test.pdf')
