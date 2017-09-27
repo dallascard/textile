@@ -3,7 +3,6 @@ import re
 from glob import glob
 from optparse import OptionParser
 
-import seaborn
 import numpy as np
 import pandas as pd
 
@@ -11,7 +10,7 @@ import pandas as pd
 import matplotlib as mpl
 mpl.use('Agg')
 import matplotlib.pyplot as plt
-
+import seaborn
 
 
 from ..util import file_handling as fh
