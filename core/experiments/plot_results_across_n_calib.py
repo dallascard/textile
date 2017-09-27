@@ -224,7 +224,7 @@ def main():
             ax.plot(n_train_means, np.array(Venn_means) + np.array(Venn_stds),  label='SRS', c=CB6[5], linestyle='dashed')
 
             for val in target_values:
-                print(val, levene(SRS_values[val], Venn_values[val]))
+                print(val, levene(SRS_values[val], Venn_values[val], center='mean'))
 
     ax.set_xlabel('Number of calibration instances (C)')
     ax.set_ylabel('Mean absolute error')
