@@ -146,8 +146,8 @@ def main():
             Venn_means.append(mean_df.loc['Venn_internal_averaged', 'RMSE'])
 
             PCC_maxes.append(max_df.loc['PCC_nontrain_averaged', 'RMSE'])
-            SRS_maxes.append(mean_df.loc['train', 'RMSE'])
-            Venn_maxes.append(mean_df.loc['Venn_internal_averaged', 'RMSE'])
+            SRS_maxes.append(max_df.loc['train', 'RMSE'])
+            Venn_maxes.append(max_df.loc['Venn_internal_averaged', 'RMSE'])
 
         print(n_train_means)
         print(CC_means)
