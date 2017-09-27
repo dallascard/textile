@@ -193,8 +193,9 @@ def main():
         linewidth = 2
 
         if objective == 'f1':
-            ax.scatter(np.array(x)-27, ACC, c=CB6[0], alpha=0.5, s=dot_size)
-            ax.plot(n_train_means, ACC_means, label='ACC', c=CB6[0], linewidth=linewidth)
+            if base == 'mfc':
+                ax.scatter(np.array(x)-27, ACC, c=CB6[0], alpha=0.5, s=dot_size)
+                ax.plot(n_train_means, ACC_means, label='ACC', c=CB6[0], linewidth=linewidth)
 
             ax.scatter(np.array(x)-9, CC, c=CB6[1], alpha=0.5, s=dot_size)
             ax.plot(n_train_means, CC_means, label='CC', c=CB6[1], linewidth=linewidth)
@@ -223,7 +224,11 @@ def main():
 
     ax.set_xlabel('Number of training instances (L)')
     ax.set_ylabel('Mean absolute error')
-    ax.set_ylim(-0.01, 0.4)
+    if base == 'mfc':
+        ax.set_ylim(-0.01, 0.4)
+    else:
+        ax.set_ylim(-0.01, 0.2)
+
 
     ax.legend()
     fig.savefig('test.pdf')
