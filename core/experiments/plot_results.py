@@ -147,8 +147,8 @@ def main():
             x.append(n_train_val)
             CC_nontrain.append(df.loc['CC_nontrain_averaged', 'RMSE'])
             PCC_nontrain.append(df.loc['PCC_nontrain_averaged', 'RMSE'])
-            SRS.append(df.loc['train', 'RMSE'])
-            Venn.append(df.loc['Venn_internal_averaged', 'RMSE'])
+            SRS.append(df.loc['calibration', 'RMSE'])
+            Venn.append(df.loc['Venn_averaged', 'RMSE'])
 
             for f in files[1:]:
                 print(f)
@@ -158,16 +158,16 @@ def main():
                 x.append(n_train_val)
                 CC_nontrain.append(df.loc['CC_nontrain_averaged', 'RMSE'])
                 PCC_nontrain.append(df.loc['PCC_nontrain_averaged', 'RMSE'])
-                SRS.append(df.loc['train', 'RMSE'])
-                Venn.append(df.loc['Venn_internal_averaged', 'RMSE'])
+                SRS.append(df.loc['calibration', 'RMSE'])
+                Venn.append(df.loc['Venn_averaged', 'RMSE'])
 
             mean_df = mean_df / float(n_files)
 
             n_train_means.append(int(n_train_val))
             CC_means.append(mean_df.loc['CC_nontrain_averaged', 'RMSE'])
             PCC_means.append(mean_df.loc['PCC_nontrain_averaged', 'RMSE'])
-            SRS_means.append(mean_df.loc['train', 'RMSE'])
-            Venn_means.append(mean_df.loc['Venn_internal_averaged', 'RMSE'])
+            SRS_means.append(mean_df.loc['calibration', 'RMSE'])
+            Venn_means.append(mean_df.loc['Venn_averaged', 'RMSE'])
 
         print(n_train_means)
         print(CC_means)
@@ -186,7 +186,7 @@ def main():
         #ax.scatter(x, PCC_nontrain, c=colors[1], alpha=0.5, s=10)
         ax.plot(n_train_means, PCC_means, label=name, alpha=0.5)
 
-        #ax.plot(n_train_means, Venn_means,  label='Venn' + objective[:3], alpha=0.5)
+        ax.plot(n_train_means, Venn_means,  label='Venn' + objective[:3], alpha=0.5)
 
         if objective == 'calibration':
             #ax.scatter(x, SRS, c=colors[2], alpha=0.5, s=10)
