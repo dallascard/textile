@@ -204,7 +204,8 @@ def main():
 
         if objective == 'f1':
             ax.scatter(n_train_means, Venn_means,  label='Venn', alpha=0.5)
-            ax.scatter(n_train_means, SRS_means,  label='SRS', alpha=0.5)
+        ax.scatter(n_train_means, SRS_means,  label='SRS', alpha=0.5)
+
 
     ax.legend()
     fig.savefig('test.pdf')
