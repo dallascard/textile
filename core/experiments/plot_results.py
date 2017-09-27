@@ -113,7 +113,7 @@ def main():
         #if base == 'mfc':
         #    n_train_values = [100, 200, 400, 800]
         if base == 'amazon':
-            n_calib_values = [100, 400, 1600, 3200]
+            n_calib_values = [100, 200, 400, 800]
 
         CC_nontrain = []
         PCC_nontrain = []
