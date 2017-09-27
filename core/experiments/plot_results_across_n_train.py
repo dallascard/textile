@@ -39,6 +39,8 @@ def main():
                       help='Regularization type [l1|l2]: default=%default')
     parser.add_option('--dh', dest='dh', default=100,
                       help='Hidden dimension for MLP: default=%default')
+    parser.add_option('--offset', dest='offset', default=9,
+                      help='Offset: default=%default')
 
     (options, args) = parser.parse_args()
 
@@ -53,6 +55,7 @@ def main():
     model_type = options.model
     penalty = options.penalty
     dh = str(int(options.dh))
+    offset = int(options.offset)
 
     fig, ax = plt.subplots()
 
@@ -195,17 +198,17 @@ def main():
         linewidth = 2
 
         if objective == 'f1':
-            ax.scatter(np.array(x)-27, ACC, c=CB6[0], alpha=0.5, s=dot_size)
+            ax.scatter(np.array(x)-1.5*offset, ACC, c=CB6[0], alpha=0.5, s=dot_size)
             ax.plot(n_train_means, ACC_means, label='ACC', c=CB6[0], linewidth=linewidth)
 
-            ax.scatter(np.array(x)-9, CC, c=CB6[1], alpha=0.5, s=dot_size)
+            ax.scatter(np.array(x)-0.5*offset, CC, c=CB6[1], alpha=0.5, s=dot_size)
             ax.plot(n_train_means, CC_means, label='CC', c=CB6[1], linewidth=linewidth)
 
         if objective == 'f1':
-            ax.scatter(np.array(x)+9, PCC_nontrain, c=CB6[2], alpha=0.5, s=dot_size)
+            ax.scatter(np.array(x)+0.5*offset, PCC_nontrain, c=CB6[2], alpha=0.5, s=dot_size)
             ax.plot(n_train_means, PCC_means, label='PCC (acc)', c=CB6[2], linewidth=linewidth)
         else:
-            ax.scatter(np.array(x)+27, PCC_nontrain, c=CB6[3], alpha=0.5, s=dot_size)
+            ax.scatter(np.array(x)+1.5*offset, PCC_nontrain, c=CB6[3], alpha=0.5, s=dot_size)
             ax.plot(n_train_means, PCC_means, label='PCC (cal)', c=CB6[3], linewidth=linewidth)
 
         """
