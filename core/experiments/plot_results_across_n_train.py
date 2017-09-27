@@ -207,7 +207,7 @@ def main():
             ax.scatter(np.array(x)+18, SRS, c=CB6[4], alpha=0.5, s=dot_size)
             ax.plot([np.min(n_train_means), np.max(n_train_means)], [np.mean(SRS_means), np.mean(SRS_means)],  label='SRS @ 100', c=CB6[4], linewidth=linewidth, linestyle='dashed')
 
-            ax.scatter(np.array(x)+36, Venn_means, c=CB6[5], alpha=0.5, s=dot_size)
+            ax.scatter(np.array(x)+36, Venn, c=CB6[5], alpha=0.5, s=dot_size)
             ax.plot(n_train_means, Venn_means,  label='IVAP', c=CB6[5], linewidth=linewidth)
 
             #ax.plot(n_train_means, Venn_means,  label='Venn', alpha=0.5)
