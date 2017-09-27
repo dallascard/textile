@@ -50,7 +50,7 @@ def main():
 
     # basic LR f1: combining subset, label, repetitions, and pre/post date
     #basename = '*_' + model_type
-    for objective in ['f1', 'calibration']:
+    for objective_i, objective in enumerate(['f1', 'calibration']):
         n_train = '*'
         basename = '*_' + label + '_*_' + model_type + '_' + penalty
         if model_type == 'MLP':
@@ -129,12 +129,16 @@ def main():
         print(n_train_means)
         print(CC_means)
         print(PCC_means)
-        ax.scatter(x, CC_nontrain, c='orange', alpha=0.5, s=10)
-        ax.scatter(x, PCC_nontrain, c='blue', alpha=0.5, s=10)
-        ax.scatter(n_train_means, CC_means, c='orange', alpha=0.5, s=20)
-        ax.scatter(n_train_means, PCC_means, c='blue', alpha=0.5, s=20)
-        ax.plot(n_train_means, CC_means, c='orange', label='CC', alpha=0.5)
-        ax.plot(n_train_means, PCC_means, c='blue', label='PCC', alpha=0.5)
+        if objective == 'f1':
+            colors = ['blue', 'orange']
+        else:
+            colors = ['green', 'magenta']
+        ax.scatter(x, CC_nontrain, c=colors[0], alpha=0.5, s=10)
+        ax.scatter(x, PCC_nontrain, c=colors[1], alpha=0.5, s=10)
+        ax.scatter(n_train_means, CC_means, c=colors[0], alpha=0.5, s=20)
+        ax.scatter(n_train_means, PCC_means, c=colors[1], alpha=0.5, s=20)
+        ax.plot(n_train_means, CC_means, c=colors[0], label='CC ' + objective[:3], alpha=0.5)
+        ax.plot(n_train_means, PCC_means, c=colors[1], label='PCC ' + objective[:3], alpha=0.5)
         #plt.plot(np.array(n_train_means), np.array(PCC_means), alpha=0.5, label=objective)
 
     ax.legend()
