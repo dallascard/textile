@@ -191,7 +191,9 @@ def main():
             ax.scatter(np.array(x)+offset, Venn, c=CB6[5], alpha=0.5, s=dot_size)
             ax.plot(n_train_means, Venn_means,  label='IVAP', c=CB6[5], linewidth=linewidth)
 
-
+    ax.set_xlabel('Number of calibration instances (C)')
+    ax.set_ylabel('Mean absolute error')
+    ax.set_ylim(-0.01, 0.4)
 
     ax.legend()
     fig.savefig('test.pdf')
