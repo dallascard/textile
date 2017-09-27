@@ -99,7 +99,10 @@ def main():
         n_train_values = []
         n_calib_values = []
         for f in files:
-            match = re.match(r'.*' + penalty + r'_([0-9]+)_([0-9]+)_*', f)
+            if model_type == 'LR':
+                match = re.match(r'.*' + penalty + r'_([0-9]+)_([0-9]+)_*', f)
+            else:
+                match = re.match(r'.*' + penalty + '_' + dh + r'_([0-9]+)_([0-9]+)_*', f)
             n_train_values.append(int(match.group(1)))
             n_calib_values.append(int(match.group(2)))
 
