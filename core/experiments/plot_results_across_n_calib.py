@@ -214,7 +214,7 @@ def main():
             ax.scatter(np.array(x)-offset, PCC_nontrain, c=CB6[3], alpha=0.5, s=dot_size)
             ax.plot([np.min(n_train_means), np.max(n_train_means)], [np.mean(PCC_means), np.mean(PCC_means)], label='PCC (cal)', c=CB6[3], linewidth=linewidth, linestyle='dashed')
 
-        if objective == 'calibration':
+        if objective == 'f1':
             ax.scatter(np.array(x), SRS, c=CB6[4], alpha=0.5, s=dot_size)
             ax.plot(n_train_means, SRS_means,  label='SRS', c=CB6[4], linewidth=linewidth)
             ax.plot(n_train_means, np.array(SRS_means) + np.array(SRS_stds),  label='SRS', c=CB6[4], linestyle='dashed')
