@@ -39,6 +39,11 @@ def main():
                       help='Regularization type [l1|l2]: default=%default')
     parser.add_option('--dh', dest='dh', default=100,
                       help='Hidden dimension for MLP: default=%default')
+    parser.add_option('--offset', dest='offset', default=8,
+                      help='offset: default=%default')
+    parser.add_option('--averaged', action="store_true", dest="averaged", default=False,
+                      help='Use value of averaged with calib: default=%default')
+
 
     (options, args) = parser.parse_args()
 
@@ -51,6 +56,13 @@ def main():
     model_type = options.model
     penalty = options.penalty
     dh = str(int(options.dh))
+    offset = int(options.offset)
+    averaged = options.averaged
+
+    if averaged:
+        venn_target = 'Venn_averaged'
+    else:
+        venn_target = 'Venn'
 
     fig, ax = plt.subplots()
 
@@ -148,7 +160,7 @@ def main():
             x.append(val)
             PCC_nontrain.append(df.loc['PCC_nontrain', 'RMSE'])
             SRS.append(df.loc['calibration', 'RMSE'])
-            Venn.append(df.loc['Venn_internal_averaged', 'RMSE'])
+            Venn.append(df.loc[venn_target, 'RMSE'])
 
             for f in files[1:]:
                 print(f)
@@ -159,14 +171,14 @@ def main():
                 x.append(val)
                 PCC_nontrain.append(df.loc['PCC_nontrain', 'RMSE'])
                 SRS.append(df.loc['calibration', 'RMSE'])
-                Venn.append(df.loc['Venn_internal_averaged', 'RMSE'])
+                Venn.append(df.loc[venn_target, 'RMSE'])
 
             mean_df = mean_df / float(n_files)
 
             n_train_means.append(int(val))
-            PCC_means.append(mean_df.loc['PCC_nontrain_averaged', 'RMSE'])
+            PCC_means.append(mean_df.loc['PCC_nontrain', 'RMSE'])
             SRS_means.append(mean_df.loc['calibration', 'RMSE'])
-            Venn_means.append(mean_df.loc['Venn_internal_averaged', 'RMSE'])
+            Venn_means.append(mean_df.loc[venn_target, 'RMSE'])
 
             #SRS_maxes.append(max_df.loc['calibration', 'RMSE'])
             #Venn_maxes.append(max_df.loc['Venn', 'RMSE'])
@@ -178,14 +190,13 @@ def main():
         CB6 = ['#1b9e77', '#d95f02', '#7570b3', '#e7298a', '#66a61e', '#e6ab02']
         dot_size = 5
         linewidth = 2
-        offset = 5
 
         #if objective == 'f1':
         #    ax.scatter(np.array(x)-offset, PCC_nontrain, c=CB6[2], alpha=0.5, s=dot_size)
         #    ax.plot([np.min(n_train_means), np.max(n_train_means)], [np.mean(PCC_means), np.mean(PCC_means)], label='PCC (acc)', c=CB6[2], linewidth=linewidth, linestyle='dashed')
 
         if objective == 'calibration':
-            ax.scatter(np.array(x)-2*offset, PCC_nontrain, c=CB6[3], alpha=0.5, s=dot_size)
+            ax.scatter(np.array(x)-offset, PCC_nontrain, c=CB6[3], alpha=0.5, s=dot_size)
             ax.plot([np.min(n_train_means), np.max(n_train_means)], [np.mean(PCC_means), np.mean(PCC_means)], label='PCC (cal)', c=CB6[3], linewidth=linewidth, linestyle='dashed')
 
         if objective == 'f1':
