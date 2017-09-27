@@ -196,6 +196,10 @@ def main():
             ax.plot(n_train_means, Venn_means,  label='Venn', alpha=0.5)
             ax.plot([np.min(n_train_means), np.max(n_train_means)], [np.mean(SRS_means), np.mean(SRS_means)], 'k--', label='SRS', alpha=0.5)
 
+            ax.plot(n_train_means, Venn_maxes,  label='Venn (max)', alpha=0.5)
+            ax.plot([np.min(n_train_means), np.max(n_train_means)], [np.mean(SRS_maxes), np.mean(SRS_maxes)], 'k--', label='SRS', alpha=0.5)
+
+
     ax.legend()
     fig.savefig('test.pdf')
 
