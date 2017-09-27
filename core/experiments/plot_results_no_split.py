@@ -164,8 +164,10 @@ def main():
             colors = ['black', 'green', 'red', 'yellow']
             name = 'PCC cal'
 
+        print(n_train_means)
         print(CC_means)
         print(CC_stds)
+        print(CC_means + CC_stds)
         if objective == 'f1':
             #ax.scatter(x, CC_nontrain, c=colors[0], alpha=0.5, s=10)
             ax.plot(n_train_means, CC_means, label='CC', c=colors[0], alpha=0.5)
