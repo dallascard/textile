@@ -90,9 +90,11 @@ def main():
         SRS_means = []
         Venn_means = []
 
-        PCC_maxes = []
-        SRS_maxes = []
-        Venn_maxes = []
+        CC_stds = []
+        PCC_stds = []
+        SRS_stds = []
+        Venn_stds = []
+
         x = []
         n_train_means = []
         for n_train in n_train_values:
@@ -113,6 +115,7 @@ def main():
             results = fh.read_csv_to_df(files[0])
             df = pd.DataFrame(results[['N', 'estimate', 'RMSE', 'contains_test']].copy())
             mean_df = pd.DataFrame(results[['N', 'estimate', 'RMSE', 'contains_test']].copy())
+            sq_mean_df = pd.DataFrame(mean_df.values ** 2, index=mean_df.index, columns=mean_df.columns)
             max_df = pd.DataFrame(results[['N', 'estimate', 'RMSE', 'contains_test']].copy())
             x.append(n_train)
             #n_train_means.append(n_train)
@@ -127,6 +130,7 @@ def main():
                 results = fh.read_csv_to_df(f)
                 df = results[['N', 'estimate', 'RMSE', 'contains_test']]
                 mean_df += results[['N', 'estimate', 'RMSE', 'contains_test']]
+                sq_mean_df += results[['N', 'estimate', 'RMSE', 'contains_test']].values ** 2
                 max_df = np.maximum(max_df, results[['N', 'estimate', 'RMSE', 'contains_test']])
                 x.append(n_train)
                 #n_train.append(float(t))
@@ -137,6 +141,7 @@ def main():
                 Venn.append(df.loc['Venn_internal_averaged', 'RMSE'])
 
             mean_df = mean_df / float(n_files)
+            sq_mean_df = sq_mean_df / float(n_files)
 
             n_train_means.append(int(n_train))
             #n_train_means.append(mean_df.loc['train', 'N'])
@@ -145,9 +150,9 @@ def main():
             SRS_means.append(mean_df.loc['train', 'RMSE'])
             Venn_means.append(mean_df.loc['Venn_internal_averaged', 'RMSE'])
 
-            PCC_maxes.append(max_df.loc['PCC_nontrain_averaged', 'RMSE'])
-            SRS_maxes.append(max_df.loc['train', 'RMSE'])
-            Venn_maxes.append(max_df.loc['Venn_internal_averaged', 'RMSE'])
+            CC_stds.append(np.sqrt(sq_mean_df.loc['CC_nontrain_averaged', 'RMSE'] - mean_df.loc['CC_nontrain_averaged', 'RMSE']**2))
+            PCC_stds.append(np.sqrt(sq_mean_df.loc['PCC_nontrain_averaged', 'RMSE'] - mean_df.loc['PCC_nontrain_averaged', 'RMSE']**2))
+
 
         print(n_train_means)
         print(CC_means)
@@ -161,21 +166,22 @@ def main():
 
         if objective == 'f1':
             #ax.scatter(x, CC_nontrain, c=colors[0], alpha=0.5, s=10)
-            ax.plot(n_train_means, CC_means, label='CC', alpha=0.5)
+            ax.plot(n_train_means, CC_means, label='CC', c=colors[0], alpha=0.5)
+            ax.plot(n_train_means, CC_means + CC_stds, linestyle='dashed', c=colors[0], label='CC', alpha=0.5)
 
         #ax.scatter(x, PCC_nontrain, c=colors[1], alpha=0.5, s=10)
-        ax.plot(n_train_means, PCC_means, label=name, alpha=0.5)
+        ax.plot(n_train_means, PCC_means, label=name, alpha=0.5, c=colors[1])
+        ax.plot(n_train_means, PCC_means + PCC_stds, label=name, alpha=0.5, c=colors[1])
         #ax.plot(n_train_means, PCC_maxes, label=name + ' (max)', linestyle='dashed', alpha=0.5)
 
         #ax.plot(n_train_means, Venn_means,  label='Venn' + objective[:3], alpha=0.5)
 
-        #if objective == 'calibration':
-        #ax.scatter(x, SRS, c=colors[2], alpha=0.5, s=10)
-        ax.plot(n_train_means, SRS_means,  label='SRS' + objective[:3], alpha=0.5)
-        #ax.plot(n_train_means, Venn_means,  label='Venn' + objective[:3], alpha=0.5)
-
-        #ax.plot(n_train_means, SRS_maxes,  label='SRS (max)' + objective[:3], linestyle='dashed', alpha=0.5)
-        #ax.plot(n_train_means, Venn_maxes,  label='Venn (max)' + objective[:3], linestyle='dashed', alpha=0.5)
+        if objective == 'calibration':
+            #ax.scatter(x, SRS, c=colors[2], alpha=0.5, s=10)
+            ax.plot(n_train_means, SRS_means,  label='SRS', alpha=0.5)
+            #ax.plot(n_train_means, Venn_means,  label='Venn' + objective[:3], alpha=0.5)
+            #ax.plot(n_train_means, SRS_maxes,  label='SRS (max)' + objective[:3], linestyle='dashed', alpha=0.5)
+            #ax.plot(n_train_means, Venn_maxes,  label='Venn (max)' + objective[:3], linestyle='dashed', alpha=0.5)
 
     ax.legend()
     fig.savefig('test.pdf')
