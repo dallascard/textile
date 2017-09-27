@@ -76,7 +76,8 @@ def main():
         n_train_values = list(set(n_train_values))
         n_train_values.sort()
         print(n_train_values)
-        n_train_values = [200, 800, 3200, 6400]
+        if base == 'amazon':
+            n_train_values = [200, 800, 3200, 6400]
 
         CC_nontrain = []
         PCC_nontrain = []
