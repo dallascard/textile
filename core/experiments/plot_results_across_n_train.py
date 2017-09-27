@@ -108,19 +108,16 @@ def main():
             n_calib_values = [100, 200, 400, 800]
 
         ACC = []
+        CC = []
         PCC_nontrain = []
         SRS = []
         Venn = []
 
         ACC_means = []
+        CC_means = []
         PCC_means = []
         SRS_means = []
         Venn_means = []
-
-        ACC_maxes = []
-        SRS_maxes = []
-        PCC_maxes = []
-        Venn_maxes = []
 
         x = []
         n_train_means = []
@@ -158,6 +155,7 @@ def main():
             max_df = pd.DataFrame(results[['N', 'estimate', 'RMSE', 'contains_test']].copy())
             x.append(val)
             ACC.append(df.loc['ACC', 'RMSE'])
+            CC.append(df.loc['CC_nontrain', 'RMSE'])
             PCC_nontrain.append(df.loc['PCC_nontrain', 'RMSE'])
             SRS.append(df.loc['calibration', 'RMSE'])
             Venn.append(df.loc['Venn', 'RMSE'])
@@ -170,6 +168,7 @@ def main():
                 max_df = np.maximum(max_df, results[['N', 'estimate', 'RMSE', 'contains_test']])
                 x.append(val)
                 ACC.append(df.loc['ACC', 'RMSE'])
+                CC.append(df.loc['CC_nontrain', 'RMSE'])
                 PCC_nontrain.append(df.loc['PCC_nontrain', 'RMSE'])
                 SRS.append(df.loc['calibration', 'RMSE'])
                 Venn.append(df.loc['Venn', 'RMSE'])
@@ -178,14 +177,15 @@ def main():
 
             n_train_means.append(int(val))
             ACC_means.append(mean_df.loc['ACC', 'RMSE'])
+            CC_means.append(mean_df.loc['CC_nontrain', 'RMSE'])
             PCC_means.append(mean_df.loc['PCC_nontrain', 'RMSE'])
             SRS_means.append(mean_df.loc['calibration', 'RMSE'])
             Venn_means.append(mean_df.loc['Venn', 'RMSE'])
 
-            ACC_maxes.append(max_df.loc['ACC', 'RMSE'])
-            SRS_maxes.append(max_df.loc['calibration', 'RMSE'])
-            Venn_maxes.append(max_df.loc['Venn', 'RMSE'])
-            PCC_maxes.append(max_df.loc['PCC_nontrain', 'RMSE'])
+            #ACC_maxes.append(max_df.loc['ACC', 'RMSE'])
+            #SRS_maxes.append(max_df.loc['calibration', 'RMSE'])
+            #Venn_maxes.append(max_df.loc['Venn', 'RMSE'])
+            #PCC_maxes.append(max_df.loc['PCC_nontrain', 'RMSE'])
 
 
         CB6 = ['#1b9e77', '#d95f02', '#7570b3', '#e7298a', '#66a61e', '#e6ab02']
@@ -193,18 +193,22 @@ def main():
         linewidth = 2
 
         if objective == 'f1':
-            ax.scatter(np.array(x)-36, ACC, c=CB6[0], alpha=0.5, s=dot_size)
+            ax.scatter(np.array(x)-27, ACC, c=CB6[0], alpha=0.5, s=dot_size)
             ax.plot(n_train_means, ACC_means, label='ACC', c=CB6[0], linewidth=linewidth)
 
-        if objective == 'f1':
-            ax.scatter(np.array(x)-18, PCC_nontrain, c=CB6[2], alpha=0.5, s=dot_size)
-            ax.plot(n_train_means, PCC_means, label='PCC (acc)', c=CB6[2], linewidth=linewidth)
-        else:
-            ax.scatter(np.array(x), PCC_nontrain, c=CB6[3], alpha=0.5, s=dot_size)
-            ax.plot(n_train_means, PCC_means, label='PCC (cal)', c=CB6[3], linewidth=linewidth)
+            ax.scatter(np.array(x)-9, CC, c=CB6[1], alpha=0.5, s=dot_size)
+            ax.plot(n_train_means, CC_means, label='ACC', c=CB6[1], linewidth=linewidth)
 
         if objective == 'f1':
-            ax.scatter(np.array(x)+18, SRS, c=CB6[4], alpha=0.5, s=dot_size)
+            ax.scatter(np.array(x)+9, PCC_nontrain, c=CB6[2], alpha=0.5, s=dot_size)
+            ax.plot(n_train_means, PCC_means, label='PCC (acc)', c=CB6[2], linewidth=linewidth)
+        else:
+            ax.scatter(np.array(x)+27, PCC_nontrain, c=CB6[3], alpha=0.5, s=dot_size)
+            ax.plot(n_train_means, PCC_means, label='PCC (cal)', c=CB6[3], linewidth=linewidth)
+
+        """
+        if objective == 'f1':
+            ax.scatter(np.array(x)+36, SRS, c=CB6[4], alpha=0.5, s=dot_size)
             ax.plot([np.min(n_train_means), np.max(n_train_means)], [np.mean(SRS_means), np.mean(SRS_means)],  label='SRS @ 100', c=CB6[4], linewidth=linewidth, linestyle='dashed')
 
             #ax.scatter(np.array(x)+36, Venn, c=CB6[5], alpha=0.5, s=dot_size)
@@ -215,7 +219,7 @@ def main():
 
             #ax.plot(n_train_means, Venn_maxes,  label='Venn (max)', alpha=0.5)
             #ax.plot([np.min(n_train_means), np.max(n_train_means)], [np.mean(SRS_maxes), np.mean(SRS_maxes)], linestyle='dashed', label='SRS (max)', alpha=0.5)
-
+        """
 
     ax.legend()
     fig.savefig('test.pdf')
