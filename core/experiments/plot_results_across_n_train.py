@@ -103,7 +103,7 @@ def main():
         n_calib_values.sort()
         print(n_calib_values)
         if base == 'mfc':
-            n_train_values = [200, 400, 800]
+            n_train_values = [100, 200, 400, 800]
         if base == 'amazon':
             n_calib_values = [100, 200, 400, 800]
 
@@ -197,8 +197,7 @@ def main():
             ax.plot([np.min(n_train_means), np.max(n_train_means)], [np.mean(SRS_means), np.mean(SRS_means)], 'k--', label='SRS', alpha=0.5)
 
             ax.plot(n_train_means, Venn_maxes,  label='Venn (max)', alpha=0.5)
-            #ax.plot([np.min(n_train_means), np.max(n_train_means)], [np.mean(SRS_maxes), np.mean(SRS_maxes)], 'k--', label='SRS (max)', alpha=0.5)
-            ax.plot(n_train_means, SRS_maxes,  label='SRS(max)', alpha=0.5)
+            ax.plot([np.min(n_train_means), np.max(n_train_means)], [np.mean(SRS_maxes), np.mean(SRS_maxes)], linestyle='dashed', label='SRS (max)', alpha=0.5)
 
 
     ax.legend()
