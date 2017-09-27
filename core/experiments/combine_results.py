@@ -27,8 +27,8 @@ def main():
                       help='Subset of base (e.g. immigration: default=%default')
     parser.add_option('--label', dest='label', default='*',
                       help='Label (e.g. Economic: default=%default')
-    #parser.add_option('--partition', dest='partition', default='*',
-    #                  help='Partition for mfc (e.g. pre: default=%default')
+    parser.add_option('--partition', dest='partition', default=None,
+                      help='Partition for mfc (e.g. pre: default=%default')
     parser.add_option('--model', dest='model', default='LR',
                       help='model type [LR|MLP]: default=%default')
     parser.add_option('--penalty', dest='penalty', default='l2',
@@ -52,6 +52,7 @@ def main():
     base = options.base
     subset = options.subset
     label = options.label
+    partition = options.partition
     model_type = options.model
     penalty = options.penalty
     dh = str(int(options.dh))
@@ -69,9 +70,15 @@ def main():
     if sample_labels:
         basename += '_sampled'
     if base == 'mfc':
-        basename += '_???_????_?'
+        if partition is None:
+            basename += '_???_????_?'
+        else:
+            basename += '_' + partition + '_?'
     elif base == 'amazon':
-        basename += '_????_?'
+        if partition is None:
+            basename += '_????_?'
+        else:
+            basename += '_' + partition + '_?'
 
     print(basename)
     files = glob(os.path.join('projects', base, subset, 'models', basename, 'results.csv'))

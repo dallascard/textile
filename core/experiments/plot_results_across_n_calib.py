@@ -183,10 +183,7 @@ def main():
 
         if objective == 'f1':
             ax.plot(n_train_means, Venn_means,  label='Venn', alpha=0.5)
-            if n_train == '*':
-                ax.plot([np.min(n_train_means), np.max(n_train_means)], [np.mean(SRS_means), np.mean(SRS_means)], 'k--', label='SRS', alpha=0.5)
-            else:
-                ax.plot(n_train_means, SRS_means,  label='SRS', alpha=0.5)
+            ax.plot(n_train_means, SRS_means,  label='SRS', alpha=0.5)
 
     ax.legend()
     fig.savefig('test.pdf')
