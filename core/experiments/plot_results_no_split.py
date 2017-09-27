@@ -81,10 +81,13 @@ def main():
         elif base == 'amazon':
             n_train_values = [200, 800, 3200, 6400]
 
+        ACC_nontrain = []
         CC_nontrain = []
         PCC_nontrain = []
         SRS = []
         Venn = []
+
+        ACC_means = []
         CC_means = []
         PCC_means = []
         SRS_means = []
@@ -120,6 +123,7 @@ def main():
             x.append(n_train)
             #n_train_means.append(n_train)
             #n_train.append(df.loc['train', 'N'])
+            ACC_nontrain.append(df.loc['ACC_internal', 'RMSE'])
             CC_nontrain.append(df.loc['CC_nontrain_averaged', 'RMSE'])
             PCC_nontrain.append(df.loc['PCC_nontrain_averaged', 'RMSE'])
             SRS.append(df.loc['train', 'RMSE'])
@@ -135,6 +139,7 @@ def main():
                 x.append(n_train)
                 #n_train.append(float(t))
                 #n_train.append(df.loc['train', 'N'])
+                ACC_nontrain.append(df.loc['ACC_internal', 'RMSE'])
                 CC_nontrain.append(df.loc['CC_nontrain_averaged', 'RMSE'])
                 PCC_nontrain.append(df.loc['PCC_nontrain_averaged', 'RMSE'])
                 SRS.append(df.loc['train', 'RMSE'])
@@ -145,6 +150,7 @@ def main():
 
             n_train_means.append(int(n_train))
             #n_train_means.append(mean_df.loc['train', 'N'])
+            ACC_means.append(mean_df.loc['ACC_internal', 'RMSE'])
             CC_means.append(mean_df.loc['CC_nontrain_averaged', 'RMSE'])
             PCC_means.append(mean_df.loc['PCC_nontrain_averaged', 'RMSE'])
             SRS_means.append(mean_df.loc['train', 'RMSE'])
@@ -163,25 +169,28 @@ def main():
         dot_size = 5
         linewidth=2
         if objective == 'f1':
-            ax.scatter(np.array(x)-24, CC_nontrain, c=CB6[0], alpha=0.5, s=dot_size)
-            ax.plot(n_train_means, CC_means, label='CC', c=CB6[0], linewidth=linewidth)
+            ax.scatter(np.array(x)-24, ACC_nontrain, c=CB6[0], alpha=0.5, s=dot_size)
+            ax.plot(n_train_means, ACC_means, label='ACC', c=CB6[0], linewidth=linewidth)
+
+            ax.scatter(np.array(x)-24, CC_nontrain, c=CB6[1], alpha=0.5, s=dot_size)
+            ax.plot(n_train_means, CC_means, label='CC', c=CB6[1], linewidth=linewidth)
             #ax.plot(n_train_means, np.array(CC_means) + np.array(CC_stds), linestyle='dashed', c=colors[0], label='CC (+1std)', alpha=0.5)
 
         #ax.scatter(x, PCC_nontrain, c=colors[1], alpha=0.5, s=10)
         if objective == 'f1':
-            ax.scatter(np.array(x)-8, PCC_nontrain, c=CB6[1], alpha=0.5, s=dot_size)
-            ax.plot(n_train_means, PCC_means, label='PCC (acc)', c=CB6[1], linewidth=linewidth)
+            ax.scatter(np.array(x)-8, PCC_nontrain, c=CB6[2], alpha=0.5, s=dot_size)
+            ax.plot(n_train_means, PCC_means, label='PCC (acc)', c=CB6[2], linewidth=linewidth)
         else:
-            ax.scatter(np.array(x)+8, PCC_nontrain, c=CB6[2], alpha=0.5, s=dot_size)
-            ax.plot(n_train_means, PCC_means, label='PCC (cal)', c=CB6[2], linewidth=linewidth)
+            ax.scatter(np.array(x)+8, PCC_nontrain, c=CB6[3], alpha=0.5, s=dot_size)
+            ax.plot(n_train_means, PCC_means, label='PCC (cal)', c=CB6[3], linewidth=linewidth)
         #ax.plot(n_train_means, np.array(PCC_means) + np.array(PCC_stds), label=name + ' (+1std)', linestyle='dashed', alpha=0.5, c=colors[1])
         #ax.plot(n_train_means, PCC_maxes, label=name + ' (max)', linestyle='dashed', alpha=0.5)
 
         #ax.plot(n_train_means, Venn_means,  label='Venn' + objective[:3], alpha=0.5)
 
         if objective == 'calibration':
-            ax.scatter(np.array(x)+24, SRS, c=CB6[3], alpha=0.5, s=dot_size)
-            ax.plot(n_train_means, SRS_means,  label='SRS', c=CB6[3], linewidth=linewidth)
+            ax.scatter(np.array(x)+24, SRS, c=CB6[4], alpha=0.5, s=dot_size)
+            ax.plot(n_train_means, SRS_means,  label='SRS', c=CB6[4], linewidth=linewidth)
             #ax.plot(n_train_means, np.array(SRS_means) + np.array(SRS_stds), label='SRS' + ' (+1std)', linestyle='dashed', alpha=0.5, c=colors[2])
 
     ax.set_xlabel('Number of training instances (L)')
