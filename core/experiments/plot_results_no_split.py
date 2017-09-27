@@ -131,14 +131,19 @@ def main():
         print(PCC_means)
         if objective == 'f1':
             colors = ['blue', 'orange']
+            name = 'PCC acc'
         else:
             colors = ['green', 'magenta']
-        ax.scatter(x, CC_nontrain, c=colors[0], alpha=0.5, s=10)
+            name = 'PCC cal'
+
+        if objective == 'f1':
+            ax.scatter(x, CC_nontrain, c=colors[0], alpha=0.5, s=10)
+            ax.scatter(n_train_means, CC_means, c=colors[0], alpha=0.5, s=20)
+            ax.plot(n_train_means, CC_means, c=colors[0], label=name, alpha=0.5)
+
         ax.scatter(x, PCC_nontrain, c=colors[1], alpha=0.5, s=10)
-        ax.scatter(n_train_means, CC_means, c=colors[0], alpha=0.5, s=20)
         ax.scatter(n_train_means, PCC_means, c=colors[1], alpha=0.5, s=20)
-        ax.plot(n_train_means, CC_means, c=colors[0], label='CC ' + objective[:3], alpha=0.5)
-        ax.plot(n_train_means, PCC_means, c=colors[1], label='PCC ' + objective[:3], alpha=0.5)
+        ax.plot(n_train_means, PCC_means, c=colors[1], label=name, alpha=0.5)
         #plt.plot(np.array(n_train_means), np.array(PCC_means), alpha=0.5, label=objective)
 
     ax.legend()
