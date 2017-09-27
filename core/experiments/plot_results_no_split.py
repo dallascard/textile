@@ -167,7 +167,7 @@ def main():
         CB6 = ['#1b9e77', '#d95f02', '#7570b3', '#e7298a', '#66a61e', '#e6ab02']
 
         dot_size = 5
-        linewidth=2
+        linewidth = 2
         if objective == 'f1':
             #ax.scatter(np.array(x)-36, ACC_nontrain, c=CB6[0], alpha=0.5, s=dot_size)
             #ax.plot(n_train_means, ACC_means, label='ACC', c=CB6[0], linewidth=linewidth)

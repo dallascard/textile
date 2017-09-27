@@ -107,17 +107,21 @@ def main():
         if base == 'amazon':
             n_calib_values = [100, 200, 400, 800]
 
-        CC_nontrain = []
+        ACC = []
         PCC_nontrain = []
         SRS = []
         Venn = []
-        CC_means = []
+
+        ACC_means = []
         PCC_means = []
         SRS_means = []
         Venn_means = []
+
+        ACC_maxes = []
         SRS_maxes = []
         PCC_maxes = []
         Venn_maxes = []
+
         x = []
         n_train_means = []
 
@@ -153,10 +157,10 @@ def main():
             mean_df = pd.DataFrame(results[['N', 'estimate', 'RMSE', 'contains_test']].copy())
             max_df = pd.DataFrame(results[['N', 'estimate', 'RMSE', 'contains_test']].copy())
             x.append(val)
-            CC_nontrain.append(df.loc['CC_nontrain', 'RMSE'])
+            ACC.append(df.loc['ACC', 'RMSE'])
             PCC_nontrain.append(df.loc['PCC_nontrain', 'RMSE'])
             SRS.append(df.loc['calibration', 'RMSE'])
-            Venn.append(df.loc['Venn_averaged', 'RMSE'])
+            Venn.append(df.loc['Venn', 'RMSE'])
 
             for f in files[1:]:
                 print(f)
@@ -165,43 +169,52 @@ def main():
                 mean_df += results[['N', 'estimate', 'RMSE', 'contains_test']]
                 max_df = np.maximum(max_df, results[['N', 'estimate', 'RMSE', 'contains_test']])
                 x.append(val)
-                CC_nontrain.append(df.loc['CC_nontrain', 'RMSE'])
+                ACC.append(df.loc['ACC', 'RMSE'])
                 PCC_nontrain.append(df.loc['PCC_nontrain', 'RMSE'])
                 SRS.append(df.loc['calibration', 'RMSE'])
-                Venn.append(df.loc['Venn_averaged', 'RMSE'])
+                Venn.append(df.loc['Venn', 'RMSE'])
 
             mean_df = mean_df / float(n_files)
 
             n_train_means.append(int(val))
-            CC_means.append(mean_df.loc['CC_nontrain', 'RMSE'])
+            ACC_means.append(mean_df.loc['ACC', 'RMSE'])
             PCC_means.append(mean_df.loc['PCC_nontrain', 'RMSE'])
             SRS_means.append(mean_df.loc['calibration', 'RMSE'])
             Venn_means.append(mean_df.loc['Venn', 'RMSE'])
 
+            ACC_maxes.append(max_df.loc['ACC', 'RMSE'])
             SRS_maxes.append(max_df.loc['calibration', 'RMSE'])
             Venn_maxes.append(max_df.loc['Venn', 'RMSE'])
             PCC_maxes.append(max_df.loc['PCC_nontrain', 'RMSE'])
 
-        print(n_train_means)
-        print(CC_means)
-        print(PCC_means)
+
+        CB6 = ['#1b9e77', '#d95f02', '#7570b3', '#e7298a', '#66a61e', '#e6ab02']
+        dot_size = 5
+        linewidth = 2
+
         if objective == 'f1':
-            colors = ['blue', 'orange', 'green', 'cyan']
-            name = 'PCC acc'
+            ax.scatter(np.array(x)-36, ACC, c=CB6[0], alpha=0.5, s=dot_size)
+            ax.plot(n_train_means, ACC_means, label='ACC', c=CB6[0], linewidth=linewidth)
+
+        if objective == 'f1':
+            ax.scatter(np.array(x)-18, PCC_nontrain, c=CB6[2], alpha=0.5, s=dot_size)
+            ax.plot(n_train_means, PCC_means, label='PCC (acc)', c=CB6[2], linewidth=linewidth)
         else:
-            colors = ['black', 'green', 'red', 'yellow']
-            name = 'PCC cal'
-
-        #ax.scatter(x, PCC_nontrain, c=colors[1], alpha=0.5, s=10)
-        ax.plot(n_train_means, PCC_means, label=name, alpha=0.5)
-        ax.plot(n_train_means, PCC_maxes, linestyle='dashed', label=name + ' (max)', alpha=0.5)
+            ax.scatter(np.array(x), PCC_nontrain, c=CB6[3], alpha=0.5, s=dot_size)
+            ax.plot(n_train_means, PCC_means, label='PCC (cal)', c=CB6[3], linewidth=linewidth)
 
         if objective == 'f1':
-            ax.plot(n_train_means, Venn_means,  label='Venn', alpha=0.5)
-            ax.plot([np.min(n_train_means), np.max(n_train_means)], [np.mean(SRS_means), np.mean(SRS_means)], linestyle='dashed', label='SRS', alpha=0.5)
+            ax.scatter(np.array(x)+18, SRS, c=CB6[4], alpha=0.5, s=dot_size)
+            ax.plot([np.min(n_train_means), np.max(n_train_means)], [np.mean(SRS_means), np.mean(SRS_means)],  label='SRS @ 100', c=CB6[4], linewidth=linewidth, linestyle='dashed')
 
-            ax.plot(n_train_means, Venn_maxes,  label='Venn (max)', alpha=0.5)
-            ax.plot([np.min(n_train_means), np.max(n_train_means)], [np.mean(SRS_maxes), np.mean(SRS_maxes)], linestyle='dashed', label='SRS (max)', alpha=0.5)
+            ax.scatter(np.array(x)+36, Venn_means, c=CB6[5], alpha=0.5, s=dot_size)
+            ax.plot(n_train_means, Venn_means,  label='IVAP', c=CB6[5], linewidth=linewidth)
+
+            #ax.plot(n_train_means, Venn_means,  label='Venn', alpha=0.5)
+            #ax.plot([np.min(n_train_means), np.max(n_train_means)], [np.mean(SRS_means), np.mean(SRS_means)], linestyle='dashed', label='SRS', alpha=0.5)
+
+            #ax.plot(n_train_means, Venn_maxes,  label='Venn (max)', alpha=0.5)
+            #ax.plot([np.min(n_train_means), np.max(n_train_means)], [np.mean(SRS_maxes), np.mean(SRS_maxes)], linestyle='dashed', label='SRS (max)', alpha=0.5)
 
 
     ax.legend()
