@@ -166,24 +166,25 @@ def main():
             name = 'PCC cal'
 
         if objective == 'f1':
-            #ax.scatter(x, CC_nontrain, c=colors[0], alpha=0.5, s=10)
+            ax.scatter(np.array(x)-10, CC_nontrain, c=colors[0], alpha=0.5, s=10)
             ax.plot(n_train_means, CC_means, label='CC', c=colors[0], alpha=0.5)
-            ax.plot(n_train_means, np.array(CC_means) + np.array(CC_stds), linestyle='dashed', c=colors[0], label='CC (+1std)', alpha=0.5)
+            #ax.plot(n_train_means, np.array(CC_means) + np.array(CC_stds), linestyle='dashed', c=colors[0], label='CC (+1std)', alpha=0.5)
 
         #ax.scatter(x, PCC_nontrain, c=colors[1], alpha=0.5, s=10)
+        if objective == 'f1':
+            ax.scatter(np.array(x)-5, CC_nontrain, c=colors[1], alpha=0.5, s=10)
+        else:
+            ax.scatter(np.array(x), CC_nontrain, c=colors[1], alpha=0.5, s=10)
         ax.plot(n_train_means, PCC_means, label=name, alpha=0.5, c=colors[1])
-        ax.plot(n_train_means, np.array(PCC_means) + np.array(PCC_stds), label=name + ' (+1std)', linestyle='dashed', alpha=0.5, c=colors[1])
+        #ax.plot(n_train_means, np.array(PCC_means) + np.array(PCC_stds), label=name + ' (+1std)', linestyle='dashed', alpha=0.5, c=colors[1])
         #ax.plot(n_train_means, PCC_maxes, label=name + ' (max)', linestyle='dashed', alpha=0.5)
 
         #ax.plot(n_train_means, Venn_means,  label='Venn' + objective[:3], alpha=0.5)
 
         if objective == 'calibration':
-            #ax.scatter(x, SRS, c=colors[2], alpha=0.5, s=10)
+            ax.scatter(np.array(x)+5, SRS, c=colors[2], alpha=0.5, s=10)
             ax.plot(n_train_means, SRS_means,  label='SRS', alpha=0.5, c=colors[2])
-            ax.plot(n_train_means, np.array(SRS_means) + np.array(SRS_stds), label='SRS' + ' (+1std)', linestyle='dashed', alpha=0.5, c=colors[2])
-            #ax.plot(n_train_means, Venn_means,  label='Venn' + objective[:3], alpha=0.5)
-            #ax.plot(n_train_means, SRS_maxes,  label='SRS (max)' + objective[:3], linestyle='dashed', alpha=0.5)
-            #ax.plot(n_train_means, Venn_maxes,  label='Venn (max)' + objective[:3], linestyle='dashed', alpha=0.5)
+            #ax.plot(n_train_means, np.array(SRS_means) + np.array(SRS_stds), label='SRS' + ' (+1std)', linestyle='dashed', alpha=0.5, c=colors[2])
 
     ax.legend()
     fig.savefig('test.pdf')
