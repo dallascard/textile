@@ -77,12 +77,12 @@ def main():
         n_train_values.sort()
         print(n_train_values)
 
-        n_train = []
         CC_nontrain = []
         PCC_nontrain = []
         n_train_means = [0]
         CC_means = [0]
         PCC_means = [0]
+        x = []
         for n_train in n_train_values:
             basename = '*_' + label + '_*_' + model_type + '_' + penalty
             if model_type == 'MLP':
@@ -101,7 +101,7 @@ def main():
             results = fh.read_csv_to_df(files[0])
             df = pd.DataFrame(results[['N', 'estimate', 'RMSE', 'contains_test']].copy())
             mean_df = pd.DataFrame(results[['N', 'estimate', 'RMSE', 'contains_test']].copy())
-            #n_train.append(float(t))
+            x.append(n_train)
             #n_train.append(df.loc['train', 'N'])
             CC_nontrain.append(df.loc['CC_nontrain_averaged', 'RMSE'])
             PCC_nontrain.append(df.loc['PCC_nontrain_averaged', 'RMSE'])
@@ -111,6 +111,7 @@ def main():
                 results = fh.read_csv_to_df(f)
                 df = results[['N', 'estimate', 'RMSE', 'contains_test']]
                 mean_df += results[['N', 'estimate', 'RMSE', 'contains_test']]
+                x.append(n_train)
                 #n_train.append(float(t))
                 #n_train.append(df.loc['train', 'N'])
                 CC_nontrain.append(df.loc['CC_nontrain_averaged', 'RMSE'])
