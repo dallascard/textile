@@ -105,7 +105,7 @@ def main():
         if base == 'mfc':
             n_train_values = [100, 200, 400, 800, 1600]
         if base == 'amazon':
-            n_calib_values = [100, 200, 400, 800]
+            n_train_values = [200, 400, 800, 1600, 3200]
 
         ACC = []
         CC = []
