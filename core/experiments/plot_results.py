@@ -119,11 +119,11 @@ def main():
         Venn_means = []
         x = []
         n_train_means = []
-        for n_train in n_train_values:
+        for n_train_val in n_train_values:
             basename = '*_' + label + '_*_' + model_type + '_' + penalty
             if model_type == 'MLP':
                 basename += '_' + dh
-            basename += '_' + str(n_train) + '_' + str(n_calib) + '_' + objective
+            basename += '_' + str(n_train_val) + '_' + str(n_calib) + '_' + objective
             if model_type == 'MLP':
                 basename += '_r?'
             if cshift is not None:
@@ -144,9 +144,7 @@ def main():
             results = fh.read_csv_to_df(files[0])
             df = pd.DataFrame(results[['N', 'estimate', 'RMSE', 'contains_test']].copy())
             mean_df = pd.DataFrame(results[['N', 'estimate', 'RMSE', 'contains_test']].copy())
-            x.append(n_train)
-            #n_train_means.append(n_train)
-            #n_train.append(df.loc['train', 'N'])
+            x.append(n_train_val)
             CC_nontrain.append(df.loc['CC_nontrain_averaged', 'RMSE'])
             PCC_nontrain.append(df.loc['PCC_nontrain_averaged', 'RMSE'])
             SRS.append(df.loc['train', 'RMSE'])
@@ -157,9 +155,7 @@ def main():
                 results = fh.read_csv_to_df(f)
                 df = results[['N', 'estimate', 'RMSE', 'contains_test']]
                 mean_df += results[['N', 'estimate', 'RMSE', 'contains_test']]
-                x.append(n_train)
-                #n_train.append(float(t))
-                #n_train.append(df.loc['train', 'N'])
+                x.append(n_train_val)
                 CC_nontrain.append(df.loc['CC_nontrain_averaged', 'RMSE'])
                 PCC_nontrain.append(df.loc['PCC_nontrain_averaged', 'RMSE'])
                 SRS.append(df.loc['train', 'RMSE'])
@@ -167,8 +163,7 @@ def main():
 
             mean_df = mean_df / float(n_files)
 
-            n_train_means.append(int(n_train))
-            #n_train_means.append(mean_df.loc['train', 'N'])
+            n_train_means.append(int(n_train_val))
             CC_means.append(mean_df.loc['CC_nontrain_averaged', 'RMSE'])
             PCC_means.append(mean_df.loc['PCC_nontrain_averaged', 'RMSE'])
             SRS_means.append(mean_df.loc['train', 'RMSE'])
