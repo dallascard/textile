@@ -196,19 +196,13 @@ def main():
             colors = ['black', 'green', 'red', 'yellow']
             name = 'PCC cal'
 
-        if objective == 'f1':
-            #ax.scatter(x, CC_nontrain, c=colors[0], alpha=0.5, s=10)
-            ax.plot(n_train_means, CC_means, label='CC', alpha=0.5)
-
         #ax.scatter(x, PCC_nontrain, c=colors[1], alpha=0.5, s=10)
         ax.plot(n_train_means, PCC_means, label=name, alpha=0.5)
 
         if objective == 'f1':
-            ax.plot(n_train_means, Venn_means,  label='Venn' + objective[:3], alpha=0.5)
+            ax.plot(n_train_means, Venn_means,  label='Venn', alpha=0.5)
 
-        if objective == 'calibration':
-            #ax.scatter(x, SRS, c=colors[2], alpha=0.5, s=10)
-            ax.plot(n_train_means, SRS_means,  label='SRS', alpha=0.5)
+        ax.plot(n_train_means, SRS_means,  label='SRS' + objective[:3], alpha=0.5)
 
     ax.legend()
     fig.savefig('test.pdf')
