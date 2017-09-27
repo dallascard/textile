@@ -124,6 +124,11 @@ def main():
         SRS_means = []
         Venn_means = []
 
+        PCC_stds = []
+        SRS_stds = []
+        Venn_stds = []
+
+
         x = []
         n_train_means = []
         target_values = n_calib_values
@@ -156,6 +161,7 @@ def main():
             results = fh.read_csv_to_df(files[0])
             df = pd.DataFrame(results[['N', 'estimate', 'RMSE', 'contains_test']].copy())
             mean_df = pd.DataFrame(results[['N', 'estimate', 'RMSE', 'contains_test']].copy())
+            sq_mean_df = pd.DataFrame(results[['N', 'estimate', 'RMSE', 'contains_test']].value ** 2, index=mean_df.index, columns=mean_df.columns)
             max_df = pd.DataFrame(results[['N', 'estimate', 'RMSE', 'contains_test']].copy())
             x.append(val)
             PCC_nontrain.append(df.loc['PCC_nontrain', 'RMSE'])
@@ -167,6 +173,7 @@ def main():
                 results = fh.read_csv_to_df(f)
                 df = results[['N', 'estimate', 'RMSE', 'contains_test']]
                 mean_df += results[['N', 'estimate', 'RMSE', 'contains_test']]
+                sq_mean_df += results[['N', 'estimate', 'RMSE', 'contains_test']].values ** 2
                 max_df = np.maximum(max_df, results[['N', 'estimate', 'RMSE', 'contains_test']].values)
                 x.append(val)
                 PCC_nontrain.append(df.loc['PCC_nontrain', 'RMSE'])
@@ -180,10 +187,9 @@ def main():
             SRS_means.append(mean_df.loc['calibration', 'RMSE'])
             Venn_means.append(mean_df.loc[venn_target, 'RMSE'])
 
-            #SRS_maxes.append(max_df.loc['calibration', 'RMSE'])
-            #Venn_maxes.append(max_df.loc['Venn', 'RMSE'])
-            #PCC_maxes.append(max_df.loc['PCC_nontrain', 'RMSE'])
-
+            PCC_stds.append(np.sqrt(sq_mean_df.loc['PCC_nontrain', 'RMSE'] - mean_df.loc['PCC_nontrain', 'RMSE'] ** 2))
+            SRS_stds.append(np.sqrt(sq_mean_df.loc['calibration', 'RMSE'] - mean_df.loc['calibration', 'RMSE'] ** 2))
+            Venn_stds.append(np.sqrt(sq_mean_df.loc[venn_target, 'RMSE'] - mean_df.loc[venn_target, 'RMSE'] ** 2))
 
         print(n_train_means)
         print(PCC_means)
@@ -202,9 +208,11 @@ def main():
         if objective == 'f1':
             ax.scatter(np.array(x), SRS, c=CB6[4], alpha=0.5, s=dot_size)
             ax.plot(n_train_means, SRS_means,  label='SRS', c=CB6[4], linewidth=linewidth)
+            ax.plot(n_train_means, np.array(SRS_means) + np.array(SRS_stds),  label='SRS', c=CB6[4], linestyle='dashed')
 
             ax.scatter(np.array(x)+offset, Venn, c=CB6[5], alpha=0.5, s=dot_size)
             ax.plot(n_train_means, Venn_means,  label='IVAP', c=CB6[5], linewidth=linewidth)
+            ax.plot(n_train_means, np.array(Venn_means) + np.array(Venn_stds),  label='SRS', c=CB6[5], linestyle='dashed')
 
     ax.set_xlabel('Number of calibration instances (C)')
     ax.set_ylabel('Mean absolute error')
