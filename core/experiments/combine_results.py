@@ -256,7 +256,7 @@ def main():
     print(len(diffs_bw_train_and_test))
 
     fig, ax = plt.subplots()
-    cm = plt.cm.get_cmap('viridis')
+    cm = plt.cm.get_cmap('seismic')
     #sc = plt.scatter(train_rmses, PCC_nontrain_rmses, c=target_estimates, cmap=cm, vmax=0.8, vmin=0)
     #sc = plt.scatter(train_estmates, PCC_errors, c=diffs_bw_train_and_test, vmax=0.25, vmin=-0.25, cmap=cm)
     sc = plt.scatter(train_estmates, PCC_errors, c=diffs_bw_train_and_test, cmap=cm, vmin=-0.15, vmax=0.15)
