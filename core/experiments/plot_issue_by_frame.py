@@ -7,6 +7,7 @@ import pandas as pd
 from scipy.stats import pearsonr
 import matplotlib as mpl
 mpl.use('Agg')
+import seaborn
 import matplotlib.pyplot as plt
 
 from ..util import file_handling as fh
@@ -209,11 +210,18 @@ def main():
                 cal_f1s.append(label_f1s)
                 cal_maes.append(label_maes)
 
-    print(f1_f1s)
-    print(cal_f1s)
-    print(f1_maes)
-    print(cal_maes)
 
+    df = pd.DataFrame(columns=['label', 'f1', 'objective'])
+
+    df['label'] = ['Tone', 'Economics', 'Health', 'Legality', 'Politics'] * 2
+    df['objective'] = ['acc'] * 5 + ['cal'] * 5
+    df['f1'] = np.r_[np.array([np.mean(f1) for f1 in f1_f1s]), np.array([np.mean(f1) for f1 in cal_1s])]
+    fig, ax = plt.subplots()
+    seaborn.boxplot(x='label', y='f1', hue='objective', data=df)
+    fig.savefig('test.pdf')
+
+
+    """
     fig, ax = plt.subplots()
     for group_i, group in enumerate(f1_f1s):
         ax.scatter(np.ones_like(group) * group_i, group, c='blue')
@@ -228,6 +236,8 @@ def main():
     for group_i, group in enumerate(cal_maes):
         ax.scatter(np.ones_like(group) * group_i + 0.2,  group, c='orange')
     fig.savefig('test2.pdf', bbox_inches='tight')
+    """
+
 
 if __name__ == '__main__':
     main()
