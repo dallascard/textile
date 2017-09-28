@@ -137,11 +137,11 @@ def main():
         venn_outside_errors.append(max(venn_av_lower - target_prop, target_prop - venn_av_upper))
         n_outside += 1
 
-    diffs_bw_train_and_test.append(results.loc['target', 'estimate'] -results.loc['train', 'estimate'])
+    diffs_bw_train_and_test.append(results.loc['train', 'estimate'] -results.loc['test', 'estimate'])
     train_estmates.append(results.loc['train', 'estimate'])
     PCC_estimates.append(results.loc['PCC_nontrain', 'estimate'])
-    train_errors.append(results.loc['target', 'estimate'] - results.loc['train', 'estimate'])
-    PCC_errors.append(results.loc['target', 'estimate'] - results.loc['PCC_nontrain', 'estimate'])
+    train_errors.append(results.loc['train', 'estimate'] - results.loc['target', 'estimate'])
+    PCC_errors.append(results.loc['PCC_nontrain', 'estimate'] - results.loc['target', 'estimate'])
     target_estimates.append(target_estimate)
     calib_rmses.append(results.loc['calibration', 'RMSE'])
     calib_widths.append(results.loc['calibration', '95ucl'] - results.loc['calibration', '95lcl'])
@@ -175,7 +175,7 @@ def main():
     for f in files[1:]:
         print(f)
         results = fh.read_csv_to_df(f)
-        diffs_bw_train_and_test.append(results.loc['target', 'estimate'] - results.loc['train', 'estimate'])
+        diffs_bw_train_and_test.append(results.loc['train', 'estimate'] - results.loc['target', 'estimate'])
         count += 1
         target_estimate = results.loc['target', 'estimate']
         for loc in results.index:
@@ -195,8 +195,8 @@ def main():
             n_outside += 1
 
         target_estimates.append(target_estimate)
-        PCC_errors.append(results.loc['target', 'estimate'] - results.loc['PCC_nontrain', 'estimate'])
-        train_errors.append(results.loc['target', 'estimate'] - results.loc['train', 'estimate'])
+        PCC_errors.append(results.loc['PCC_nontrain', 'estimate'] - results.loc['target', 'estimate'])
+        train_errors.append(results.loc['train', 'estimate'] - results.loc['test', 'estimate'])
         train_estmates.append(results.loc['train', 'estimate'])
         PCC_estimates.append(results.loc['PCC_nontrain', 'estimate'])
         calib_rmses.append(results.loc['calibration', 'RMSE'])
@@ -266,6 +266,8 @@ def main():
     ax.plot([0.0, 1.0], [0, 0.0], 'k--', alpha=0.5)
     ax.set_ylim(-0.25, 0.25)
     #ax.set_xlim(-0.02, 0.27)
+    ax.set_xlabel('Proportion of positive examples in training sample')
+    ax.set_ylabel('Error on predicting proportions in target corpus')
     fig.savefig('test.pdf')
 
 
