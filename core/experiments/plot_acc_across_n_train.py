@@ -57,7 +57,7 @@ def main():
     penalty = options.penalty
     dh = str(int(options.dh))
     offset = int(options.offset)
-    output = int(options.output)
+    output = options.output
 
     fig, ax = plt.subplots()
 
