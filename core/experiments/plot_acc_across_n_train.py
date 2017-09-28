@@ -222,6 +222,11 @@ def main():
     #else:
     #    ax.set_ylim(-0.01, 0.15)
 
+    if base == 'mfc':
+        ax.set_title('MFC')
+    else:
+        ax.set_title('Amazon')
+
     #ax.legend(loc='upper right')
     ax.legend()
     fig.savefig(output_file, bbox_inches='tight')
