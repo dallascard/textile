@@ -137,7 +137,7 @@ def main():
         venn_outside_errors.append(max(venn_av_lower - target_prop, target_prop - venn_av_upper))
         n_outside += 1
 
-    diffs_bw_train_and_test.append(results.loc['train', 'estimate'] -results.loc['test', 'estimate'])
+    diffs_bw_train_and_test.append(results.loc['train', 'estimate'] -results.loc['target', 'estimate'])
     train_estmates.append(results.loc['train', 'estimate'])
     PCC_estimates.append(results.loc['PCC_nontrain', 'estimate'])
     train_errors.append(results.loc['train', 'estimate'] - results.loc['target', 'estimate'])
