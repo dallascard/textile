@@ -251,7 +251,10 @@ def main():
     fig, ax = plt.subplots()
     cm = plt.cm.get_cmap('viridis')
     #sc = plt.scatter(train_rmses, PCC_nontrain_rmses, c=target_estimates, cmap=cm, vmax=0.8, vmin=0)
-    sc = plt.scatter(train_estmates, PCC_estimates, c=PCC_errors, cmap=cm)
+    sc = plt.scatter(train_estmates, PCC_estimates, c=PCC_errors, vmax=0.25, vmin=-0.25, cmap=cm)
+    for i in range(len(train_estmates)):
+        t = train_estmates[i]
+        plt.plot([t, t], [PCC_estimates[i], target_estimates[i]], 'k')
     plt.colorbar(sc)
     ax.plot([0.0, 1.0], [0, 1.0], 'k--', alpha=0.5)
     #ax.set_ylim(-0.02, 0.27)
