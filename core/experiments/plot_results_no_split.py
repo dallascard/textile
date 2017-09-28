@@ -83,7 +83,7 @@ def main():
         if base == 'mfc':
             n_train_values = [100, 200, 400, 800, 1600]
         elif base == 'amazon':
-            n_train_values = [400, 800, 3200, 6400]
+            n_train_values = [400, 800, 1600, 3200, 6400]
 
         ACC_nontrain = []
         CC_nontrain = []
