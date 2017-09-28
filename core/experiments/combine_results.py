@@ -143,6 +143,7 @@ def main():
     accuracy_df = fh.read_csv_to_df(accuracy_file)
     cv_cals.append(accuracy_df.loc['cross_val', 'calibration'])
     cv_f1s.append(accuracy_df.loc['cross_val', 'f1'])
+    cv_calib_overall.append(accuracy_df.loc['cross_val', 'calib overall'])
     #calibration_cals.append(accuracy_df.loc['calibration', 'calibration'])
     #calibration_f1s.append(accuracy_df.loc['calibration', 'f1'])
 
