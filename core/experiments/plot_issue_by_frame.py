@@ -245,11 +245,11 @@ def main():
 
     fig, ax = plt.subplots()
     seaborn.boxplot(x='Label', y='f1 on target corpus', hue='Method', data=df, palette=pal)
-    fig.savefig('comp_f1.pdf')
+    fig.savefig('comp_f1.pdf', bbox_inches='tight')
 
     fig, ax = plt.subplots()
     seaborn.boxplot(x='Label', y='Mean absolute error', hue='Method', data=df, palette=pal)
-    fig.savefig('comp_mae.pdf')
+    fig.savefig('comp_mae.pdf', bbox_inches='tight')
 
     """
     fig, ax = plt.subplots()
