@@ -204,34 +204,21 @@ def main():
         linewidth = 2
 
         if objective == 'f1':
-            if base == 'mfc':
-                ax.scatter(np.array(x)-1.5*offset, ACC, c=CB6[0], alpha=0.5, s=dot_size)
-                ax.plot(n_train_means, ACC_means, label='ACC', c=CB6[0], linewidth=linewidth)
-
-            ax.scatter(np.array(x)-0.5*offset, CC, c=CB6[1], alpha=0.5, s=dot_size)
-            ax.plot(n_train_means, CC_means, label='CC', c=CB6[1], linewidth=linewidth)
-
-        if objective == 'f1':
             ax.scatter(np.array(x)+0.5*offset, PCC_nontrain, c=CB6[2], alpha=0.5, s=dot_size)
             ax.plot(n_train_means, PCC_means, label='PCC (acc)', c=CB6[2], linewidth=linewidth)
         else:
             ax.scatter(np.array(x)+1.5*offset, PCC_nontrain, c=CB6[3], alpha=0.5, s=dot_size)
             ax.plot(n_train_means, PCC_means, label='PCC (cal)', c=CB6[3], linewidth=linewidth)
 
-        if objective == 'f1':
-            ax.plot(n_train_means, train_means, 'k--', label='Train', alpha=0.5, linewidth=1)
-            #if objective == 'f1':
-            #    ax.scatter(np.array(x)+2.5*offset, Venn, c=CB6[5], alpha=0.5, s=dot_size)
-            #    ax.plot(n_train_means, Venn_means,  label='IVAP', c=CB6[5], linewidth=linewidth)
-
     ax.set_xlabel('Number of training instances (L)')
-    ax.set_ylabel('Mean absolute error')
-    if base == 'mfc':
-        ax.set_ylim(-0.01, 0.4)
-    else:
-        ax.set_ylim(-0.01, 0.15)
+    ax.set_ylabel('Accuracy')
+    #if base == 'mfc':
+    #    ax.set_ylim(-0.01, 0.4)
+    #else:
+    #    ax.set_ylim(-0.01, 0.15)
 
-    ax.legend(loc='upper right')
+    #ax.legend(loc='upper right')
+    ax.legend()
     fig.savefig(output_file, bbox_inches='tight')
 
 
