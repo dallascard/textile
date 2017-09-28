@@ -205,6 +205,10 @@ def main():
         ax.set_ylim(-0.01, 0.2)
 
     ax.legend()
+    if base == 'mfc':
+        ax.set_title('MFC')
+    else:
+        ax.set_title('Amazon')
     fig.savefig(output_file, bbox_inches='tight')
 
 if __name__ == '__main__':
