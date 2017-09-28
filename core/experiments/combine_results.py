@@ -103,6 +103,7 @@ def main():
     venn_outside_errors = []
     n_outside = 0
     train_rmses = []
+    target_estimates = []
     calib_rmses = []
     calib_widths = []
     calib_widths_n_annotations = []
@@ -131,6 +132,7 @@ def main():
         n_outside += 1
 
     train_rmses.append(results.loc['train', 'RMSE'])
+    target_estimates.append(min(target_estimate, 1-target_estimate))
     calib_rmses.append(results.loc['calibration', 'RMSE'])
     calib_widths.append(results.loc['calibration', '95ucl'] - results.loc['calibration', '95lcl'])
     calib_widths_n_annotations.append(results.loc['calibration_n_annotations', '95ucl'] - results.loc['calibration_n_annotations', '95lcl'])
@@ -182,6 +184,7 @@ def main():
             venn_outside_errors.append(max(venn_av_lower - target_prop, target_prop - venn_av_upper))
             n_outside += 1
 
+        target_estimates.append(min(target_estimate, 1-target_estimate))
         train_rmses.append(results.loc['train', 'RMSE'])
         calib_rmses.append(results.loc['calibration', 'RMSE'])
         calib_widths.append(results.loc['calibration', '95ucl'] - results.loc['calibration', '95lcl'])
@@ -240,7 +243,7 @@ def main():
 
     fig, ax = plt.subplots()
     cm = plt.cm.get_cmap('viridis')
-    sc = plt.scatter(train_rmses, PCC_nontrain_rmses, c=cv_f1s, cmap=cm, vmax=1, vmin=0)
+    sc = plt.scatter(train_rmses, PCC_nontrain_rmses, c=target_estimates, cmap=cm, vmax=0.8, vmin=0)
     plt.colorbar(sc)
     ax.plot([-0.02, 0.27], [-0.02, 0.27], 'k--', alpha=0.5)
     ax.set_ylim(-0.02, 0.27)
