@@ -219,5 +219,13 @@ def main():
         ax.scatter(np.arange(len(group))+0.2,  group, c='orange')
     fig.savefig('test.pdf', bbox_inches='tight')
 
+
+    fig, ax = plt.subplots()
+    for group in f1_maes:
+        ax.scatter(np.arange(len(group)), group, c='blue')
+    for group in cal_maes:
+        ax.scatter(np.arange(len(group))+0.2,  group, c='orange')
+    fig.savefig('test2.pdf', bbox_inches='tight')
+
 if __name__ == '__main__':
     main()
