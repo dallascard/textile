@@ -200,6 +200,8 @@ def main():
 
             df = df / float(n_files)
 
+            print(objective, label, np.mean(label_maes), np.mean(label_f1s))
+
             if objective == 'f1':
                 f1_f1s.append(label_f1s)
                 f1_maes.append(label_maes)
