@@ -235,9 +235,6 @@ def main():
     df['MSE'] = df['MSE'] / float(n_files)
     df['contains_test'] = df['contains_test'] / float(n_files)
 
-    diffs_bw_train_and_test = np.sort(diffs_bw_train_and_test).tolist()
-    print(diffs_bw_train_and_test)
-
     print(df)
     print("Mean adjusted error rmse = %0.5f" % np.mean(adj_errors))
     print("n_outside: %d" % n_outside)
