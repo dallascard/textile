@@ -210,7 +210,7 @@ def main():
                 cal_f1s.append(label_f1s)
                 cal_maes.append(label_maes)
 
-    df = pd.DataFrame(columns=['label', 'f1', 'Method', 'Mean absolute error'])
+    df = pd.DataFrame(columns=['label', 'f1 on target corpus', 'Method', 'Mean absolute error'])
 
     label_list = ['Tone', 'Economics', 'Health', 'Legality', 'Politics']
     #df['objective'] = ['acc'] * 5 + ['cal'] * 5
@@ -233,7 +233,7 @@ def main():
     for group_i, group in enumerate(cal_maes):
         maes.extend(group)
     df['Label'] = labels
-    df['f1'] = f1s
+    df['f1 on target corpus'] = f1s
     df['Method'] = objectives
     df['Mean absolute error'] = maes
     print(df)
@@ -241,7 +241,7 @@ def main():
     pal = {'PCC (acc)': '#7570b3', 'PCC (cal)': '#e7298a'}
 
     fig, ax = plt.subplots()
-    seaborn.boxplot(x='Label', y='f1', hue='Method', data=df, palette=pal)
+    seaborn.boxplot(x='Label', y='f1 on target corpus', hue='Method', data=df, palette=pal)
     fig.savefig('comp_f1.pdf')
 
     fig, ax = plt.subplots()
