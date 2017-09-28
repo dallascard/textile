@@ -239,7 +239,9 @@ def main():
     print("PCC correlation (with train rmses) = %0.4f" % corr)
 
     fig, ax = plt.subplots()
-    plt.scatter(train_rmses, PCC_nontrain_rmses)
+    cm = plt.cm.get_cmap('RdYlBu')
+    sc = plt.scatter(train_rmses, PCC_nontrain_rmses, c=cv_f1s, cmap=cm)
+    plt.colorbar(sc)
     fig.savefig('test.pdf')
 
     corr, p_val = pearsonr(venn_rmses, cv_cals)
