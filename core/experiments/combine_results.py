@@ -100,6 +100,7 @@ def main():
         df.loc[loc, 'MSE'] = (results.loc[loc, 'estimate'] - target_estimate) ** 2
         df.loc[loc, 'max_MAE'] = results.loc[loc, 'RMSE']
 
+    diffs_bw_train_and_test = []
     venn_outside_errors = []
     n_outside = 0
     train_errors = []
@@ -134,6 +135,7 @@ def main():
         venn_outside_errors.append(max(venn_av_lower - target_prop, target_prop - venn_av_upper))
         n_outside += 1
 
+    diffs_bw_train_and_test.append(np.abs(results.loc['train', 'estimate'], results.loc['target', 'estimate']))
     train_estmates.append(results.loc['train', 'estimate'])
     PCC_estimates.append(results.loc['PCC_nontrain', 'estimate'])
     train_errors.append(results.loc['target', 'estimate'] - results.loc['train', 'estimate'])
@@ -190,6 +192,7 @@ def main():
             venn_outside_errors.append(max(venn_av_lower - target_prop, target_prop - venn_av_upper))
             n_outside += 1
 
+        diffs_bw_train_and_test.append(np.abs(results.loc['train', 'estimate'], results.loc['target', 'estimate']))
         target_estimates.append(target_estimate)
         PCC_errors.append(results.loc['target', 'estimate'] - results.loc['PCC_nontrain', 'estimate'])
         train_errors.append(results.loc['target', 'estimate'] - results.loc['train', 'estimate'])
@@ -230,7 +233,8 @@ def main():
     df['MSE'] = df['MSE'] / float(n_files)
     df['contains_test'] = df['contains_test'] / float(n_files)
 
-
+    diffs_bw_train_and_test = np.sort(diffs_bw_train_and_test).tolist()
+    print(diffs_bw_train_and_test)
 
     print(df)
     print("Mean adjusted error rmse = %0.5f" % np.mean(adj_errors))
