@@ -251,10 +251,15 @@ def main():
     corr, p_val = pearsonr(PCC_nontrain_rmses, cv_calib_overall)
     print("PCC correlation (with cv_calib_overall) = %0.4f" % corr)
 
+    print(len(train_estmates))
+    print(len(PCC_errors))
+    print(len(diffs_bw_train_and_test))
+
     fig, ax = plt.subplots()
     cm = plt.cm.get_cmap('viridis')
     #sc = plt.scatter(train_rmses, PCC_nontrain_rmses, c=target_estimates, cmap=cm, vmax=0.8, vmin=0)
-    sc = plt.scatter(train_estmates, PCC_errors, c=diffs_bw_train_and_test, vmax=0.25, vmin=-0.25, cmap=cm)
+    #sc = plt.scatter(train_estmates, PCC_errors, c=diffs_bw_train_and_test, vmax=0.25, vmin=-0.25, cmap=cm)
+    sc = plt.scatter(train_estmates, PCC_errors, c=diffs_bw_train_and_test, cmap=cm)
     #for i in range(len(train_estmates)):
     #    t = train_estmates[i]
     #    plt.plot([t, t], [PCC_estimates[i], target_estimates[i]], 'k', linewidth=0.5, alpha=0.4)
