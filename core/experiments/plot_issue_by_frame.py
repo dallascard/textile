@@ -229,7 +229,7 @@ def main():
         labels.extend([label_list[group_i]] * n_samples)
         objectives.extend(['cal'] * n_samples)
     df['label'] = labels
-    df['f1s'] = f1s
+    df['f1'] = f1s
     df['objective'] = objectives
 
     print(df)
