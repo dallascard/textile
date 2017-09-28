@@ -60,6 +60,8 @@ def main():
     penalty = options.penalty
     dh = str(int(options.dh))
 
+    count = 1
+
     # basic LR f1: combining subset, label, repetitions, and pre/post date
     #basename = '*_' + model_type
     basename = '*_' + label + '_*_' + model_type + '_' + penalty
@@ -173,62 +175,63 @@ def main():
     for f in files[1:]:
         print(f)
         results = fh.read_csv_to_df(f)
-        #df += results[['estimate', 'RMSE', 'contains_test']]
-
-        target_estimate = results.loc['target', 'estimate']
-        for loc in results.index:
-            df.loc[loc, 'estimate'] += results.loc[loc, 'estimate']
-            df.loc[loc, 'MAE'] += results.loc[loc, 'RMSE']
-            df.loc[loc, 'contains_test'] += results.loc[loc, 'contains_test']
-            df.loc[loc, 'MSE'] += (results.loc[loc, 'estimate'] - target_estimate) ** 2
-            df.loc[loc, 'max_MAE'] = max(df.loc[loc, 'max_MAE'], results.loc[loc, 'RMSE'])
-
-        target_prop = results.loc['target', 'estimate']
-        venn_av_lower = results.loc['Venn_averaged', '95lcl']
-        venn_av_upper = results.loc['Venn_averaged', '95ucl']
-        venn_inside = results.loc['Venn_averaged', 'contains_test']
-
-        if venn_inside == 0:
-            venn_outside_errors.append(max(venn_av_lower - target_prop, target_prop - venn_av_upper))
-            n_outside += 1
-
         diffs_bw_train_and_test.append(np.abs(results.loc['train', 'estimate'] - results.loc['target', 'estimate']))
-        target_estimates.append(target_estimate)
-        PCC_errors.append(results.loc['target', 'estimate'] - results.loc['PCC_nontrain', 'estimate'])
-        train_errors.append(results.loc['target', 'estimate'] - results.loc['train', 'estimate'])
-        train_estmates.append(results.loc['train', 'estimate'])
-        PCC_estimates.append(results.loc['PCC_nontrain', 'estimate'])
-        calib_rmses.append(results.loc['calibration', 'RMSE'])
-        calib_widths.append(results.loc['calibration', '95ucl'] - results.loc['calibration', '95lcl'])
-        calib_widths_n_annotations.append(results.loc['calibration_n_annotations', '95ucl'] - results.loc['calibration_n_annotations', '95lcl'])
-        PCC_cal_rmses.append(results.loc['PCC_cal', 'RMSE'])
-        PCC_nontrain_rmses.append(results.loc['PCC_nontrain', 'RMSE'])
-        PCC_cal_overestimates.append(results.loc['PCC_cal', 'estimate'] - results.loc['calibration', 'estimate'])
-        PCC_nontrain_overestimates.append(results.loc['PCC_nontrain', 'estimate'] - results.loc['target', 'estimate'])
-        venn_rmses.append(results.loc['Venn', 'RMSE'])
-        venn_widths.append(results.loc['Venn', '95ucl'] - results.loc['Venn', '95lcl'])
-        cal_error_estimate = results.loc['PCC_cal', 'estimate'] - results.loc['calibration', 'estimate']
-        adj_errors.append(np.abs(results.loc['PCC_nontrain', 'estimate'] - cal_error_estimate - results.loc['target', 'estimate']))
+        if np.abs(results.loc['train', 'estimate'] - results.loc['target', 'estimate']) > 0.035:
+            count += 1
+            target_estimate = results.loc['target', 'estimate']
+            for loc in results.index:
+                df.loc[loc, 'estimate'] += results.loc[loc, 'estimate']
+                df.loc[loc, 'MAE'] += results.loc[loc, 'RMSE']
+                df.loc[loc, 'contains_test'] += results.loc[loc, 'contains_test']
+                df.loc[loc, 'MSE'] += (results.loc[loc, 'estimate'] - target_estimate) ** 2
+                df.loc[loc, 'max_MAE'] = max(df.loc[loc, 'max_MAE'], results.loc[loc, 'RMSE'])
 
-        file_dir, _ = os.path.split(f)
-        accuracy_file = os.path.join(file_dir, 'accuracy.csv')
-        accuracy_df = fh.read_csv_to_df(accuracy_file)
-        cv_cals.append(accuracy_df.loc['cross_val', 'calibration'])
-        cv_f1s.append(accuracy_df.loc['cross_val', 'f1'])
-        cv_calib_overall.append(accuracy_df.loc['cross_val', 'calib overall'])
-        #calibration_cals.append(accuracy_df.loc['calibration', 'calibration'])
-        #calibration_f1s.append(accuracy_df.loc['calibration', 'f1'])
+            target_prop = results.loc['target', 'estimate']
+            venn_av_lower = results.loc['Venn_averaged', '95lcl']
+            venn_av_upper = results.loc['Venn_averaged', '95ucl']
+            venn_inside = results.loc['Venn_averaged', 'contains_test']
 
-        venn_range_file = os.path.join(file_dir, 'venn_calib_props_in_range.csv')
-        venn_calib_in_range_list = [float(f) for f in fh.read_text(venn_range_file)]
-        venn_calib_in_range_vals.append(np.mean(venn_calib_in_range_list))
+            if venn_inside == 0:
+                venn_outside_errors.append(max(venn_av_lower - target_prop, target_prop - venn_av_upper))
+                n_outside += 1
 
-        venn_levels_file = os.path.join(file_dir, 'list_of_n_levels.csv')
-        venn_levels_list = [float(f) for f in fh.read_text(venn_levels_file)]
-        venn_levels_vals.append(np.mean(venn_levels_list))
+            diffs_bw_train_and_test.append(np.abs(results.loc['train', 'estimate'] - results.loc['target', 'estimate']))
+            target_estimates.append(target_estimate)
+            PCC_errors.append(results.loc['target', 'estimate'] - results.loc['PCC_nontrain', 'estimate'])
+            train_errors.append(results.loc['target', 'estimate'] - results.loc['train', 'estimate'])
+            train_estmates.append(results.loc['train', 'estimate'])
+            PCC_estimates.append(results.loc['PCC_nontrain', 'estimate'])
+            calib_rmses.append(results.loc['calibration', 'RMSE'])
+            calib_widths.append(results.loc['calibration', '95ucl'] - results.loc['calibration', '95lcl'])
+            calib_widths_n_annotations.append(results.loc['calibration_n_annotations', '95ucl'] - results.loc['calibration_n_annotations', '95lcl'])
+            PCC_cal_rmses.append(results.loc['PCC_cal', 'RMSE'])
+            PCC_nontrain_rmses.append(results.loc['PCC_nontrain', 'RMSE'])
+            PCC_cal_overestimates.append(results.loc['PCC_cal', 'estimate'] - results.loc['calibration', 'estimate'])
+            PCC_nontrain_overestimates.append(results.loc['PCC_nontrain', 'estimate'] - results.loc['target', 'estimate'])
+            venn_rmses.append(results.loc['Venn', 'RMSE'])
+            venn_widths.append(results.loc['Venn', '95ucl'] - results.loc['Venn', '95lcl'])
+            cal_error_estimate = results.loc['PCC_cal', 'estimate'] - results.loc['calibration', 'estimate']
+            adj_errors.append(np.abs(results.loc['PCC_nontrain', 'estimate'] - cal_error_estimate - results.loc['target', 'estimate']))
+
+            file_dir, _ = os.path.split(f)
+            accuracy_file = os.path.join(file_dir, 'accuracy.csv')
+            accuracy_df = fh.read_csv_to_df(accuracy_file)
+            cv_cals.append(accuracy_df.loc['cross_val', 'calibration'])
+            cv_f1s.append(accuracy_df.loc['cross_val', 'f1'])
+            cv_calib_overall.append(accuracy_df.loc['cross_val', 'calib overall'])
+            #calibration_cals.append(accuracy_df.loc['calibration', 'calibration'])
+            #calibration_f1s.append(accuracy_df.loc['calibration', 'f1'])
+
+            venn_range_file = os.path.join(file_dir, 'venn_calib_props_in_range.csv')
+            venn_calib_in_range_list = [float(f) for f in fh.read_text(venn_range_file)]
+            venn_calib_in_range_vals.append(np.mean(venn_calib_in_range_list))
+
+            venn_levels_file = os.path.join(file_dir, 'list_of_n_levels.csv')
+            venn_levels_list = [float(f) for f in fh.read_text(venn_levels_file)]
+            venn_levels_vals.append(np.mean(venn_levels_list))
 
     #df = df / float(n_files)
-    df['estimate'] = df['estimate'] / float(n_files)
+    df['estimate'] = df['estimate'] / float(count)
     df['MAE'] = df['MAE'] / float(n_files)
     df['MSE'] = df['MSE'] / float(n_files)
     df['contains_test'] = df['contains_test'] / float(n_files)
