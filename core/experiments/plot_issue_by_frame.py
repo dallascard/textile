@@ -239,11 +239,11 @@ def main():
     print(df)
 
     fig, ax = plt.subplots()
-    seaborn.boxplot(x='label', y='f1', hue='objective', data=df)
+    seaborn.boxplot(x='Label', y='f1', hue='objective', data=df)
     fig.savefig('test.pdf')
 
     fig, ax = plt.subplots()
-    seaborn.boxplot(x='label', y='MAE', hue='objective', data=df)
+    seaborn.boxplot(x='Label', y='MAE', hue='objective', data=df)
     fig.savefig('test2.pdf')
 
     """
