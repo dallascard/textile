@@ -137,7 +137,7 @@ def main():
         venn_outside_errors.append(max(venn_av_lower - target_prop, target_prop - venn_av_upper))
         n_outside += 1
 
-    diffs_bw_train_and_test.append(abs(results.loc['train', 'estimate'] -results.loc['target', 'estimate']))
+    diffs_bw_train_and_test.append(results.loc['target', 'estimate'] -results.loc['train', 'estimate'])
     train_estmates.append(results.loc['train', 'estimate'])
     PCC_estimates.append(results.loc['PCC_nontrain', 'estimate'])
     train_errors.append(results.loc['target', 'estimate'] - results.loc['train', 'estimate'])
@@ -175,7 +175,7 @@ def main():
     for f in files[1:]:
         print(f)
         results = fh.read_csv_to_df(f)
-        diffs_bw_train_and_test.append(np.abs(results.loc['train', 'estimate'] - results.loc['target', 'estimate']))
+        diffs_bw_train_and_test.append(results.loc['target', 'estimate'] - results.loc['train', 'estimate'])
         count += 1
         target_estimate = results.loc['target', 'estimate']
         for loc in results.index:
