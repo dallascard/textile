@@ -158,6 +158,8 @@ def main():
             venn_levels_vals.append(np.mean(venn_levels_list))
 
             label_maes = []
+            label_maes.append(results.loc['PCC_nontrain', 'RMSE'])
+
             for f in files[1:]:
                 #print(f)
                 results = fh.read_csv_to_df(f)
@@ -192,12 +194,13 @@ def main():
             df = results.copy()
 
             label_f1s = []
+            label_f1s.append(results.loc['test', 'f1'])
+
             for f in files[1:]:
                 #print(f)
                 results = fh.read_csv_to_df(f)
                 df += results
-
-                label_f1s.append(results.loc['cross_val', 'f1'])
+                label_f1s.append(results.loc['test', 'f1'])
 
             df = df / float(n_files)
 
