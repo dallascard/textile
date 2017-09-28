@@ -39,6 +39,9 @@ def main():
                       help='Hidden dimension for MLP: default=%default')
     parser.add_option('--offset', dest='offset', default=9,
                       help='Offset: default=%default')
+    parser.add_option('--output', dest='output', default='acc',
+                      help='Output [f1|acc]: default=%default')
+
 
     (options, args) = parser.parse_args()
 
@@ -54,6 +57,7 @@ def main():
     penalty = options.penalty
     dh = str(int(options.dh))
     offset = int(options.offset)
+    output = int(options.output)
 
     fig, ax = plt.subplots()
 
@@ -160,7 +164,7 @@ def main():
             #mean_df = pd.DataFrame(results[['N', 'estimate', 'RMSE', 'contains_test']].copy())
             #max_df = pd.DataFrame(results[['N', 'estimate', 'RMSE', 'contains_test']].copy())
             x.append(val)
-            PCC_nontrain.append(results.loc['test', 'acc'])
+            PCC_nontrain.append(results.loc['test', output])
 
             #ACC.append(df.loc['ACC', 'RMSE'])
             #CC.append(df.loc['CC_nontrain', 'RMSE'])
@@ -172,7 +176,7 @@ def main():
                 print(f)
                 results = fh.read_csv_to_df(f)
                 mean_df += pd.DataFrame(results[['f1', 'acc']].copy())
-                PCC_nontrain.append(results.loc['test', 'acc'])
+                PCC_nontrain.append(results.loc['test', output])
                 x.append(val)
 
                 #ACC.append(df.loc['ACC', 'RMSE'])
@@ -187,7 +191,7 @@ def main():
             #train_means.append(mean_df.loc['train', 'RMSE'])
             #ACC_means.append(mean_df.loc['ACC', 'RMSE'])
             #CC_means.append(mean_df.loc['CC_nontrain', 'RMSE'])
-            PCC_means.append(mean_df.loc['test', 'acc'])
+            PCC_means.append(mean_df.loc['test', output])
             #SRS_means.append(mean_df.loc['calibration', 'RMSE'])
             #Venn_means.append(mean_df.loc['Venn_internal', 'RMSE'])
 
