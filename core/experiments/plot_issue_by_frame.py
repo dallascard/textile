@@ -228,10 +228,11 @@ def main():
         f1s.extend(group)
         labels.extend([label_list[group_i]] * n_samples)
         objectives.extend(['cal'] * n_samples)
-    print(labels)
     df['label'] = labels
     df['f1s'] = f1s
     df['objective'] = objectives
+
+    print(df)
 
     fig, ax = plt.subplots()
     seaborn.boxplot(x='label', y='f1', hue='objective', data=df)
