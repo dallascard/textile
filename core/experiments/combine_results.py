@@ -196,7 +196,7 @@ def main():
 
         target_estimates.append(target_estimate)
         PCC_errors.append(results.loc['PCC_nontrain', 'estimate'] - results.loc['target', 'estimate'])
-        train_errors.append(results.loc['train', 'estimate'] - results.loc['test', 'estimate'])
+        train_errors.append(results.loc['train', 'estimate'] - results.loc['target', 'estimate'])
         train_estmates.append(results.loc['train', 'estimate'])
         PCC_estimates.append(results.loc['PCC_nontrain', 'estimate'])
         calib_rmses.append(results.loc['calibration', 'RMSE'])
