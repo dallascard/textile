@@ -99,6 +99,7 @@ def main():
 
     venn_outside_errors = []
     n_outside = 0
+    train_rmses = []
     calib_rmses = []
     calib_widths = []
     calib_widths_n_annotations = []
@@ -126,6 +127,7 @@ def main():
         venn_outside_errors.append(max(venn_av_lower - target_prop, target_prop - venn_av_upper))
         n_outside += 1
 
+    train_rmses.append(results.loc['train', 'RMSE'])
     calib_rmses.append(results.loc['calibration', 'RMSE'])
     calib_widths.append(results.loc['calibration', '95ucl'] - results.loc['calibration', '95lcl'])
     calib_widths_n_annotations.append(results.loc['calibration_n_annotations', '95ucl'] - results.loc['calibration_n_annotations', '95lcl'])
@@ -177,6 +179,7 @@ def main():
             venn_outside_errors.append(max(venn_av_lower - target_prop, target_prop - venn_av_upper))
             n_outside += 1
 
+        train_rmses.append(results.loc['train', 'RMSE'])
         calib_rmses.append(results.loc['calibration', 'RMSE'])
         calib_widths.append(results.loc['calibration', '95ucl'] - results.loc['calibration', '95lcl'])
         calib_widths_n_annotations.append(results.loc['calibration_n_annotations', '95ucl'] - results.loc['calibration_n_annotations', '95lcl'])
@@ -229,14 +232,15 @@ def main():
     print("PCC correlation (with cv_f1s) = %0.4f" % corr)
     corr, p_val = pearsonr(PCC_nontrain_rmses, cv_calib_overall)
     print("PCC correlation (with cv_calib_overall) = %0.4f" % corr)
+    corr, p_val = pearsonr(PCC_nontrain_rmses, train_rmses)
+    print("PCC correlation (with train rmses) = %0.4f" % corr)
 
     corr, p_val = pearsonr(venn_rmses, cv_cals)
     print("Venn correlation (with cv_cal) = %0.4f" % corr)
     corr, p_val = pearsonr(venn_rmses, cv_f1s)
     print("Venn correlation (with cv_f1s) = %0.4f" % corr)
-    corr, p_val = pearsonr(venn_rmses, cv_calib_overall)
-    print("Venn correlation (with cv_calib_overall) = %0.4f" % corr)
-
+    corr, p_val = pearsonr(venn_rmses, train_rmses)
+    print("Venn correlation (with train_rmses) = %0.4f" % corr)
 
     corr, p_val = pearsonr(PCC_nontrain_rmses, PCC_cal_rmses)
     print("PCC correlation (with PCC_cal) = %0.4f" % corr)
