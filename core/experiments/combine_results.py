@@ -247,8 +247,6 @@ def main():
     print("PCC correlation (with cv_f1s) = %0.4f" % corr)
     corr, p_val = pearsonr(PCC_nontrain_rmses, cv_calib_overall)
     print("PCC correlation (with cv_calib_overall) = %0.4f" % corr)
-    corr, p_val = pearsonr(PCC_nontrain_rmses, train_rmses)
-    print("PCC correlation (with train rmses) = %0.4f" % corr)
 
     fig, ax = plt.subplots()
     cm = plt.cm.get_cmap('viridis')
