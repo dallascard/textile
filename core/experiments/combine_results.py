@@ -110,6 +110,7 @@ def main():
     venn_widths = []
     cv_cals = []
     cv_f1s = []
+    cv_calib_overall = []
     calibration_cals = []
     calibration_f1s = []
     adj_errors = []
@@ -192,6 +193,7 @@ def main():
         accuracy_df = fh.read_csv_to_df(accuracy_file)
         cv_cals.append(accuracy_df.loc['cross_val', 'calibration'])
         cv_f1s.append(accuracy_df.loc['cross_val', 'f1'])
+        cv_calib_overall.append(accuracy_df.loc['cross_val', 'calib overall'])
         #calibration_cals.append(accuracy_df.loc['calibration', 'calibration'])
         #calibration_f1s.append(accuracy_df.loc['calibration', 'f1'])
 
@@ -224,6 +226,16 @@ def main():
     print("PCC correlation (with cv_cal) = %0.4f" % corr)
     corr, p_val = pearsonr(PCC_nontrain_rmses, cv_f1s)
     print("PCC correlation (with cv_f1s) = %0.4f" % corr)
+    corr, p_val = pearsonr(PCC_nontrain_rmses, cv_calib_overall)
+    print("PCC correlation (with cv_calib_overall) = %0.4f" % corr)
+
+    corr, p_val = pearsonr(venn_rmses, cv_cals)
+    print("Venn correlation (with cv_cal) = %0.4f" % corr)
+    corr, p_val = pearsonr(venn_rmses, cv_f1s)
+    print("Venn correlation (with cv_f1s) = %0.4f" % corr)
+    corr, p_val = pearsonr(venn_rmses, cv_calib_overall)
+    print("Venn correlation (with cv_calib_overall) = %0.4f" % corr)
+
 
     corr, p_val = pearsonr(PCC_nontrain_rmses, PCC_cal_rmses)
     print("PCC correlation (with PCC_cal) = %0.4f" % corr)
