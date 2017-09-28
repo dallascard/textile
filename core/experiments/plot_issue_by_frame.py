@@ -159,8 +159,9 @@ def main():
             venn_levels_vals.append(np.mean(venn_levels_list))
 
             label_maes = []
+            label_train_maes = []
             label_maes.append(results.loc['PCC_nontrain', 'RMSE'])
-            train_maes.append(results.loc['train', 'RMSE'])
+            label_train_maes.append(results.loc['train', 'RMSE'])
 
             for f in files[1:]:
                 #print(f)
@@ -185,7 +186,7 @@ def main():
                     n_outside += 1
 
                 label_maes.append(results.loc['PCC_nontrain', 'RMSE'])
-                train_maes.append(results.loc['train', 'RMSE'])
+                label_train_maes.append(results.loc['train', 'RMSE'])
 
             # repeat for accuracy / f1
             files = glob(os.path.join('projects', base, subset, 'models', basename, 'accuracy.csv'))
@@ -212,9 +213,11 @@ def main():
             if objective == 'f1':
                 f1_f1s.append(label_f1s)
                 f1_maes.append(label_maes)
+                #train_maes.append(label_train_maes)
             else:
                 cal_f1s.append(label_f1s)
                 cal_maes.append(label_maes)
+                train_maes.append(label_train_maes)
 
     df = pd.DataFrame(columns=['label', 'f1 on target corpus', 'Method', 'Mean absolute error'])
 
@@ -272,7 +275,6 @@ def main():
     df['Label'] = labels
     df['Mean absolute error'] = maes
     df['Method'] = objectives
-    df['Mean absolute error'] = maes
     print(df)
 
     pal = {'PCC (acc)': '#7570b3', 'PCC (cal)': '#e7298a', 'Train proportions': '#555555'}
