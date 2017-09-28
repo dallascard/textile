@@ -215,7 +215,7 @@ def main():
     print("Mean adjusted error rmse = %0.5f" % np.mean(adj_errors))
     print("n_outside: %d" % n_outside)
     print("mean venn outside error = %0.6f" % np.mean(venn_outside_errors))
-    print(" max venn outside error = %0.6f" % np.max(venn_outside_errors))
+    #print(" max venn outside error = %0.6f" % np.max(venn_outside_errors))
     print("mean calib (n_items) width = %0.4f" % np.mean(calib_widths))
     print("mean calib (n_annot) width = %0.4f" % np.mean(calib_widths_n_annotations))
     print("mean venn widths = %0.6f" % np.mean(venn_widths))
