@@ -14,7 +14,7 @@ from ..util import file_handling as fh
 
 
 def main():
-    usage = "%prog"
+    usage = "%prog output_file.pdf"
     parser = OptionParser(usage=usage)
     parser.add_option('--cshift', dest='cshift', default=None,
                       help='cshift [None|classify]: default=%default')
@@ -46,6 +46,7 @@ def main():
     #                  help='Keyword argument: default=%default')
 
     (options, args) = parser.parse_args()
+    output_file = args[0]
 
     objective = options.objective
     cshift = options.cshift
@@ -268,9 +269,7 @@ def main():
     #ax.set_xlim(-0.02, 0.27)
     ax.set_xlabel('Proportion of positive examples in training sample')
     ax.set_ylabel('Error on predicting proportions in target corpus')
-    fig.savefig('test.pdf')
-
-
+    fig.savefig(output_file, bbox_inches='tight')
 
 
     corr, p_val = pearsonr(venn_rmses, cv_cals)
