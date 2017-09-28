@@ -138,7 +138,7 @@ def main():
     PCC_estimates.append(results.loc['PCC_nontrain', 'estimate'])
     train_errors.append(results.loc['target', 'estimate'] - results.loc['train', 'estimate'])
     PCC_errors.append(results.loc['target', 'estimate'] - results.loc['PCC_nontrain', 'estimate'])
-    target_estimates.append(min(target_estimate, 1-target_estimate))
+    target_estimates.append(target_estimate)
     calib_rmses.append(results.loc['calibration', 'RMSE'])
     calib_widths.append(results.loc['calibration', '95ucl'] - results.loc['calibration', '95lcl'])
     calib_widths_n_annotations.append(results.loc['calibration_n_annotations', '95ucl'] - results.loc['calibration_n_annotations', '95lcl'])
@@ -190,7 +190,7 @@ def main():
             venn_outside_errors.append(max(venn_av_lower - target_prop, target_prop - venn_av_upper))
             n_outside += 1
 
-        target_estimates.append(min(target_estimate, 1-target_estimate))
+        target_estimates.append(target_estimate)
         PCC_errors.append(results.loc['target', 'estimate'] - results.loc['PCC_nontrain', 'estimate'])
         train_errors.append(results.loc['target', 'estimate'] - results.loc['train', 'estimate'])
         train_estmates.append(results.loc['train', 'estimate'])
