@@ -210,7 +210,6 @@ def main():
                 cal_f1s.append(label_f1s)
                 cal_maes.append(label_maes)
 
-
     df = pd.DataFrame(columns=['label', 'f1', 'objective', 'MAE'])
 
     label_list = ['Tone', 'Economics', 'Health', 'Legality', 'Politics']
@@ -237,7 +236,7 @@ def main():
     df['f1'] = f1s
     df['objective'] = objectives
     df['MAE'] = maes
-
+    print(df)
 
     fig, ax = plt.subplots()
     seaborn.boxplot(x='label', y='f1', hue='objective', data=df)
