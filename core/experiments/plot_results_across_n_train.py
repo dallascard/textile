@@ -216,7 +216,7 @@ def main():
             ax.plot(n_train_means, PCC_means, label='PCC (cal)', c=CB6[3], linewidth=linewidth)
 
         if objective == 'calibration':
-            ax.plot([np.min(n_train_means), np.max(n_train_means)], [np.mean(train_means), np.mean(train_means)], 'k--', label='Mean diff', alpha=0.5, linewidth=1)
+            ax.plot([np.min(n_train_means), np.max(n_train_means)], [np.mean(train_means), np.mean(train_means)], 'k--', label='Train', alpha=0.5, linewidth=1)
         #if objective == 'f1':
         #    ax.scatter(np.array(x)+2.5*offset, Venn, c=CB6[5], alpha=0.5, s=dot_size)
         #    ax.plot(n_train_means, Venn_means,  label='IVAP', c=CB6[5], linewidth=linewidth)
