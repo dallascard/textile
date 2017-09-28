@@ -5,7 +5,10 @@ from optparse import OptionParser
 import numpy as np
 import pandas as pd
 from scipy.stats import pearsonr
+import matplotlib as mpl
+mpl.use('Agg')
 import matplotlib.pyplot as plt
+
 
 from ..util import file_handling as fh
 
@@ -234,6 +237,10 @@ def main():
     print("PCC correlation (with cv_calib_overall) = %0.4f" % corr)
     corr, p_val = pearsonr(PCC_nontrain_rmses, train_rmses)
     print("PCC correlation (with train rmses) = %0.4f" % corr)
+
+    fig, ax = plt.subplots()
+    plt.scatter(train_rmses, PCC_nontrain_rmses)
+    fig.savefig('test.pdf')
 
     corr, p_val = pearsonr(venn_rmses, cv_cals)
     print("Venn correlation (with cv_cal) = %0.4f" % corr)
