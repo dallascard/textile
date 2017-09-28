@@ -237,7 +237,7 @@ def main():
     df['Label'] = labels
     df['f1 on target corpus'] = f1s
     df['Method'] = objectives
-    df['Mean absolute error'] = maes
+    #df['Mean absolute error'] = maes
     print(df)
 
     pal = {'PCC (acc)': '#7570b3', 'PCC (cal)': '#e7298a'}
