@@ -267,11 +267,11 @@ def main():
         maes.extend(group)
         labels.extend([label_list[group_i]] * n_samples)
         objectives.extend(['PCC (cal)'] * n_samples)
-    for group_i, group in enumerate(train_maes):
-        n_samples = len(group)
-        maes.extend(group)
-        labels.extend([label_list[group_i]] * n_samples)
-        objectives.extend(['Train proportions'] * n_samples)
+    #for group_i, group in enumerate(train_maes):
+    #    n_samples = len(group)
+    #    maes.extend(group)
+    #    labels.extend([label_list[group_i]] * n_samples)
+    #    objectives.extend(['Train proportions'] * n_samples)
     df['Label'] = labels
     df['Mean absolute error'] = maes
     df['Method'] = objectives
