@@ -213,17 +213,18 @@ def main():
 
     df = pd.DataFrame(columns=['label', 'f1', 'objective'])
 
-    n_samples = len(f1_f1s[0])
     label_list = ['Tone', 'Economics', 'Health', 'Legality', 'Politics']
     df['objective'] = ['acc'] * 5 + ['cal'] * 5
     f1s = []
     labels = []
     objectives = []
     for group_i, group in enumerate(f1_f1s):
+        n_samples = len(group)
         f1s.extend(group)
         labels.extend([label_list[group_i]] * n_samples)
         objectives.extend(['acc'] * n_samples)
     for group_i, group in enumerate(cal_f1s):
+        n_samples = len(group)
         f1s.extend(group)
         labels.extend([label_list[group_i]] * n_samples)
         objectives.extend(['cal'] * n_samples)
