@@ -213,7 +213,10 @@ def main():
             ax.plot(n_train_means, PCC_means, label='PCC (cal)', c=CB6[3], linewidth=linewidth)
 
     ax.set_xlabel('Number of training instances (L)')
-    ax.set_ylabel('Accuracy')
+    if output == 'acc':
+        ax.set_ylabel('Classification accuracy on target corpus')
+    else:
+        ax.set_ylabel('Classification f1 on target corpus')
     #if base == 'mfc':
     #    ax.set_ylim(-0.01, 0.4)
     #else:
