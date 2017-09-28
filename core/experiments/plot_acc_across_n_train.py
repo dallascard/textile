@@ -216,7 +216,7 @@ def main():
     if output == 'acc':
         ax.set_ylabel('Classification accuracy on target corpus')
     else:
-        ax.set_ylabel('Classification f1 on target corpus')
+        ax.set_ylabel('Classification f1')
     #if base == 'mfc':
     #    ax.set_ylim(-0.01, 0.4)
     #else:
