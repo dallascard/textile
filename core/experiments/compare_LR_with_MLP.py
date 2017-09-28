@@ -4,6 +4,7 @@ from optparse import OptionParser
 
 import numpy as np
 import pandas as pd
+from scipy.stats import ttest_rel
 from scipy.stats import pearsonr
 import matplotlib.pyplot as plt
 
@@ -85,9 +86,9 @@ def main():
         n_files = len(files)
 
         if model_type == 'LR':
-            n_LR = len(files)
+            n_LR += 1
         else:
-            n_MLP = len(files)
+            n_MLP += 1
 
         print(files[0])
         results = fh.read_csv_to_df(files[0])
@@ -115,6 +116,11 @@ def main():
             results = fh.read_csv_to_df(f)
             #df += results[['estimate', 'RMSE', 'contains_test']]
 
+            if model_type == 'LR':
+                n_LR += 1
+            else:
+                n_MLP += 1
+
             target_estimate = results.loc['target', 'estimate']
             for loc in results.index:
                 df.loc[loc, 'estimate'] += results.loc[loc, 'estimate']
@@ -136,6 +142,12 @@ def main():
     print(n_LR)
     print(n_MLP)
     print(np.mean(cv_f1s[:n_LR]), np.mean(cv_f1s[n_LR:]))
+    print(ttest_rel(cv_f1s[:n_LR], cv_f1s[n_LR:]))
+    print(np.mean(test_f1s[:n_LR]), np.mean(test_f1s[n_LR:]))
+    print(ttest_rel(test_f1s[:n_LR], test_f1s[n_LR:]))
+    print(np.mean(PCC_maes[:n_LR]), np.mean(PCC_maes[n_LR:]))
+    print(ttest_rel(PCC_maes[:n_LR], PCC_maes[n_LR:]))
+
 
 if __name__ == '__main__':
     main()
