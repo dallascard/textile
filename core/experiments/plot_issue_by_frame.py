@@ -214,7 +214,7 @@ def main():
     df = pd.DataFrame(columns=['label', 'f1', 'objective'])
 
     label_list = ['Tone', 'Economics', 'Health', 'Legality', 'Politics']
-    df['objective'] = ['acc'] * 5 + ['cal'] * 5
+    #df['objective'] = ['acc'] * 5 + ['cal'] * 5
     f1s = []
     labels = []
     objectives = []
