@@ -215,18 +215,18 @@ def main():
     print(cal_maes)
 
     fig, ax = plt.subplots()
-    for group in f1_f1s:
-        ax.scatter(np.arange(len(group)), group, c='blue')
-    for group in cal_f1s:
-        ax.scatter(np.arange(len(group))+0.2,  group, c='orange')
+    for group_i, group in enumerate(f1_f1s):
+        ax.scatter(np.ones_like(group) * group_i, group, c='blue')
+    for group_i, group in enumerate(cal_f1s):
+        ax.scatter(np.ones_like(group) * group_i + 0.2,  group, c='orange')
     fig.savefig('test.pdf', bbox_inches='tight')
 
 
     fig, ax = plt.subplots()
-    for group in f1_maes:
-        ax.scatter(np.arange(len(group)), group, c='blue')
-    for group in cal_maes:
-        ax.scatter(np.arange(len(group))+0.2,  group, c='orange')
+    for group_i, group in enumerate(f1_maes):
+        ax.scatter(np.ones_like(group) * group_i, group, c='blue')
+    for group_i, group in enumerate(cal_maes):
+        ax.scatter(np.ones_like(group) * group_i + 0.2,  group, c='orange')
     fig.savefig('test2.pdf', bbox_inches='tight')
 
 if __name__ == '__main__':
