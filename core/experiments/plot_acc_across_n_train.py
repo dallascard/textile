@@ -155,13 +155,12 @@ def main():
 
             print(files[0])
             results = fh.read_csv_to_df(files[0])
-            df = pd.DataFrame(results[['f1', 'acc']].copy())
             mean_df = pd.DataFrame(results[['f1', 'acc']].copy())
             #df = pd.DataFrame(results[['N', 'estimate', 'RMSE', 'contains_test']].copy())
             #mean_df = pd.DataFrame(results[['N', 'estimate', 'RMSE', 'contains_test']].copy())
             #max_df = pd.DataFrame(results[['N', 'estimate', 'RMSE', 'contains_test']].copy())
             x.append(val)
-            PCC_nontrain.append(df.loc['test', 'acc'])
+            PCC_nontrain.append(results.loc['test', 'acc'])
 
             #ACC.append(df.loc['ACC', 'RMSE'])
             #CC.append(df.loc['CC_nontrain', 'RMSE'])
@@ -172,10 +171,9 @@ def main():
             for f in files[1:]:
                 print(f)
                 results = fh.read_csv_to_df(f)
-                df = pd.DataFrame(results[['f1', 'acc']].copy())
-                mean_df = pd.DataFrame(results[['f1', 'acc']].copy())
+                mean_df += pd.DataFrame(results[['f1', 'acc']].copy())
+                PCC_nontrain.append(results.loc['test', 'acc'])
                 x.append(val)
-                PCC_nontrain.append(df.loc['test', 'acc'])
 
                 #ACC.append(df.loc['ACC', 'RMSE'])
                 #CC.append(df.loc['CC_nontrain', 'RMSE'])
