@@ -211,11 +211,12 @@ def main():
                 cal_maes.append(label_maes)
 
 
-    df = pd.DataFrame(columns=['label', 'f1', 'objective'])
+    df = pd.DataFrame(columns=['label', 'f1', 'objective', 'MAE'])
 
     label_list = ['Tone', 'Economics', 'Health', 'Legality', 'Politics']
     #df['objective'] = ['acc'] * 5 + ['cal'] * 5
     f1s = []
+    maes = []
     labels = []
     objectives = []
     for group_i, group in enumerate(f1_f1s):
@@ -223,21 +224,28 @@ def main():
         f1s.extend(group)
         labels.extend([label_list[group_i]] * n_samples)
         objectives.extend(['acc'] * n_samples)
+    for group_i, group in enumerate(f1_maes):
+        maes.extend(group)
     for group_i, group in enumerate(cal_f1s):
         n_samples = len(group)
         f1s.extend(group)
         labels.extend([label_list[group_i]] * n_samples)
         objectives.extend(['cal'] * n_samples)
-    df['label'] = labels
+    for group_i, group in enumerate(cal_maes):
+        maes.extend(group)
+    df['Label'] = labels
     df['f1'] = f1s
     df['objective'] = objectives
+    df['MAE'] = maes
 
-    print(df)
 
     fig, ax = plt.subplots()
     seaborn.boxplot(x='label', y='f1', hue='objective', data=df)
     fig.savefig('test.pdf')
 
+    fig, ax = plt.subplots()
+    seaborn.boxplot(x='label', y='MAE', hue='objective', data=df)
+    fig.savefig('test2.pdf')
 
     """
     fig, ax = plt.subplots()
