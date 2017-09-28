@@ -112,12 +112,14 @@ def main():
         if base == 'amazon':
             n_train_values = [400, 800, 1600, 3200]
 
+        train = []
         ACC = []
         CC = []
         PCC_nontrain = []
         SRS = []
         Venn = []
 
+        train_means = []
         ACC_means = []
         CC_means = []
         PCC_means = []
@@ -181,6 +183,7 @@ def main():
             mean_df = mean_df / float(n_files)
 
             n_train_means.append(int(val))
+            train_means.append(mean_df.loc['train', 'RMSE'])
             ACC_means.append(mean_df.loc['ACC', 'RMSE'])
             CC_means.append(mean_df.loc['CC_nontrain', 'RMSE'])
             PCC_means.append(mean_df.loc['PCC_nontrain', 'RMSE'])
@@ -212,6 +215,7 @@ def main():
             ax.scatter(np.array(x)+1.5*offset, PCC_nontrain, c=CB6[3], alpha=0.5, s=dot_size)
             ax.plot(n_train_means, PCC_means, label='PCC (cal)', c=CB6[3], linewidth=linewidth)
 
+        ax.plot(n_train_means, train_means, label='train' + objective[:3], c='k--', alpha=0.5, linewidth=linewidth)
         #if objective == 'f1':
         #    ax.scatter(np.array(x)+2.5*offset, Venn, c=CB6[5], alpha=0.5, s=dot_size)
         #    ax.plot(n_train_means, Venn_means,  label='IVAP', c=CB6[5], linewidth=linewidth)
