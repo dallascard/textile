@@ -213,9 +213,24 @@ def main():
 
     df = pd.DataFrame(columns=['label', 'f1', 'objective'])
 
-    df['label'] = ['Tone', 'Economics', 'Health', 'Legality', 'Politics'] * 2
+    n_samples = len(f1_f1s[0])
+    label_list = ['Tone', 'Economics', 'Health', 'Legality', 'Politics']
     df['objective'] = ['acc'] * 5 + ['cal'] * 5
-    df['f1'] = np.r_[np.array([np.mean(f1) for f1 in f1_f1s]), np.array([np.mean(f1) for f1 in cal_f1s])]
+    f1s = []
+    labels = []
+    objectives = []
+    for group_i, group in enumerate(f1_f1s):
+        f1s.extend(group)
+        labels.extend([label_list[group_i]] * n_samples)
+        objectives.extend(['acc'] * n_samples)
+    for group_i, group in enumerate(cal_f1s):
+        f1s.extend(group)
+        labels.extend([label_list[group_i]] * n_samples)
+        objectives.extend(['cal'] * n_samples)
+    df['label'] = labels
+    df['f1s'] = f1s
+    df['objective'] = objectives
+
     fig, ax = plt.subplots()
     seaborn.boxplot(x='label', y='f1', hue='objective', data=df)
     fig.savefig('test.pdf')
