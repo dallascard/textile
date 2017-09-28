@@ -243,7 +243,8 @@ def main():
 
     fig, ax = plt.subplots()
     cm = plt.cm.get_cmap('viridis')
-    sc = plt.scatter(train_rmses, PCC_nontrain_rmses, c=target_estimates, cmap=cm, vmax=0.8, vmin=0)
+    #sc = plt.scatter(train_rmses, PCC_nontrain_rmses, c=target_estimates, cmap=cm, vmax=0.8, vmin=0)
+    sc = plt.scatter(train_rmses, target_estimates, c=PCC_nontrain_rmses, cmap=cm, vmax=0.8, vmin=0)
     plt.colorbar(sc)
     ax.plot([-0.02, 0.27], [-0.02, 0.27], 'k--', alpha=0.5)
     ax.set_ylim(-0.02, 0.27)
