@@ -222,14 +222,14 @@ def main():
         n_samples = len(group)
         f1s.extend(group)
         labels.extend([label_list[group_i]] * n_samples)
-        objectives.extend(['acc'] * n_samples)
+        objectives.extend(['PCC (acc)'] * n_samples)
     for group_i, group in enumerate(f1_maes):
         maes.extend(group)
     for group_i, group in enumerate(cal_f1s):
         n_samples = len(group)
         f1s.extend(group)
         labels.extend([label_list[group_i]] * n_samples)
-        objectives.extend(['cal'] * n_samples)
+        objectives.extend(['PCC (cal)'] * n_samples)
     for group_i, group in enumerate(cal_maes):
         maes.extend(group)
     df['Label'] = labels
@@ -238,12 +238,14 @@ def main():
     df['MAE'] = maes
     print(df)
 
+    pal = {'PCC (acc)': '#7570b3', 'PCC (cal)': '#e7298a'}
+
     fig, ax = plt.subplots()
-    seaborn.boxplot(x='Label', y='f1', hue='objective', data=df)
+    seaborn.boxplot(x='Label', y='f1', hue='objective', data=df, palette=pal)
     fig.savefig('test.pdf')
 
     fig, ax = plt.subplots()
-    seaborn.boxplot(x='Label', y='MAE', hue='objective', data=df)
+    seaborn.boxplot(x='Label', y='MAE', hue='objective', data=df, palette=pal)
     fig.savefig('test2.pdf')
 
     """
