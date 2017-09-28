@@ -264,7 +264,7 @@ def main():
     #    plt.plot([t, t], [PCC_estimates[i], target_estimates[i]], 'k', linewidth=0.5, alpha=0.4)
     plt.colorbar(sc)
     ax.plot([0.0, 1.0], [0, 0.0], 'k--', alpha=0.5)
-    ax.set_ylim(-0.25, 0.25)
+    ax.set_ylim(-0.27, 0.27)
     #ax.set_xlim(-0.02, 0.27)
     ax.set_xlabel('Proportion of positive examples in training sample')
     ax.set_ylabel('Error on predicting proportions in target corpus')
