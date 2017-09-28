@@ -110,7 +110,7 @@ def main():
         cv_f1s.append(accuracy_df.loc['cross_val', 'f1'])
         test_f1s.append(accuracy_df.loc['test', 'f1'])
 
-        for f in files[1:]:
+        for f in files[1:21]:
             print(f)
             results = fh.read_csv_to_df(f)
             #df += results[['estimate', 'RMSE', 'contains_test']]
