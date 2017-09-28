@@ -58,6 +58,7 @@ def main():
     cal_f1s = []
     f1_maes = []
     cal_maes = []
+    train_maes = []
 
     # basic LR f1: combining subset, label, repetitions, and pre/post date
 
@@ -159,6 +160,7 @@ def main():
 
             label_maes = []
             label_maes.append(results.loc['PCC_nontrain', 'RMSE'])
+            train_maes.append(results.loc['train', 'RMSE'])
 
             for f in files[1:]:
                 #print(f)
@@ -183,6 +185,7 @@ def main():
                     n_outside += 1
 
                 label_maes.append(results.loc['PCC_nontrain', 'RMSE'])
+                train_maes.append(results.loc['train', 'RMSE'])
 
             # repeat for accuracy / f1
             files = glob(os.path.join('projects', base, subset, 'models', basename, 'accuracy.csv'))
@@ -226,15 +229,11 @@ def main():
         f1s.extend(group)
         labels.extend([label_list[group_i]] * n_samples)
         objectives.extend(['PCC (acc)'] * n_samples)
-    for group_i, group in enumerate(f1_maes):
-        maes.extend(group)
     for group_i, group in enumerate(cal_f1s):
         n_samples = len(group)
         f1s.extend(group)
         labels.extend([label_list[group_i]] * n_samples)
         objectives.extend(['PCC (cal)'] * n_samples)
-    for group_i, group in enumerate(cal_maes):
-        maes.extend(group)
     df['Label'] = labels
     df['f1 on target corpus'] = f1s
     df['Method'] = objectives
@@ -246,6 +245,37 @@ def main():
     fig, ax = plt.subplots()
     seaborn.boxplot(x='Label', y='f1 on target corpus', hue='Method', data=df, palette=pal)
     fig.savefig('comp_f1.pdf', bbox_inches='tight')
+
+    df = pd.DataFrame(columns=['label', 'f1 on target corpus', 'Method', 'Mean absolute error'])
+
+    label_list = ['Tone', 'Economics', 'Health', 'Legality', 'Politics']
+    #df['objective'] = ['acc'] * 5 + ['cal'] * 5
+    f1s = []
+    maes = []
+    labels = []
+    objectives = []
+    for group_i, group in enumerate(f1_maes):
+        n_samples = len(group)
+        maes.extend(group)
+        labels.extend([label_list[group_i]] * n_samples)
+        objectives.extend(['PCC (acc)'] * n_samples)
+    for group_i, group in enumerate(cal_maes):
+        n_samples = len(group)
+        maes.extend(group)
+        labels.extend([label_list[group_i]] * n_samples)
+        objectives.extend(['PCC (cal)'] * n_samples)
+    for group_i, group in enumerate(train_maes):
+        n_samples = len(group)
+        maes.extend(group)
+        labels.extend([label_list[group_i]] * n_samples)
+        objectives.extend(['Train proportions'] * n_samples)
+    df['Label'] = labels
+    df['Mean absolute error'] = maes
+    df['Method'] = objectives
+    df['Mean absolute error'] = maes
+    print(df)
+
+    pal = {'PCC (acc)': '#7570b3', 'PCC (cal)': '#e7298a', 'Train proportions': '#555555'}
 
     fig, ax = plt.subplots()
     seaborn.boxplot(x='Label', y='Mean absolute error', hue='Method', data=df, palette=pal)

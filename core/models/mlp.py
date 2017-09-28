@@ -334,6 +334,7 @@ class tf_MLP:
                         print(count, running_loss / weight_sum, running_accuracy / weight_sum)
 
                 predictions = []
+                dev_probs = []
                 for i in range(n_dev_items):
                     x_i = X_dev[i, :].reshape((1, n_features))
                     y_i = np.array(Y_dev[i], dtype=np.int32).reshape((1, n_classes))
@@ -342,8 +343,11 @@ class tf_MLP:
                     feed_dict = {self.x: x_i, self.sample_weights: w_i}
                     scores = sess.run(self.scores_out, feed_dict=feed_dict)
                     predictions.append(np.argmax(scores, axis=1))
+                    dev_probs.append(sess.run(self.probs, feed_dict=feed_dict))
                 dev_acc = evaluation.acc_score(np.argmax(Y_dev, axis=1), predictions, n_classes=n_classes, weights=w_dev)
                 dev_f1 = evaluation.f1_score(np.argmax(Y_dev, axis=1), predictions, n_classes=n_classes, pos_label=self.pos_label, weights=w_dev)
+                dev_cal_rmse = evaluation.evaluate_calibration_rmse(Y_dev, dev_probs)
+
                 print("Validation accuracy: %0.4f; f1: %0.4f" % (dev_acc, dev_f1))
 
                 if dev_f1 > best_dev_f1:
