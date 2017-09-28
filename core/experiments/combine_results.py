@@ -263,7 +263,7 @@ def main():
     #    t = train_estmates[i]
     #    plt.plot([t, t], [PCC_estimates[i], target_estimates[i]], 'k', linewidth=0.5, alpha=0.4)
     plt.colorbar(sc)
-    ax.plot([0.0, 1.0], [0, 1.0], 'k--', alpha=0.5)
+    #ax.plot([0.0, 1.0], [0, 1.0], 'k--', alpha=0.5)
     #ax.set_ylim(-0.02, 0.27)
     #ax.set_xlim(-0.02, 0.27)
     fig.savefig('test.pdf')
