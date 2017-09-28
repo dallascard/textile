@@ -213,18 +213,8 @@ def main():
             ax.plot(n_train_means, PCC_means, label='PCC (cal)', c=CB6[3], linewidth=linewidth)
 
         if objective == 'f1':
-            #ax.scatter(np.array(x)+36, SRS, c=CB6[4], alpha=0.5, s=dot_size)
-            #ax.plot([np.min(n_train_means), np.max(n_train_means)], [np.mean(SRS_means), np.mean(SRS_means)],  label='SRS @ 100', c=CB6[4], linewidth=linewidth, linestyle='dashed')
-
             ax.scatter(np.array(x)+2.5*offset, Venn, c=CB6[5], alpha=0.5, s=dot_size)
             ax.plot(n_train_means, Venn_means,  label='IVAP', c=CB6[5], linewidth=linewidth)
-
-            #ax.plot(n_train_means, Venn_means,  label='Venn', alpha=0.5)
-            #ax.plot([np.min(n_train_means), np.max(n_train_means)], [np.mean(SRS_means), np.mean(SRS_means)], linestyle='dashed', label='SRS', alpha=0.5)
-
-            #ax.plot(n_train_means, Venn_maxes,  label='Venn (max)', alpha=0.5)
-            #ax.plot([np.min(n_train_means), np.max(n_train_means)], [np.mean(SRS_maxes), np.mean(SRS_maxes)], linestyle='dashed', label='SRS (max)', alpha=0.5)
-
 
     ax.set_xlabel('Number of training instances (L)')
     ax.set_ylabel('Mean absolute error')
@@ -235,6 +225,7 @@ def main():
 
     ax.legend(loc='upper right')
     fig.savefig(output_file, bbox_inches='tight')
+
 
 if __name__ == '__main__':
     main()
