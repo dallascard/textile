@@ -5,6 +5,8 @@ from optparse import OptionParser
 import numpy as np
 import pandas as pd
 from scipy.stats import pearsonr
+import matplotlib as mpl
+mpl.use('Agg')
 import matplotlib.pyplot as plt
 
 from ..util import file_handling as fh
@@ -210,8 +212,12 @@ def main():
     print(f1_maes)
     print(cal_maes)
 
-
-
+    fig, ax = plt.subplots()
+    for group in f1_f1s:
+        ax.scatter(np.arange(len(group)), group, c='blue')
+    for group in cal_f1s:
+        ax.scatter(np.arange(len(group))+0.2,  group, c='orange')
+    fig.savefig('test.pdf', bbox_inches='tight')
 
 if __name__ == '__main__':
     main()
