@@ -83,12 +83,12 @@ def main():
                 else:
                     basename += '_' + partition + '_?'
 
-            print(basename)
+            #print(basename)
             files = glob(os.path.join('projects', base, subset, 'models', basename, 'results.csv'))
             files.sort()
             n_files = len(files)
 
-            print(files[0])
+            #print(files[0])
             results = fh.read_csv_to_df(files[0])
             df = pd.DataFrame(columns=['estimate', 'MAE', 'MSE', 'contains_test', 'max_MAE'])
             #df = pd.DataFrame(results[['estimate', 'RMSE', 'contains_test']].copy())
