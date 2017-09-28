@@ -202,7 +202,7 @@ def main():
     if base == 'mfc':
         ax.set_ylim(-0.01, 0.4)
     else:
-        ax.set_ylim(-0.01, 0.2)
+        ax.set_ylim(-0.01, 0.15)
 
     ax.legend()
     if base == 'mfc':

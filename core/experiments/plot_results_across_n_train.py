@@ -232,7 +232,7 @@ def main():
     if base == 'mfc':
         ax.set_ylim(-0.01, 0.4)
     else:
-        ax.set_ylim(-0.01, 0.2)
+        ax.set_ylim(-0.01, 0.15)
 
     ax.legend(loc='upper right')
     fig.savefig(output_file, bbox_inches='tight')
