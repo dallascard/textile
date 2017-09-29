@@ -202,7 +202,7 @@ def main():
         print(PCC_means)
         CB6 = ['#1b9e77', '#d95f02', '#7570b3', '#e7298a', '#66a61e', '#e6ab02']
         dot_size = 5
-        linewidth = 1
+        linewidth = 2
 
         #if objective == 'f1':
         #    ax.scatter(np.array(x)-offset, PCC_nontrain, c=CB6[2], alpha=0.5, s=dot_size)
@@ -214,11 +214,11 @@ def main():
 
         if objective == 'f1':
             ax.scatter(np.array(x), SRS, c=CB6[4], alpha=0.5, s=dot_size)
-            ax.plot(n_train_means, SRS_means,  label='SRS', c=CB6[4], linewidth=linewidth, alpha=0.9)
+            ax.plot(n_train_means, SRS_means,  label='SRS', c=CB6[4], linewidth=linewidth, alpha=0.8)
             #ax.plot(n_train_means, np.array(SRS_means) + np.array(SRS_stds),  label='SRS', c=CB6[4], linestyle='dashed')
 
             ax.scatter(np.array(x)+offset, Venn, c=CB6[5], alpha=0.5, s=dot_size)
-            ax.plot(n_train_means, Venn_means,  label='IVAP', c=CB6[5], linewidth=linewidth, alpha=0.9)
+            ax.plot(n_train_means, Venn_means,  label='IVAP', c=CB6[5], linewidth=linewidth, alpha=0.8)
             #ax.plot(n_train_means, np.array(Venn_means) + np.array(Venn_stds),  label='SRS', c=CB6[5], linestyle='dashed')
 
             print("ttest")
