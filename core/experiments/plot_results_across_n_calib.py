@@ -227,6 +227,8 @@ def main():
             for val in target_values:
                 print(val, bartlett(SRS_values[val], Venn_values[val]))
 
+            print(SRS_stds)
+            print(Venn_stds)
 
     ax.set_xlabel('Number of calibration instances (C)')
     ax.set_ylabel('Mean absolute error')
