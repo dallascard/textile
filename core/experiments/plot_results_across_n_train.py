@@ -108,7 +108,7 @@ def main():
         n_calib_values.sort()
         print(n_calib_values)
         if base == 'mfc':
-            n_train_values = [100, 200, 400, 800, 1600]
+            n_train_values = [100, 200, 400, 800, 1200, 1600]
         if base == 'amazon':
             n_train_values = [400, 800, 1600, 3200]
 
