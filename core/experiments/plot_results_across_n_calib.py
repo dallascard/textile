@@ -5,7 +5,7 @@ from optparse import OptionParser
 
 import numpy as np
 import pandas as pd
-from scipy.stats import levene, bartlett
+from scipy.stats import levene, bartlett, ttest_rel
 
 # import Agg to avoid network display problems
 import matplotlib as mpl
@@ -221,9 +221,15 @@ def main():
             ax.plot(n_train_means, Venn_means,  label='IVAP', c=CB6[5], linewidth=linewidth)
             #ax.plot(n_train_means, np.array(Venn_means) + np.array(Venn_stds),  label='SRS', c=CB6[5], linestyle='dashed')
 
+            print("ttest")
+            for val in target_values:
+                print(val, ttest_rel(SRS_values[val], Venn_values[val]))
+
+            print("Levene")
             for val in target_values:
                 print(val, levene(SRS_values[val], Venn_values[val], center='trimmed'))
 
+            print("Bartlett")
             for val in target_values:
                 print(val, bartlett(SRS_values[val], Venn_values[val]))
 
