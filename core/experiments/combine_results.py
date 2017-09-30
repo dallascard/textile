@@ -268,7 +268,7 @@ def main():
     ax.set_ylim(-0.27, 0.27)
     #ax.set_xlim(-0.02, 0.27)
     ax.set_xlabel('Proportion of positive examples in training sample')
-    ax.set_ylabel('Error on predicting proportions in target corpus')
+    ax.set_ylabel('Error on predicting proportions')
     fig.savefig(output_file, bbox_inches='tight')
 
 
