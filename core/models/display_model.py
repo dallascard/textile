@@ -4,8 +4,7 @@ from optparse import OptionParser
 
 import numpy as np
 
-from ..models import lr
-from ..models import load_model, mlp
+from ..models import load_model
 from ..util import file_handling as fh
 
 def main():
