@@ -23,7 +23,7 @@ def main():
     #model_name = args[1]
 
     n_terms = int(options.n_terms)
-    model_type = options.model_type
+    default_model_type = options.model_type
     print_values = options.values
 
     basename = os.path.split(model_dir)[-1]
@@ -32,7 +32,7 @@ def main():
     for file in model_files:
         print("Loading %s" % file)
         model_name = os.path.split(file)[-1].rstrip('_metadata.json')
-        model = load_model.load_model(model_dir, model_name, model_type)
+        model = load_model.load_model(model_dir, model_name, default_model_type)
         model_type = model.get_model_type()
         print("Found: ", model_type)
 
