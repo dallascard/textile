@@ -34,9 +34,9 @@ def main():
             coefs = model.get_coefs(target_class=0)
             coefs_sorted = sorted(coefs, key=operator.itemgetter(1))
             terms, values = zip(*coefs_sorted)
-            output = str(0) + ': ' + ' '.join([t for t in terms[-1:-n_terms:-1]])
+            output = str(1) + ': ' + ' '.join([t for t in terms[-1:-n_terms:-1]])
             print(output)
-            output = str(1) + ': ' + ' '.join([t for t in terms[:n_terms]])
+            output = str(0) + ': ' + ' '.join([t for t in terms[:n_terms]])
             print(output)
         else:
             for c in classes:
