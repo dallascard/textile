@@ -31,7 +31,8 @@ def main():
 
     for file in model_files:
         print("Loading %s" % file)
-        model = load_model.load_model2(file, model_type)
+        model_name = os.path.split(file)[-1].rstrip('_metadata.json')
+        model = load_model.load_model(model_dir, model_name, model_type)
         model_type = model.get_model_type()
         print("Found: ", model_type)
 
