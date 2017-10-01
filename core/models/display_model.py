@@ -26,6 +26,7 @@ def main():
     model_type = options.model_type
     model = load_model.load_model(model_dir, model_name, model_type)
     model_type = model.get_model_type()
+    print("Found: ", model_type)
 
     if model_type == 'LR':
         classes = model.get_active_classes()
