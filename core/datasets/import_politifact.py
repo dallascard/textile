@@ -27,7 +27,7 @@ def import_politifact_data(input_dir, project):
 
     parties = defaultdict(set)
     output = {}
-    files = glob.glob(os.path.join(input_dir, '*'))
+    files = glob.glob(os.path.join(input_dir, '*.json'))
     articles = []
     for f in files:
         data = fh.read_json(f)
