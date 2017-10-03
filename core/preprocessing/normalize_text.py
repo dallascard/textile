@@ -1,4 +1,5 @@
 import re
+import ftfy
 import doctest
 
 
@@ -13,6 +14,16 @@ def strip_html(text):
     '>This is OK<'
     """
     text = re.sub('<[^>]+>', '', text)
+    return text
+
+
+def fix_web_text(text):
+    """Replace certain strings that appear in web text with more sesible alternatives
+    >>> fix_web_text("Senate&rsquo;s")
+    "Senate's"
+    """
+    #text = re.sub('&rsquo;', "'", text)
+    text = ftfy.fix_text(text)
     return text
 
 

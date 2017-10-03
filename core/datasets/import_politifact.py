@@ -5,6 +5,7 @@ from collections import defaultdict, Counter
 
 from ..util import dirs
 from ..util import file_handling as fh
+from ..preprocessing import normalize_text
 
 
 def main():
@@ -44,6 +45,8 @@ def import_politifact_data(input_dir, project):
     for i, article in enumerate(articles):
         key = article['id']
         text = article['ruling_comments']
+        text = normalize_text.strip_html(text)
+        text = normalize_text.fix_web_text(text)
         party_name = article['speaker']['party']['party']
         if party_name == 'Republican':
             output[key] = {'text': text, 'republican': {1: 1}}
