@@ -9,7 +9,7 @@ from ..models import load_model
 from ..util import file_handling as fh
 
 def main():
-    usage = "%prog model_dir"
+    usage = "%prog model_dir [specific_model_name.json]"
     parser = OptionParser(usage=usage)
     parser.add_option('-n', dest='n_terms', default=10,
                       help='Number of terms to display: default=%default')
@@ -20,14 +20,19 @@ def main():
 
     (options, args) = parser.parse_args()
     model_dir = args[0]
-    #model_name = args[1]
+    model_name = None
+    if len(args) > 1:
+        model_name = args[1]
 
     n_terms = int(options.n_terms)
     default_model_type = options.model_type
     print_values = options.values
 
     basename = os.path.split(model_dir)[-1]
-    model_files = glob.glob(os.path.join(model_dir, basename + '*_metadata.json'))
+    if model_name is None:
+        model_files = glob.glob(os.path.join(model_dir, basename + '*_metadata.json'))
+    else:
+        model_files = [os.path.join(model_dir, model_name)]
 
     for file in model_files:
         print("Loading %s" % file)
