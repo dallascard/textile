@@ -25,7 +25,7 @@ def main():
 
 def import_politifact_data(input_dir, project):
 
-    parties = defaultdict(set)
+    parties = defaultdict(int)
     output = {}
     files = glob.glob(os.path.join(input_dir, '*.json'))
     articles = []
@@ -36,7 +36,7 @@ def import_politifact_data(input_dir, project):
     for i, article in enumerate(articles):
         party_id = article['speaker']['party']['id']
         party_name = article['speaker']['party']['party']
-        parties[party_id].add(party_name)
+        parties[party_name] += 1
 
     print(parties)
 
