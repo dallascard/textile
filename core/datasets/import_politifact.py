@@ -1,7 +1,7 @@
 import os
 import glob
 from optparse import OptionParser
-from collections import defaultdict
+from collections import defaultdict, Counter
 
 from ..util import dirs
 from ..util import file_handling as fh
@@ -25,7 +25,7 @@ def main():
 
 def import_politifact_data(input_dir, project):
 
-    parties = defaultdict(int)
+    parties = Counter()
     output = {}
     files = glob.glob(os.path.join(input_dir, '*.json'))
     articles = []
@@ -36,9 +36,10 @@ def import_politifact_data(input_dir, project):
     for i, article in enumerate(articles):
         party_id = article['speaker']['party']['id']
         party_name = article['speaker']['party']['party']
-        parties[party_name] += 1
+        parties.update([party_name])
 
-    print(parties)
+    for key, value in parties.most_common():
+        print('%s: %d' % (key, value))
 
     for i, article in enumerate(articles):
         key = article['id']
