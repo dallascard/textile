@@ -146,6 +146,8 @@ def compare_marginals(project_dir, subset, label, feature_defs, target_word, ite
     ps0 = defaultdict(int)
     ps0_values = []
 
+    seqs = sorted(seqs, key=lambda x: np.sum(x))
+
     for seq in seqs:
         print(seq)
         ps1 = defaultdict(int)
