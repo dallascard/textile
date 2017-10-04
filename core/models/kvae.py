@@ -1,3 +1,5 @@
+import tempfile
+
 import sys
 import numpy as np
 import theano
@@ -10,7 +12,32 @@ from ..models import theano_common
 sys.setrecursionlimit(5000)
 
 
-class KVAE:
+
+class KAVE:
+
+    def __init__(self, dv, nonlinearity='tanh', output_dir=None, name='model', pos_label=1):
+        self._model_type = 'KVAE'
+        self._nonlinearity = nonlinearity
+        if output_dir is None:
+            self._output_dir = tempfile.gettempdir()
+        else:
+            self._output_dir = output_dir
+        self._name = name
+        self._pos_label = pos_label
+        self._train_f1 = None
+        self._train_acc = None
+        self._dev_f1 = None
+        self._dev_acc = None
+        self._dev_acc_cfm = None
+        self._dev_pvc_cfm = None
+        self._venn_info = None
+
+        # create a variable to store the label proportions in the training data
+        self._train_proportions = None
+        # variable to hold the sklearn model
+        self._model = None
+
+class th_KVAE:
 
     def __init__(self, d_v, d_e, optimizer, optimizer_args, np_rng, th_rng, encoder_layers=1, clip_gradients=False, init_bias=None, train_bias=False, scale=6.0):
 
@@ -251,7 +278,7 @@ def test():
     n = 200
     p = 100
 
-    kvae = KVAE(p, int(p/5), optimizer, opti_params, np_rng, th_rng, 1)
+    kvae = th_KVAE(p, int(p/5), optimizer, opti_params, np_rng, th_rng, 1)
 
 
     X = np.random.randint(low=0, high=2, size=(n, p))
