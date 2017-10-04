@@ -151,9 +151,9 @@ def compare_marginals(project_dir, subset, label, feature_defs, target_word, ite
                 ps1_values.append(p)
 
     print("ps0", len(ps0_values), ps0)
-    print(fit_beta(ps0_values))
+    print(fit_beta2(ps0_values))
     print("ps1", len(ps1_values), ps1)
-    print(fit_beta(ps1_values))
+    print(fit_beta2(ps1_values))
 
     fig, ax = plt.subplots()
     for key, value in ps1.items():
@@ -162,7 +162,7 @@ def compare_marginals(project_dir, subset, label, feature_defs, target_word, ite
     fig.savefig('ps1_counts.pdf')
 
     fig, ax = plt.subplots()
-    ps1_alpha, ps1_beta = fit_beta(ps1_values)
+    ps1_alpha, ps1_beta = fit_beta2(ps1_values)
     x = np.linspace(0, 1, 1000)
     y = stats.beta.pdf(x, ps1_alpha, ps1_beta)
     ax.plot(x, y)
@@ -465,6 +465,13 @@ def fit_beta(values):
     beta = (1 - mean) * common
     return alpha, beta
 
+
+def fit_beta2(values):
+    sample_size = len(values)
+    mean = np.mean(values)
+    var = np.var(values)
+    alpha = mean * sample_size
+    beta = (1 - mean) * sample_size
 
 if __name__ == '__main__':
     main()
