@@ -162,7 +162,7 @@ def compare_marginals(project_dir, subset, label, feature_defs, target_word, ite
                 #    ps1[p] += 1
                 # then look for at least the required elements to be one
                 #elif (vector[0, nonzero] == 1).all():
-                if vector == seq:
+                if np.all(vector == seq):
                     #print(vector[0, seq])
                     ps1[p] += 1
                     ps1_values.append(p)
