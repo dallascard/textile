@@ -6,6 +6,7 @@ from collections import defaultdict
 import numpy as np
 import pandas as pd
 from scipy import sparse
+from scipy import stats
 from sklearn.model_selection import KFold
 
 from ..util import file_handling as fh
@@ -154,6 +155,18 @@ def compare_marginals(project_dir, subset, label, feature_defs, target_word, ite
     print("ps1", len(ps1_values), ps1)
     print(fit_beta(ps1_values))
 
+    fig, ax = plt.subplots()
+    for key, value in ps0_values.items():
+        ax.plot([key, key], [0, value], 'k')
+        ax.scatter(key, value, c='k')
+    fig.savefig('ps0_counts.pdf')
+
+    fig, ax = plt.subplots()
+    ps0_alpha, ps0_beta = fit_beta(ps0_values)
+    x = np.linspace(0, 1, 1000)
+    y = stats.beta.pdf(x, ps0_alpha, ps0_beta)
+    ax.plot(x, y)
+    fig.savefig('ps0_beta.pdf')
 
 
     #weights = pd.DataFrame(1.0/labels_df.sum(axis=1), index=labels_df.index, columns=['inv_n_labels'])
