@@ -155,8 +155,9 @@ def compare_marginals(project_dir, subset, label, feature_defs, target_word, ite
                 ps_i = Y[i, :] / np.sum(Y[i, :])
                 p = ps_i[1]
                 vector = X[i, indices].todense()
-                if (vector[0, seq] == 1).all():
-                    print(vector[0, seq])
+                nonzero = np.nonzero(seq)
+                if (vector[0, nonzero] == 1).all():
+                    #print(vector[0, seq])
                     ps1[p] += 1
                     ps1_values.append(p)
 
