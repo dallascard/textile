@@ -147,13 +147,15 @@ def compare_marginals(project_dir, subset, label, feature_defs, target_word, ite
     ps0_values = []
 
     for seq in seqs:
+        print(seq)
         ps1 = defaultdict(int)
         ps1_values = []
         for i in range(n_items):
             if np.sum(Y[i, :]) > 0:
                 ps_i = Y[i, :] / np.sum(Y[i, :])
                 p = ps_i[1]
-                if X[i, indices] == seq:
+                vector = X[i, :].todense()
+                if vector[indices] == seq:
                     ps1[p] += 1
                     ps1_values.append(p)
 
