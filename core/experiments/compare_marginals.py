@@ -138,19 +138,14 @@ def compare_marginals(project_dir, subset, label, feature_defs, target_word, ite
     for i in range(n_items):
         if np.sum(Y[i, :]) > 0:
             ps_i = Y[i, :] / np.sum(Y[i, :])
-            p = ps_i[0]
+            p = ps_i[1]
             if X[i, index] == 0:
                 ps0.append(p)
             else:
                 ps1.append(p)
 
-    fig, ax = plt.subplots()
-    plt.hist(ps0)
-    plt.savefig('ps0.pdf')
-
-    fig, ax = plt.subplots()
-    plt.hist(ps1)
-    plt.savefig('ps1.pdf')
+    print("ps0", len(ps0), np.histogram(ps0, bins=10, range=(0, 1)))
+    print("ps1", len(ps1), np.histogram(ps1, bins=10, range=(0, 1)))
 
 
 
