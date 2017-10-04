@@ -2,6 +2,7 @@ import os
 import sys
 from optparse import OptionParser
 from collections import defaultdict
+import itertools
 
 import numpy as np
 import pandas as pd
@@ -131,30 +132,35 @@ def compare_marginals(project_dir, subset, label, feature_defs, target_word, ite
     n_items, n_features = X.shape
     _, n_classes = Y.shape
 
-    index = col_names.index(target_word)
-    if index < 0:
-        sys.exit("word not found in feature")
+    #index = col_names.index(target_word)
+    #if index < 0:
+    #    sys.exit("word not found in feature")
+
+
+    target_words = ['court', 'legal', 'state', 'supreme']
+
+    indices = [col_names.index(w) for w in target_words]
+
+    seqs = itertools.product([0, 1], repeat=len(target_words))
 
     ps0 = defaultdict(int)
     ps0_values = []
-    ps1 = defaultdict(int)
-    ps1_values = []
-    for i in range(n_items):
-        if np.sum(Y[i, :]) > 0:
-            ps_i = Y[i, :] / np.sum(Y[i, :])
-            p = ps_i[1]
-            if X[i, index] == 0:
-                ps0[p] += 1
-                ps0_values.append(p)
-            else:
-                ps1[p] += 1
-                ps1_values.append(p)
 
-    print("ps0", len(ps0_values), ps0)
-    print(fit_beta2(ps0_values))
-    print("ps1", len(ps1_values), ps1)
-    print(fit_beta2(ps1_values))
+    for seq in seqs:
+        ps1 = defaultdict(int)
+        ps1_values = []
+        for i in range(n_items):
+            if np.sum(Y[i, :]) > 0:
+                ps_i = Y[i, :] / np.sum(Y[i, :])
+                p = ps_i[1]
+                if X[i, indices] == seq:
+                    ps1[p] += 1
+                    ps1_values.append(p)
 
+        print(seq, len(ps1_values), ps1)
+        #print(fit_beta2(ps1_values))
+
+    """
     fig, ax = plt.subplots()
     for key, value in ps1.items():
         ax.plot([key, key], [0, value], 'k')
@@ -171,7 +177,7 @@ def compare_marginals(project_dir, subset, label, feature_defs, target_word, ite
     #weights = pd.DataFrame(1.0/labels_df.sum(axis=1), index=labels_df.index, columns=['inv_n_labels'])
     # divide weights by the number of annotations that we have for each item
     #weights = weights * 1.0/Y.sum(axis=1)
-
+    """
 
 
     """
