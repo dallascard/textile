@@ -156,18 +156,17 @@ def compare_marginals(project_dir, subset, label, feature_defs, target_word, ite
     print(fit_beta(ps1_values))
 
     fig, ax = plt.subplots()
-    for key, value in ps0.items():
+    for key, value in ps1.items():
         ax.plot([key, key], [0, value], 'k')
         ax.scatter(key, value, c='k')
-    fig.savefig('ps0_counts.pdf')
+    fig.savefig('ps1_counts.pdf')
 
     fig, ax = plt.subplots()
-    ps0_alpha, ps0_beta = fit_beta(ps0_values)
+    ps1_alpha, ps1_beta = fit_beta(ps1_values)
     x = np.linspace(0, 1, 1000)
-    y = stats.beta.pdf(x, ps0_alpha, ps0_beta)
+    y = stats.beta.pdf(x, ps1_alpha, ps1_beta)
     ax.plot(x, y)
-    fig.savefig('ps0_beta.pdf')
-
+    fig.savefig('ps1_beta.pdf')
 
     #weights = pd.DataFrame(1.0/labels_df.sum(axis=1), index=labels_df.index, columns=['inv_n_labels'])
     # divide weights by the number of annotations that we have for each item
