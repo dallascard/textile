@@ -472,6 +472,7 @@ def fit_beta2(values):
     var = np.var(values)
     alpha = mean * sample_size
     beta = (1 - mean) * sample_size
+    return alpha, beta
 
 if __name__ == '__main__':
     main()
