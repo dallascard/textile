@@ -158,7 +158,7 @@ def compare_marginals(project_dir, subset, label, feature_defs, target_word, ite
                 vector = X[i, indices].todense()
                 nonzero = np.nonzero(seq)
                 # first look for the case of all zeros
-                if len(nonzero) == 0 and (vector == 0).all():
+                if np.sum(seq) == 0 and np.sum(vector) == 0:
                     ps1[p] += 1
                 # then look for at least the required elements to be one
                 elif (vector[0, nonzero] == 1).all():
