@@ -156,7 +156,7 @@ def compare_marginals(project_dir, subset, label, feature_defs, target_word, ite
     print(fit_beta(ps1_values))
 
     fig, ax = plt.subplots()
-    for key, value in ps0_values.items():
+    for key, value in ps0.items():
         ax.plot([key, key], [0, value], 'k')
         ax.scatter(key, value, c='k')
     fig.savefig('ps0_counts.pdf')
