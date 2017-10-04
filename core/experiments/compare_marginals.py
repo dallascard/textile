@@ -1,6 +1,7 @@
 import os
 import sys
 from optparse import OptionParser
+from collections import defaultdict
 
 import numpy as np
 import pandas as pd
@@ -133,20 +134,25 @@ def compare_marginals(project_dir, subset, label, feature_defs, target_word, ite
     if index < 0:
         sys.exit("word not found in feature")
 
-    ps0 = []
-    ps1 = []
+    ps0 = defaultdict(int)
+    ps0_values = []
+    ps1 = defaultdict(int)
+    ps1_values = []
     for i in range(n_items):
         if np.sum(Y[i, :]) > 0:
             ps_i = Y[i, :] / np.sum(Y[i, :])
             p = ps_i[1]
             if X[i, index] == 0:
-                ps0.append(p)
+                ps0[p] += 1
+                ps0_values.append(p)
             else:
-                ps1.append(p)
+                ps1[p] += 1
+                ps1_values.append(p)
 
-    print("ps0", len(ps0), np.histogram(ps0, bins=10, range=(0, 1)))
-    print("ps1", len(ps1), np.histogram(ps1, bins=10, range=(0, 1)))
-
+    print("ps0", len(ps0_values), ps0)
+    print(fit_beta(ps0_values))
+    print("ps1", len(ps1_values), ps1)
+    print(fit_beta(ps1_values))
 
 
 
@@ -436,6 +442,15 @@ def prepare_data(X, Y, weights=None, predictions=None, loss='log'):
         return X_return, Y_return, weights_return
     else:
         return X_return, Y_return, weights_return, pred_return
+
+
+def fit_beta(values):
+    v = len(values)
+    mean = np.mean(values)
+    var = np.var(values)
+    alpha = mean * v
+    beta = (var * (v**2 + v)) / mean
+    return alpha, beta
 
 
 if __name__ == '__main__':
