@@ -47,11 +47,12 @@ def import_politifact_data(input_dir, project):
         text = article['ruling_comments']
         text = normalize_text.strip_html(text)
         text = normalize_text.fix_web_text(text)
+        year = article['ruling_date'][:4]
         party_name = article['speaker']['party']['party']
         if party_name == 'Republican':
-            output[key] = {'text': text, 'republican': {1: 1}}
+            output[key] = {'text': text, 'republican': {1: 1}, 'year': int(year)}
         elif party_name == 'Democrat':
-            output[key] = {'text': text, 'republican': {0: 1}}
+            output[key] = {'text': text, 'republican': {0: 1}, 'year': int(year)}
 
     print("Saving %d articles" % len(output))
     fh.makedirs(dirs.dir_data_raw(project))

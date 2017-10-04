@@ -445,11 +445,12 @@ def prepare_data(X, Y, weights=None, predictions=None, loss='log'):
 
 
 def fit_beta(values):
-    v = len(values)
     mean = np.mean(values)
     var = np.var(values)
-    alpha = mean * v
-    beta = (var * (v**2 + v)) / mean
+    assert var < mean * (1 - mean)
+    common = mean * (1 - mean) / var - 1
+    alpha = mean * common
+    beta = (1 - mean) * common
     return alpha, beta
 
 
