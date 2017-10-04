@@ -137,7 +137,7 @@ def compare_marginals(project_dir, subset, label, feature_defs, target_word, ite
     #    sys.exit("word not found in feature")
 
 
-    target_words = ['court', 'legal', 'state', 'supreme']
+    target_words = ['court', 'legal', 'state', 'supreme', 'law']
 
     indices = [col_names.index(w) for w in target_words]
 
@@ -149,7 +149,6 @@ def compare_marginals(project_dir, subset, label, feature_defs, target_word, ite
     seqs = sorted(seqs, key=lambda x: np.sum(x))
 
     for seq in seqs:
-        print(seq)
         ps1 = defaultdict(int)
         ps1_values = []
         for i in range(n_items):
