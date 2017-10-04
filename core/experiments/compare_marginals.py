@@ -161,7 +161,7 @@ def compare_marginals(project_dir, subset, label, feature_defs, target_word, ite
                     ps1[p] += 1
                     ps1_values.append(p)
 
-        print(seq, len(ps1_values), ps1)
+        print(seq, len(ps1_values), np.mean(ps1_values))
         #print(fit_beta2(ps1_values))
 
     """
