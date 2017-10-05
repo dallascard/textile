@@ -48,9 +48,9 @@ def main():
         coef_totals = [(coef, value) for coef, value in totals.items()]
         coef_totals = sorted(coef_totals, key=lambda x: x[1])
         n_coefs = len(coef_totals)
-        for i in range(n_coefs):
+        for i in range(n_terms):
             print(coef_totals[i])
-        for i in range(-10,0):
+        for i in range(-n_terms, 0):
             print(coef_totals[i])
 
 
