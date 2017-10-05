@@ -265,7 +265,7 @@ def compare_marginals(project_dir, subset, label, field_name, feature_defs, max_
             key_sum = key_sums[key]
             for train_key in train_keys:
                 dist = edit_distance(key, train_key)
-                if dist <= max_dist and key_sum[train_key] > 0:
+                if dist <= max_dist and key_sums[train_key] > 0:
                     est_neg[key] += train_neg[key] * discount ** dist
                     est_pos[key] += train_pos[key] * discount ** dist
 
