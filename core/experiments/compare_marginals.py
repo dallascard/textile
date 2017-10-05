@@ -144,7 +144,7 @@ def compare_marginals(project_dir, subset, label, field_name, feature_defs, max_
             X_train = features_concat.get_counts().tocsr()
         else:
             X_train = features_concat.get_counts()
-        Y_train = labels_df.as_matrix()
+        Y_train = labels_df.loc[train_items].as_matrix()
 
         n_train, n_features = X_train.shape
         _, n_classes = Y_train.shape
@@ -193,7 +193,7 @@ def compare_marginals(project_dir, subset, label, field_name, feature_defs, max_
             X_nontrain = features_concat.get_counts().tocsr()
         else:
             X_nontrain = features_concat.get_counts()
-        Y_nontrain = labels_df.as_matrix()
+        Y_nontrain = labels_df.loc[non_train_items].as_matrix()
 
         n_nontrain, _ = X_nontrain.shape
 
