@@ -230,6 +230,7 @@ def compare_marginals(project_dir, subset, label, field_name, feature_defs, max_
                 if np.sum(vector) > 0:
                     nonzero_neg_sum += Y_train[i, 0]
                     nonzero_pos_sum += Y_train[i, 1]
+
         nonzero_prob = nonzero_pos_sum / float(nonzero_pos_sum + nonzero_neg_sum)
 
         print("Distinct keys = ", len(observations), "; labeled items = ", np.sum(list(observations.values())))
@@ -277,61 +278,55 @@ def compare_marginals(project_dir, subset, label, field_name, feature_defs, max_
         total_est_neg = 0
         total_est_pos = 0
         for key in keys[1:]:
+
             est_neg[key] = 2 * (1 - nonzero_prob)
             est_pos[key] = 2 * nonzero_prob
             #matching_counts.append(train_counts[key])
 
             key_sum = key_sums[key]
+
+            """
             for train_key in train_keys:
                 dist = edit_distance(key, train_key)
                 if dist <= max_dist and key_sums[train_key] > 0:
                     est_neg[key] += train_neg[key] * discount ** dist
                     est_pos[key] += train_pos[key] * discount ** dist
 
-            #total_est_neg += est_neg[key] * nontrain_counts[key]
-            #total_est_pos += est_pos[key] * nontrain_counts[key]
-            total_est_pos += nontrain_counts[key] * est_pos[key] / float(est_neg[key] + est_pos[key])
-            #print(key, nontrain_counts[key], nontrain_pos[key] / float(nontrain_pos[key] + nontrain_neg[key]), observations[key], est_pos[key], est_pos[key] / float(est_pos[key] + est_neg[key]))
+            """
 
-        print(np.sum(list(nontrain_pos.values())) / float(np.sum(list(nontrain_pos.values())) + np.sum(list(nontrain_neg.values()))))
-        print(np.sum(total_est_pos) / float(total))
+            pattern = re.sub('1', '[0-1]', key)
+            #print(key, pattern)
+            matches = [key for key in train_keys if re.match(pattern, key) is not None and key_sums[key] > 0 and 0 < key_sum - key_sums[key] < 4]
+            for key in matches:
+                est_neg[key] += train_neg[key] #* discount ** dist
+                est_pos[key] += train_pos[key] #* discount ** dist
 
-    """
-            #for dist in range(1, max_dist+1):
-            #    matches = [key for key in train_keys if re.match(pattern, key) is not None and key_sums[key] > 0 and 0 < key_sum - key_sums[key] < 4]
-
-            #pattern = re.sub('1', '[0-1]', key)
-            ##print(key, pattern)
-            #matches = [key for key in train_keys if re.match(pattern, key) is not None and key_sums[key] > 0 and 0 < key_sum - key_sums[key] < 4]
-            ##print(matches)
+            #print(matches)
             #values = [train_counts[key] for key in matches]
             ##print(values)
             #count = sum(values)
             ##print(sum)
-            #lower = [key for key in keys if key_sum - key_sums[key] < 3 and key_sums[key] > 0]
-            #matching_lower.append(int(count))
 
-            #pattern = re.sub('0', '[0-1]', key)
-            #matches = [key for key in train_keys if re.match(pattern, key) is not None and 0 < key_sums[key] - key_sum < 4]
+            pattern = re.sub('0', '[0-1]', key)
+            matches = [key for key in train_keys if re.match(pattern, key) is not None and 0 < key_sums[key] - key_sum < 4]
+
+            for key in matches:
+                est_neg[key] += train_neg[key] #* discount ** dist
+                est_pos[key] += train_pos[key] #* discount ** dist
+
             #values = [train_counts[key] for key in matches]
             #count = sum(values)
             #lower = [key for key in keys if key_sum - key_sums[key] < 3 and key_sums[key] > 0]
             #matching_upper.append(int(count))
 
             #total_counts.append(matching_counts[-1] + matching_lower[-1] + matching_upper[-1])
+            total_est_pos += nontrain_counts[key] * est_pos[key] / float(est_neg[key] + est_pos[key])
+            #print(key, nontrain_counts[key], nontrain_pos[key] / float(nontrain_pos[key] + nontrain_neg[key]), observations[key], est_pos[key], est_pos[key] / float(est_pos[key] + est_neg[key]))
 
 
+        print(np.sum(list(nontrain_pos.values())) / float(np.sum(list(nontrain_pos.values())) + np.sum(list(nontrain_neg.values()))))
+        print(np.sum(total_est_pos) / float(total))
 
-
-        #print(np.histogram(matching_counts))
-        #print(sum([count == 0 for count in matching_counts]))
-        #print(np.histogram(matching_lower))
-        #print(sum([count == 0 for count in matching_lower]))
-        #print(np.histogram(matching_upper))
-        #print(sum([count == 0 for count in matching_upper]))
-        #print(np.histogram(total_counts))
-        #print(sum([count == 0 for count in total_counts]))
-    """
 
 
 def prepare_data(X, Y, weights=None, predictions=None, loss='log'):
