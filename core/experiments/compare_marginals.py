@@ -27,7 +27,7 @@ def main():
     parser = OptionParser(usage=usage)
     parser.add_option('--discount', dest='discount', default=0.5,
                       help='Discount factor for distance: default=%default')
-    parser.add_option('--max_dist', dest='maximum_distance', default=6,
+    parser.add_option('--max_dist', dest='max_dist', default=6,
                       help='Maximum distance to consider neighbours: default=%default')
     #parser.add_option('--loss', dest='loss', default='log',
     #                  help='Loss function [log|brier]: default=%default')
