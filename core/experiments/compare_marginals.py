@@ -193,8 +193,8 @@ def compare_marginals(project_dir, subset, label, field_name, feature_defs, item
 
         n_nontrain, _ = X_nontrain.shape
 
-        target_words = ['amendment', 'attorney', 'ban', 'benefits', 'case', 'civil', 'constitution', 'constitutional', 'court', 'courts', 'decision', 'decisions', 'federal', 'filed', 'granted', 'judge', 'judges', 'judicial', 'law', 'laws', 'lawsuit', 'lawyer', 'lawyers', 'legal', 'legalized', 'legality', 'licenses', 'majority', 'order', 'prop', 'protections', 'right', 'ruled', 'ruling', 'senate', 'suit', 'sued', 'supreme', 'unconstitutional']
-        #target_words = ['court', 'law', 'judge', 'legal']
+        #target_words = ['amendment', 'attorney', 'ban', 'benefits', 'case', 'civil', 'constitution', 'constitutional', 'court', 'courts', 'decision', 'decisions', 'federal', 'filed', 'granted', 'judge', 'judges', 'judicial', 'law', 'laws', 'lawsuit', 'lawyer', 'lawyers', 'legal', 'legalized', 'legality', 'licenses', 'majority', 'order', 'prop', 'protections', 'right', 'ruled', 'ruling', 'senate', 'suit', 'sued', 'supreme', 'unconstitutional']
+        target_words = ['court', 'law', 'judge', 'legal']
         print("n words = ", len(target_words))
 
         indices = [col_names.index(w) for w in target_words]
@@ -236,9 +236,13 @@ def compare_marginals(project_dir, subset, label, field_name, feature_defs, item
         for key in keys[1:]:
             key_sum = key_sums[key]
             pattern = re.sub('1', '[0-1]', key)
+            print(key, pattern)
             matches = [key for key in train_keys if re.match(pattern, key) is not None and key_sums[key] > 0 and key_sum - key_sums[key] < 3 and key_sum - key_sums[key] > 0]
+            print(matches)
             values = [train_counts[key] for key in matches]
+            print(values)
             count = sum(values)
+            print(sum)
             #lower = [key for key in keys if key_sum - key_sums[key] < 3 and key_sums[key] > 0]
             matching_lower.append(int(count))
 
