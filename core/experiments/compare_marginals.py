@@ -100,7 +100,6 @@ def compare_marginals(project_dir, subset, label, field_name, feature_defs, max_
         labels_df = fh.read_csv_to_df(os.path.join(label_dir, label + '.csv'), index_col=0, header=0)
         n_items, n_classes = labels_df.shape
 
-
         features_dir = dirs.dir_features(project_dir, subset)
         n_items, n_classes = labels_df.shape
 
@@ -146,6 +145,9 @@ def compare_marginals(project_dir, subset, label, field_name, feature_defs, max_
             X_train = features_concat.get_counts()
         Y_train = labels_df.loc[train_items].as_matrix()
 
+        print("shapes")
+        print(X_train.shape)
+        print(Y_train.shape)
         n_train, n_features = X_train.shape
         _, n_classes = Y_train.shape
 
@@ -197,6 +199,10 @@ def compare_marginals(project_dir, subset, label, field_name, feature_defs, max_
 
         n_nontrain, _ = X_nontrain.shape
 
+        print("shapes")
+        print(X_nontrain.shape)
+        print(Y_nontrain.shape)
+
         #target_words = ['amendment', 'attorney', 'ban', 'benefits', 'case', 'civil', 'constitution', 'constitutional', 'court', 'courts', 'decision', 'decisions', 'federal', 'filed', 'granted', 'judge', 'judges', 'judicial', 'law', 'laws', 'lawsuit', 'lawyer', 'lawyers', 'legal', 'legalized', 'legality', 'licenses', 'majority', 'order', 'prop', 'protections', 'right', 'ruled', 'ruling', 'senate', 'suit', 'sued', 'supreme', 'unconstitutional']
         #target_words = ['court', 'law', 'judge', 'legal', 'constitution']
         target_words = ['court', 'state', 'legal', 'supreme', 'courts', 'constitution', 'law', 'ruling']
@@ -204,7 +210,6 @@ def compare_marginals(project_dir, subset, label, field_name, feature_defs, max_
 
         indices = [col_names.index(w) for w in target_words]
         print(indices)
-
 
         observations = defaultdict(int)
         train_neg = defaultdict(int)
