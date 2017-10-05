@@ -265,6 +265,9 @@ def compare_marginals(project_dir, subset, label, field_name, feature_defs, max_
         est_neg[keys[0]] = train_neg[keys[0]]
         est_pos[keys[0]] = train_pos[keys[0]]
 
+        total = np.sum(list(nontrain_counts.values()))
+        total_est_pos = nontrain_counts[keys[0]] * est_pos[keys[0]] / float(est_neg[keys[0]] + est_pos[keys[0]])
+
         total_est_neg = 0
         total_est_pos = 0
         for key in keys[1:]:
@@ -279,12 +282,13 @@ def compare_marginals(project_dir, subset, label, field_name, feature_defs, max_
                     est_neg[key] += train_neg[key] * discount ** dist
                     est_pos[key] += train_pos[key] * discount ** dist
 
-            total_est_neg += est_neg[key] * nontrain_counts[key]
-            total_est_pos += est_pos[key] * nontrain_counts[key]
+            #total_est_neg += est_neg[key] * nontrain_counts[key]
+            #total_est_pos += est_pos[key] * nontrain_counts[key]
+            total_est_pos += nontrain_counts[key] * est_pos[key] / float(est_neg[key] + est_pos[key])
             #print(key, nontrain_counts[key], nontrain_pos[key] / float(nontrain_pos[key] + nontrain_neg[key]), observations[key], est_pos[key], est_pos[key] / float(est_pos[key] + est_neg[key]))
 
         print(np.sum(list(nontrain_pos.values())) / float(np.sum(list(nontrain_pos.values())) + np.sum(list(nontrain_neg.values()))))
-        print(np.sum(total_est_pos) / float(total_est_neg + total_est_pos))
+        print(np.sum(total_est_pos) / float(total))
 
     """
             #for dist in range(1, max_dist+1):
