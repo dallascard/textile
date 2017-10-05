@@ -268,7 +268,8 @@ def compare_marginals(project_dir, subset, label, field_name, feature_defs, item
         print(sum([count == 0 for count in matching_lower]))
         print(np.histogram(matching_upper))
         print(sum([count == 0 for count in matching_upper]))
-
+        print(np.histogram(total_counts))
+        print(sum([count == 0 for count in total_counts]))
 
 def prepare_data(X, Y, weights=None, predictions=None, loss='log'):
     """
