@@ -240,16 +240,19 @@ def compare_marginals(project_dir, subset, label, field_name, feature_defs, item
             values = [train_counts[key] for key in matches]
             count = sum(values)
             #lower = [key for key in keys if key_sum - key_sums[key] < 3 and key_sums[key] > 0]
-            matching_lower.append(count)
+            matching_lower.append(int(count))
 
             pattern = re.sub('0', '[0-1]', key)
             matches = [key for key in train_keys if re.match(pattern, key) is not None and key_sums[key] - key_sum < 3]
             values = [train_counts[key] for key in matches]
             count = sum(values)
             #lower = [key for key in keys if key_sum - key_sums[key] < 3 and key_sums[key] > 0]
-            matching_lower.append(count)
+            matching_upper.append(int(count))
 
         print(np.histogram(matching_lower))
+        print(sum([count == 0 for count in matching_lower]))
+        print(np.histogram(matching_upper))
+        print(sum([count == 0 for count in matching_upper]))
 
 
 def prepare_data(X, Y, weights=None, predictions=None, loss='log'):
