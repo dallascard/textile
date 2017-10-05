@@ -216,6 +216,8 @@ def compare_marginals(project_dir, subset, label, field_name, feature_defs, max_
         train_pos = defaultdict(int)
         total_train_pos = 0
         total_train_neg = 0
+        nonzero_neg_sum = 0
+        nonzero_pos_sum = 0
         for i in range(n_train):
             if np.sum(Y_train[i, :]) > 0:
                 vector = np.array(X_train[i, indices].todense()).ravel()
@@ -225,6 +227,10 @@ def compare_marginals(project_dir, subset, label, field_name, feature_defs, max_
                 train_pos[key] += Y_train[i, 1]
                 total_train_neg += Y_train[i, 0]
                 total_train_pos += Y_train[i, 1]
+                if np.sum(vector) > 0:
+                    nonzero_neg_sum += Y_train[i, 0]
+                    nonzero_pos_sum += Y_train[i, 1]
+        nonzero_prob = nonzero_pos_sum / float(nonzero_pos_sum + nonzero_neg_sum)
 
         print("Distinct keys = ", len(observations), "; labeled items = ", np.sum(list(observations.values())))
 
@@ -271,8 +277,8 @@ def compare_marginals(project_dir, subset, label, field_name, feature_defs, max_
         total_est_neg = 0
         total_est_pos = 0
         for key in keys[1:]:
-            #est_neg[key] = 2 * total_train_neg / float(total_train_pos + total_train_neg)
-            #est_pos[key] = 2 * total_train_pos / float(total_train_pos + total_train_neg)
+            est_neg[key] = 2 * (1 - nonzero_prob)
+            est_pos[key] = 2 * nonzero_prob
             #matching_counts.append(train_counts[key])
 
             key_sum = key_sums[key]
