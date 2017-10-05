@@ -230,29 +230,34 @@ def compare_marginals(project_dir, subset, label, field_name, feature_defs, item
         print(len(nontrain_counts), np.sum(list(nontrain_counts.values())))
 
         matching_lower = []
+        matching_counts = []
         matching_upper = []
         keys = list(nontrain_counts.keys())
         keys.sort()
         for key in keys[1:]:
+            matching_counts.append(train_counts[key])
+
             key_sum = key_sums[key]
             pattern = re.sub('1', '[0-1]', key)
-            print(key, pattern)
-            matches = [key for key in train_keys if re.match(pattern, key) is not None and key_sums[key] > 0 and key_sum - key_sums[key] < 3 and key_sum - key_sums[key] > 0]
-            print(matches)
+            #print(key, pattern)
+            matches = [key for key in train_keys if re.match(pattern, key) is not None and key_sums[key] > 0 and 0 < key_sum - key_sums[key] < 4]
+            #print(matches)
             values = [train_counts[key] for key in matches]
-            print(values)
+            #print(values)
             count = sum(values)
-            print(sum)
+            #print(sum)
             #lower = [key for key in keys if key_sum - key_sums[key] < 3 and key_sums[key] > 0]
             matching_lower.append(int(count))
 
             pattern = re.sub('0', '[0-1]', key)
-            matches = [key for key in train_keys if re.match(pattern, key) is not None and key_sums[key] - key_sum < 3 and key_sums[key] - key_sum > 0]
+            matches = [key for key in train_keys if re.match(pattern, key) is not None and 0 < key_sums[key] - key_sum < 4]
             values = [train_counts[key] for key in matches]
             count = sum(values)
             #lower = [key for key in keys if key_sum - key_sums[key] < 3 and key_sums[key] > 0]
             matching_upper.append(int(count))
 
+        print(np.histogram(matching_counts))
+        print(sum([count == 0 for count in matching_counts]))
         print(np.histogram(matching_lower))
         print(sum([count == 0 for count in matching_lower]))
         print(np.histogram(matching_upper))
