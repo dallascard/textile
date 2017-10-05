@@ -211,7 +211,7 @@ def compare_marginals(project_dir, subset, label, field_name, feature_defs, item
                 key = ''.join([str(s) for s in vector.tolist()])
                 train_counts[key] += 1
 
-        print(len(train_counts))
+        print(len(train_counts), np.sum(train_counts.values()))
 
         nontrain_counts = defaultdict(int)
         for i in range(n_nontrain):
@@ -219,7 +219,7 @@ def compare_marginals(project_dir, subset, label, field_name, feature_defs, item
             key = ''.join([str(s) for s in vector.tolist()])
             nontrain_counts[key] += 1
 
-        print(len(nontrain_counts))
+        print(len(nontrain_counts), np.sum(train_counts.values()))
 
         matching_counts = defaultdict(int)
         keys = list(nontrain_counts.keys())
@@ -228,7 +228,7 @@ def compare_marginals(project_dir, subset, label, field_name, feature_defs, item
             count = train_counts[key]
             matching_counts[count] += 1
 
-        print(np.bincount(matching_counts))
+        print(np.bincount(matching_counts.values()))
 
 
 
