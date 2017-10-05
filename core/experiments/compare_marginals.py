@@ -267,7 +267,7 @@ def compare_marginals(project_dir, subset, label, field_name, feature_defs, max_
                     est_neg[key] += train_neg[key] * discount ** dist
                     est_pos[key] += train_pos[key] * discount ** dist
 
-            print(key, nontrain_counts[key], observations[key], nontrain_pos[key] / float(nontrain_pos[key] + nontrain_neg[key]), est_pos[key] / float(est_pos[key] + est_neg[key]))
+            print(key, nontrain_counts[key], nontrain_pos[key] / float(nontrain_pos[key] + nontrain_neg[key]), observations[key], est_pos[key], est_pos[key] / float(est_pos[key] + est_neg[key]))
 
             #for dist in range(1, max_dist+1):
             #    matches = [key for key in train_keys if re.match(pattern, key) is not None and key_sums[key] > 0 and 0 < key_sum - key_sums[key] < 4]
