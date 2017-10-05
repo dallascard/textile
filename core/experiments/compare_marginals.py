@@ -209,10 +209,8 @@ def compare_marginals(project_dir, subset, label, field_name, feature_defs, item
             if np.sum(Y_train[i, :]) > 0:
                 ps_i = Y_train[i, :] / np.sum(Y_train[i, :])
                 p = ps_i[1]
-                vector = X_train[i, indices].todense()
-                print(vector)
-                vector = np.reshape(vector, (len(target_words), ))
-                print(vector)
+                vector = X_train[i, indices].todense().ravel()
+                #print(vector)
                 key = ''.join([str(int(s)) for s in vector.tolist()])
                 train_counts[key] += 1
                 positives[key].append(p)
