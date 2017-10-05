@@ -25,8 +25,10 @@ import matplotlib.pyplot as plt
 def main():
     usage = "%prog project_dir subset config.json field_name"
     parser = OptionParser(usage=usage)
-    #parser.add_option('--model', dest='model', default='LR',
-    #                  help='Model type [LR|MLP]: default=%default')
+    parser.add_option('--discount', dest='discount', default=0.5,
+                      help='Discount factor for distance: default=%default')
+    parser.add_option('--max_dist', dest='maximum_distance', default=6,
+                      help='Maximum distance to consider neighbours: default=%default')
     #parser.add_option('--loss', dest='loss', default='log',
     #                  help='Loss function [log|brier]: default=%default')
     #parser.add_option('--dh', dest='dh', default=0,
@@ -55,6 +57,8 @@ def main():
     config_file = args[2]
     field_name = args[3]
 
+    discount = float(options.discount)
+    max_dist = int(options.max_dist)
     label = options.label
     n_dev_folds = int(options.n_dev_folds)
     seed = options.seed
@@ -67,10 +71,10 @@ def main():
     for f in config['feature_defs']:
         feature_defs.append(features.parse_feature_string(f))
 
-    compare_marginals(project_dir, subset, label, field_name, feature_defs, n_dev_folds=n_dev_folds, seed=seed)
+    compare_marginals(project_dir, subset, label, field_name, feature_defs, max_dist, discount, n_dev_folds=n_dev_folds, seed=seed)
 
 
-def compare_marginals(project_dir, subset, label, field_name, feature_defs, items_to_use=None, n_dev_folds=5, seed=None, verbose=True):
+def compare_marginals(project_dir, subset, label, field_name, feature_defs, max_dist=6, discount=0.5, items_to_use=None, n_dev_folds=5, seed=None, verbose=True):
 
     # load the file that contains metadata about each item
     metadata_file = os.path.join(dirs.dir_subset(project_dir, subset), 'metadata.csv')
@@ -200,76 +204,105 @@ def compare_marginals(project_dir, subset, label, field_name, feature_defs, item
         indices = [col_names.index(w) for w in target_words]
         print(indices)
 
-        train_counts = defaultdict(int)
-        positives = defaultdict(list)
+
+        observations = defaultdict(int)
+        train_neg = defaultdict(int)
+        train_pos = defaultdict(int)
         for i in range(n_train):
             if np.sum(Y_train[i, :]) > 0:
-                ps_i = Y_train[i, :] / np.sum(Y_train[i, :])
-                p = ps_i[1]
                 vector = np.array(X_train[i, indices].todense()).ravel()
                 key = ''.join([str(int(s)) for s in vector])
-                train_counts[key] += 1
-                positives[key].append(p)
+                observations[key] += 1
+                train_neg[key] += Y_train[i, 0]
+                train_pos[key] += Y_train[i, 1]
 
-        print(len(train_counts), np.sum(list(train_counts.values())))
+        print("Distinct keys = ", len(observations), "; labeled items = ", np.sum(list(observations.values())))
 
-        train_keys = list(train_counts.keys())
+        train_keys = list(observations.keys())
         train_keys.sort()
         key_sums = defaultdict(int)
         for key in train_keys:
             key_sums[key] = np.sum([int(w) for w in key])
         for key in train_keys[:20]:
-            print(key, train_counts[key], np.mean(positives[key]), key_sums[key])
+            print(key, observations[key], train_pos[key] / float(train_pos[key] + train_neg[key]))
 
         nontrain_counts = defaultdict(int)
+        nontrain_neg = defaultdict(int)
+        nontrain_pos = defaultdict(int)
         for i in range(n_nontrain):
-            vector = np.array(X_nontrain[i, indices].todense()).ravel()
-            key = ''.join([str(int(s)) for s in vector])
-            nontrain_counts[key] += 1
+            if np.sum(Y_nontrain[i, :]) > 0:
+                vector = np.array(X_nontrain[i, indices].todense()).ravel()
+                key = ''.join([str(int(s)) for s in vector])
+                nontrain_counts[key] += 1
+                train_neg[key] += Y_train[i, 0]
+                train_pos[key] += Y_train[i, 1]
+
 
         print(len(nontrain_counts), np.sum(list(nontrain_counts.values())))
 
-        matching_lower = []
-        matching_counts = []
-        matching_upper = []
-        total_counts = []
+        est_neg = defaultdict(int)
+        est_pos = defaultdict(int)
+        #matching_lower = []
+        #matching_counts = []
+        #matching_upper = []
+        #total_counts = []
         keys = list(nontrain_counts.keys())
         keys.sort()
         for key in keys:
             if key not in key_sums:
                 key_sums[key] = np.sum([int(w) for w in key])
+
+        est_neg[keys[0]] = train_neg[keys[0]]
+        est_pos[keys[0]] = train_pos[keys[0]]
+
         for key in keys[1:]:
-            matching_counts.append(train_counts[key])
+            est_neg[key] = 1
+            est_pos[key] = 1
+            #matching_counts.append(train_counts[key])
 
             key_sum = key_sums[key]
-            pattern = re.sub('1', '[0-1]', key)
-            #print(key, pattern)
-            matches = [key for key in train_keys if re.match(pattern, key) is not None and key_sums[key] > 0 and 0 < key_sum - key_sums[key] < 4]
-            #print(matches)
-            values = [train_counts[key] for key in matches]
-            #print(values)
-            count = sum(values)
-            #print(sum)
+            for train_key in train_keys:
+                dist = edit_distance(key, train_key)
+                if dist <= max_dist:
+                    est_neg[key] += train_neg[key] * discount ** dist
+                    est_pos[key] += train_pos[key] * discount ** dist
+
+            print(key, observations[key], nontrain_pos[key] / float(nontrain_pos[key] + nontrain_neg[key]), est_pos[key] / float(est_pos[key] + est_neg[key]))
+
+            #for dist in range(1, max_dist+1):
+            #    matches = [key for key in train_keys if re.match(pattern, key) is not None and key_sums[key] > 0 and 0 < key_sum - key_sums[key] < 4]
+
+            #pattern = re.sub('1', '[0-1]', key)
+            ##print(key, pattern)
+            #matches = [key for key in train_keys if re.match(pattern, key) is not None and key_sums[key] > 0 and 0 < key_sum - key_sums[key] < 4]
+            ##print(matches)
+            #values = [train_counts[key] for key in matches]
+            ##print(values)
+            #count = sum(values)
+            ##print(sum)
             #lower = [key for key in keys if key_sum - key_sums[key] < 3 and key_sums[key] > 0]
-            matching_lower.append(int(count))
+            #matching_lower.append(int(count))
 
-            pattern = re.sub('0', '[0-1]', key)
-            matches = [key for key in train_keys if re.match(pattern, key) is not None and 0 < key_sums[key] - key_sum < 4]
-            values = [train_counts[key] for key in matches]
-            count = sum(values)
+            #pattern = re.sub('0', '[0-1]', key)
+            #matches = [key for key in train_keys if re.match(pattern, key) is not None and 0 < key_sums[key] - key_sum < 4]
+            #values = [train_counts[key] for key in matches]
+            #count = sum(values)
             #lower = [key for key in keys if key_sum - key_sums[key] < 3 and key_sums[key] > 0]
-            matching_upper.append(int(count))
+            #matching_upper.append(int(count))
 
-            total_counts.append(matching_counts[-1] + matching_lower[-1] + matching_upper[-1])
+            #total_counts.append(matching_counts[-1] + matching_lower[-1] + matching_upper[-1])
 
-        print(np.histogram(matching_counts))
-        print(sum([count == 0 for count in matching_counts]))
-        print(np.histogram(matching_lower))
-        print(sum([count == 0 for count in matching_lower]))
-        print(np.histogram(matching_upper))
-        print(sum([count == 0 for count in matching_upper]))
-        print(np.histogram(total_counts))
-        print(sum([count == 0 for count in total_counts]))
+
+
+
+        #print(np.histogram(matching_counts))
+        #print(sum([count == 0 for count in matching_counts]))
+        #print(np.histogram(matching_lower))
+        #print(sum([count == 0 for count in matching_lower]))
+        #print(np.histogram(matching_upper))
+        #print(sum([count == 0 for count in matching_upper]))
+        #print(np.histogram(total_counts))
+        #print(sum([count == 0 for count in total_counts]))
 
 def prepare_data(X, Y, weights=None, predictions=None, loss='log'):
     """
@@ -361,6 +394,12 @@ def fit_beta2(values):
     alpha = mean * sample_size
     beta = (1 - mean) * sample_size
     return alpha, beta
+
+
+def edit_distance(s1, s2):
+    a1 = np.array([int(s) for s in s1])
+    a2 = np.array([int(s) for s in s2])
+    return len(a1) - np.sum(a1 == a2)
 
 if __name__ == '__main__':
     main()
