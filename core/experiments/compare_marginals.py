@@ -150,44 +150,41 @@ def compare_marginals(project_dir, subset, label, field_name, feature_defs, item
         #if index < 0:
         #    sys.exit("word not found in feature")
 
-
+        test_features_dir = dirs.dir_features(project_dir, subset)
         printv("loading test features", verbose)
+        items_to_use = non_train_items
         feature_list = []
-        feature_signatures = []
-        for feature_def in feature_defs:
-            printv(feature_def, verbose)
+        for sig in feature_signatures:
+            feature_def = features.FeatureDef(sig['name'], sig['min_df'], sig['max_fp'], sig['transform'])
+            printv("Loading %s" % feature_def, verbose)
             name = feature_def.name
-            feature = features.load_from_file(input_dir=features_dir, basename=name)
-            # take a subset of the rows, if requested
-            printv("Initial shape = (%d, %d)" % feature.get_shape(), verbose)
-            feature_items = feature.get_items()
-            feature_item_index = dict(zip(feature_items, range(len(feature_items))))
-            indices_to_use = [feature_item_index[i] for i in non_train_items]
-            if indices_to_use is not None:
-                printv("Taking subset of items", verbose)
-                feature = features.create_from_feature(feature, indices_to_use)
-                printv("New shape = (%d, %d)" % feature.get_shape(), verbose)
-            feature.threshold(feature_def.min_df)
-            if feature_def.transform == 'doc2vec':
-                word_vectors_prefix = os.path.join(features_dir, name + '_vecs')
-            else:
-                word_vectors_prefix = None
-            feature.transform(feature_def.transform, word_vectors_prefix=word_vectors_prefix, alpha=feature_def.alpha)
-            printv("Final shape = (%d, %d)" % feature.get_shape(), verbose)
-            feature_list.append(feature)
-            #if save_model:
-            #    feature_signature = features.get_feature_signature(feature_def, feature)
-            #    # save the location of the word vectors from training... (need a better solution for this eventually)
-            #    feature_signature['word_vectors_prefix'] = word_vectors_prefix
-            #    feature_signatures.append(feature_signature)
+            test_feature = features.load_from_file(input_dir=test_features_dir, basename=name)
+            printv("Initial shape = (%d, %d)" % test_feature.get_shape(), verbose)
 
-        #output_dir = os.path.join(dirs.dir_models(project_dir), model_name)
-        #if save_model:
-        #    fh.makedirs(output_dir)
-        #    fh.write_to_json(feature_signatures, os.path.join(output_dir, 'features.json'), sort_keys=False)
+            # use only a subset of the items, if given
+            if items_to_use is not None:
+                all_test_items = test_feature.get_items()
+                n_items = len(all_test_items)
+                item_index = dict(zip(all_test_items, range(n_items)))
+                indices_to_use = [item_index[i] for i in items_to_use]
+                printv("Taking subset of items", verbose)
+                test_feature = features.create_from_feature(test_feature, indices_to_use)
+                printv("New shape = (%d, %d)" % test_feature.get_shape(), verbose)
+            printv("Setting vocabulary", verbose)
+            test_feature.set_terms(sig['terms'])
+            idf = None
+            if feature_def.transform == 'tfidf':
+                idf = sig['idf']
+            word_vectors_prefix = sig['word_vectors_prefix']
+            test_feature.transform(feature_def.transform, idf=idf, word_vectors_prefix=word_vectors_prefix, alpha=feature_def.alpha)
+            printv("Final shape = (%d, %d)" % test_feature.get_shape(), verbose)
+            feature_list.append(test_feature)
+            #output_dir = os.path.join(dirs.dir_models(project_dir), model_name)
+            #if save_model:
+            #    fh.makedirs(output_dir)
+            #    fh.write_to_json(feature_signatures, os.path.join(output_dir, 'features.json'), sort_keys=False)
 
         features_concat = features.concatenate(feature_list)
-        col_names = features_concat.get_col_names()
 
         if features_concat.sparse:
             X_nontrain = features_concat.get_counts().tocsr()
