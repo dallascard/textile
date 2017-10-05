@@ -1,4 +1,5 @@
 import os
+import re
 import sys
 from optparse import OptionParser
 from collections import defaultdict
@@ -212,9 +213,10 @@ def compare_marginals(project_dir, subset, label, field_name, feature_defs, item
 
         print(len(train_counts), np.sum(list(train_counts.values())))
 
-        keys = list(train_counts.keys())
-        keys.sort()
-        for key in keys[:20]:
+        train_keys = list(train_counts.keys())
+        train_keys.sort()
+        key_sums = {key: np.sum([int(w) for w in key]) for key in train_keys}
+        for key in train_keys[:20]:
             print(key, train_counts[key], np.mean(positives[key]))
 
         nontrain_counts = defaultdict(int)
@@ -229,13 +231,12 @@ def compare_marginals(project_dir, subset, label, field_name, feature_defs, item
         keys = list(nontrain_counts.keys())
         keys.sort()
         for key in keys:
-            count = train_counts[key]
-            for j in range(len(target_words)):
-                if key[j] == '0':
-                    mod = key[:j] + '1' + key[j+1:]
-                else:
-                    mod = key[:j] + '0' + key[j+1:]
-                count += train_counts[mod]
+            key_sum = key_sums[key]
+            pattern = re.sub('1', '[0-1]', key)
+            matches = [key for key in train_keys if re.match(pattern, key) is not None and key_sums[key] > 0 and key_sum - key_sums[key] < 3]
+            values = [train_counts[key] for key in matches]
+            count = sum(values)
+            #lower = [key for key in keys if key_sum - key_sums[key] < 3 and key_sums[key] > 0]
             matching_counts.append(count)
 
         print(np.histogram(matching_counts))
