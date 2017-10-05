@@ -230,6 +230,12 @@ def compare_marginals(project_dir, subset, label, field_name, feature_defs, item
         keys.sort()
         for key in keys:
             count = train_counts[key]
+            for j in range(len(target_words)):
+                if key[j] == '0':
+                    mod = key[:j] + '1' + key[j+1:]
+                else:
+                    mod = key[:j] + '0' + key[j+1:]
+                count += train_counts[mod]
             matching_counts.append(count)
 
         print(np.histogram(matching_counts))
