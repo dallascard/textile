@@ -232,6 +232,7 @@ def compare_marginals(project_dir, subset, label, field_name, feature_defs, item
         matching_lower = []
         matching_counts = []
         matching_upper = []
+        total_counts = []
         keys = list(nontrain_counts.keys())
         keys.sort()
         for key in keys:
@@ -258,6 +259,8 @@ def compare_marginals(project_dir, subset, label, field_name, feature_defs, item
             count = sum(values)
             #lower = [key for key in keys if key_sum - key_sums[key] < 3 and key_sums[key] > 0]
             matching_upper.append(int(count))
+
+            total_counts.append(matching_counts[-1] + matching_lower[-1] + matching_upper[-1])
 
         print(np.histogram(matching_counts))
         print(sum([count == 0 for count in matching_counts]))
