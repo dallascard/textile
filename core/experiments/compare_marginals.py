@@ -329,7 +329,7 @@ def compare_marginals(project_dir, subset, label, field_name, feature_defs, max_
 
             #total_counts.append(matching_counts[-1] + matching_lower[-1] + matching_upper[-1])
             total_est_pos += nontrain_counts[key] * est_pos[key] / float(est_neg[key] + est_pos[key])
-            print(key, nontrain_counts[key], nontrain_pos[key] / float(nontrain_pos[key] + nontrain_neg[key]), observations[key], est_pos[key], est_pos[key] / float(est_pos[key] + est_neg[key]))
+            #print(key, nontrain_counts[key], nontrain_pos[key] / float(nontrain_pos[key] + nontrain_neg[key]), observations[key], est_pos[key], est_pos[key] / float(est_pos[key] + est_neg[key]))
 
         print(np.sum(list(nontrain_pos.values())) / float(np.sum(list(nontrain_pos.values())) + np.sum(list(nontrain_neg.values()))))
         print(np.sum(total_est_pos) / float(total))
