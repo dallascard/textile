@@ -235,9 +235,8 @@ def compare_marginals(project_dir, subset, label, field_name, feature_defs, item
             count = train_counts[key]
             matching_counts[count] += 1
 
-        #print(matching_counts)
-        print(np.bincount(list(matching_counts.values())))
-
+        for key, value in matching_counts.items():
+            print(key, value)
 
 
 
