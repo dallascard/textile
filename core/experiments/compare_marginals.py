@@ -284,7 +284,11 @@ def compare_marginals(project_dir, subset, label, field_name, feature_defs, max_
 
             est_neg[key] = 2 * (1 - nonzero_prob)
             est_pos[key] = 2 * nonzero_prob
+
             #matching_counts.append(train_counts[key])
+
+            est_neg[key] += train_neg[key] #* discount ** dist
+            est_pos[key] += train_pos[key] #* discount ** dist
 
             key_sum = key_sums[key]
 
