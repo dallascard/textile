@@ -192,7 +192,7 @@ def compare_marginals(project_dir, subset, label, field_name, feature_defs, item
 
         n_nontrain, _ = X_nontrain.shape
 
-        target_words = ['amendment', 'attorney', 'ban', 'benefits', 'case', 'civil', 'constitution', 'constitutional', 'court', 'courts', 'federal', 'filed', 'judge', 'judicial', 'law', 'laws', 'lawsuit', 'lawyer', 'legal', 'licenses', 'majority', 'right', 'ruled', 'ruling', 'suit', 'supreme']
+        target_words = ['amendment', 'attorney', 'ban', 'benefits', 'case', 'civil', 'constitution', 'constitutional', 'court', 'courts', 'decision', 'decisions', 'federal', 'filed', 'judge', 'judges', 'judicial', 'law', 'laws', 'lawsuit', 'lawyer', 'lawyers', 'legal', 'legalized', 'legality', 'licenses', 'majority', 'order', 'prop', 'right', 'ruled', 'ruling', 'senate', 'suit', 'supreme', 'unconstitutional']
         #target_words = ['court', 'law', 'judge', 'legal']
         print("n words = ", len(target_words))
 
