@@ -241,7 +241,7 @@ def compare_marginals(project_dir, subset, label, field_name, feature_defs, max_
         key_sums = defaultdict(int)
         for key in train_keys:
             key_sums[key] = np.sum([int(w) for w in key])
-        for key in train_keys[:20]:
+        for key in train_keys:
             print(key, observations[key], train_pos[key] / float(train_pos[key] + train_neg[key]))
 
         nontrain_counts = defaultdict(int)
