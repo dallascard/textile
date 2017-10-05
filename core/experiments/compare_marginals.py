@@ -236,14 +236,14 @@ def compare_marginals(project_dir, subset, label, field_name, feature_defs, item
         for key in keys[1:]:
             key_sum = key_sums[key]
             pattern = re.sub('1', '[0-1]', key)
-            matches = [key for key in train_keys if re.match(pattern, key) is not None and key_sums[key] > 0 and key_sum - key_sums[key] < 3]
+            matches = [key for key in train_keys if re.match(pattern, key) is not None and key_sums[key] > 0 and key_sum - key_sums[key] < 3 and key_sum - key_sums[key] > 0]
             values = [train_counts[key] for key in matches]
             count = sum(values)
             #lower = [key for key in keys if key_sum - key_sums[key] < 3 and key_sums[key] > 0]
             matching_lower.append(int(count))
 
             pattern = re.sub('0', '[0-1]', key)
-            matches = [key for key in train_keys if re.match(pattern, key) is not None and key_sums[key] - key_sum < 3]
+            matches = [key for key in train_keys if re.match(pattern, key) is not None and key_sums[key] - key_sum < 3 and key_sums[key] - key_sum > 0]
             values = [train_counts[key] for key in matches]
             count = sum(values)
             #lower = [key for key in keys if key_sum - key_sums[key] < 3 and key_sums[key] > 0]
