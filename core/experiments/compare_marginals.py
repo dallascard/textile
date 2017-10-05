@@ -255,6 +255,8 @@ def compare_marginals(project_dir, subset, label, field_name, feature_defs, max_
                 nontrain_neg[key] += Y_nontrain[i, 0]
                 nontrain_pos[key] += Y_nontrain[i, 1]
 
+        for key in nontrain_counts.keys():
+            print(key, nontrain_counts[key])
 
         print(len(nontrain_counts), np.sum(list(nontrain_counts.values())))
 
