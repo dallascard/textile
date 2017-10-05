@@ -203,9 +203,9 @@ def compare_marginals(project_dir, subset, label, field_name, feature_defs, max_
         print(X_nontrain.shape)
         print(Y_nontrain.shape)
 
-        target_words = ['amendment', 'attorney', 'ban', 'benefits', 'case', 'civil', 'constitution', 'constitutional', 'court', 'courts', 'decision', 'decisions', 'federal', 'filed', 'granted', 'judge', 'judges', 'judicial', 'law', 'laws', 'lawsuit', 'lawyer', 'lawyers', 'legal', 'legalized', 'legality', 'licenses', 'majority', 'order', 'prop', 'protections', 'right', 'ruled', 'ruling', 'senate', 'suit', 'sued', 'supreme', 'unconstitutional']
+        #target_words = ['amendment', 'attorney', 'ban', 'benefits', 'case', 'civil', 'constitution', 'constitutional', 'court', 'courts', 'decision', 'decisions', 'federal', 'filed', 'granted', 'judge', 'judges', 'judicial', 'law', 'laws', 'lawsuit', 'lawyer', 'lawyers', 'legal', 'legalized', 'legality', 'licenses', 'majority', 'order', 'prop', 'protections', 'right', 'ruled', 'ruling', 'senate', 'suit', 'sued', 'supreme', 'unconstitutional']
         #target_words = ['court', 'law', 'judge', 'legal', 'constitution']
-        #target_words = ['court', 'state', 'legal', 'supreme', 'courts', 'constitution', 'law', 'ruling']
+        target_words = ['court', 'state', 'legal', 'supreme', 'courts', 'constitution', 'law', 'ruling']
         print("n words = ", len(target_words))
 
         indices = [col_names.index(w) for w in target_words]
@@ -232,6 +232,7 @@ def compare_marginals(project_dir, subset, label, field_name, feature_defs, max_
                     nonzero_pos_sum += Y_train[i, 1]
 
         nonzero_prob = nonzero_pos_sum / float(nonzero_pos_sum + nonzero_neg_sum)
+        print(nonzero_prob)
 
         print("Distinct keys = ", len(observations), "; labeled items = ", np.sum(list(observations.values())))
 
@@ -321,7 +322,7 @@ def compare_marginals(project_dir, subset, label, field_name, feature_defs, max_
 
             #total_counts.append(matching_counts[-1] + matching_lower[-1] + matching_upper[-1])
             total_est_pos += nontrain_counts[key] * est_pos[key] / float(est_neg[key] + est_pos[key])
-            #print(key, nontrain_counts[key], nontrain_pos[key] / float(nontrain_pos[key] + nontrain_neg[key]), observations[key], est_pos[key], est_pos[key] / float(est_pos[key] + est_neg[key]))
+            print(key, nontrain_counts[key], nontrain_pos[key] / float(nontrain_pos[key] + nontrain_neg[key]), observations[key], est_pos[key], est_pos[key] / float(est_pos[key] + est_neg[key]))
 
 
         print(np.sum(list(nontrain_pos.values())) / float(np.sum(list(nontrain_pos.values())) + np.sum(list(nontrain_neg.values()))))
