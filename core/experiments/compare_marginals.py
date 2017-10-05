@@ -203,9 +203,9 @@ def compare_marginals(project_dir, subset, label, field_name, feature_defs, max_
         print(X_nontrain.shape)
         print(Y_nontrain.shape)
 
-        target_words = ['amendment', 'attorney', 'ban', 'benefits', 'case', 'civil', 'constitution', 'constitutional', 'court', 'courts', 'decision', 'decisions', 'federal', 'filed', 'granted', 'judge', 'judges', 'judicial', 'law', 'laws', 'lawsuit', 'lawyer', 'lawyers', 'legal', 'legalized', 'legality', 'licenses', 'majority', 'order', 'prop', 'protections', 'right', 'ruled', 'ruling', 'senate', 'suit', 'sued', 'supreme', 'unconstitutional']
+        #target_words = ['amendment', 'attorney', 'ban', 'benefits', 'case', 'civil', 'constitution', 'constitutional', 'court', 'courts', 'decision', 'decisions', 'federal', 'filed', 'granted', 'judge', 'judges', 'judicial', 'law', 'laws', 'lawsuit', 'lawyer', 'lawyers', 'legal', 'legalized', 'legality', 'licenses', 'majority', 'order', 'prop', 'protections', 'right', 'ruled', 'ruling', 'senate', 'suit', 'sued', 'supreme', 'unconstitutional']
         #target_words = ['court', 'law', 'judge', 'legal', 'constitution']
-        #target_words = ['court', 'state', 'legal', 'supreme', 'courts', 'constitution', 'law', 'ruling']
+        target_words = ['court', 'state', 'legal', 'supreme', 'courts', 'constitution', 'law', 'ruling', 'support', 'legislation', 'bill', 'democrats', 'president']
         print("n words = ", len(target_words))
 
         indices = [col_names.index(w) for w in target_words]
