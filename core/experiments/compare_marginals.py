@@ -192,8 +192,8 @@ def compare_marginals(project_dir, subset, label, field_name, feature_defs, item
 
         n_nontrain, _ = X_nontrain.shape
 
-        #target_words = ['amendment', 'attorney', 'ban', 'benefits', 'case', 'civil', 'constitution', 'constitutional', 'court', 'courts', 'federal', 'filed', 'judge', 'judicial', 'law', 'laws', 'lawsuit', 'lawyer', 'legal', 'licenses', 'majority', 'right', 'ruled', 'ruling', 'suit', 'supreme']
-        target_words = ['court', 'law', 'judge', 'legal']
+        target_words = ['amendment', 'attorney', 'ban', 'benefits', 'case', 'civil', 'constitution', 'constitutional', 'court', 'courts', 'federal', 'filed', 'judge', 'judicial', 'law', 'laws', 'lawsuit', 'lawyer', 'legal', 'licenses', 'majority', 'right', 'ruled', 'ruling', 'suit', 'supreme']
+        #target_words = ['court', 'law', 'judge', 'legal']
         print("n words = ", len(target_words))
 
         indices = [col_names.index(w) for w in target_words]
@@ -225,16 +225,14 @@ def compare_marginals(project_dir, subset, label, field_name, feature_defs, item
 
         print(len(nontrain_counts), np.sum(list(nontrain_counts.values())))
 
-        matching_counts = defaultdict(int)
+        matching_counts = []
         keys = list(nontrain_counts.keys())
         keys.sort()
         for key in keys:
             count = train_counts[key]
-            matching_counts[count] += 1
+            matching_counts.append(count)
 
-        for key, value in matching_counts.items():
-            print(key, value)
-
+        print(np.histogram(matching_counts))
 
 
 def prepare_data(X, Y, weights=None, predictions=None, loss='log'):
