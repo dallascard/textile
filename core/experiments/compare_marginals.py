@@ -215,9 +215,11 @@ def compare_marginals(project_dir, subset, label, field_name, feature_defs, item
 
         train_keys = list(train_counts.keys())
         train_keys.sort()
-        key_sums = {key: np.sum([int(w) for w in key]) for key in train_keys}
+        key_sums = defaultdict(int)
+        for key in train_keys:
+            key_sums[key] = np.sum([int(w) for w in key])
         for key in train_keys[:20]:
-            print(key, train_counts[key], np.mean(positives[key]))
+            print(key, train_counts[key], np.mean(positives[key]), key_sums[key])
 
         nontrain_counts = defaultdict(int)
         for i in range(n_nontrain):
@@ -227,7 +229,7 @@ def compare_marginals(project_dir, subset, label, field_name, feature_defs, item
 
         print(len(nontrain_counts), np.sum(list(nontrain_counts.values())))
 
-        matching_counts = []
+        matching_lower = []
         keys = list(nontrain_counts.keys())
         keys.sort()
         for key in keys:
@@ -237,9 +239,9 @@ def compare_marginals(project_dir, subset, label, field_name, feature_defs, item
             values = [train_counts[key] for key in matches]
             count = sum(values)
             #lower = [key for key in keys if key_sum - key_sums[key] < 3 and key_sums[key] > 0]
-            matching_counts.append(count)
+            matching_lower.append(count)
 
-        print(np.histogram(matching_counts))
+        print(np.histogram(matching_lower))
 
 
 def prepare_data(X, Y, weights=None, predictions=None, loss='log'):
