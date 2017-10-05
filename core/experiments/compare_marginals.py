@@ -208,7 +208,7 @@ def compare_marginals(project_dir, subset, label, field_name, feature_defs, item
             if np.sum(Y_train[i, :]) > 0:
                 ps_i = Y_train[i, :] / np.sum(Y_train[i, :])
                 p = ps_i[1]
-                vector = X_train[i, indices].todense().reshape(len(indices))
+                vector = X_train[i, indices].todense().reshape(len(indices), )
                 key = ''.join([str(int(s)) for s in vector.tolist()])
                 train_counts[key] += 1
                 positives[key].append(p)
@@ -222,7 +222,7 @@ def compare_marginals(project_dir, subset, label, field_name, feature_defs, item
 
         nontrain_counts = defaultdict(int)
         for i in range(n_nontrain):
-            vector = X_nontrain[i, indices].todense().reshape(len(indices))
+            vector = X_nontrain[i, indices].todense().reshape(len(indices), )
             key = ''.join([str(int(s)) for s in vector.tolist()])
             nontrain_counts[key] += 1
 
