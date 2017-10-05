@@ -255,7 +255,9 @@ def compare_marginals(project_dir, subset, label, field_name, feature_defs, max_
                 nontrain_neg[key] += Y_nontrain[i, 0]
                 nontrain_pos[key] += Y_nontrain[i, 1]
 
-        for key in nontrain_counts.keys():
+        keys = list(nontrain_counts.keys())
+        keys.sort()
+        for key in keys:
             print(key, nontrain_counts[key])
 
         print(len(nontrain_counts), np.sum(list(nontrain_counts.values())))
@@ -266,8 +268,8 @@ def compare_marginals(project_dir, subset, label, field_name, feature_defs, max_
         #matching_counts = []
         #matching_upper = []
         #total_counts = []
-        keys = list(nontrain_counts.keys())
-        keys.sort()
+        #keys = list(nontrain_counts.keys())
+        #keys.sort()
         for key in keys:
             if key not in key_sums:
                 key_sums[key] = np.sum([int(w) for w in key])
