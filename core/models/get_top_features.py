@@ -14,8 +14,8 @@ def main():
     parser = OptionParser(usage=usage)
     parser.add_option('-n', dest='n_terms', default=10,
                       help='Number of terms to display: default=%default')
-    parser.add_option('--model_type', dest='model_type', default=None,
-                      help='Model type [LR|MLP|ensemble]; None=auto-detect: default=%default')
+    #parser.add_option('--model_type', dest='model_type', default=None,
+    #                  help='Model type [LR|MLP|ensemble]; None=auto-detect: default=%default')
     #parser.add_option('--values', action="store_true", dest="values", default=False,
     #                  help='Print values: default=%default')
 
@@ -23,7 +23,12 @@ def main():
     model_dir = args[0]
 
     n_terms = int(options.n_terms)
-    default_model_type = options.model_type
+
+    top_coefs = get_top_features(model_dir, n_terms)
+    print(top_coefs)
+
+
+def get_top_features(model_dir, n_terms, default_model_type=None):
 
     basename = os.path.split(model_dir)[-1]
     model_files = glob.glob(os.path.join(model_dir, basename + '*_metadata.json'))
@@ -47,9 +52,9 @@ def main():
 
     coef_totals = [(coef, value) for coef, value in totals.items()]
     coef_totals = sorted(coef_totals, key=lambda x: abs(x[1]))
+    coef_totals.reverse()
 
-    for i in range(-n_terms-1, 0):
-        print(coef_totals[i])
+    return [term for term, coef in coef_totals[:n_terms]]
 
 
 if __name__ == '__main__':
