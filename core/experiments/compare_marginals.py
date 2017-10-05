@@ -272,15 +272,16 @@ def compare_marginals(project_dir, subset, label, field_name, feature_defs, max_
             if key not in key_sums:
                 key_sums[key] = np.sum([int(w) for w in key])
 
-        #est_neg[keys[0]] = train_neg[keys[0]]
-        #est_pos[keys[0]] = train_pos[keys[0]]
+        key = keys[0]
+        est_neg[key] = train_neg[key]
+        est_pos[key] = train_pos[key]
 
         total = np.sum(list(nontrain_counts.values()))
-        #total_est_pos = nontrain_counts[keys[0]] * est_pos[keys[0]] / float(est_neg[keys[0]] + est_pos[keys[0]])
+        total_est_pos = nontrain_counts[key] * est_pos[key] / float(est_neg[key] + est_pos[key])
 
-        total_est_neg = 0
-        total_est_pos = 0
-        for key in keys:
+        print(key, nontrain_counts[key], nontrain_pos[key] / float(nontrain_pos[key] + nontrain_neg[key]), observations[key], est_pos[key], est_pos[key] / float(est_pos[key] + est_neg[key]))
+
+        for key in keys[1:]:
 
             est_neg[key] = 2 * (1 - nonzero_prob)
             est_pos[key] = 2 * nonzero_prob
