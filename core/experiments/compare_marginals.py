@@ -258,8 +258,8 @@ def compare_marginals(project_dir, subset, label, field_name, feature_defs, max_
         total_est_neg = 0
         total_est_pos = 0
         for key in keys[1:]:
-            est_neg[key] = 1
-            est_pos[key] = 1
+            est_neg[key] = 2 * train_neg[key] / float(train_neg[key] + train_pos[key])
+            est_pos[key] = 2 * train_pos[key] / float(train_neg[key] + train_pos[key])
             #matching_counts.append(train_counts[key])
 
             key_sum = key_sums[key]
