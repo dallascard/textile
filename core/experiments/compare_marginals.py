@@ -255,6 +255,8 @@ def compare_marginals(project_dir, subset, label, field_name, feature_defs, max_
         est_neg[keys[0]] = train_neg[keys[0]]
         est_pos[keys[0]] = train_pos[keys[0]]
 
+        total_est_neg = 0
+        total_est_pos = 0
         for key in keys[1:]:
             est_neg[key] = 1
             est_pos[key] = 1
@@ -263,12 +265,18 @@ def compare_marginals(project_dir, subset, label, field_name, feature_defs, max_
             key_sum = key_sums[key]
             for train_key in train_keys:
                 dist = edit_distance(key, train_key)
-                if dist <= max_dist:
+                if dist <= max_dist and key_sum[train_key] > 0:
                     est_neg[key] += train_neg[key] * discount ** dist
                     est_pos[key] += train_pos[key] * discount ** dist
 
+            total_est_neg += est_neg[key] * nontrain_counts[key]
+            total_est_pos += est_pos[key] * nontrain_counts[key]
             print(key, nontrain_counts[key], nontrain_pos[key] / float(nontrain_pos[key] + nontrain_neg[key]), observations[key], est_pos[key], est_pos[key] / float(est_pos[key] + est_neg[key]))
 
+        print(np.sum(list(nontrain_pos.values())) / float(np.sum(list(nontrain_pos.values())) + np.sum(list(nontrain_neg.values()))))
+        print(np.sum(total_est_pos) / float(total_est_neg + total_est_pos))
+
+    """
             #for dist in range(1, max_dist+1):
             #    matches = [key for key in train_keys if re.match(pattern, key) is not None and key_sums[key] > 0 and 0 < key_sum - key_sums[key] < 4]
 
@@ -303,6 +311,8 @@ def compare_marginals(project_dir, subset, label, field_name, feature_defs, max_
         #print(sum([count == 0 for count in matching_upper]))
         #print(np.histogram(total_counts))
         #print(sum([count == 0 for count in total_counts]))
+    """
+
 
 def prepare_data(X, Y, weights=None, predictions=None, loss='log'):
     """
