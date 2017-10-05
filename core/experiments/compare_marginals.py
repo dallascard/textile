@@ -234,8 +234,8 @@ def compare_marginals(project_dir, subset, label, field_name, feature_defs, max_
                 vector = np.array(X_nontrain[i, indices].todense()).ravel()
                 key = ''.join([str(int(s)) for s in vector])
                 nontrain_counts[key] += 1
-                train_neg[key] += Y_train[i, 0]
-                train_pos[key] += Y_train[i, 1]
+                nontrain_neg[key] += Y_train[i, 0]
+                nontrain_pos[key] += Y_train[i, 1]
 
 
         print(len(nontrain_counts), np.sum(list(nontrain_counts.values())))
