@@ -221,10 +221,14 @@ def compare_marginals(project_dir, subset, label, field_name, feature_defs, item
 
         print(len(nontrain_counts))
 
+        matching_counts = defaultdict(int)
         keys = list(nontrain_counts.keys())
         keys.sort()
         for key in keys:
-            print(key, train_counts[key])
+            count = train_counts[key]
+            matching_counts[count] += 1
+
+        print(np.bincount(matching_counts))
 
 
 
