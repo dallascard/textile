@@ -214,7 +214,7 @@ def compare_marginals(project_dir, subset, label, field_name, feature_defs, item
 
         keys = list(train_counts.keys())
         keys.sort()
-        for key in keys:
+        for key in keys[:20]:
             print(key, train_counts[key], np.mean(positives[key]))
 
         nontrain_counts = defaultdict(int)
