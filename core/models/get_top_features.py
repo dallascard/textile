@@ -45,13 +45,13 @@ def main():
                 for coef, value in coefs:
                     totals[coef] += value
 
-        coef_totals = [(coef, value) for coef, value in totals.items()]
-        coef_totals = sorted(coef_totals, key=lambda x: x[1])
-        n_coefs = len(coef_totals)
-        for i in range(n_terms):
-            print(coef_totals[i])
-        for i in range(-n_terms, 0):
-            print(coef_totals[i])
+    coef_totals = [(coef, value) for coef, value in totals.items()]
+    coef_totals = sorted(coef_totals, key=lambda x: x[1])
+    n_coefs = len(coef_totals)
+    for i in range(n_terms):
+        print(coef_totals[i])
+    for i in range(-n_terms, 0):
+        print(coef_totals[i])
 
 
 if __name__ == '__main__':
