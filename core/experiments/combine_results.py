@@ -229,6 +229,8 @@ def main():
         venn_levels_list = [float(f) for f in fh.read_text(venn_levels_file)]
         venn_levels_vals.append(np.mean(venn_levels_list))
 
+        print(f, results.loc['target', 'estimate'] - results.loc['train', 'estimate'])
+
     #df = df / float(n_files)
     df['estimate'] = df['estimate'] / float(count)
     df['MAE'] = df['MAE'] / float(n_files)
