@@ -201,6 +201,7 @@ def compare_marginals(project_dir, subset, label, field_name, feature_defs, item
         print("n words = ", len(target_words))
 
         indices = [col_names.index(w) for w in target_words]
+        print(indices)
 
         train_counts = defaultdict(int)
         positives = defaultdict(list)
@@ -210,7 +211,7 @@ def compare_marginals(project_dir, subset, label, field_name, feature_defs, item
                 p = ps_i[1]
                 vector = X_train[i, indices].todense()
                 print(vector)
-                vector = np.reshape(vector, (len(vector), ))
+                vector = np.reshape(vector, (len(target_words), ))
                 print(vector)
                 key = ''.join([str(int(s)) for s in vector.tolist()])
                 train_counts[key] += 1
