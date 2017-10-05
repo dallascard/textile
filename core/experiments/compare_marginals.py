@@ -22,7 +22,7 @@ import matplotlib.pyplot as plt
 
 
 def main():
-    usage = "%prog project_dir subset config.json word"
+    usage = "%prog project_dir subset config.json field_name"
     parser = OptionParser(usage=usage)
     #parser.add_option('--model', dest='model', default='LR',
     #                  help='Model type [LR|MLP]: default=%default')
@@ -52,7 +52,7 @@ def main():
     project_dir = args[0]
     subset = args[1]
     config_file = args[2]
-    word = args[3]
+    field_name = args[3]
 
     label = options.label
     n_dev_folds = int(options.n_dev_folds)
@@ -66,337 +66,167 @@ def main():
     for f in config['feature_defs']:
         feature_defs.append(features.parse_feature_string(f))
 
-    compare_marginals(project_dir, subset, label, feature_defs, word, n_dev_folds=n_dev_folds, seed=seed)
+    compare_marginals(project_dir, subset, label, field_name, feature_defs, n_dev_folds=n_dev_folds, seed=seed)
 
 
-def compare_marginals(project_dir, subset, label, feature_defs, target_word, items_to_use=None, n_dev_folds=5, seed=None, verbose=True):
+def compare_marginals(project_dir, subset, label, field_name, feature_defs, items_to_use=None, n_dev_folds=5, seed=None, verbose=True):
 
-    label_dir = dirs.dir_labels(project_dir, subset)
-    labels_df = fh.read_csv_to_df(os.path.join(label_dir, label + '.csv'), index_col=0, header=0)
+    # load the file that contains metadata about each item
+    metadata_file = os.path.join(dirs.dir_subset(project_dir, subset), 'metadata.csv')
+    metadata = fh.read_csv_to_df(metadata_file)
+    field_vals = list(set(metadata[field_name].values))
+    field_vals.sort()
+    print("Splitting data according to :", field_vals)
 
-    features_dir = dirs.dir_features(project_dir, subset)
-    n_items, n_classes = labels_df.shape
+    # repeat the following value for each fold of the partition of interest (up to max_folds, if given)
+    for v_i, v in enumerate(field_vals):
+        print("\nTesting on %s" % v)
+        # first, split into training and non-train data based on the field of interest
+        train_selector = metadata[field_name] != v
+        train_subset = metadata[train_selector]
+        train_items = list(train_subset.index)
 
-    if items_to_use is not None:
-        item_index = dict(zip(labels_df.index, range(n_items)))
-        #indices_to_use = [item_index[i] for i in items_to_use]
-        labels_df = labels_df.loc[items_to_use]
+        non_train_selector = metadata[field_name] == v
+        non_train_subset = metadata[non_train_selector]
+        non_train_items = non_train_subset.index.tolist()
+
+        # load all labels
+        label_dir = dirs.dir_labels(project_dir, subset)
+        labels_df = fh.read_csv_to_df(os.path.join(label_dir, label + '.csv'), index_col=0, header=0)
         n_items, n_classes = labels_df.shape
-    else:
-        items_to_use = list(labels_df.index)
 
-    printv("loading features", verbose)
-    feature_list = []
-    feature_signatures = []
-    for feature_def in feature_defs:
-        printv(feature_def, verbose)
-        name = feature_def.name
-        feature = features.load_from_file(input_dir=features_dir, basename=name)
-        # take a subset of the rows, if requested
-        printv("Initial shape = (%d, %d)" % feature.get_shape(), verbose)
-        feature_items = feature.get_items()
-        feature_item_index = dict(zip(feature_items, range(len(feature_items))))
-        indices_to_use = [feature_item_index[i] for i in items_to_use]
-        if indices_to_use is not None:
-            printv("Taking subset of items", verbose)
-            feature = features.create_from_feature(feature, indices_to_use)
-            printv("New shape = (%d, %d)" % feature.get_shape(), verbose)
-        feature.threshold(feature_def.min_df)
-        if feature_def.transform == 'doc2vec':
-            word_vectors_prefix = os.path.join(features_dir, name + '_vecs')
-        else:
-            word_vectors_prefix = None
-        feature.transform(feature_def.transform, word_vectors_prefix=word_vectors_prefix, alpha=feature_def.alpha)
-        printv("Final shape = (%d, %d)" % feature.get_shape(), verbose)
-        feature_list.append(feature)
+
+        features_dir = dirs.dir_features(project_dir, subset)
+        n_items, n_classes = labels_df.shape
+
+        printv("loading training features", verbose)
+        feature_list = []
+        feature_signatures = []
+        for feature_def in feature_defs:
+            printv(feature_def, verbose)
+            name = feature_def.name
+            feature = features.load_from_file(input_dir=features_dir, basename=name)
+            # take a subset of the rows, if requested
+            printv("Initial shape = (%d, %d)" % feature.get_shape(), verbose)
+            feature_items = feature.get_items()
+            feature_item_index = dict(zip(feature_items, range(len(feature_items))))
+            indices_to_use = [feature_item_index[i] for i in train_items]
+            if indices_to_use is not None:
+                printv("Taking subset of items", verbose)
+                feature = features.create_from_feature(feature, indices_to_use)
+                printv("New shape = (%d, %d)" % feature.get_shape(), verbose)
+            feature.threshold(feature_def.min_df)
+            if feature_def.transform == 'doc2vec':
+                word_vectors_prefix = os.path.join(features_dir, name + '_vecs')
+            else:
+                word_vectors_prefix = None
+            feature.transform(feature_def.transform, word_vectors_prefix=word_vectors_prefix, alpha=feature_def.alpha)
+            printv("Final shape = (%d, %d)" % feature.get_shape(), verbose)
+            feature_list.append(feature)
+            #if save_model:
+            #    feature_signature = features.get_feature_signature(feature_def, feature)
+            #    # save the location of the word vectors from training... (need a better solution for this eventually)
+            #    feature_signature['word_vectors_prefix'] = word_vectors_prefix
+            #    feature_signatures.append(feature_signature)
+
+        #output_dir = os.path.join(dirs.dir_models(project_dir), model_name)
         #if save_model:
-        #    feature_signature = features.get_feature_signature(feature_def, feature)
-        #    # save the location of the word vectors from training... (need a better solution for this eventually)
-        #    feature_signature['word_vectors_prefix'] = word_vectors_prefix
-        #    feature_signatures.append(feature_signature)
+        #    fh.makedirs(output_dir)
+        #    fh.write_to_json(feature_signatures, os.path.join(output_dir, 'features.json'), sort_keys=False)
 
-    #output_dir = os.path.join(dirs.dir_models(project_dir), model_name)
-    #if save_model:
-    #    fh.makedirs(output_dir)
-    #    fh.write_to_json(feature_signatures, os.path.join(output_dir, 'features.json'), sort_keys=False)
+        features_concat = features.concatenate(feature_list)
+        col_names = features_concat.get_col_names()
 
-    features_concat = features.concatenate(feature_list)
-    col_names = features_concat.get_col_names()
+        if features_concat.sparse:
+            X_train = features_concat.get_counts().tocsr()
+        else:
+            X_train = features_concat.get_counts()
+        Y_train = labels_df.as_matrix()
 
-    if features_concat.sparse:
-        X = features_concat.get_counts().tocsr()
-    else:
-        X = features_concat.get_counts()
-    Y = labels_df.as_matrix()
+        n_train, n_features = X_train.shape
+        _, n_classes = Y_train.shape
 
-    n_items, n_features = X.shape
-    _, n_classes = Y.shape
-
-    #index = col_names.index(target_word)
-    #if index < 0:
-    #    sys.exit("word not found in feature")
+        #index = col_names.index(target_word)
+        #if index < 0:
+        #    sys.exit("word not found in feature")
 
 
-    target_words = ['court', 'legal', 'state', 'supreme', 'law']
+        printv("loading test features", verbose)
+        feature_list = []
+        feature_signatures = []
+        for feature_def in feature_defs:
+            printv(feature_def, verbose)
+            name = feature_def.name
+            feature = features.load_from_file(input_dir=features_dir, basename=name)
+            # take a subset of the rows, if requested
+            printv("Initial shape = (%d, %d)" % feature.get_shape(), verbose)
+            feature_items = feature.get_items()
+            feature_item_index = dict(zip(feature_items, range(len(feature_items))))
+            indices_to_use = [feature_item_index[i] for i in non_train_items]
+            if indices_to_use is not None:
+                printv("Taking subset of items", verbose)
+                feature = features.create_from_feature(feature, indices_to_use)
+                printv("New shape = (%d, %d)" % feature.get_shape(), verbose)
+            feature.threshold(feature_def.min_df)
+            if feature_def.transform == 'doc2vec':
+                word_vectors_prefix = os.path.join(features_dir, name + '_vecs')
+            else:
+                word_vectors_prefix = None
+            feature.transform(feature_def.transform, word_vectors_prefix=word_vectors_prefix, alpha=feature_def.alpha)
+            printv("Final shape = (%d, %d)" % feature.get_shape(), verbose)
+            feature_list.append(feature)
+            #if save_model:
+            #    feature_signature = features.get_feature_signature(feature_def, feature)
+            #    # save the location of the word vectors from training... (need a better solution for this eventually)
+            #    feature_signature['word_vectors_prefix'] = word_vectors_prefix
+            #    feature_signatures.append(feature_signature)
 
-    indices = [col_names.index(w) for w in target_words]
+        #output_dir = os.path.join(dirs.dir_models(project_dir), model_name)
+        #if save_model:
+        #    fh.makedirs(output_dir)
+        #    fh.write_to_json(feature_signatures, os.path.join(output_dir, 'features.json'), sort_keys=False)
 
-    seqs = itertools.product([0, 1], repeat=len(target_words))
+        features_concat = features.concatenate(feature_list)
+        col_names = features_concat.get_col_names()
 
-    ps0 = defaultdict(int)
-    ps0_values = []
+        if features_concat.sparse:
+            X_nontrain = features_concat.get_counts().tocsr()
+        else:
+            X_nontrain = features_concat.get_counts()
+        Y_nontrain  = labels_df.as_matrix()
 
-    seqs = sorted(seqs, key=lambda x: np.sum(x))
+        n_nontrain, _ = X_nontrain.shape
 
-    for seq in seqs:
-        ps1 = defaultdict(int)
-        ps1_values = []
-        for i in range(n_items):
-            if np.sum(Y[i, :]) > 0:
-                ps_i = Y[i, :] / np.sum(Y[i, :])
+        target_words = ['amendment', 'attorney', 'ban', 'benefits', 'case', 'civil', 'constitution', 'constitutional', 'court', 'courts', 'federal', 'filed', 'judge', 'judicial', 'law', 'laws', 'lawsuit', 'lawyer', 'legal', 'licenses', 'majority', 'right', 'ruled', 'ruling', 'suit', 'supreme']
+        print("n words = ", len(target_words))
+
+        indices = [col_names.index(w) for w in target_words]
+
+        train_counts = defaultdict(int)
+        for i in range(n_train):
+            if np.sum(Y_train[i, :]) > 0:
+                ps_i = Y_train[i, :] / np.sum(Y_train[i, :])
                 p = ps_i[1]
-                vector = X[i, indices].todense()
-                nonzero = np.nonzero(seq)
-                # first look for the case of all zeros
-                #if np.sum(seq) == 0 and np.sum(vector) == 0:
-                #    ps1[p] += 1
-                # then look for at least the required elements to be one
-                #elif (vector[0, nonzero] == 1).all():
-                if np.all(vector == seq):
-                    #print(vector[0, seq])
-                    ps1[p] += 1
-                    ps1_values.append(p)
+                vector = X_train[i, indices].todense()
+                key = [''.join([str(s) for s in vector.tolist()])]
+                train_counts[key] += 1
 
-        print(seq, len(ps1_values), np.mean(ps1_values))
-        #print(fit_beta2(ps1_values))
+        print(len(train_counts))
 
-    """
-    fig, ax = plt.subplots()
-    for key, value in ps1.items():
-        ax.plot([key, key], [0, value], 'k')
-        ax.scatter(key, value, c='k')
-    fig.savefig('ps1_counts.pdf')
+        nontrain_counts = defaultdict(int)
+        for i in range(n_nontrain):
+            vector = X_nontrain[i, indices].todense()
+            key = [''.join([str(s) for s in vector.tolist()])]
+            nontrain_counts[key] += 1
 
-    fig, ax = plt.subplots()
-    ps1_alpha, ps1_beta = fit_beta2(ps1_values)
-    x = np.linspace(0, 1, 1000)
-    y = stats.beta.pdf(x, ps1_alpha, ps1_beta)
-    ax.plot(x, y)
-    fig.savefig('ps1_beta.pdf')
+        print(len(nontrain_counts))
 
-    #weights = pd.DataFrame(1.0/labels_df.sum(axis=1), index=labels_df.index, columns=['inv_n_labels'])
-    # divide weights by the number of annotations that we have for each item
-    #weights = weights * 1.0/Y.sum(axis=1)
-    """
+        keys = list(nontrain_counts.keys())
+        keys.sort()
+        for key in keys:
+            print(key, train_counts[key])
 
 
-    """
-    print("Train feature matrix shape: (%d, %d)" % X.shape)
-
-    try:
-        assert np.array(features_concat.items == labels_df.index).all()
-    except AssertionError:
-        print("mismatch in items between labels and features")
-        print(features_concat.items[:5])
-        print(labels_df.index[:5])
-        sys.exit()
-
-    kfold = KFold(n_splits=n_dev_folds, shuffle=True)
-    if n_alphas > 1:
-        alpha_factor = np.power(alpha_max / alpha_min, 1.0/(n_alphas-1))
-        alphas = np.array(alpha_min * np.power(alpha_factor, np.arange(n_alphas)))
-    else:
-        alphas = [alpha_min]
-
-    mean_train_f1s = np.zeros(n_alphas)
-    mean_dev_f1s = np.zeros(n_alphas)
-    mean_dev_acc = np.zeros(n_alphas)
-    mean_dev_cal = np.zeros(n_alphas)  # track the calibration across the range of probabilities (using bins)
-    mean_dev_cal_overall = np.zeros(n_alphas)  # track the calibration overall
-    mean_model_size = np.zeros(n_alphas)
-
-    print("%s\t%s\t%s\t%s\t%s\t%s\t%s\t%s" % ('iter', 'alpha', 'size', 'f1_trn', 'f1_dev', 'acc_dev', 'dev_cal', 'dev_cal_overall'))
-
-    model = None
-    model_ensemble = None
-    if do_ensemble:
-        model_ensemble = ensemble.Ensemble(output_dir, model_name)
-
-    # store everything, as we'll want it after doing CV
-    alpha_models = {}
-    best_models = None
-
-    if model_type == 'LR':
-        for alpha_i, alpha in enumerate(alphas):
-            alpha_models[alpha] = []
-
-            fold = 1
-            for train_indices, dev_indices in kfold.split(X):
-                name = model_name + '_' + str(fold)
-                model = linear.LinearClassifier(alpha, loss_function=loss, penalty=penalty, fit_intercept=intercept, output_dir=output_dir, name=name, pos_label=pos_label)
-
-                X_train = X[train_indices, :]
-                Y_train = Y[train_indices, :]
-                X_dev = X[dev_indices, :]
-                Y_dev = Y[dev_indices, :]
-                w_train = weights[train_indices]
-                w_dev = weights[dev_indices]
-                X_train, Y_train, w_train = prepare_data(X_train, Y_train, w_train, loss=loss)
-                X_dev, Y_dev, w_dev = prepare_data(X_dev, Y_dev, w_dev, loss=loss)
-
-                model.fit(X_train, Y_train, train_weights=w_train, X_dev=X_dev, Y_dev=Y_dev, dev_weights=w_dev, col_names=col_names)
-
-                train_predictions = model.predict(X_train)
-                dev_predictions = model.predict(X_dev)
-                dev_pred_probs = model.predict_probs(X_dev)
-
-                alpha_models[alpha].append(model)
-                #print("Adding model to list for %.4f; new length = %d" % alpha, len(alpha_models[alpha]))
-
-                y_train_vector = np.argmax(Y_train, axis=1)
-                y_dev_vector = np.argmax(Y_dev, axis=1)
-
-                # internally compute the correction matrices
-                #alpha_acc_cfms.append(calibration.compute_acc(y_dev_vector, dev_predictions, n_classes, weights=w_dev))
-                #alpha_pvc_cfms.append(calibration.compute_pvc(y_dev_vector, dev_predictions, n_classes, weights=w_dev))
-
-                train_f1 = evaluation.f1_score(y_train_vector, train_predictions, n_classes, pos_label=pos_label, weights=w_train)
-                dev_f1 = evaluation.f1_score(y_dev_vector, dev_predictions, n_classes, pos_label=pos_label, weights=w_dev)
-                dev_acc = evaluation.acc_score(y_dev_vector, dev_predictions, n_classes, weights=w_dev)
-                dev_proportions = evaluation.compute_proportions(Y_dev, w_dev)
-                pred_proportions = evaluation.compute_proportions(dev_pred_probs, w_dev)
-                dev_cal_rmse_overall = evaluation.eval_proportions_rmse(dev_proportions, pred_proportions)
-                dev_cal_rmse = evaluation.evaluate_calibration_rmse(y_dev_vector, dev_pred_probs)
-
-                mean_train_f1s[alpha_i] += train_f1 / float(n_dev_folds)
-                mean_dev_f1s[alpha_i] += dev_f1 / float(n_dev_folds)
-                mean_dev_acc[alpha_i] += dev_acc / float(n_dev_folds)
-                mean_dev_cal[alpha_i] += dev_cal_rmse / float(n_dev_folds)
-                mean_dev_cal_overall[alpha_i] += dev_cal_rmse_overall / float(n_dev_folds)
-                mean_model_size[alpha_i] += model.get_model_size() / float(n_dev_folds)
-                fold += 1
-
-            print("%d\t%0.2f\t%.1f\t%0.3f\t%0.3f\t%0.3f\t%0.3f\t%0.3f" % (alpha_i, alpha, mean_model_size[alpha_i], mean_train_f1s[alpha_i], mean_dev_f1s[alpha_i], mean_dev_acc[alpha_i], mean_dev_cal[alpha_i], mean_dev_cal_overall[alpha_i]))
-
-        if objective == 'f1':
-            best_alpha_index = mean_dev_f1s.argmax()
-            print("Using best f1: %d" % best_alpha_index)
-        elif objective == 'calibration':
-            best_alpha_index = mean_dev_cal.argmin()
-            print("Using best calibration: %d" % best_alpha_index)
-        else:
-            sys.exit("Objective not recognized")
-        best_alpha = alphas[best_alpha_index]
-        best_dev_f1 = mean_dev_f1s[best_alpha_index]
-        best_dev_acc = mean_dev_acc[best_alpha_index]
-        best_dev_cal = mean_dev_cal[best_alpha_index]
-        best_dev_cal_overall = mean_dev_cal_overall[best_alpha_index]
-        print("Best: alpha = %.3f, dev f1 = %.3f, dev cal = %.3f, dev cal overall = %0.3f" % (best_alpha, best_dev_f1, best_dev_cal, best_dev_cal_overall))
-
-        best_models = alpha_models[best_alpha]
-        print("Number of best models = %d" % len(best_models))
-
-        if save_model:
-            print("Saving models")
-            for model in best_models:
-                model.save()
-
-        if do_ensemble:
-            printv("Retraining with best alpha for ensemble", verbose)
-            fold = 1
-            for model_i, model in enumerate(best_models):
-                name = model_name + '_' + str(fold)
-                model_ensemble.add_model(model, name)
-                fold += 1
-            full_model = model_ensemble
-            full_model.save()
-
-        else:
-            printv("Training full model", verbose)
-            full_model = linear.LinearClassifier(best_alpha, loss_function=loss, penalty=penalty, fit_intercept=intercept, output_dir=output_dir, name=model_name, pos_label=pos_label)
-            X, Y, w = prepare_data(X, Y, weights, loss=loss)
-            full_model.fit(X, Y, train_weights=w, col_names=col_names)
-            full_model.save()
-
-    elif model_type == 'MLP':
-        if dh > 0:
-            dimensions = [n_features, dh, n_classes]
-        else:
-            dimensions = [n_features, n_classes]
-        if not save_model:
-            output_dir = None
-
-        best_models = []
-        fold = 1
-        best_dev_f1 = 0.0
-        best_dev_acc = 0.0
-        best_dev_cal = 0.0
-        best_dev_cal_overall = 0.0
-        for train_indices, dev_indices in kfold.split(X):
-            print("Starting fold %d" % fold)
-            name = model_name + '_' + str(fold)
-            model = mlp.MLP(dimensions=dimensions, loss_function=loss, nonlinearity='tanh', penalty=penalty, reg_strength=0, output_dir=output_dir, name=name, pos_label=pos_label)
-
-            X_train = X[train_indices, :]
-            Y_train = Y[train_indices, :]
-            X_dev = X[dev_indices, :]
-            Y_dev = Y[dev_indices, :]
-            w_train = weights[train_indices]
-            w_dev = weights[dev_indices]
-            X_train, Y_train, w_train = prepare_data(X_train, Y_train, w_train, loss=loss)
-            X_dev, Y_dev, w_dev = prepare_data(X_dev, Y_dev, w_dev, loss=loss)
-
-            model.fit(X_train, Y_train, X_dev, Y_dev, train_weights=w_train, dev_weights=w_dev)
-            best_models.append(model)
-
-            dev_predictions = model.predict(X_dev)
-            dev_pred_probs = model.predict_probs(X_dev)
-
-            y_dev_vector = np.argmax(Y_dev, axis=1)
-
-            dev_f1 = evaluation.f1_score(y_dev_vector, dev_predictions, n_classes, pos_label=pos_label, weights=w_dev)
-            dev_acc = evaluation.acc_score(y_dev_vector, dev_predictions, n_classes, weights=w_dev)
-            dev_proportions = evaluation.compute_proportions(Y_dev, w_dev)
-            pred_proportions = evaluation.compute_proportions(dev_pred_probs, w_dev)
-            dev_cal_rmse_overall = evaluation.eval_proportions_rmse(dev_proportions, pred_proportions)
-            dev_cal_rmse = evaluation.evaluate_calibration_rmse(y_dev_vector, dev_pred_probs)
-
-            best_dev_f1 += dev_f1 / float(n_dev_folds)
-            best_dev_acc += dev_acc / float(n_dev_folds)
-            best_dev_cal += dev_cal_rmse / float(n_dev_folds)
-            best_dev_cal_overall += dev_cal_rmse_overall / float(n_dev_folds)
-
-            #acc_cfm = calibration.compute_acc(y_dev_vector, dev_predictions, n_classes, weights=w_dev)
-            #pvc_cfm = calibration.compute_pvc(y_dev_vector, dev_predictions, n_classes, weights=w_dev)
-            #best_acc_cfms.append(acc_cfm)
-            #best_pvc_cfms.append(pvc_cfm)
-            #dev_pred_info = np.vstack([Y_dev[:, 1], dev_pred_probs[:, 1], w_dev]).T
-            #matching_dev_results.append(dev_pred_info)
-
-            if save_model:
-                model.save()
-                #fh.save_dense(acc_cfm, os.path.join(output_dir, name + '_acc_cfm.npz'))
-                #fh.save_dense(pvc_cfm, os.path.join(output_dir, name + '_pvc_cfm.npz'))
-                #fh.save_dense(dev_pred_info, os.path.join(output_dir, name + '_dev_pred.npz'))
-
-            if do_ensemble:
-                model_ensemble.add_model(model, name)
-                fold += 1
-
-        if do_ensemble:
-            full_model = model_ensemble
-            if save_model:
-                full_model.save()
-        else:
-            full_model = None
-
-    else:
-        sys.exit("Model type %s not recognized" % model_type)
-
-    """
-
-
-    #return full_model, best_dev_f1, best_dev_acc, best_dev_cal, best_dev_cal_overall
 
 
 def prepare_data(X, Y, weights=None, predictions=None, loss='log'):
