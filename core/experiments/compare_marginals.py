@@ -257,8 +257,6 @@ def compare_marginals(project_dir, subset, label, field_name, feature_defs, max_
 
         keys = list(nontrain_counts.keys())
         keys.sort()
-        for key in keys:
-            print(key, nontrain_counts[key])
 
         print(len(nontrain_counts), np.sum(list(nontrain_counts.values())))
 
@@ -302,9 +300,9 @@ def compare_marginals(project_dir, subset, label, field_name, feature_defs, max_
             pattern = re.sub('1', '[0-1]', key)
             #print(key, pattern)
             matches = [key for key in train_keys if re.match(pattern, key) is not None and key_sums[key] > 0 and 0 < key_sum - key_sums[key] < 4]
-            for key in matches:
-                est_neg[key] += train_neg[key] #* discount ** dist
-                est_pos[key] += train_pos[key] #* discount ** dist
+            for match_key in matches:
+                est_neg[key] += train_neg[match_key] #* discount ** dist
+                est_pos[key] += train_pos[match_key] #* discount ** dist
 
             #print(matches)
             #values = [train_counts[key] for key in matches]
