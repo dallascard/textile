@@ -576,7 +576,7 @@ def train_brier_grouped(project_dir, reference_model_dir, model_name, subset, la
         for key in keys:
             if X_counts[key] >= 10:
                 vector = np.reshape(np.array([int(s) for s in key], dtype=int), (1, n_features))
-                pred_prob = model.predict_probs(vector)
+                pred_prob = model.predict_probs(vector, verbose=True)
                 print(key, vector, X_counts[key], key_probs[key], pred_prob[0, 1])
 
     if do_ensemble:

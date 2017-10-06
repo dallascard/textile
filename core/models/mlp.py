@@ -427,7 +427,7 @@ class tf_MLP:
 
         return predictions
 
-    def predict_probs(self, X):
+    def predict_probs(self, X, verbose=False):
         n_items, n_features = X.shape
 
         probs_list = []
@@ -441,7 +441,8 @@ class tf_MLP:
                 _, n_classes = probs.shape
                 probs_list.append(probs.reshape(n_classes, ))
 
-        print(probs_list)
+        if verbose:
+            print(probs_list)
         pred_probs = np.array(probs_list)
         return pred_probs
 
