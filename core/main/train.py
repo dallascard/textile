@@ -450,8 +450,6 @@ def train_brier_grouped(project_dir, model_name, subset, labels_df, feature_defs
     features_concat = features.concatenate(feature_list)
     col_names = features_concat.get_col_names()
 
-    print(col_names)
-
     X = features_concat.get_counts().tocsr()
     print(type(X))
     X = np.array(X.todense())
