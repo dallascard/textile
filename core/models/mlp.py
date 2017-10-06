@@ -441,6 +441,7 @@ class tf_MLP:
                 _, n_classes = probs.shape
                 probs_list.append(probs.reshape(n_classes, ))
 
+        print(probs_list)
         pred_probs = np.array(probs_list)
         return pred_probs
 
