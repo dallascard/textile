@@ -461,13 +461,13 @@ def train_mlp_restricted(project_dir, reference_model_dir, model_name, subset, l
     X_n_pos = defaultdict(int)
 
     for i in range(n_items):
-        vector = np.array(X[i].todense()).ravel()
+        vector = np.array(X[i, :]).ravel()
         key = ''.join([str(int(s)) for s in vector])
         X_counts[key] += np.sum(Y[i, :])
         X_n_pos[key] += Y[i, 1]
 
     for i in range(n_items):
-        vector = np.array(X[i].todense()).ravel()
+        vector = np.array(X[i, :]).ravel()
         key = ''.join([str(int(s)) for s in vector])
         ps[i, 0] = 1 - X_n_pos[key] / float(X_counts[key])
         ps[i, 1] = X_n_pos[key] / float(X_counts[key])
