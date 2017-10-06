@@ -339,7 +339,7 @@ class tf_MLP:
                 predictions = []
                 dev_probs = []
                 dev_loss = 0
-                """
+
                 for i in range(n_dev_items):
                     x_i = X_dev[i, :].reshape((1, n_features))
                     y_i = np.array(Y_dev[i], dtype=np.int32).reshape((1, n_classes))
@@ -350,7 +350,7 @@ class tf_MLP:
                     predictions.append(np.argmax(scores, axis=1))
                     dev_probs.append(sess.run(self.probs, feed_dict=feed_dict))
                     dev_loss += sess.run(self.loss, feed_dict=feed_dict)
-                """
+
                 if self.objective == 'f1':
                     dev_acc = evaluation.acc_score(np.argmax(Y_dev, axis=1), predictions, n_classes=n_classes, weights=w_dev)
                     dev_f1 = evaluation.f1_score(np.argmax(Y_dev, axis=1), predictions, n_classes=n_classes, pos_label=self.pos_label, weights=w_dev)
