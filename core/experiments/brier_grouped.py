@@ -100,7 +100,7 @@ def main():
     #calib_pred = options.calib_pred
     label = options.label
     field_val = options.field_val
-    vocab_size = int(options.vocab)
+    vocab_size = int(options.vocab_size)
     group = options.group
     #penalty = options.penalty
     #cshift = options.cshift
