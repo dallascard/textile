@@ -41,6 +41,8 @@ def main():
     #                  help='Use predictions on calibration items, rather than given labels: default=%default')
     parser.add_option('--label', dest='label', default='label',
                       help='Label name: default=%default')
+    parser.add_option('--field_val', dest='field_val', default=None,
+                      help='Part of partition to use as a target: default=%default')
     parser.add_option('--vocab', dest='vocab_size', default=20,
                       help='Vocab size: default=%default')
     parser.add_option('--group', action="store_true", dest="group", default=False,
@@ -97,6 +99,7 @@ def main():
     #exclude_calib = options.exclude_calib
     #calib_pred = options.calib_pred
     label = options.label
+    field_val = options.field_val
     vocab_size = int(options.vocab)
     group = options.group
     #penalty = options.penalty
@@ -119,10 +122,10 @@ def main():
 
     average = 'micro'
 
-    cross_train_and_eval(project_dir, reference_model_dir, subset, field_name, config_file, n_train, vocab_size, group, suffix, model_type, loss, do_ensemble, dh, label, n_dev_folds, repeats, verbose, average, objective, seed, min_epochs, max_epochs, early_stopping, tol, patience)
+    cross_train_and_eval(project_dir, reference_model_dir, subset, field_name, config_file, n_train, field_val, vocab_size, group, suffix, model_type, loss, do_ensemble, dh, label, n_dev_folds, repeats, verbose, average, objective, seed, min_epochs, max_epochs, early_stopping, tol, patience)
 
 
-def cross_train_and_eval(project_dir, reference_model_dir, subset, field_name, config_file, n_train=100, vocab_size=20, group_identical=False, suffix='', model_type='MLP', loss='log', do_ensemble=True, dh=100, label='label', n_dev_folds=5, repeats=1, verbose=False, average='micro', objective='calibration', seed=None, min_epochs=2, max_epochs=50, early_stopping=False, tol=1e-4, patience=8):
+def cross_train_and_eval(project_dir, reference_model_dir, subset, field_name, config_file, n_train=100, field_val=None, vocab_size=20, group_identical=False, suffix='', model_type='MLP', loss='log', do_ensemble=True, dh=100, label='label', n_dev_folds=5, repeats=1, verbose=False, average='micro', objective='calibration', seed=None, min_epochs=2, max_epochs=50, early_stopping=False, tol=1e-4, patience=8):
     n_calib = 0
     model_basename = subset + '_' + label + '_' + field_name + '_' + model_type
     if model_type == 'MLP':
@@ -146,6 +149,7 @@ def cross_train_and_eval(project_dir, reference_model_dir, subset, field_name, c
         'dh': dh,
         'do_ensemble': do_ensemble,
         'label': label,
+        'field_val': field_val,
         'n_dev_folds': n_dev_folds,
         'repeats': repeats,
         'average': average,
@@ -165,6 +169,10 @@ def cross_train_and_eval(project_dir, reference_model_dir, subset, field_name, c
     field_vals = list(set(metadata[field_name].values))
     field_vals.sort()
     print("Splitting data according to :", field_vals)
+    print(field_vals)
+
+    if field_val is not None:
+        field_vals = [field_val]
 
     # repeat the following value for each fold of the partition of interest (up to max_folds, if given)
     for v_i, v in enumerate(field_vals):
