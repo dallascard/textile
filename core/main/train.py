@@ -468,6 +468,13 @@ def train_brier_grouped(project_dir, reference_model_dir, model_name, subset, la
         X_counts[key] += np.sum(Y[i, :])
         X_n_pos[key] += Y[i, 1]
 
+    keys = list(X_counts.keys())
+    keys.sort()
+    key_probs = {}
+
+    for key in keys:
+        key_probs[key] = X_n_pos[key] / float(X_counts[key])
+
     for i in range(n_items):
         if group_identical:
             vector = np.array(X[i, :]).ravel()
@@ -497,7 +504,6 @@ def train_brier_grouped(project_dir, reference_model_dir, model_name, subset, la
     mean_dev_cal = np.zeros(n_alphas)  # track the calibration across the range of probabilities (using bins)
     mean_dev_cal_overall = np.zeros(n_alphas)  # track the calibration overall
     mean_model_size = np.zeros(n_alphas)
-
 
     model_ensemble = None
     if do_ensemble:
@@ -566,6 +572,12 @@ def train_brier_grouped(project_dir, reference_model_dir, model_name, subset, la
         if do_ensemble:
             model_ensemble.add_model(model, name)
             fold += 1
+
+        for key in X_counts.keys():
+            if X_counts[key] > 1:
+                vector = np.reshape(np.array([int(s) for s in key], dtype=int), (1, n_features))
+                pred_prob = model.predict_probs(vector)
+                print(key, X_counts[key], key_probs[key], pred_prob)
 
     if do_ensemble:
         full_model = model_ensemble
