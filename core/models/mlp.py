@@ -283,7 +283,7 @@ class tf_MLP:
         if loss_function == 'log':
             self.loss = tf.reduce_mean(tf.nn.softmax_cross_entropy_with_logits(labels=self.y, logits=self.scores_out))
         elif loss_function == 'brier':
-            self.loss = tf.reduce_mean(tf.square(self.y[1] - self.probs[1]))
+            self.loss = tf.reduce_mean(tf.square(self.y[:, 1] - self.probs[:, 1]))
         else:
             sys.exit("%s loss not supported" % loss_function)
 
@@ -330,7 +330,8 @@ class tf_MLP:
                     w_i = w_train[i]
 
                     feed_dict = {self.x: x_i, self.y: y_i, self.sample_weights: w_i}
-                    _, loss, scores = sess.run([self.train_step, self.loss, self.scores_out], feed_dict=feed_dict)
+                    _, loss, scores, probs_i = sess.run([self.train_step, self.loss, self.scores_out, self.probs], feed_dict=feed_dict)
+                    print(y_i, probs_i)
                     running_accuracy += (np.argmax(y_i, axis=1) == np.argmax(scores, axis=1)) * w_i
                     weight_sum += w_i
                     running_loss += loss * w_i
