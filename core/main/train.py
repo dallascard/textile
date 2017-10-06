@@ -443,8 +443,9 @@ def train_mlp_restricted(project_dir, reference_model_dir, model_name, subset, l
 
     print(col_names)
 
-    print(type(features_concat.get_counts()))
-    X = features_concat.get_counts().todense()
+    X = features_concat.get_counts()
+    X = X.todense()
+    #X = features_concat.get_counts().tocsr().todense()
     Y = labels_df.as_matrix()
 
     n_items, n_features = X.shape
