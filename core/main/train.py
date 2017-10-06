@@ -573,8 +573,8 @@ def train_brier_grouped(project_dir, reference_model_dir, model_name, subset, la
             model_ensemble.add_model(model, name)
             fold += 1
 
-        for key in X_counts.keys():
-            if X_counts[key] > 1:
+        for key in keys:
+            if X_counts[key] > 4:
                 vector = np.reshape(np.array([int(s) for s in key], dtype=int), (1, n_features))
                 pred_prob = model.predict_probs(vector)
                 print(key, X_counts[key], key_probs[key], pred_prob)
