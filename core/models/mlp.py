@@ -407,6 +407,9 @@ class tf_MLP:
                 if epoch >= max_epochs:
                     print("Max epochs exceeded. Done")
                     print("Best validation f1 = %0.4f" % best_dev_f1)
+                    if not early_stopping:
+                        print("Saving model")
+                        self.saver.save(sess, self.filename)
                     done = True
 
                 epoch += 1
