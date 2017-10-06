@@ -72,7 +72,7 @@ def main():
     n_calib = int(options.n_calib)
     #sample_labels = options.sample
     suffix = options.suffix
-    model_type = options.model
+    model_type = 'MLP'
     loss = 'brier'
     dh = int(options.dh)
     #alpha_min = float(options.alpha_min)
