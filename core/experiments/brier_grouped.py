@@ -25,8 +25,8 @@ def main():
     #                  help='Sample labels instead of averaging: default=%default')
     parser.add_option('--suffix', dest='suffix', default='',
                       help='Suffix to mdoel name: default=%default')
-    parser.add_option('--model', dest='model', default='MLP',
-                      help='Model type [SGD|MLP]: default=%default')
+    #parser.add_option('--model', dest='model', default='MLP',
+    #                  help='Model type [SGD|MLP]: default=%default')
     parser.add_option('--dh', dest='dh', default=0,
                       help='Hidden layer size for MLP [0 for None]: default=%default')
     #parser.add_option('--alpha_min', dest='alpha_min', default=0.01,
@@ -74,7 +74,7 @@ def main():
     n_calib = int(options.n_calib)
     #sample_labels = options.sample
     suffix = options.suffix
-    model_type = options.model
+    model_type = 'MLP'
     loss = 'brier'
     dh = int(options.dh)
     #alpha_min = float(options.alpha_min)
@@ -107,6 +107,9 @@ def cross_train_and_eval(project_dir, reference_model_dir, subset, field_name, c
     model_basename = subset + '_' + label + '_' + field_name + '_' + model_type
     if model_type == 'MLP':
         model_basename += '_' + str(dh)
+    print(n_train)
+    print(n_calib)
+    print(objective)
     model_basename += '_' + str(n_train) + '_' + str(n_calib) + '_' + objective
     model_basename += suffix
 
