@@ -65,10 +65,10 @@ def main():
 
     # basic LR f1: combining subset, label, repetitions, and pre/post date
     #basename = '*_' + model_type
-    basename = '*_' + label + '_*_' + model_type #+ '_' + penalty
+    basename = '*_' + label + '_*_' + model_type + '_' + penalty
     if model_type == 'MLP':
         basename += '_' + dh
-    basename += '_' + n_train + '_' + n_calib #+ '_' + objective
+    basename += '_' + n_train + '_' + n_calib + '_' + objective
     if model_type == 'MLP' and base == 'mfc':
         basename += '_??'
     if cshift is not None:
