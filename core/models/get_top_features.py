@@ -25,8 +25,8 @@ def main():
     n_terms = int(options.n_terms)
 
     top_features = get_top_features(model_dir, n_terms)
-    for feature in top_features:
-        print(feature)
+    for feature, weight in top_features:
+        print('%s\t%0.4f' % (feature, weight))
 
 
 def get_top_features(model_dir, n_terms, default_model_type=None):
@@ -55,7 +55,7 @@ def get_top_features(model_dir, n_terms, default_model_type=None):
     coef_totals = sorted(coef_totals, key=lambda x: abs(x[1]))
     coef_totals.reverse()
 
-    return [term for term, coef in coef_totals[:n_terms]]
+    return coef_totals[:n_terms]
 
 
 if __name__ == '__main__':
