@@ -575,11 +575,12 @@ def train_brier_grouped(project_dir, reference_model_dir, model_name, subset, la
             fold += 1
 
         #model2 = load_model.load_model(output_dir, name, 'MLP')
+        print('key' + ''.join([' '] * (n_features - 3)) + '\tcount\ttrue\tpred')
         for key in keys:
             if X_counts[key] >= 10:
                 vector = np.reshape(np.array([int(s) for s in key], dtype=int), (1, n_features))
                 pred_prob = model.predict_probs(vector, verbose=True)
-                print(key, vector, X_counts[key], key_probs[key], pred_prob[0, 1])
+                print('%s\t%d\t%0.3f\t%0.3f' % (key, X_counts[key], key_probs[key], pred_prob[0, 1]))
 
     if do_ensemble:
         full_model = model_ensemble
