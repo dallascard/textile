@@ -378,10 +378,10 @@ def train_model_with_labels(project_dir, model_type, loss, model_name, subset, l
     return full_model, best_dev_f1, best_dev_acc, best_dev_cal, best_dev_cal_overall
 
 
-def train_mlp_restricted(project_dir, reference_model_dir, model_name, subset, labels_df, feature_defs, weights_df=None,
-                            vocab_size=15, items_to_use=None, intercept=True, loss='brier',
-                            n_dev_folds=5, save_model=True, do_ensemble=False, dh=0, seed=None,
-                            pos_label=1, verbose=True):
+def train_brier_grouped(project_dir, reference_model_dir, model_name, subset, labels_df, feature_defs, weights_df=None,
+                        vocab_size=15, items_to_use=None, intercept=True, loss='brier',
+                        n_dev_folds=5, save_model=True, do_ensemble=False, dh=0, seed=None,
+                        pos_label=1, verbose=True):
 
     features_dir = dirs.dir_features(project_dir, subset)
     n_items, n_classes = labels_df.shape

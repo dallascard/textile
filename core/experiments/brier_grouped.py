@@ -41,6 +41,8 @@ def main():
     #                  help='Use predictions on calibration items, rather than given labels: default=%default')
     parser.add_option('--label', dest='label', default='label',
                       help='Label name: default=%default')
+    parser.add_option('--vocab', dest='vocab_size', default=20,
+                      help='Vocab size: default=%default')
     #parser.add_option('--cshift', dest='cshift', default=None,
     #                  help='Covariate shift method [None|classify]: default=%default')
     #parser.add_option('--penalty', dest='penalty', default='l2',
@@ -93,13 +95,14 @@ def main():
         np.random.seed(seed)
     #run_all = options.run_all
     verbose = options.verbose
+    vocab_size = int(options.vocab_size)
 
     average = 'micro'
 
-    cross_train_and_eval(project_dir, reference_model_dir, subset, field_name, config_file, n_calib, n_train, suffix, model_type, loss, do_ensemble, dh, label, n_dev_folds, repeats, verbose, average, seed, )
+    cross_train_and_eval(project_dir, reference_model_dir, subset, field_name, config_file, n_calib, n_train, vocab_size, suffix, model_type, loss, do_ensemble, dh, label, n_dev_folds, repeats, verbose, average, seed, )
 
 
-def cross_train_and_eval(project_dir, reference_model_dir, subset, field_name, config_file, n_calib=0, n_train=100, suffix='', model_type='LR', loss='log', do_ensemble=True, dh=100, label='label', n_dev_folds=5, repeats=1, verbose=False, average='micro', seed=None):
+def cross_train_and_eval(project_dir, reference_model_dir, subset, field_name, config_file, n_calib=0, n_train=100, vocab_size=20, suffix='', model_type='MLP', loss='log', do_ensemble=True, dh=100, label='label', n_dev_folds=5, repeats=1, verbose=False, average='micro', seed=None):
 
     model_basename = subset + '_' + label + '_' + field_name + '_' + model_type
     if model_type == 'MLP':
@@ -256,7 +259,7 @@ def cross_train_and_eval(project_dir, reference_model_dir, subset, field_name, c
             # Now train a model on the training data, saving the calibration data for calibration
 
             print("Training model on training data only")
-            model, dev_f1, dev_acc, dev_cal, dev_cal_overall = train.train_mlp_restricted(project_dir, reference_model_dir, model_name, subset, sampled_labels_df, feature_defs, weights_df=weights_df, items_to_use=train_items_r, intercept=True, n_dev_folds=n_dev_folds, do_ensemble=do_ensemble, dh=dh, seed=seed, pos_label=pos_label, verbose=verbose)
+            model, dev_f1, dev_acc, dev_cal, dev_cal_overall = train.train_brier_grouped(project_dir, reference_model_dir, model_name, subset, sampled_labels_df, feature_defs, weights_df=weights_df, vocab_size=vocab_size, items_to_use=train_items_r, intercept=True, n_dev_folds=n_dev_folds, do_ensemble=do_ensemble, dh=dh, seed=seed, pos_label=pos_label, verbose=verbose)
             results_df.loc['cross_val'] = [dev_f1, dev_acc, dev_cal, dev_cal_overall]
 
             # predict on calibration data
