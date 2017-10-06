@@ -513,9 +513,9 @@ def train_mlp_restricted(project_dir, reference_model_dir, model_name, subset, l
         model = mlp.MLP(dimensions=dimensions, loss_function='brier', nonlinearity='tanh', reg_strength=0, output_dir=output_dir, name=name, pos_label=pos_label)
 
         X_train = X[train_indices, :]
-        Y_train = ps[train_indices, :]
+        Y_train = ps[train_indices]
         X_dev = X[dev_indices, :]
-        Y_dev = ps[dev_indices, :]
+        Y_dev = ps[dev_indices]
         w_train = weights[train_indices]
         w_dev = weights[dev_indices]
         #X_train, Y_train, w_train = prepare_data(X_train, Y_train, w_train, loss='brier')
