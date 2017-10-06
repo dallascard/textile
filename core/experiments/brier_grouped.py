@@ -15,7 +15,7 @@ from core.util import dirs
 
 
 def main():
-    usage = "%prog project_dir subset cross_field_name config.json reference_model_dir"
+    usage = "%prog project_dir subset cross_field_name config.json"
     parser = OptionParser(usage=usage)
     parser.add_option('--n_train', dest='n_train', default=0,
                       help='Number of training instances to use (0 for all): default=%default')
@@ -43,8 +43,8 @@ def main():
                       help='Label name: default=%default')
     parser.add_option('--field_val', dest='field_val', default=None,
                       help='Part of partition to use as a target: default=%default')
-    parser.add_option('--vocab', dest='vocab_size', default=20,
-                      help='Vocab size: default=%default')
+    parser.add_option('--vocab_file', dest='vocab_file', default=None,
+                      help='json file specificying vocab to use: default=%default')
     parser.add_option('--group', action="store_true", dest="group", default=False,
                       help='Group instances with identical feature vectors: default=%default')
     #parser.add_option('--cshift', dest='cshift', default=None,
@@ -102,7 +102,8 @@ def main():
     #calib_pred = options.calib_pred
     label = options.label
     field_val = options.field_val
-    vocab_size = int(options.vocab_size)
+    #vocab_size = int(options.vocab_size)
+    vocab_file = options.vocab_file
     group = options.group
     #penalty = options.penalty
     #cshift = options.cshift
@@ -125,10 +126,10 @@ def main():
 
     average = 'micro'
 
-    cross_train_and_eval(project_dir, reference_model_dir, subset, field_name, config_file, n_train, field_val, vocab_size, group, suffix, model_type, loss, do_ensemble, dh, label, n_dev_folds, repeats, verbose, average, objective, seed, init_lr, min_epochs, max_epochs, early_stopping, tol, patience)
+    cross_train_and_eval(project_dir, reference_model_dir, subset, field_name, config_file, n_train, field_val, vocab_file, group, suffix, model_type, loss, do_ensemble, dh, label, n_dev_folds, repeats, verbose, average, objective, seed, init_lr, min_epochs, max_epochs, early_stopping, tol, patience)
 
 
-def cross_train_and_eval(project_dir, reference_model_dir, subset, field_name, config_file, n_train=100, field_val=None, vocab_size=20, group_identical=False, suffix='', model_type='MLP', loss='log', do_ensemble=True, dh=100, label='label', n_dev_folds=5, repeats=1, verbose=False, average='micro', objective='calibration', seed=None, init_lr=1e-4, min_epochs=2, max_epochs=50, early_stopping=False, tol=1e-4, patience=8):
+def cross_train_and_eval(project_dir, reference_model_dir, subset, field_name, config_file, n_train=100, field_val=None, vocab_file=None, group_identical=False, suffix='', model_type='MLP', loss='log', do_ensemble=True, dh=100, label='label', n_dev_folds=5, repeats=1, verbose=False, average='micro', objective='calibration', seed=None, init_lr=1e-4, min_epochs=2, max_epochs=50, early_stopping=False, tol=1e-4, patience=8):
     n_calib = 0
     model_basename = subset + '_' + label + '_' + field_name + '_' + model_type
     if model_type == 'MLP':
@@ -291,7 +292,7 @@ def cross_train_and_eval(project_dir, reference_model_dir, subset, field_name, c
             # Now train a model on the training data, saving the calibration data for calibration
 
             print("Training model on training data only")
-            model, dev_f1, dev_acc, dev_cal, dev_cal_overall = train.train_brier_grouped(project_dir, reference_model_dir, model_name, subset, sampled_labels_df, feature_defs, weights_df=weights_df, vocab_size=vocab_size, group_identical=group_identical, items_to_use=train_items_r, intercept=True, n_dev_folds=n_dev_folds, do_ensemble=do_ensemble, dh=dh, seed=seed, pos_label=pos_label, verbose=verbose, init_lr=init_lr, min_epochs=min_epochs, max_epochs=max_epochs, early_stopping=early_stopping, tol=tol, patience=patience)
+            model, dev_f1, dev_acc, dev_cal, dev_cal_overall = train.train_brier_grouped(project_dir, model_name, subset, sampled_labels_df, feature_defs, weights_df=weights_df, vocab_file=vocab_file, group_identical=group_identical, items_to_use=train_items_r, intercept=True, n_dev_folds=n_dev_folds, do_ensemble=do_ensemble, dh=dh, seed=seed, pos_label=pos_label, verbose=verbose, init_lr=init_lr, min_epochs=min_epochs, max_epochs=max_epochs, early_stopping=early_stopping, tol=tol, patience=patience)
             results_df.loc['cross_val'] = [dev_f1, dev_acc, dev_cal, dev_cal_overall]
 
             # predict on calibration data

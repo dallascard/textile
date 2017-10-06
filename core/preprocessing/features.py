@@ -31,7 +31,7 @@ class FeatureDef:
         self.alpha = alpha           # smoothing for doc2vec transform
 
     def __str__(self):
-        data = json.dumps({'name': self.name, 'min_df': self.min_df, 'max_fp': self.max_fp, 'transform': self.transform, 'alpha': self.alpha})
+        data = json.dumps({'name': self.name, 'min_df': self.min_df, 'max_fp': self.max_fp, 'transform': self.transform, 'alpha': self.alpha, 'vocab_file': self.vocab_file})
         return data
 
 

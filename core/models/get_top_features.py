@@ -24,8 +24,9 @@ def main():
 
     n_terms = int(options.n_terms)
 
-    top_coefs = get_top_features(model_dir, n_terms)
-    print(top_coefs)
+    top_features = get_top_features(model_dir, n_terms)
+    for feature in top_features:
+        print(feature)
 
 
 def get_top_features(model_dir, n_terms, default_model_type=None):

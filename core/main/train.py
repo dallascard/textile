@@ -380,8 +380,8 @@ def train_model_with_labels(project_dir, model_type, loss, model_name, subset, l
     return full_model, best_dev_f1, best_dev_acc, best_dev_cal, best_dev_cal_overall
 
 
-def train_brier_grouped(project_dir, reference_model_dir, model_name, subset, labels_df, feature_defs, weights_df=None,
-                        vocab_size=15, group_identical=False, items_to_use=None, intercept=True, loss='brier',
+def train_brier_grouped(project_dir, model_name, subset, labels_df, feature_defs, weights_df=None,
+                        vocab_file=None, group_identical=False, items_to_use=None, intercept=True, loss='brier',
                         n_dev_folds=5, save_model=True, do_ensemble=False, dh=0, seed=None, init_lr=1e-4,
                         min_epochs=2, max_epochs=50, tol=1e-4, early_stopping=False, patience=8,
                         pos_label=1, verbose=True):
@@ -402,7 +402,10 @@ def train_brier_grouped(project_dir, reference_model_dir, model_name, subset, la
     else:
         weights = np.ones(n_items)
 
-    top_features = get_top_features.get_top_features(reference_model_dir, vocab_size)
+    vocab = None
+    if vocab_file is not None:
+        vocab = fh.read_json(vocab_file)
+    #top_features = get_top_features.get_top_features(reference_model_dir, vocab_size)
 
     printv("loading features", verbose)
     feature_list = []
@@ -421,7 +424,8 @@ def train_brier_grouped(project_dir, reference_model_dir, model_name, subset, la
             feature = features.create_from_feature(feature, indices_to_use)
             printv("New shape = (%d, %d)" % feature.get_shape(), verbose)
         printv("Setting vocabulary", verbose)
-        feature.set_terms(top_features)
+        if vocab is not None:
+            feature.set_terms(vocab)
         #feature.threshold(feature_def.min_df)
         if feature_def.transform == 'doc2vec':
             word_vectors_prefix = os.path.join(features_dir, name + '_vecs')
