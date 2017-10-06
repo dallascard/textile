@@ -42,7 +42,7 @@ def load_and_predict(project_dir, model_type, model_name, test_subset, label_nam
     predict(project_dir, model, model_name, test_subset, label_name, items_to_use=items_to_use)
 
 
-def predict(project_dir, model, model_name, test_subset, label_name, items_to_use=None, verbose=False):
+def predict(project_dir, model, model_name, test_subset, label_name, items_to_use=None, verbose=False, force_dense=False):
 
     model_dir = os.path.join(dirs.dir_models(project_dir), model_name)
 
@@ -82,6 +82,9 @@ def predict(project_dir, model, model_name, test_subset, label_name, items_to_us
         X = features_concat.get_counts().tocsr()
     else:
         X = features_concat.get_counts()
+    if force_dense:
+        X = np.array(X.todense())
+
     print("Feature matrix shape: (%d, %d)" % X.shape)
 
     print("Doing prediction")
