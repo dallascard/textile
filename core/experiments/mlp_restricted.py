@@ -27,7 +27,7 @@ def main():
                       help='Suffix to mdoel name: default=%default')
     #parser.add_option('--model', dest='model', default='LR',
     #                  help='Model type [LR|MLP]: default=%default')
-    parser.add_option('--dh', dest='dh', default=100,
+    parser.add_option('--dh', dest='dh', default=0,
                       help='Hidden layer size for MLP [0 for None]: default=%default')
     #parser.add_option('--alpha_min', dest='alpha_min', default=0.01,
     #                  help='Minimum value of training hyperparameter: default=%default')
@@ -96,10 +96,10 @@ def main():
 
     average = 'micro'
 
-    cross_train_and_eval(project_dir, subset, field_name, config_file, n_calib, n_train, suffix, model_type, loss, do_ensemble, dh, label, n_dev_folds, repeats, verbose, average, seed, )
+    cross_train_and_eval(project_dir, reference_model_dir, subset, field_name, config_file, n_calib, n_train, suffix, model_type, loss, do_ensemble, dh, label, n_dev_folds, repeats, verbose, average, seed, )
 
 
-def cross_train_and_eval(project_dir, subset, field_name, config_file, n_calib=0, n_train=100, suffix='', model_type='LR', loss='log', do_ensemble=True, dh=100, label='label', n_dev_folds=5, repeats=1, verbose=False, average='micro', seed=None):
+def cross_train_and_eval(project_dir, reference_model_dir, subset, field_name, config_file, n_calib=0, n_train=100, suffix='', model_type='LR', loss='log', do_ensemble=True, dh=100, label='label', n_dev_folds=5, repeats=1, verbose=False, average='micro', seed=None):
 
     model_basename = subset + '_' + label + '_' + field_name + '_' + model_type
     if model_type == 'MLP':
@@ -255,9 +255,8 @@ def cross_train_and_eval(project_dir, subset, field_name, config_file, n_calib=0
 
             # Now train a model on the training data, saving the calibration data for calibration
 
-
             print("Training model on training data only")
-            model, dev_f1, dev_acc, dev_cal, dev_cal_overall = train.train_model_with_labels(project_dir, model_type, loss, model_name, subset, sampled_labels_df, feature_defs, weights_df=weights_df, items_to_use=train_items_r, penalty=penalty, alpha_min=alpha_min, alpha_max=alpha_max,  intercept=intercept, objective=objective, n_dev_folds=n_dev_folds, do_ensemble=do_ensemble, dh=dh, seed=seed, pos_label=pos_label, verbose=verbose)
+            model, dev_f1, dev_acc, dev_cal, dev_cal_overall = train.train_mlp_restricted(project_dir, reference_model_dir, model_name, subset, sampled_labels_df, feature_defs, weights_df=weights_df, items_to_use=train_items_r, intercept=True, n_dev_folds=n_dev_folds, do_ensemble=do_ensemble, dh=dh, seed=seed, pos_label=pos_label, verbose=verbose)
             results_df.loc['cross_val'] = [dev_f1, dev_acc, dev_cal, dev_cal_overall]
 
             # predict on calibration data
@@ -278,6 +277,7 @@ def cross_train_and_eval(project_dir, subset, field_name, config_file, n_calib=0
             test_cal_rmse_overall = evaluation.evaluate_calibration_rmse(true_test_vector, test_pred_probs_df.as_matrix(), min_bins=1, max_bins=1)
             results_df.loc['test'] = [f1_test, acc_test, test_cal_rmse, test_cal_rmse_overall]
             test_cc_estimate, test_pcc_estimate, test_acc_estimate_internal, test_pvc_estimate_internal = test_pred_proportions
+
 
             # predict on calibration and test data combined
             nontrain_predictions_df, nontrain_pred_probs_df, nontrain_pred_proportions = predict.predict(project_dir, model, model_name, subset, label, items_to_use=non_train_items, verbose=verbose)
@@ -306,6 +306,7 @@ def cross_train_and_eval(project_dir, subset, field_name, config_file, n_calib=0
                 output_df.loc['CC_nontrain_averaged'] = [n_non_train, 'train', 'nontrain', 'given', averaged_cc_estimate, averaged_cc_rmse, np.nan, np.nan, np.nan]
                 output_df.loc['PCC_nontrain_averaged'] = [n_non_train, 'train', 'nontrain', 'given', averaged_pcc_estimate, averaged_pcc_rmse, np.nan, np.nan, np.nan]
 
+            """
             nontrain_acc_rmse_internal = np.sqrt((nontrain_acc_estimate_internal[1] - target_estimate) ** 2)
             nontrain_pvc_rmse_internal = np.sqrt((nontrain_pvc_estimate_internal[1] - target_estimate) ** 2)
 
@@ -320,7 +321,6 @@ def cross_train_and_eval(project_dir, subset, field_name, config_file, n_calib=0
 
                 output_df.loc['ACC_internal_averaged'] = [n_non_train, 'train', 'nontrain', 'given', averaged_acc_estimate_internal, averaged_acc_rmse_internal, np.nan, np.nan, np.nan]
                 output_df.loc['PVC_internal_averaged'] = [n_non_train, 'train', 'nontrain', 'given', averaged_pvc_estimate_internal, averaged_pvc_rmse_internal, np.nan, np.nan, np.nan]
-
 
             # do calibration here using calibration data
             if n_calib > 0:
@@ -480,6 +480,7 @@ def cross_train_and_eval(project_dir, subset, field_name, config_file, n_calib=0
 
                     output_df.loc['Venn_internal_averaged_all'] = [n_non_train, 'nontest', 'nontrain', 'given', venn_estimate, venn_rmse, averaged_lower, averaged_upper, venn_contains_test]
 
+            """
             results_df.to_csv(os.path.join(dirs.dir_models(project_dir), model_name, 'accuracy.csv'))
             output_df.to_csv(os.path.join(dirs.dir_models(project_dir), model_name, 'results.csv'))
 

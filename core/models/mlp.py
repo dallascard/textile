@@ -233,7 +233,7 @@ def load_from_file(model_dir, name):
 class tf_MLP:
 
     # TODO: optionally add embedding layer, or embedding updates, or attention over embeddings
-    def __init__(self, dimensions, filename, loss_function='log', penalty=None, reg_strength=0.1, nonlinearity='tanh', seed=None, pos_label=1):
+    def __init__(self, dimensions, filename, loss_function='log', penalty=None, reg_strength=0.1, nonlinearity='tanh', seed=None, pos_label=1, objective='f1'):
         """
         Create an MLP in tensorflow, using a softmax on the final layer
         """
@@ -246,6 +246,7 @@ class tf_MLP:
         self.nonlinearity = nonlinearity
         self.filename = filename
         self.pos_label = pos_label
+        self.objective = objective
 
         # create model
         self.x = tf.placeholder(tf.float32, shape=[None, dimensions[0]])
@@ -298,6 +299,7 @@ class tf_MLP:
     def train(self, X_train, Y_train, X_dev, Y_dev, w_train=None, w_dev=None, display_period=500, min_epochs=10, patience=8):
         done = False
         best_dev_f1 = 0
+        best_neg_dev_loss = 0
 
         n_train_items, n_classes = Y_train.shape
         n_dev_items, _ = Y_dev.shape
@@ -335,6 +337,7 @@ class tf_MLP:
 
                 predictions = []
                 dev_probs = []
+                dev_loss = 0
                 for i in range(n_dev_items):
                     x_i = X_dev[i, :].reshape((1, n_features))
                     y_i = np.array(Y_dev[i], dtype=np.int32).reshape((1, n_classes))
@@ -344,20 +347,33 @@ class tf_MLP:
                     scores = sess.run(self.scores_out, feed_dict=feed_dict)
                     predictions.append(np.argmax(scores, axis=1))
                     dev_probs.append(sess.run(self.probs, feed_dict=feed_dict))
-                dev_acc = evaluation.acc_score(np.argmax(Y_dev, axis=1), predictions, n_classes=n_classes, weights=w_dev)
-                dev_f1 = evaluation.f1_score(np.argmax(Y_dev, axis=1), predictions, n_classes=n_classes, pos_label=self.pos_label, weights=w_dev)
-                dev_cal_rmse = evaluation.evaluate_calibration_rmse(Y_dev, dev_probs)
+                    dev_loss += sess.run(self.loss, feed_dict=feed_dict)
 
-                print("Validation accuracy: %0.4f; f1: %0.4f" % (dev_acc, dev_f1))
+                if self.objective == 'f1':
+                    dev_acc = evaluation.acc_score(np.argmax(Y_dev, axis=1), predictions, n_classes=n_classes, weights=w_dev)
+                    dev_f1 = evaluation.f1_score(np.argmax(Y_dev, axis=1), predictions, n_classes=n_classes, pos_label=self.pos_label, weights=w_dev)
+                    dev_cal_rmse = evaluation.evaluate_calibration_rmse(Y_dev, dev_probs)
+                    print("Validation accuracy: %0.4f; f1: %0.4f" % (dev_acc, dev_f1))
+                    if dev_f1 > best_dev_f1:
+                        print("New best validation f1; saving model")
+                        best_dev_f1 = dev_f1
+                        self.saver.save(sess, self.filename)
+                        epochs_since_improvement = 0
+                    else:
+                        epochs_since_improvement += 1
+                        print("Epochs since improvement = %d" % epochs_since_improvement)
 
-                if dev_f1 > best_dev_f1:
-                    print("New best validation f1; saving model")
-                    best_dev_f1 = dev_f1
-                    self.saver.save(sess, self.filename)
-                    epochs_since_improvement = 0
                 else:
-                    epochs_since_improvement += 1
-                    print("Epochs since improvement = %d" % epochs_since_improvement)
+                    neg_dev_loss = -dev_loss / float(n_dev_items)
+                    print("Neg dev loss: %0.4f" % neg_dev_loss)
+                    if neg_dev_loss > best_neg_dev_loss:
+                        print("New best dev loss; saving model")
+                        best_neg_dev_loss = neg_dev_loss
+                        self.saver.save(sess, self.filename)
+                        epochs_since_improvement = 0
+                    else:
+                        epochs_since_improvement += 1
+                        print("Epochs since improvement = %d" % epochs_since_improvement)
 
                 if epoch >= min_epochs and epochs_since_improvement > patience:
                     print("Patience exceeded. Done")
