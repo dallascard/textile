@@ -420,17 +420,17 @@ def train_mlp_restricted(project_dir, reference_model_dir, model_name, subset, l
         printv("Setting vocabulary", verbose)
         feature.set_terms(top_features)
         #feature.threshold(feature_def.min_df)
-        #if feature_def.transform == 'doc2vec':
-        #    word_vectors_prefix = os.path.join(features_dir, name + '_vecs')
-        #else:
-        #    word_vectors_prefix = None
-        #feature.transform(feature_def.transform, word_vectors_prefix=word_vectors_prefix, alpha=feature_def.alpha)
+        if feature_def.transform == 'doc2vec':
+            word_vectors_prefix = os.path.join(features_dir, name + '_vecs')
+        else:
+            word_vectors_prefix = None
+        feature.transform(feature_def.transform, word_vectors_prefix=word_vectors_prefix, alpha=feature_def.alpha)
         printv("Final shape = (%d, %d)" % feature.get_shape(), verbose)
         feature_list.append(feature)
         if save_model:
             feature_signature = features.get_feature_signature(feature_def, feature)
             # save the location of the word vectors from training... (need a better solution for this eventually)
-            #feature_signature['word_vectors_prefix'] = word_vectors_prefix
+            feature_signature['word_vectors_prefix'] = word_vectors_prefix
             feature_signatures.append(feature_signature)
 
     output_dir = os.path.join(dirs.dir_models(project_dir), model_name)
