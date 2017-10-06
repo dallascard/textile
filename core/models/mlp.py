@@ -375,6 +375,8 @@ class tf_MLP:
                         print("Epochs since improvement = %d" % epochs_since_improvement)
 
                 else:
+                    print(Y_dev)
+                    print(dev_probs)
                     dev_cal_rmse = evaluation.evaluate_calibration_rmse(Y_dev, dev_probs, soft_labels=True)
                     print("Dev loss: %0.4f" % dev_loss)
                     if dev_cal_rmse < best_dev_cal_rmse:
