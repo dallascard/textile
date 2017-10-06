@@ -300,7 +300,7 @@ class tf_MLP:
     def train(self, X_train, Y_train, X_dev, Y_dev, w_train=None, w_dev=None, display_period=500, min_epochs=10, patience=8):
         done = False
         best_dev_f1 = 0
-        best_neg_dev_loss = 0
+        best_dev_loss = np.inf
 
         n_train_items, n_classes = Y_train.shape
         n_dev_items, _ = Y_dev.shape
@@ -369,11 +369,11 @@ class tf_MLP:
                         print("Epochs since improvement = %d" % epochs_since_improvement)
 
                 else:
-                    neg_dev_loss = -dev_loss / float(n_dev_items)
-                    print("Neg dev loss: %0.4f" % neg_dev_loss)
-                    if neg_dev_loss > best_neg_dev_loss:
+                    dev_loss = dev_loss / float(n_dev_items)
+                    print("Dev loss: %0.4f" % dev_loss)
+                    if dev_loss < best_dev_loss:
                         print("New best dev loss; saving model")
-                        best_neg_dev_loss = neg_dev_loss
+                        best_dev_loss = dev_loss
                         self.saver.save(sess, self.filename)
                         epochs_since_improvement = 0
                     else:
