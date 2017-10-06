@@ -345,11 +345,14 @@ class tf_MLP:
                     y_i = np.array(Y_dev[i], dtype=np.int32).reshape((1, n_classes))
                     w_i = w_dev[i]
 
-                    feed_dict = {self.x: x_i, self.sample_weights: w_i}
-                    scores = sess.run(self.scores_out, feed_dict=feed_dict)
-                    predictions.append(np.argmax(scores, axis=1))
-                    dev_probs.append(sess.run(self.probs, feed_dict=feed_dict))
-                    dev_loss += sess.run(self.loss, feed_dict=feed_dict)
+                    if self.objective == 'f1':
+                        feed_dict = {self.x: x_i, self.sample_weights: w_i}
+                        scores = sess.run(self.scores_out, feed_dict=feed_dict)
+                        predictions.append(np.argmax(scores, axis=1))
+                        dev_probs.append(sess.run(self.probs, feed_dict=feed_dict))
+                    else:
+                        feed_dict = {self.x: x_i, self.y: y_i, self.sample_weights: w_i}
+                        dev_loss += sess.run(self.loss, feed_dict=feed_dict)
 
                 if self.objective == 'f1':
                     dev_acc = evaluation.acc_score(np.argmax(Y_dev, axis=1), predictions, n_classes=n_classes, weights=w_dev)
