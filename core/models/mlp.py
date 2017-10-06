@@ -338,7 +338,6 @@ class tf_MLP:
 
                     feed_dict = {self.x: x_i, self.y: y_i, self.sample_weights: w_i}
                     _, loss, scores, probs_i = sess.run([self.train_step, self.loss, self.scores_out, self.probs], feed_dict=feed_dict)
-                    print(y_i, probs_i)
                     running_accuracy += (np.argmax(y_i, axis=1) == np.argmax(scores, axis=1)) * w_i
                     weight_sum += w_i
                     running_loss += loss * w_i
