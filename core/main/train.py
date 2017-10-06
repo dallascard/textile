@@ -215,7 +215,7 @@ def train_model_with_labels(project_dir, model_type, loss, model_name, subset, l
                 X_train, Y_train, w_train = prepare_data(X_train, Y_train, w_train, loss=loss)
                 X_dev, Y_dev, w_dev = prepare_data(X_dev, Y_dev, w_dev, loss=loss)
 
-                model.fit(X_train, Y_train, train_weights=w_train, X_dev=X_dev, Y_dev=Y_dev, dev_weights=w_dev, col_names=col_names)
+                model.fit(X_train, Y_train, train_weights=w_train, X_dev=X_dev, Y_dev=Y_dev, dev_weights=w_dev, col_names=col_names, objective='calibration')
 
                 train_predictions = model.predict(X_train)
                 dev_predictions = model.predict(X_dev)

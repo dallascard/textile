@@ -13,7 +13,7 @@ class MLP:
     """
     Multilayer perceptron (representing documents as weighted sums of word vectors)
     """
-    def __init__(self, dimensions, loss_function='log', nonlinearity='tanh', penalty=None, reg_strength=1e-3, output_dir=None, name='model', pos_label=1):
+    def __init__(self, dimensions, loss_function='log', nonlinearity='tanh', penalty=None, reg_strength=1e-3, output_dir=None, name='model', pos_label=1, objective='f1'):
         self._model_type = 'MLP'
         self._dimensions = dimensions[:]
         self._loss_function = loss_function
@@ -27,6 +27,7 @@ class MLP:
             self._output_dir = output_dir
         self._name = name
         self._pos_label = pos_label
+        self._objective = objective
         self._train_f1 = None
         self._train_acc = None
         self._dev_f1 = None
@@ -74,7 +75,7 @@ class MLP:
             self._model = None
         else:
             model_filename = os.path.join(self._output_dir, self._name + '.ckpt')
-            self._model = tf_MLP(self._dimensions,  model_filename, loss_function=self._loss_function, penalty=self._penalty, reg_strength=self._reg_strength, nonlinearity=self._nonlinearity, seed=seed, pos_label=self._pos_label)
+            self._model = tf_MLP(self._dimensions,  model_filename, loss_function=self._loss_function, penalty=self._penalty, reg_strength=self._reg_strength, nonlinearity=self._nonlinearity, seed=seed, pos_label=self._pos_label, objective=self._objective)
             self._model.train(X_train, Y_train, X_dev, Y_dev, train_weights, dev_weights)
 
         # do a quick evaluation and store the results internally
