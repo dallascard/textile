@@ -44,7 +44,7 @@ def main():
     parser.add_option('--field_val', dest='field_val', default=None,
                       help='Part of partition to use as a target: default=%default')
     parser.add_option('--vocab_file', dest='vocab_file', default=None,
-                      help='json file specificying vocab to use: default=%default')
+                      help='text file specificying vocab to use: default=%default')
     parser.add_option('--group', action="store_true", dest="group", default=False,
                       help='Group instances with identical feature vectors: default=%default')
     #parser.add_option('--cshift', dest='cshift', default=None,

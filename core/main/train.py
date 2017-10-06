@@ -404,7 +404,8 @@ def train_brier_grouped(project_dir, model_name, subset, labels_df, feature_defs
 
     vocab = None
     if vocab_file is not None:
-        vocab = fh.read_json(vocab_file)
+        vocab = fh.read_text(vocab_file)
+    print(vocab)
     #top_features = get_top_features.get_top_features(reference_model_dir, vocab_size)
 
     printv("loading features", verbose)
