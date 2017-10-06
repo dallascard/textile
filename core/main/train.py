@@ -381,7 +381,7 @@ def train_model_with_labels(project_dir, model_type, loss, model_name, subset, l
 
 def train_brier_grouped(project_dir, reference_model_dir, model_name, subset, labels_df, feature_defs, weights_df=None,
                         vocab_size=15, group_identical=False, items_to_use=None, intercept=True, loss='brier',
-                        n_dev_folds=5, save_model=True, do_ensemble=False, dh=0, seed=None,
+                        n_dev_folds=5, save_model=True, do_ensemble=False, dh=0, seed=None, init_lr=1e-4,
                         min_epochs=2, max_epochs=50, tol=1e-4, early_stopping=False, patience=8,
                         pos_label=1, verbose=True):
 
@@ -482,7 +482,7 @@ def train_brier_grouped(project_dir, reference_model_dir, model_name, subset, la
             ps[i, 0] = 1 - X_n_pos[key] / float(X_counts[key])
             ps[i, 1] = X_n_pos[key] / float(X_counts[key])
         else:
-            ps[i, :] = Y[i, :] / np.sum(Y[i, :])
+            ps[i, :] = Y[i, :] / float(np.sum(Y[i, :]))
 
     print("Train feature matrix shape: (%d, %d)" % X.shape)
     print("Number of distinct feature vectors = %d" % len(X_counts))
@@ -536,7 +536,7 @@ def train_brier_grouped(project_dir, reference_model_dir, model_name, subset, la
         #X_train, Y_train, w_train = prepare_data(X_train, Y_train, w_train, loss='brier')
         #X_dev, Y_dev, w_dev = prepare_data(X_dev, Y_dev, w_dev, loss='brier')
 
-        model.fit(X_train, Y_train, X_dev, Y_dev, train_weights=w_train, dev_weights=w_dev, min_epochs=min_epochs, max_epochs=max_epochs, patience=patience, tol=tol, early_stopping=early_stopping)
+        model.fit(X_train, Y_train, X_dev, Y_dev, train_weights=w_train, dev_weights=w_dev, init_lr=init_lr, min_epochs=min_epochs, max_epochs=max_epochs, patience=patience, tol=tol, early_stopping=early_stopping)
         best_models.append(model)
 
         dev_predictions = model.predict(X_dev)

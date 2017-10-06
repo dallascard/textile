@@ -57,6 +57,8 @@ def main():
     #                  help='Objective for choosing best alpha [calibration|f1]: default=%default')
     parser.add_option('--n_dev_folds', dest='n_dev_folds', default=5,
                       help='Number of dev folds for tuning regularization: default=%default')
+    parser.add_option('--init_lr', dest='init_lr', default=1e-4,
+                      help='Initial learning rate: default=%default')
     parser.add_option('--min_epochs', dest='min_epochs', default=2,
                       help='Minimum number of epochs for optimization: default=%default')
     parser.add_option('--max_epochs', dest='max_epochs', default=50,
@@ -107,6 +109,7 @@ def main():
     objective = 'calibration'
     #intercept = not options.no_intercept
     n_dev_folds = int(options.n_dev_folds)
+    init_lr = float(options.init_lr)
     min_epochs = int(options.min_epochs)
     max_epochs = int(options.max_epochs)
     early_stopping = options.early_stopping
@@ -122,10 +125,10 @@ def main():
 
     average = 'micro'
 
-    cross_train_and_eval(project_dir, reference_model_dir, subset, field_name, config_file, n_train, field_val, vocab_size, group, suffix, model_type, loss, do_ensemble, dh, label, n_dev_folds, repeats, verbose, average, objective, seed, min_epochs, max_epochs, early_stopping, tol, patience)
+    cross_train_and_eval(project_dir, reference_model_dir, subset, field_name, config_file, n_train, field_val, vocab_size, group, suffix, model_type, loss, do_ensemble, dh, label, n_dev_folds, repeats, verbose, average, objective, seed, init_lr, min_epochs, max_epochs, early_stopping, tol, patience)
 
 
-def cross_train_and_eval(project_dir, reference_model_dir, subset, field_name, config_file, n_train=100, field_val=None, vocab_size=20, group_identical=False, suffix='', model_type='MLP', loss='log', do_ensemble=True, dh=100, label='label', n_dev_folds=5, repeats=1, verbose=False, average='micro', objective='calibration', seed=None, min_epochs=2, max_epochs=50, early_stopping=False, tol=1e-4, patience=8):
+def cross_train_and_eval(project_dir, reference_model_dir, subset, field_name, config_file, n_train=100, field_val=None, vocab_size=20, group_identical=False, suffix='', model_type='MLP', loss='log', do_ensemble=True, dh=100, label='label', n_dev_folds=5, repeats=1, verbose=False, average='micro', objective='calibration', seed=None, init_lr=1e-4, min_epochs=2, max_epochs=50, early_stopping=False, tol=1e-4, patience=8):
     n_calib = 0
     model_basename = subset + '_' + label + '_' + field_name + '_' + model_type
     if model_type == 'MLP':
@@ -288,7 +291,7 @@ def cross_train_and_eval(project_dir, reference_model_dir, subset, field_name, c
             # Now train a model on the training data, saving the calibration data for calibration
 
             print("Training model on training data only")
-            model, dev_f1, dev_acc, dev_cal, dev_cal_overall = train.train_brier_grouped(project_dir, reference_model_dir, model_name, subset, sampled_labels_df, feature_defs, weights_df=weights_df, vocab_size=vocab_size, group_identical=group_identical, items_to_use=train_items_r, intercept=True, n_dev_folds=n_dev_folds, do_ensemble=do_ensemble, dh=dh, seed=seed, pos_label=pos_label, verbose=verbose, min_epochs=min_epochs, max_epochs=max_epochs, early_stopping=early_stopping, tol=tol, patience=patience)
+            model, dev_f1, dev_acc, dev_cal, dev_cal_overall = train.train_brier_grouped(project_dir, reference_model_dir, model_name, subset, sampled_labels_df, feature_defs, weights_df=weights_df, vocab_size=vocab_size, group_identical=group_identical, items_to_use=train_items_r, intercept=True, n_dev_folds=n_dev_folds, do_ensemble=do_ensemble, dh=dh, seed=seed, pos_label=pos_label, verbose=verbose, init_lr=init_lr, min_epochs=min_epochs, max_epochs=max_epochs, early_stopping=early_stopping, tol=tol, patience=patience)
             results_df.loc['cross_val'] = [dev_f1, dev_acc, dev_cal, dev_cal_overall]
 
             # predict on calibration data

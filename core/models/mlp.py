@@ -55,7 +55,7 @@ class MLP:
         else:
             self._model = model
 
-    def fit(self, X_train, Y_train, X_dev, Y_dev, train_weights=None, dev_weights=None, seed=None, min_epochs=2, max_epochs=100, patience=8, tol=1e-4, early_stopping=True, **kwargs):
+    def fit(self, X_train, Y_train, X_dev, Y_dev, train_weights=None, dev_weights=None, seed=None, init_lr=1e-4, min_epochs=2, max_epochs=100, patience=8, tol=1e-4, early_stopping=True, **kwargs):
         """
         Fit a classifier to data
         """
@@ -75,7 +75,7 @@ class MLP:
             self._model = None
         else:
             model_filename = os.path.join(self._output_dir, self._name + '.ckpt')
-            self._model = tf_MLP(self._dimensions,  model_filename, loss_function=self._loss_function, penalty=self._penalty, reg_strength=self._reg_strength, nonlinearity=self._nonlinearity, seed=seed, pos_label=self._pos_label, objective=self._objective)
+            self._model = tf_MLP(self._dimensions,  model_filename, loss_function=self._loss_function, penalty=self._penalty, reg_strength=self._reg_strength, nonlinearity=self._nonlinearity, seed=seed, pos_label=self._pos_label, objective=self._objective, init_lr=init_lr)
             self._model.train(X_train, Y_train, X_dev, Y_dev, train_weights, dev_weights, min_epochs=min_epochs, max_epochs=max_epochs, patience=patience, tol=tol, early_stopping=early_stopping)
 
         # do a quick evaluation and store the results internally
@@ -234,7 +234,7 @@ def load_from_file(model_dir, name):
 class tf_MLP:
 
     # TODO: optionally add embedding layer, or embedding updates, or attention over embeddings
-    def __init__(self, dimensions, filename, loss_function='log', penalty=None, reg_strength=0.1, nonlinearity='tanh', seed=None, pos_label=1, objective='f1'):
+    def __init__(self, dimensions, filename, loss_function='log', penalty=None, reg_strength=0.1, nonlinearity='tanh', seed=None, pos_label=1, objective='f1', init_lr=1e-4):
         """
         Create an MLP in tensorflow, using a softmax on the final layer
         """
@@ -293,7 +293,7 @@ class tf_MLP:
         elif penalty == 'l1':
             sys.exit('L1 regularization not supported')
 
-        self.train_step = tf.train.AdamOptimizer(1e-4).minimize(self.loss * self.sample_weights)
+        self.train_step = tf.train.AdamOptimizer(init_lr).minimize(self.loss * self.sample_weights)
         self.initializer = tf.global_variables_initializer()
         self.saver = tf.train.Saver()
 
