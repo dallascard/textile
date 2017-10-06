@@ -85,7 +85,7 @@ def main():
     label = options.label
     #penalty = options.penalty
     #cshift = options.cshift
-    #objective = options.objective
+    #objective = 'calibration'
     #intercept = not options.no_intercept
     n_dev_folds = int(options.n_dev_folds)
     repeats = int(options.repeats)
@@ -102,12 +102,12 @@ def main():
     cross_train_and_eval(project_dir, reference_model_dir, subset, field_name, config_file, n_calib, n_train, vocab_size, suffix, model_type, loss, do_ensemble, dh, label, n_dev_folds, repeats, verbose, average, seed, )
 
 
-def cross_train_and_eval(project_dir, reference_model_dir, subset, field_name, config_file, n_calib=0, n_train=100, vocab_size=20, suffix='', model_type='MLP', loss='log', do_ensemble=True, dh=100, label='label', n_dev_folds=5, repeats=1, verbose=False, average='micro', seed=None):
+def cross_train_and_eval(project_dir, reference_model_dir, subset, field_name, config_file, n_calib=0, n_train=100, vocab_size=20, suffix='', model_type='MLP', loss='log', do_ensemble=True, dh=100, label='label', n_dev_folds=5, repeats=1, verbose=False, average='micro', objective='calibration', seed=None):
 
     model_basename = subset + '_' + label + '_' + field_name + '_' + model_type
     if model_type == 'MLP':
         model_basename += '_' + str(dh)
-    model_basename +=  '_' + str(n_train) + '_' + str(n_calib)
+    model_basename += '_' + str(n_train) + '_' + str(n_calib) + '_' + objective
     model_basename += suffix
 
     # save the experiment parameters to a log file
@@ -128,7 +128,8 @@ def cross_train_and_eval(project_dir, reference_model_dir, subset, field_name, c
         'label': label,
         'n_dev_folds': n_dev_folds,
         'repeats': repeats,
-        'average': average
+        'average': average,
+        'objective': objective,
     }
     fh.write_to_json(log, logfile)
 

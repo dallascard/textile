@@ -68,9 +68,9 @@ def main():
     basename = '*_' + label + '_*_' + model_type + '_' + penalty
     if model_type == 'MLP':
         basename += '_' + dh
-    basename += '_' + n_train + '_' + n_calib + '_' + objective
+    basename += '_' + n_train + '_' + n_calib #+ '_' + objective
     if model_type == 'MLP' and base == 'mfc':
-        basename += '_r?'
+        basename += '_??'
     if cshift is not None:
         basename += '_cshift'
     if sample_labels:

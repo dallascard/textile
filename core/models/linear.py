@@ -86,6 +86,7 @@ class LinearClassifier:
             self._col_names = range(n_features)
 
         # if there is only a single type of label, make a default prediction
+        # NOTE: this assumes that all items are singly labeled!
         train_labels = np.argmax(Y_train, axis=1).reshape((n_train_items, ))
         if np.max(self._train_proportions) == 1.0:
             self._model = None
