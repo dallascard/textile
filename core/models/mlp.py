@@ -342,7 +342,7 @@ class tf_MLP:
                 prev_train_loss = running_loss
                 predictions = []
                 dev_probs = np.zeros([n_dev_items, 2])
-                dev_loss = 0
+                print('epoch = %d, running loss = %.4f, delta = %.4f' % (epoch, running_loss, delta))
 
                 for i in range(n_dev_items):
                     x_i = X_dev[i, :].reshape((1, n_features))
