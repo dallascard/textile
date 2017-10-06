@@ -341,7 +341,7 @@ class tf_MLP:
                 delta = np.abs(running_loss - prev_train_loss) / prev_train_loss
                 prev_train_loss = running_loss
                 predictions = []
-                dev_probs = []
+                dev_probs = np.zeros([n_dev_items, 2])
                 dev_loss = 0
 
                 for i in range(n_dev_items):
@@ -352,7 +352,7 @@ class tf_MLP:
                     feed_dict = {self.x: x_i, self.sample_weights: w_i}
                     scores = sess.run(self.scores_out, feed_dict=feed_dict)
                     predictions.append(np.argmax(scores, axis=1))
-                    dev_probs.append(sess.run(self.probs, feed_dict=feed_dict))
+                    dev_probs[i, :] = sess.run(self.probs, feed_dict=feed_dict)
 
                 if self.objective == 'f1':
                     dev_acc = evaluation.acc_score(np.argmax(Y_dev, axis=1), predictions, n_classes=n_classes, weights=w_dev)
@@ -371,8 +371,8 @@ class tf_MLP:
                         print("Epochs since improvement = %d" % epochs_since_improvement)
 
                 else:
-                    print(dev_probs)
-                    dev_cal_rmse = evaluation.evaluate_calibration_rmse(Y_dev, np.array(dev_probs), soft_labels=True)
+                    #print(dev_probs)
+                    dev_cal_rmse = evaluation.evaluate_calibration_rmse(Y_dev, dev_probs, soft_labels=True)
                     print("Dev RMSE: %0.4f" % dev_cal_rmse)
                     if dev_cal_rmse < best_dev_cal_rmse:
                         print("New best dev RMSE")
