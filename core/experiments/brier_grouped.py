@@ -19,8 +19,8 @@ def main():
     parser = OptionParser(usage=usage)
     parser.add_option('--n_train', dest='n_train', default=0,
                       help='Number of training instances to use (0 for all): default=%default')
-    parser.add_option('--n_calib', dest='n_calib', default=0,
-                      help='Number of test instances to use for calibration: default=%default')
+    #parser.add_option('--n_calib', dest='n_calib', default=0,
+    #                  help='Number of test instances to use for calibration: default=%default')
     #parser.add_option('--sample', action="store_true", dest="sample", default=False,
     #                  help='Sample labels instead of averaging: default=%default')
     parser.add_option('--suffix', dest='suffix', default='',
@@ -43,6 +43,8 @@ def main():
                       help='Label name: default=%default')
     parser.add_option('--vocab', dest='vocab_size', default=20,
                       help='Vocab size: default=%default')
+    parser.add_option('--group', action="store_true", dest="group", default=False,
+                      help='Group instances with identical feature vectors: default=%default')
     #parser.add_option('--cshift', dest='cshift', default=None,
     #                  help='Covariate shift method [None|classify]: default=%default')
     #parser.add_option('--penalty', dest='penalty', default='l2',
@@ -53,6 +55,16 @@ def main():
     #                  help='Objective for choosing best alpha [calibration|f1]: default=%default')
     parser.add_option('--n_dev_folds', dest='n_dev_folds', default=5,
                       help='Number of dev folds for tuning regularization: default=%default')
+    parser.add_option('--min_epochs', dest='min_epochs', default=2,
+                      help='Minimum number of epochs for optimization: default=%default')
+    parser.add_option('--max_epochs', dest='max_epochs', default=50,
+                      help='Maximum number of epochs for optimization: default=%default')
+    parser.add_option('--early_stopping', action="store_true", dest="early_stopping", default=False,
+                      help='Use early stopping: default=%default')
+    parser.add_option('--tol', dest='tol', default=1e-4,
+                      help='Tolerance for convergence (if not using early stopping): default=%default')
+    parser.add_option('--patience', dest='patience', default=8,
+                      help='Patience for dev performance to improve (if not using early stopping): default=%default')
     parser.add_option('--repeats', dest='repeats', default=3,
                       help='Number of repeats with random calibration/test splits: default=%default')
     parser.add_option('--seed', dest='seed', default=None,
@@ -61,6 +73,8 @@ def main():
     #                  help='Run models using combined train and calibration data: default=%default')
     parser.add_option('--verbose', action="store_true", dest="verbose", default=False,
                       help='Print more output: default=%default')
+
+
 
     (options, args) = parser.parse_args()
 
@@ -71,7 +85,7 @@ def main():
     reference_model_dir = args[4]
 
     n_train = int(options.n_train)
-    n_calib = int(options.n_calib)
+    #n_calib = int(options.n_calib)
     #sample_labels = options.sample
     suffix = options.suffix
     model_type = 'MLP'
@@ -83,11 +97,18 @@ def main():
     #exclude_calib = options.exclude_calib
     #calib_pred = options.calib_pred
     label = options.label
+    vocab_size = int(options.vocab)
+    group = options.group
     #penalty = options.penalty
     #cshift = options.cshift
     objective = 'calibration'
     #intercept = not options.no_intercept
     n_dev_folds = int(options.n_dev_folds)
+    min_epochs = int(options.min_epochs)
+    max_epochs = int(options.max_epochs)
+    early_stopping = options.early_stopping
+    tol = float(options.tol)
+    patience = int(options.patience)
     repeats = int(options.repeats)
     seed = options.seed
     if options.seed is not None:
@@ -95,15 +116,14 @@ def main():
         np.random.seed(seed)
     #run_all = options.run_all
     verbose = options.verbose
-    vocab_size = int(options.vocab_size)
 
     average = 'micro'
 
-    cross_train_and_eval(project_dir, reference_model_dir, subset, field_name, config_file, n_calib, n_train, vocab_size, suffix, model_type, loss, do_ensemble, dh, label, n_dev_folds, repeats, verbose, average, objective, seed)
+    cross_train_and_eval(project_dir, reference_model_dir, subset, field_name, config_file, n_train, vocab_size, group, suffix, model_type, loss, do_ensemble, dh, label, n_dev_folds, repeats, verbose, average, objective, seed, min_epochs, max_epochs, early_stopping, tol, patience)
 
 
-def cross_train_and_eval(project_dir, reference_model_dir, subset, field_name, config_file, n_calib=0, n_train=100, vocab_size=20, suffix='', model_type='MLP', loss='log', do_ensemble=True, dh=100, label='label', n_dev_folds=5, repeats=1, verbose=False, average='micro', objective='calibration', seed=None):
-
+def cross_train_and_eval(project_dir, reference_model_dir, subset, field_name, config_file, n_train=100, vocab_size=20, group_identical=False, suffix='', model_type='MLP', loss='log', do_ensemble=True, dh=100, label='label', n_dev_folds=5, repeats=1, verbose=False, average='micro', objective='calibration', seed=None, min_epochs=2, max_epochs=50, early_stopping=False, tol=1e-4, patience=8):
+    n_calib = 0
     model_basename = subset + '_' + label + '_' + field_name + '_' + model_type
     if model_type == 'MLP':
         model_basename += '_' + str(dh)
@@ -260,7 +280,7 @@ def cross_train_and_eval(project_dir, reference_model_dir, subset, field_name, c
             # Now train a model on the training data, saving the calibration data for calibration
 
             print("Training model on training data only")
-            model, dev_f1, dev_acc, dev_cal, dev_cal_overall = train.train_brier_grouped(project_dir, reference_model_dir, model_name, subset, sampled_labels_df, feature_defs, weights_df=weights_df, vocab_size=vocab_size, items_to_use=train_items_r, intercept=True, n_dev_folds=n_dev_folds, do_ensemble=do_ensemble, dh=dh, seed=seed, pos_label=pos_label, verbose=verbose)
+            model, dev_f1, dev_acc, dev_cal, dev_cal_overall = train.train_brier_grouped(project_dir, reference_model_dir, model_name, subset, sampled_labels_df, feature_defs, weights_df=weights_df, vocab_size=vocab_size, group_identical=group_identical, items_to_use=train_items_r, intercept=True, n_dev_folds=n_dev_folds, do_ensemble=do_ensemble, dh=dh, seed=seed, pos_label=pos_label, verbose=verbose, min_epochs=min_epochs, max_epochs=max_epochs, early_stopping=early_stopping, tol=tol, patience=patience)
             results_df.loc['cross_val'] = [dev_f1, dev_acc, dev_cal, dev_cal_overall]
 
             # predict on calibration data

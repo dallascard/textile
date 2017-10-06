@@ -42,6 +42,7 @@ def main():
     parser.add_option('--seed', dest='seed', default=None,
                       help='Random seed (None=random): default=%default')
 
+
     (options, args) = parser.parse_args()
 
     project_dir = args[0]
@@ -379,8 +380,9 @@ def train_model_with_labels(project_dir, model_type, loss, model_name, subset, l
 
 
 def train_brier_grouped(project_dir, reference_model_dir, model_name, subset, labels_df, feature_defs, weights_df=None,
-                        vocab_size=15, items_to_use=None, intercept=True, loss='brier',
+                        vocab_size=15, group_identical=False, items_to_use=None, intercept=True, loss='brier',
                         n_dev_folds=5, save_model=True, do_ensemble=False, dh=0, seed=None,
+                        min_epochs=2, max_epochs=50, tol=1e-4, early_stopping=False, patience=8,
                         pos_label=1, verbose=True):
 
     features_dir = dirs.dir_features(project_dir, subset)
@@ -467,10 +469,13 @@ def train_brier_grouped(project_dir, reference_model_dir, model_name, subset, la
         X_n_pos[key] += Y[i, 1]
 
     for i in range(n_items):
-        vector = np.array(X[i, :]).ravel()
-        key = ''.join([str(int(s)) for s in vector])
-        ps[i, 0] = 1 - X_n_pos[key] / float(X_counts[key])
-        ps[i, 1] = X_n_pos[key] / float(X_counts[key])
+        if group_identical:
+            vector = np.array(X[i, :]).ravel()
+            key = ''.join([str(int(s)) for s in vector])
+            ps[i, 0] = 1 - X_n_pos[key] / float(X_counts[key])
+            ps[i, 1] = X_n_pos[key] / float(X_counts[key])
+        else:
+            ps[i, :] = Y[i, :] / np.sum(Y[i, :])
 
     print("Train feature matrix shape: (%d, %d)" % X.shape)
     print("Number of distinct feature vectors = %d" % len(X_counts))
@@ -525,7 +530,7 @@ def train_brier_grouped(project_dir, reference_model_dir, model_name, subset, la
         #X_train, Y_train, w_train = prepare_data(X_train, Y_train, w_train, loss='brier')
         #X_dev, Y_dev, w_dev = prepare_data(X_dev, Y_dev, w_dev, loss='brier')
 
-        model.fit(X_train, Y_train, X_dev, Y_dev, train_weights=w_train, dev_weights=w_dev)
+        model.fit(X_train, Y_train, X_dev, Y_dev, train_weights=w_train, dev_weights=w_dev, min_epochs=min_epochs, max_epochs=max_epochs, patience=patience, tol=tol, early_stopping=early_stopping)
         best_models.append(model)
 
         dev_predictions = model.predict(X_dev)
@@ -569,6 +574,8 @@ def train_brier_grouped(project_dir, reference_model_dir, model_name, subset, la
     else:
         full_model = None
 
+
+    # TODO: do retraining without early stopping if not using an ensemble
 
     """
     elif model_type == 'BLR':

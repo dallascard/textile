@@ -87,8 +87,38 @@ def evaluate_calibration_rmse_bins(true_labels, pred_probs, n_bins=5):
     return rmse
 
 
-def evaluate_calibration_rmse(true_labels, pred_probs, min_bins=3, max_bins=5):
-    return np.mean([evaluate_calibration_rmse_bins(true_labels, pred_probs, n_bins) for n_bins in range(min_bins, max_bins+1)])
+# TODO: write a thing to evaluate calibration in the same way, but on soft-labeled data
+
+def evaluate_calibration_rmse_bins_soft(true_probs, pred_probs, n_bins=5):
+    n_items, n_classes = pred_probs.shape
+    if n_items < n_bins:
+        n_bins = n_items
+
+    breakpoints = list(np.array(np.arange(n_bins)/float(n_bins) * n_items, dtype=int).tolist()) + [n_items]
+    mse_sum = 0
+    for label in range(n_classes):
+        label_probs = pred_probs[:, label]
+        order = np.argsort(label_probs)
+
+        for b in range(n_bins):
+            start = breakpoints[b]
+            end = breakpoints[b+1]
+            items = order[start:end]
+            mean_bin_probs = np.mean(pred_probs[items, label])
+            mean_bin_labels = np.mean(true_probs[items, label])
+            mse = (mean_bin_labels - mean_bin_probs)**2
+            mse_sum += mse
+
+    rmse = np.sqrt(mse_sum/float(n_bins)/float(n_classes))
+
+    return rmse
+
+
+def evaluate_calibration_rmse(true, pred_probs, min_bins=3, max_bins=5, soft_labels=False):
+    if soft_labels:
+        return np.mean([evaluate_calibration_rmse_bins_soft(true, pred_probs, n_bins) for n_bins in range(min_bins, max_bins+1)])
+    else:
+        return np.mean([evaluate_calibration_rmse_bins(true, pred_probs, n_bins) for n_bins in range(min_bins, max_bins+1)])
 
 
 def mean_mae(true_props, pred_props):

@@ -55,7 +55,7 @@ class MLP:
         else:
             self._model = model
 
-    def fit(self, X_train, Y_train, X_dev, Y_dev, train_weights=None, dev_weights=None, seed=None, **kwargs):
+    def fit(self, X_train, Y_train, X_dev, Y_dev, train_weights=None, dev_weights=None, seed=None, min_epochs=2, max_epochs=100, patience=8, tol=1e-4, early_stopping=True, **kwargs):
         """
         Fit a classifier to data
         """
@@ -76,7 +76,7 @@ class MLP:
         else:
             model_filename = os.path.join(self._output_dir, self._name + '.ckpt')
             self._model = tf_MLP(self._dimensions,  model_filename, loss_function=self._loss_function, penalty=self._penalty, reg_strength=self._reg_strength, nonlinearity=self._nonlinearity, seed=seed, pos_label=self._pos_label, objective=self._objective)
-            self._model.train(X_train, Y_train, X_dev, Y_dev, train_weights, dev_weights)
+            self._model.train(X_train, Y_train, X_dev, Y_dev, train_weights, dev_weights, min_epochs=min_epochs, max_epochs=max_epochs, patience=patience, tol=tol, early_stopping=early_stopping)
 
         # do a quick evaluation and store the results internally
         train_pred = self.predict(X_train)
@@ -297,10 +297,11 @@ class tf_MLP:
         self.initializer = tf.global_variables_initializer()
         self.saver = tf.train.Saver()
 
-    def train(self, X_train, Y_train, X_dev, Y_dev, w_train=None, w_dev=None, display_period=500, min_epochs=10, max_epochs=50, patience=8):
+    def train(self, X_train, Y_train, X_dev, Y_dev, w_train=None, w_dev=None, display_period=500, min_epochs=10, max_epochs=50, patience=8, tol=1e-4, early_stopping=True):
         done = False
         best_dev_f1 = 0
-        best_dev_loss = np.inf
+        best_dev_cal_rmse = np.inf
+        prev_train_loss = 0
 
         n_train_items, n_classes = Y_train.shape
         n_dev_items, _ = Y_dev.shape
@@ -336,6 +337,9 @@ class tf_MLP:
                     if count % display_period == 0 and count > 0:
                         print(count, running_loss / weight_sum, running_accuracy / weight_sum)
 
+                running_loss = running_loss / float(n_train_items)
+                delta = np.abs(running_loss - prev_train_loss) / prev_train_loss
+                prev_train_loss = running_loss
                 predictions = []
                 dev_probs = []
                 dev_loss = 0
@@ -357,32 +361,43 @@ class tf_MLP:
                 if self.objective == 'f1':
                     dev_acc = evaluation.acc_score(np.argmax(Y_dev, axis=1), predictions, n_classes=n_classes, weights=w_dev)
                     dev_f1 = evaluation.f1_score(np.argmax(Y_dev, axis=1), predictions, n_classes=n_classes, pos_label=self.pos_label, weights=w_dev)
-                    dev_cal_rmse = evaluation.evaluate_calibration_rmse(Y_dev, dev_probs)
+
                     print("Validation accuracy: %0.4f; f1: %0.4f" % (dev_acc, dev_f1))
                     if dev_f1 > best_dev_f1:
                         print("New best validation f1; saving model")
                         best_dev_f1 = dev_f1
-                        self.saver.save(sess, self.filename)
                         epochs_since_improvement = 0
+                        if early_stopping:
+                            print("Saving model")
+                            self.saver.save(sess, self.filename)
                     else:
                         epochs_since_improvement += 1
                         print("Epochs since improvement = %d" % epochs_since_improvement)
 
                 else:
-                    dev_loss = dev_loss / float(n_dev_items)
+                    dev_cal_rmse = evaluation.evaluate_calibration_rmse(Y_dev, dev_probs, soft_labels=True)
                     print("Dev loss: %0.4f" % dev_loss)
-                    if dev_loss < best_dev_loss:
-                        print("New best dev loss; saving model")
-                        best_dev_loss = dev_loss
-                        self.saver.save(sess, self.filename)
+                    if dev_cal_rmse < best_dev_cal_rmse:
+                        print("New best dev loss")
+                        best_dev_cal_rmse = dev_cal_rmse
                         epochs_since_improvement = 0
+                        if early_stopping:
+                            print("Saving model")
+                            self.saver.save(sess, self.filename)
                     else:
                         epochs_since_improvement += 1
                         print("Epochs since improvement = %d" % epochs_since_improvement)
 
-                if epoch >= min_epochs and epochs_since_improvement > patience:
+                if early_stopping and epoch >= min_epochs and epochs_since_improvement > patience:
                     print("Patience exceeded. Done")
                     print("Best validation f1 = %0.4f" % best_dev_f1)
+                    done = True
+
+                if epoch >= min_epochs and delta < tol and not early_stopping:
+                    print("change on train loss < tolerance. Done")
+                    print("Best validation f1 = %0.4f" % best_dev_f1)
+                    print("Saving model")
+                    self.saver.save(sess, self.filename)
                     done = True
 
                 if epoch >= max_epochs:
