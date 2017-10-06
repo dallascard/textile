@@ -104,7 +104,7 @@ class MLP:
         else:
             return self._model.predict(X)
 
-    def predict_probs(self, X):
+    def predict_probs(self, X, verbose=False):
         n_items, _ = X.shape
         full_probs = np.zeros([n_items, self._n_classes])
         # if we've saved a default label, predict that with 100% confidence
@@ -114,7 +114,7 @@ class MLP:
             return full_probs
         else:
             # otherwise, get probabilities from the model
-            model_probs = self._model.predict_probs(X)
+            model_probs = self._model.predict_probs(X, verbose=verbose)
             return model_probs
 
     def predict_proportions(self, X=None, weights=None):
