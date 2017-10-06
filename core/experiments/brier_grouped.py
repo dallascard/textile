@@ -25,8 +25,8 @@ def main():
     #                  help='Sample labels instead of averaging: default=%default')
     parser.add_option('--suffix', dest='suffix', default='',
                       help='Suffix to mdoel name: default=%default')
-    #parser.add_option('--model', dest='model', default='LR',
-    #                  help='Model type [LR|MLP]: default=%default')
+    parser.add_option('--model', dest='model', default='MLP',
+                      help='Model type [SGD|MLP]: default=%default')
     parser.add_option('--dh', dest='dh', default=0,
                       help='Hidden layer size for MLP [0 for None]: default=%default')
     #parser.add_option('--alpha_min', dest='alpha_min', default=0.01,
@@ -72,7 +72,7 @@ def main():
     n_calib = int(options.n_calib)
     #sample_labels = options.sample
     suffix = options.suffix
-    model_type = 'MLP'
+    model_type = options.model
     loss = 'brier'
     dh = int(options.dh)
     #alpha_min = float(options.alpha_min)
