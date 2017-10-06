@@ -417,7 +417,7 @@ class tf_MLP:
 
         with tf.Session() as sess:
             self.saver.restore(sess, self.filename)
-            # just do minibatche sizes of 1 for now
+            # just do minibatches sizes of 1 for now
             for i in range(n_items):
                 x_i = X[i, :].reshape((1, n_features))
                 feed_dict = {self.x: x_i, self.sample_weights: 1.0}
@@ -441,8 +441,6 @@ class tf_MLP:
                 _, n_classes = probs.shape
                 probs_list.append(probs.reshape(n_classes, ))
 
-        if verbose:
-            print(probs_list)
         pred_probs = np.array(probs_list)
         return pred_probs
 
