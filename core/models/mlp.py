@@ -311,6 +311,13 @@ class tf_MLP:
         if w_dev is None:
             w_dev = np.ones(n_dev_items)
 
+        if self.loss_function == 'log':
+            Y_train = np.array(Y_train, dtype=np.int32)
+        elif self.loss_function == 'brier':
+            Y_train = np.array(Y_train, dtype=np.float32)
+        else:
+            sys.exit("Loss not recognized")
+
         with tf.Session() as sess:
             sess.run(self.initializer)
             epoch = 1
@@ -326,7 +333,7 @@ class tf_MLP:
                 weight_sum = 0.0
                 for count, i in enumerate(order):
                     x_i = X_train[i, :].reshape((1, n_features))
-                    y_i = np.array(Y_train[i], dtype=np.int32).reshape((1, n_classes))
+                    y_i = np.reshape(Y_train[i, :], (1, n_classes))
                     w_i = w_train[i]
 
                     feed_dict = {self.x: x_i, self.y: y_i, self.sample_weights: w_i}
