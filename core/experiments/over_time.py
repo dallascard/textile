@@ -88,10 +88,10 @@ def main():
 
     average = 'micro'
 
-    train_and_eval(project_dir, subset, target_year, config_file, penalty, suffix, do_ensemble, dh, label, intercept, n_dev_folds, verbose, average, seed, alpha_min, alpha_max, sample_labels)
+    stage1(project_dir, subset, target_year, config_file, penalty, suffix, do_ensemble, dh, label, intercept, n_dev_folds, verbose, average, seed, alpha_min, alpha_max, sample_labels)
 
 
-def train_and_eval(project_dir, subset, target_year, config_file, penalty='l1', suffix='', do_ensemble=True, dh=100, label='label', intercept=True, n_dev_folds=5, verbose=False, average='micro', seed=None, alpha_min=0.01, alpha_max=1000.0, sample_labels=False):
+def stage1(project_dir, subset, target_year, config_file, penalty='l1', suffix='', do_ensemble=True, dh=100, label='label', intercept=True, n_dev_folds=5, verbose=False, average='micro', seed=None, alpha_min=0.01, alpha_max=1000.0, sample_labels=False):
 
     model_basename = subset + '_' + label + '_year_' + target_year + '_LR_' + penalty + '_' + str(dh)
     #model_basename +=  '_' + str(n_train) + '_' + str(n_calib) + '_' + objective
@@ -135,12 +135,12 @@ def train_and_eval(project_dir, subset, target_year, config_file, penalty='l1', 
     #print("Splitting data according to :", field_vals)
 
     # first, split into training and non-train data based on the field of interest
-    test_selector_all = metadata['year'] == target_year
+    test_selector_all = metadata['year'] == int(target_year)
     test_subset_all = metadata[test_selector_all]
     test_items_all = test_subset_all.index.tolist()
     n_test_all = len(test_items_all)
 
-    train_selector_all = metadata['year'] < target_year
+    train_selector_all = metadata['year'] < int(target_year)
     train_subset_all = metadata[train_selector_all]
     train_items_all = list(train_subset_all.index)
     n_train_all = len(train_items_all)
@@ -245,7 +245,40 @@ def train_and_eval(project_dir, subset, target_year, config_file, penalty='l1', 
     output_df.to_csv(os.path.join(dirs.dir_models(project_dir), model_name, 'results.csv'))
 
 
+"""
+def stage2(project_dir, subset, target_year, config_file, penalty='l1', suffix='', do_ensemble=True, dh=100, label='label', intercept=True, n_dev_folds=5, verbose=False, average='micro', seed=None, alpha_min=0.01, alpha_max=1000.0, sample_labels=False):
 
+    stage1_model_basename = subset + '_' + label + '_year_' + target_year + '_LR_' + penalty + '_' + str(dh)
+    if sample_labels:
+        stage1_model_basename += '_sampled'
+    stage1_model_basename += suffix
+
+    stage2_model_basename = subset + '_' + label + '_year_' + target_year + '_LR_' + penalty + '_' + str(dh)
+    if sample_labels:
+        stage2_model_basename += '_sampled'
+    stage2_model_basename += suffix
+
+
+    # save the experiment parameters to a log file
+    logfile = os.path.join(dirs.dir_logs(project_dir), model_basename + '.json')
+    fh.makedirs(dirs.dir_logs(project_dir))
+    log = {
+        'project': project_dir,
+        'subset': subset,
+        'config_file': config_file,
+        'suffix': suffix,
+        'dh': dh,
+        'alpha_min': alpha_min,
+        'alpha_max': alpha_max,
+        'do_ensemble': do_ensemble,
+        'label': label,
+        'intercept': intercept,
+        'n_dev_folds': n_dev_folds,
+        'average': average,
+        'sample_labels': sample_labels
+    }
+    fh.write_to_json(log, logfile)
+"""
 
 def get_estimate_and_std(labels_df, use_n_annotations=False):
     n_items, n_classes = labels_df.shape
