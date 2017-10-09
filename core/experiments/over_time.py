@@ -14,7 +14,7 @@ from core.util import dirs
 
 
 def main():
-    usage = "%prog project_dir subset target_year model_config.json"
+    usage = "%prog project_dir subset model_config.json"
     parser = OptionParser(usage=usage)
     #parser.add_option('--n_train', dest='n_train', default=100,
     #                  help='Number of training instances to use (0 for all): default=%default')
@@ -63,8 +63,7 @@ def main():
 
     project_dir = args[0]
     subset = args[1]
-    target_year = args[2]
-    config_file = args[3]
+    config_file = args[2]
 
 
     #n_train = int(options.n_train)
