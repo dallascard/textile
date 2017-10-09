@@ -174,7 +174,7 @@ def stage1(project_dir, subset, config_file, first_year, penalty='l2', suffix=''
             if annotated_subset is not None:
                 print("Determining fightin' words")
                 model_name += '_fight'
-                fightin_lexicon, scores = fightin_words.load_from_config_files(project_dir, annotated_subset, subset, config_file, n=n_terms)
+                fightin_lexicon, scores = fightin_words.load_from_config_files(project_dir, annotated_subset, subset, config_file, items_to_use=train_items_all, n=n_terms)
                 vocab = fightin_lexicon
 
             # add in a stage to eliminate items with no labels?
