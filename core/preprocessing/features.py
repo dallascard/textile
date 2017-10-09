@@ -364,7 +364,7 @@ def get_feature_signature(feature_def, feature):
     return signature
 
 
-def load_and_process_features_for_training(features_dir, feature_defs, items_to_use, verbose=False):
+def load_and_process_features_for_training(features_dir, feature_defs, items_to_use=None, verbose=False):
 
     feature_list = []
     feature_signatures = []
@@ -375,9 +375,9 @@ def load_and_process_features_for_training(features_dir, feature_defs, items_to_
         # take a subset of the rows, if requested
         printv("Initial shape = (%d, %d)" % feature.get_shape(), verbose)
         feature_items = feature.get_items()
-        feature_item_index = dict(zip(feature_items, range(len(feature_items))))
-        indices_to_use = [feature_item_index[i] for i in items_to_use if i in feature_item_index]
-        if indices_to_use is not None:
+        if items_to_use is not None:
+            feature_item_index = dict(zip(feature_items, range(len(feature_items))))
+            indices_to_use = [feature_item_index[i] for i in items_to_use if i in feature_item_index]
             printv("Taking subset of items", verbose)
             feature = create_from_feature(feature, indices_to_use)
             printv("New shape = (%d, %d)" % feature.get_shape(), verbose)

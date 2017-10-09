@@ -102,7 +102,7 @@ def log_odds_normalized_diff(first_counts, second_counts, alphas):
     return word_scores
 
 
-def load_from_config_files(project, target_subset, background_subset, items_to_use, config_file, n=100, verbose=True):
+def load_from_config_files(project, target_subset, background_subset, config_file, items_to_use=None, n=100, verbose=True):
 
     target_features_dir = dirs.dir_features(project, target_subset)
     background_features_dir = dirs.dir_features(project, background_subset)

@@ -332,14 +332,14 @@ def stage2(project_dir, subset, target_year, config_file, penalty='l1', suffix='
 
     print("\nFightin' features")
     if annotated_subset is not None:
-        fightin_lexicon, scores = fightin_words.load_from_config_files(project_dir, annotated_subset, subset, train_items, config_file)
+        fightin_lexicon, scores = fightin_words.load_from_config_files(project_dir, annotated_subset, subset, config_file)
         for i in range(n):
             print(fightin_lexicon[i], scores[i])
 
-    print("\nIntersection")
-    intersection = set(lr_features).intersection(set(fightin_lexicon))
-    for w in intersection:
-        print(w)
+        print("\nIntersection")
+        intersection = set(lr_features).intersection(set(fightin_lexicon))
+        for w in intersection:
+            print(w)
 
 
 
