@@ -337,7 +337,7 @@ def stage2(project_dir, subset, target_year, config_file, penalty='l1', suffix='
             print(fightin_lexicon[i], scores[i])
 
         print("\nIntersection")
-        intersection = set(lr_features).intersection(set(fightin_lexicon))
+        intersection = set(lr_features).intersection(set(fightin_lexicon)) - set(get_stopwords())
         for w in intersection:
             print(w)
 
@@ -366,6 +366,17 @@ def get_estimate_and_std(labels_df, use_n_annotations=False):
     # estimate the variance by pretending this is a binomial distribution
     std = np.sqrt(estimate * (1 - estimate) / float(n))
     return props, estimate, std
+
+
+def get_stopwords():
+    suffixes = {"'s", "n't"}
+    pronouns = {"i", 'you', 'he', 'his', 'she', 'her', 'hers', 'it', 'its', 'we', 'you', 'your', 'they', 'them', 'their'}
+    determiners = {'a', 'an', 'the', 'this', 'that', 'these', 'those'}
+    prepositions = {'at', 'by', 'for', 'from', 'in', 'into', 'of', 'on', 'than', 'to', 'with'}
+    transitional = {'and', 'also', 'as', 'but', 'if', 'or',  'then'}
+    common_verbs = {'are', 'be', 'been', 'had', 'has', 'have', 'is', 'said', 'was', 'were'}
+    my_stopwords = suffixes.union(pronouns).union(determiners).union(prepositions).union(transitional).union(common_verbs)
+    return my_stopwords
 
 
 if __name__ == '__main__':
