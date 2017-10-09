@@ -151,7 +151,7 @@ def stage1(project_dir, subset, config_file, first_year, penalty='l2', suffix=''
     for target_year in field_vals:
         if int(target_year) >= first_year:
             print("\nTesting on %s" % target_year)
-            model_name = model_basename + '_' + target_year
+            model_name = model_basename + '_' + str(target_year)
             # first, split into training and non-train data based on the field of interest
             test_selector_all = metadata['year'] == int(target_year)
             test_subset_all = metadata[test_selector_all]
