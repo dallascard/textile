@@ -325,7 +325,7 @@ def stage2(project_dir, subset, target_year, config_file, penalty='l1', suffix='
     n = 50
     print("LR features")
     # load features from previous model
-    top_features = get_top_features.get_top_features(stage1_model_basename, n)
+    top_features = get_top_features.get_top_features(os.path.join(dirs.dir_models(project_dir), stage1_model_basename), n)
     for f in top_features:
         print(f)
 

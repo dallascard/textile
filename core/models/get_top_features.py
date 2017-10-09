@@ -33,7 +33,7 @@ def get_top_features(model_dir, n_terms, default_model_type=None):
     model_files = glob.glob(os.path.join(model_dir, basename + '*_metadata.json'))
 
     if len(model_files) == 0:
-        sys.exit("No model files found in %s" % os.path.join(model_dir, basename))
+        sys.exit("No model files found in %s" % os.path.join(model_dir))
 
     totals = defaultdict(float)
 
