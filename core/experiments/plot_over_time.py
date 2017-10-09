@@ -43,8 +43,6 @@ def main():
 
     project_dir = args[0]
     subset = args[1]
-    config_file = args[2]
-
 
     #n_train = int(options.n_train)
     #n_calib = int(options.n_calib)
