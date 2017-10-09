@@ -377,7 +377,8 @@ def get_stopwords():
     prepositions = {'at', 'by', 'for', 'from', 'in', 'into', 'of', 'on', 'than', 'to', 'with'}
     transitional = {'and', 'also', 'as', 'but', 'if', 'or',  'then'}
     common_verbs = {'are', 'be', 'been', 'had', 'has', 'have', 'is', 'said', 'was', 'were'}
-    my_stopwords = suffixes.union(pronouns).union(determiners).union(prepositions).union(transitional).union(common_verbs)
+    punctuation = {'.', ',', '-', ';', '?', "'", '"', '!', '<', '>', '(', ')', ':'}
+    my_stopwords = suffixes.union(pronouns).union(determiners).union(prepositions).union(transitional).union(common_verbs).union(punctuation)
     return my_stopwords
 
 
