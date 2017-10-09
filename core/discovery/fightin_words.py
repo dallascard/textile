@@ -42,7 +42,7 @@ def load_and_select_features(target_json_file, bkgrnd_json_file, n=100):
         print(vocab[i], scores[i])
 
 
-def select_features(feature, background_feature, n=100):
+def select_features(feature, background_feature, n=100, remove_stopwords=True):
     """
     Use the method from "Fightin' Words: Lexical Feature Selection and Evaluation for Identifying the Content of
     Political Conflict" by Monroe, Colaresi and Quinn for feature selection.
@@ -62,6 +62,10 @@ def select_features(feature, background_feature, n=100):
     # construct the combined vocabulary
     full_vocab = list(set(target_vocab).union(set(bkgrnd_vocab)))
     full_vocab.sort()
+    if remove_stopwords:
+        stopwords = set(get_stopwords())
+        full_vocab = [w for w in full_vocab if w not in stopwords]
+
     n_words = len(full_vocab)
     vocab_index = dict(zip(full_vocab, range(n_words)))
 
@@ -118,6 +122,17 @@ def load_from_config_files(project, target_subset, background_subset, config_fil
 
     return select_features(target_feature, background_feature, n=n)
 
+
+def get_stopwords():
+    suffixes = {"'s", "n't"}
+    pronouns = {"i", 'you', 'he', 'his', 'she', 'her', 'hers', 'it', 'its', 'we', 'you', 'your', 'they', 'them', 'their'}
+    determiners = {'a', 'an', 'the', 'this', 'that', 'these', 'those'}
+    prepositions = {'at', 'by', 'for', 'from', 'in', 'into', 'of', 'on', 'than', 'to', 'with'}
+    transitional = {'and', 'also', 'as', 'but', 'if', 'or',  'then'}
+    common_verbs = {'are', 'be', 'been', 'had', 'has', 'have', 'is', 'said', 'was', 'were'}
+    punctuation = {'.', ',', '-', ';', '?', "'", '"', '!', '<', '>', '(', ')', ':'}
+    my_stopwords = suffixes.union(pronouns).union(determiners).union(prepositions).union(transitional).union(common_verbs).union(punctuation)
+    return my_stopwords
 
 if __name__ == '__main__':
     main()

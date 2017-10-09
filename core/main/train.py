@@ -95,7 +95,7 @@ def train_model(project_dir, model_type, loss, model_name, subset, label, featur
 def train_model_with_labels(project_dir, model_type, loss, model_name, subset, labels_df, feature_defs, weights_df=None,
                             items_to_use=None, penalty='l2', alpha_min=0.01, alpha_max=1000, n_alphas=8, intercept=True,
                             objective='f1', n_dev_folds=5, save_model=True, do_ensemble=False, dh=0, seed=None,
-                            pos_label=1, verbose=True):
+                            pos_label=1, vocab=None, verbose=True):
 
     features_dir = dirs.dir_features(project_dir, subset)
     n_items, n_classes = labels_df.shape
@@ -150,6 +150,10 @@ def train_model_with_labels(project_dir, model_type, loss, model_name, subset, l
 
     features_concat = features.concatenate(feature_list)
     col_names = features_concat.get_col_names()
+    if vocab is not None:
+        vocab = [w for w in vocab if w in col_names]
+        print("Restricting vocabulary to %d terms" % len(vocab))
+        features_concat.set_terms(vocab)
 
     if features_concat.sparse:
         X = features_concat.get_counts().tocsr()
