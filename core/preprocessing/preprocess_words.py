@@ -152,7 +152,7 @@ def extract_bigram_feature(parse, percept):
     counter = Counter()
     for sent in parse.sents:
         if len(sent) > 1:
-            counter.update([percept(sent[i]) + '_' + percept(sent[i+1]) for i in range(len(sent)-1)])
+            counter.update([percept(sent[i]) + '_' + percept(sent[i+1]) for i in range(len(sent)-1) if len(percept(sent[i]) > 0 and len(percept(sent[i+1])) > 0)])
     return dict(counter)
 
 

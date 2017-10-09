@@ -322,7 +322,7 @@ def stage2(project_dir, subset, target_year, config_file, penalty='l1', suffix='
     n_train = len(train_items)
     n_test = len(test_items)
 
-    n = 100
+    n = 50
     # load features from previous model
     top_features = get_top_features.get_top_features(stage1_model_basename, n, 'LR')
     for f in top_features:
