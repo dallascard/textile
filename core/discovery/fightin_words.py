@@ -73,9 +73,11 @@ def select_features(feature, background_feature, n=100, remove_stopwords=True):
     target_counts = np.zeros(n_words)
     bkgrnd_counts = np.zeros(n_words)
     for word_i, word in enumerate(target_vocab):
-        target_counts[vocab_index[word]] = target_sum[word_i]
+        if word in vocab_index:
+            target_counts[vocab_index[word]] = target_sum[word_i]
     for word_i, word in enumerate(bkgrnd_vocab):
-        bkgrnd_counts[vocab_index[word]] = bkgrnd_sum[word_i]
+        if word in vocab_index:
+            bkgrnd_counts[vocab_index[word]] = bkgrnd_sum[word_i]
 
     alphas = get_informative_alpha(target_counts, bkgrnd_counts)
     word_scores = log_odds_normalized_diff(target_counts, bkgrnd_counts, alphas)
