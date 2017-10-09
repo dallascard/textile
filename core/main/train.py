@@ -113,6 +113,9 @@ def train_model_with_labels(project_dir, model_type, loss, model_name, subset, l
     else:
         weights = np.ones(n_items)
 
+    if vocab is not None:
+        vocab_index = dict(zip(vocab, range(len(vocab))))
+
     printv("loading features", verbose)
     feature_list = []
     feature_signatures = []
@@ -130,6 +133,9 @@ def train_model_with_labels(project_dir, model_type, loss, model_name, subset, l
             feature = features.create_from_feature(feature, indices_to_use)
             printv("New shape = (%d, %d)" % feature.get_shape(), verbose)
         feature.threshold(feature_def.min_df)
+        if vocab is not None:
+            feature_vocab = [term for term in feature.get_terms() if term in vocab_index]
+            feature.set_terms(feature_vocab)
         if feature_def.transform == 'doc2vec':
             word_vectors_prefix = os.path.join(features_dir, name + '_vecs')
         else:
@@ -150,10 +156,6 @@ def train_model_with_labels(project_dir, model_type, loss, model_name, subset, l
 
     features_concat = features.concatenate(feature_list)
     col_names = features_concat.get_col_names()
-    if vocab is not None:
-        vocab = [w for w in vocab if w in col_names]
-        print("Restricting vocabulary to %d terms" % len(vocab))
-        features_concat.set_terms(vocab)
 
     if features_concat.sparse:
         X = features_concat.get_counts().tocsr()
