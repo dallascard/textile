@@ -286,6 +286,41 @@ def stage2(project_dir, subset, target_year, config_file, penalty='l1', suffix='
     }
     fh.write_to_json(log, logfile)
 
+    # load the file that contains metadata about each item
+    metadata_file = os.path.join(dirs.dir_subset(project_dir, subset), 'metadata.csv')
+    metadata = fh.read_csv_to_df(metadata_file)
+    #field_vals = list(set(metadata['year'].values))
+    #field_vals.sort()
+    #print("Splitting data according to :", field_vals)
+
+    # first, split into training and non-train data based on the field of interest
+    test_selector_all = metadata['year'] == int(target_year)
+    test_subset_all = metadata[test_selector_all]
+    test_items_all = test_subset_all.index.tolist()
+    n_test_all = len(test_items_all)
+
+    train_selector_all = metadata['year'] < int(target_year)
+    train_subset_all = metadata[train_selector_all]
+    train_items_all = list(train_subset_all.index)
+    n_train_all = len(train_items_all)
+
+    # load all labels
+    label_dir = dirs.dir_labels(project_dir, subset)
+    labels_df = fh.read_csv_to_df(os.path.join(label_dir, label + '.csv'), index_col=0, header=0)
+    n_items, n_classes = labels_df.shape
+
+    # add in a stage to eliminate items with no labels?
+    print("Subsetting items with labels")
+    label_sums_df = labels_df.sum(axis=1)
+    labeled_item_selector = label_sums_df > 0
+    labels_df = labels_df[labeled_item_selector]
+    n_items, n_classes = labels_df.shape
+    labeled_items = set(labels_df.index)
+
+    train_items = [i for i in train_items_all if i in labeled_items]
+    test_items = [i for i in test_items_all if i in labeled_items]
+    n_train = len(train_items)
+    n_test = len(test_items)
 
     n = 100
     # load features from previous model
@@ -294,7 +329,7 @@ def stage2(project_dir, subset, target_year, config_file, penalty='l1', suffix='
         print(f)
 
     if annotated_subset is not None:
-        fightin_lexicon, scores = fightin_words.load_from_config_files(annotation_config, config_file, n=n)
+        fightin_lexicon, scores = fightin_words.load_from_config_files(project_dir, annotated_subset, subset, train_items, config_file)
         for i in range(len(fightin_lexicon)):
             print(fightin_lexicon[i], scores[i])
 
