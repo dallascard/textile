@@ -323,11 +323,13 @@ def stage2(project_dir, subset, target_year, config_file, penalty='l1', suffix='
     n_test = len(test_items)
 
     n = 50
+    print("LR features")
     # load features from previous model
     top_features = get_top_features.get_top_features(stage1_model_basename, n, 'LR')
     for f in top_features:
         print(f)
 
+    print("\nFightin' features")
     if annotated_subset is not None:
         fightin_lexicon, scores = fightin_words.load_from_config_files(project_dir, annotated_subset, subset, train_items, config_file)
         for i in range(len(fightin_lexicon)):
