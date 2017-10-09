@@ -5,6 +5,9 @@ import numpy as np
 
 from ..preprocessing import features
 
+from ..util import dirs
+from ..util import file_handling as fh
+from ..util.misc import printv
 
 def main():
     usage = "%prog target_feature.json background_feature.json"
@@ -34,7 +37,9 @@ def load_and_select_features(target_json_file, bkgrnd_json_file, n=100):
     target_feature = features.load_from_file(target_dir, target_basename)
     bkgrnd_feature = features.load_from_file(bkgrnd_dir, bkgrnd_basename)
 
-    select_features(target_feature, bkgrnd_feature, n=n)
+    vocab, scores = select_features(target_feature, bkgrnd_feature, n=n)
+    for i in range(len(vocab)):
+        print(vocab[i], scores[i])
 
 
 def select_features(feature, background_feature, n=100):
@@ -72,8 +77,9 @@ def select_features(feature, background_feature, n=100):
     word_scores = log_odds_normalized_diff(target_counts, bkgrnd_counts, alphas)
     order = list(np.argsort(np.abs(word_scores)))
     order.reverse()
-    for i in range(n):
-        print(full_vocab[order[i]], word_scores[order[i]])
+    vocab = [full_vocab[i] for i in order[:n]]
+    scores = [word_scores[i] for i in order[:n]]
+    return vocab, scores
 
 
 def get_informative_alpha(first_counts, second_counts, smoothing=1000.0):
@@ -87,13 +93,34 @@ def log_odds_normalized_diff(first_counts, second_counts, alphas):
     second_total = second_counts.sum()
     alpha_total = alphas.sum()
     first_top = first_counts + alphas
-    first_bottom = first_total  + alpha_total - first_counts - alphas
+    first_bottom = first_total + alpha_total - first_counts - alphas
     second_top = second_counts + alphas
-    second_bottom = second_total  + alpha_total - second_counts - alphas
+    second_bottom = second_total + alpha_total - second_counts - alphas
     delta = np.log(first_top) - np.log(first_bottom) - np.log(second_top) + np.log(second_bottom)
     variance = 1. / first_top + 1. / first_bottom + 1. / second_top + 1. / second_bottom
     word_scores = delta / np.sqrt(variance)
     return word_scores
+
+
+def load_from_config_files(project, subset, items_to_use, target_config_file, background_config_file, n=100, verbose=True):
+
+    features_dir = dirs.dir_features(project, subset)
+
+    target_config = fh.read_json(target_config_file)
+    target_feature_defs = []
+    for f in target_config['feature_defs']:
+        target_feature_defs.append(features.parse_feature_string(f))
+
+    background_config = fh.read_json(background_config_file)
+    background_feature_defs = []
+    for f in background_config['feature_defs']:
+        background_feature_defs.append(features.parse_feature_string(f))
+
+    target_feature = features.load_and_process_features_for_training(features_dir, target_feature_defs, items_to_use, verbose=False)
+
+    background_feature = features.load_and_process_features_for_training(features_dir, background_feature_defs, items_to_use, verbose=False)
+
+    return select_features(target_feature, background_feature, n=n)
 
 
 if __name__ == '__main__':

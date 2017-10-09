@@ -362,3 +362,38 @@ def get_feature_signature(feature_def, feature):
     elif feature_def.transform == 'doc2vec':
         signature['p_w'] = feature.compute_p_w().tolist()
     return signature
+
+
+def load_and_process_features_for_training(features_dir, feature_defs, items_to_use, verbose=False):
+
+    feature_list = []
+    feature_signatures = []
+    for feature_def in feature_defs:
+        printv(feature_def, verbose)
+        name = feature_def.name
+        feature = load_from_file(input_dir=features_dir, basename=name)
+        # take a subset of the rows, if requested
+        printv("Initial shape = (%d, %d)" % feature.get_shape(), verbose)
+        feature_items = feature.get_items()
+        feature_item_index = dict(zip(feature_items, range(len(feature_items))))
+        indices_to_use = [feature_item_index[i] for i in items_to_use if i in feature_item_index]
+        if indices_to_use is not None:
+            printv("Taking subset of items", verbose)
+            feature = create_from_feature(feature, indices_to_use)
+            printv("New shape = (%d, %d)" % feature.get_shape(), verbose)
+        feature.threshold(feature_def.min_df)
+        if feature_def.transform == 'doc2vec':
+            word_vectors_prefix = os.path.join(features_dir, name + '_vecs')
+        else:
+            word_vectors_prefix = None
+        feature.transform(feature_def.transform, word_vectors_prefix=word_vectors_prefix, alpha=feature_def.alpha)
+        printv("Final shape = (%d, %d)" % feature.get_shape(), verbose)
+        feature_list.append(feature)
+
+        feature_signature = get_feature_signature(feature_def, feature)
+        # save the location of the word vectors from training... (need a better solution for this eventually)
+        feature_signature['word_vectors_prefix'] = word_vectors_prefix
+        feature_signatures.append(feature_signature)
+
+    features_concat = concatenate(feature_list)
+    return features_concat, feature_signatures

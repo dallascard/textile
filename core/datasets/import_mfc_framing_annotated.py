@@ -97,7 +97,7 @@ def convert_mfc(project, data_file, output_prefix, threshold, metadata_file, tar
     keys.sort()
 
     for k in keys:
-        words = []
+        phrases = []
         text = data[k]['text']
         framing_annotations = data[k]['annotations']['framing']
         # extract all annotations, double counting for doubly-annotated
@@ -108,14 +108,14 @@ def convert_mfc(project, data_file, output_prefix, threshold, metadata_file, tar
                 start = int(a['start'])
                 end = int(a['end'])
                 if FRAMES[frame] == target_frame:
-                    words.extend(text[start:end].split())
+                    phrases.extend(text[start:end].split())
 
         year = int(metadata[k]['year'])
         month = int(metadata[k]['month'])
         source = SOURCES[metadata[k]['source']]
 
         # only export those items with annotations
-        if len(words) > 0 and year >= 1990:
+        if len(phrases) > 0 and year >= 1990:
             if year < threshold:
                 year_group = 'pre_' + str(threshold)
             else:
@@ -124,7 +124,7 @@ def convert_mfc(project, data_file, output_prefix, threshold, metadata_file, tar
             sources.add(source)
 
             # keep all annotations
-            output[k] = {'text': ' '.join(words), 'year': int(year), 'year_group': year_group, 'month': month, 'source': source}
+            output[k] = {'text': '\n\n'.join(phrases), 'year': int(year), 'year_group': year_group, 'month': month, 'source': source}
 
     print(year_group_sizes)
     print(len(output))

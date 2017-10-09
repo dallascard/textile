@@ -7,12 +7,14 @@ import pandas as pd
 from core.util import file_handling as fh
 from core.preprocessing import features
 from core.main import train, predict, evaluate_predictions
-from core.models import calibration, ivap, evaluation
+from core.models import evaluation
+from core.models import get_top_features
+from core.discovery import fightin_words
 from core.util import dirs
 
 
 def main():
-    usage = "%prog project_dir subset target_year config.json "
+    usage = "%prog project_dir subset target_year model_config.json"
     parser = OptionParser(usage=usage)
     #parser.add_option('--n_train', dest='n_train', default=100,
     #                  help='Number of training instances to use (0 for all): default=%default')
@@ -50,6 +52,8 @@ def main():
                       help='Random seed (None=random): default=%default')
     #parser.add_option('--run_all', action="store_true", dest="run_all", default=False,
     #                  help='Run models using combined train and calibration data: default=%default')
+    parser.add_option('--annotations', dest='annotations', default=None,
+                      help='config file to load the corresponding features from just annotated text: default=%default')
     parser.add_option('--verbose', action="store_true", dest="verbose", default=False,
                       help='Print more output: default=%default')
 
@@ -59,6 +63,7 @@ def main():
     subset = args[1]
     target_year = args[2]
     config_file = args[3]
+
 
     #n_train = int(options.n_train)
     #n_calib = int(options.n_calib)
@@ -84,11 +89,14 @@ def main():
         seed = int(seed)
         np.random.seed(seed)
     #run_all = options.run_all
+    annotations = options.annotations
     verbose = options.verbose
 
     average = 'micro'
 
     stage1(project_dir, subset, target_year, config_file, penalty, suffix, do_ensemble, dh, label, intercept, n_dev_folds, verbose, average, seed, alpha_min, alpha_max, sample_labels)
+
+    stage2(project_dir, subset, target_year, config_file, penalty, suffix, do_ensemble, dh, label, intercept, n_dev_folds, verbose, average, seed, alpha_min, alpha_max, sample_labels, annotation_config=annotations)
 
 
 def stage1(project_dir, subset, target_year, config_file, penalty='l1', suffix='', do_ensemble=True, dh=100, label='label', intercept=True, n_dev_folds=5, verbose=False, average='micro', seed=None, alpha_min=0.01, alpha_max=1000.0, sample_labels=False):
@@ -245,8 +253,7 @@ def stage1(project_dir, subset, target_year, config_file, penalty='l1', suffix='
     output_df.to_csv(os.path.join(dirs.dir_models(project_dir), model_name, 'results.csv'))
 
 
-"""
-def stage2(project_dir, subset, target_year, config_file, penalty='l1', suffix='', do_ensemble=True, dh=100, label='label', intercept=True, n_dev_folds=5, verbose=False, average='micro', seed=None, alpha_min=0.01, alpha_max=1000.0, sample_labels=False):
+def stage2(project_dir, subset, target_year, config_file, penalty='l1', suffix='', do_ensemble=True, dh=100, label='label', intercept=True, n_dev_folds=5, verbose=False, average='micro', seed=None, alpha_min=0.01, alpha_max=1000.0, sample_labels=False, annotation_config=None):
 
     stage1_model_basename = subset + '_' + label + '_year_' + target_year + '_LR_' + penalty + '_' + str(dh)
     if sample_labels:
@@ -260,7 +267,7 @@ def stage2(project_dir, subset, target_year, config_file, penalty='l1', suffix='
 
 
     # save the experiment parameters to a log file
-    logfile = os.path.join(dirs.dir_logs(project_dir), model_basename + '.json')
+    logfile = os.path.join(dirs.dir_logs(project_dir), stage2_model_basename + '.json')
     fh.makedirs(dirs.dir_logs(project_dir))
     log = {
         'project': project_dir,
@@ -278,7 +285,22 @@ def stage2(project_dir, subset, target_year, config_file, penalty='l1', suffix='
         'sample_labels': sample_labels
     }
     fh.write_to_json(log, logfile)
-"""
+
+
+    n = 100
+    # load features from previous model
+    top_features = get_top_features.get_top_features(stage1_model_basename, n, 'LR')
+    for f in top_features:
+        print(f)
+
+    if annotation_config is not None:
+        fightin_lexicon, scores = fightin_words.load_from_config_files(annotation_config, config_file, n=n)
+        for i in range(len(fightin_lexicon)):
+            print(fightin_lexicon[i], scores[i])
+
+
+
+
 
 def get_estimate_and_std(labels_df, use_n_annotations=False):
     n_items, n_classes = labels_df.shape
