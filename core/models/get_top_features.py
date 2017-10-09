@@ -1,10 +1,8 @@
 import os
+import sys
 import glob
-import operator
 from optparse import OptionParser
 from collections import defaultdict
-
-import numpy as np
 
 from ..models import load_model
 from ..util import file_handling as fh
@@ -33,6 +31,9 @@ def get_top_features(model_dir, n_terms, default_model_type=None):
 
     basename = os.path.split(model_dir)[-1]
     model_files = glob.glob(os.path.join(model_dir, basename + '*_metadata.json'))
+
+    if len(model_files) == 0:
+        sys.exit("No model files found in %s" % os.path.join(model_dir, basename))
 
     totals = defaultdict(float)
 

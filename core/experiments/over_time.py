@@ -258,7 +258,7 @@ def stage2(project_dir, subset, target_year, config_file, penalty='l1', suffix='
     stage1_model_basename = subset + '_' + label + '_year_' + target_year + '_LR_' + penalty + '_' + str(dh)
     if sample_labels:
         stage1_model_basename += '_sampled'
-    stage1_model_basename += suffix
+    stage1_model_basename += suffix + '_all_LR_l2'
 
     stage2_model_basename = subset + '_' + label + '_year_' + target_year + '_LR_' + penalty + '_' + str(dh)
     if sample_labels:
@@ -325,7 +325,7 @@ def stage2(project_dir, subset, target_year, config_file, penalty='l1', suffix='
     n = 50
     print("LR features")
     # load features from previous model
-    top_features = get_top_features.get_top_features(stage1_model_basename, n, 'LR')
+    top_features = get_top_features.get_top_features(stage1_model_basename, n)
     for f in top_features:
         print(f)
 

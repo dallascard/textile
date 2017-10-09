@@ -144,7 +144,7 @@ def get_token(token):
 
 def extract_unigram_feature(parse, feature_function):
     counter = Counter()
-    counter.update([feature_function(token) for token in parse])
+    counter.update([feature_function(token) for token in parse if len(feature_function(token)) > 0])
     return dict(counter)
 
 
@@ -152,7 +152,11 @@ def extract_bigram_feature(parse, percept):
     counter = Counter()
     for sent in parse.sents:
         if len(sent) > 1:
-            counter.update([percept(sent[i]) + '_' + percept(sent[i+1]) for i in range(len(sent)-1) if len(percept(sent[i])) > 0 and len(percept(sent[i+1])) > 0])
+            for i in range(len(sent)-1):
+                percept1 = percept(sent[i])
+                percept2 = percept(sent[i+1])
+                if len(percept1) > 0 and len(percept2) > 0:
+                    counter.update([percept1 + '_' + percept2])
     return dict(counter)
 
 
