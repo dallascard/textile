@@ -322,20 +322,24 @@ def stage2(project_dir, subset, target_year, config_file, penalty='l1', suffix='
     n_train = len(train_items)
     n_test = len(test_items)
 
-    n = 50
+    n = 100
     print("LR features")
     # load features from previous model
     top_features = get_top_features.get_top_features(os.path.join(dirs.dir_models(project_dir), stage1_model_basename), n)
-    for f in top_features:
-        print(f)
+    lr_features, weights = zip(*top_features)
+    for i in range(n):
+        print(lr_features[i], weights[i])
 
     print("\nFightin' features")
     if annotated_subset is not None:
         fightin_lexicon, scores = fightin_words.load_from_config_files(project_dir, annotated_subset, subset, train_items, config_file)
-        for i in range(len(fightin_lexicon)):
+        for i in range(n):
             print(fightin_lexicon[i], scores[i])
 
-
+    print("\nIntersection")
+    intersection = set(lr_features).intersection(set(fightin_lexicon))
+    for w in intersection:
+        print(w)
 
 
 
