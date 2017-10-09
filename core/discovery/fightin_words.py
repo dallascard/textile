@@ -112,9 +112,9 @@ def load_from_config_files(project, target_subset, background_subset, items_to_u
     for f in config['feature_defs']:
         feature_defs.append(features.parse_feature_string(f))
 
-    target_feature = features.load_and_process_features_for_training(target_features_dir, feature_defs, items_to_use, verbose=False)
+    target_feature, _ = features.load_and_process_features_for_training(target_features_dir, feature_defs, items_to_use, verbose=False)
 
-    background_feature = features.load_and_process_features_for_training(background_features_dir, feature_defs, items_to_use, verbose=False)
+    background_feature, _ = features.load_and_process_features_for_training(background_features_dir, feature_defs, items_to_use, verbose=False)
 
     return select_features(target_feature, background_feature, n=n)
 
