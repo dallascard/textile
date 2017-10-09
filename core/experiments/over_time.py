@@ -20,7 +20,7 @@ def main():
     #                  help='Number of training instances to use (0 for all): default=%default')
     #parser.add_option('--n_calib', dest='n_calib', default=100,
     #                  help='Number of test instances to use for calibration: default=%default')
-    parser.add_option('--first_year', dest='first_year', default=1991,
+    parser.add_option('--first_year', dest='first_year', default=1996,
                       help='First year: default=%default')
     parser.add_option('--sample', action="store_true", dest="sample", default=False,
                       help='Sample labels instead of averaging: default=%default')
