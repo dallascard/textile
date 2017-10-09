@@ -52,8 +52,8 @@ def main():
                       help='Random seed (None=random): default=%default')
     #parser.add_option('--run_all', action="store_true", dest="run_all", default=False,
     #                  help='Run models using combined train and calibration data: default=%default')
-    parser.add_option('--annotations', dest='annotations', default=None,
-                      help='config file to load the corresponding features from just annotated text: default=%default')
+    parser.add_option('--annotated', dest='annotated', default=None,
+                      help='Annotated subset to load the corresponding features from just annotated text: default=%default')
     parser.add_option('--verbose', action="store_true", dest="verbose", default=False,
                       help='Print more output: default=%default')
 
@@ -89,14 +89,14 @@ def main():
         seed = int(seed)
         np.random.seed(seed)
     #run_all = options.run_all
-    annotations = options.annotations
+    annotated = options.annotated
     verbose = options.verbose
 
     average = 'micro'
 
     stage1(project_dir, subset, target_year, config_file, penalty, suffix, do_ensemble, dh, label, intercept, n_dev_folds, verbose, average, seed, alpha_min, alpha_max, sample_labels)
 
-    stage2(project_dir, subset, target_year, config_file, penalty, suffix, do_ensemble, dh, label, intercept, n_dev_folds, verbose, average, seed, alpha_min, alpha_max, sample_labels, annotation_config=annotations)
+    stage2(project_dir, subset, target_year, config_file, penalty, suffix, do_ensemble, dh, label, intercept, n_dev_folds, verbose, average, seed, alpha_min, alpha_max, sample_labels, annotated_subset=annotated)
 
 
 def stage1(project_dir, subset, target_year, config_file, penalty='l1', suffix='', do_ensemble=True, dh=100, label='label', intercept=True, n_dev_folds=5, verbose=False, average='micro', seed=None, alpha_min=0.01, alpha_max=1000.0, sample_labels=False):
@@ -253,7 +253,7 @@ def stage1(project_dir, subset, target_year, config_file, penalty='l1', suffix='
     output_df.to_csv(os.path.join(dirs.dir_models(project_dir), model_name, 'results.csv'))
 
 
-def stage2(project_dir, subset, target_year, config_file, penalty='l1', suffix='', do_ensemble=True, dh=100, label='label', intercept=True, n_dev_folds=5, verbose=False, average='micro', seed=None, alpha_min=0.01, alpha_max=1000.0, sample_labels=False, annotation_config=None):
+def stage2(project_dir, subset, target_year, config_file, penalty='l1', suffix='', do_ensemble=True, dh=100, label='label', intercept=True, n_dev_folds=5, verbose=False, average='micro', seed=None, alpha_min=0.01, alpha_max=1000.0, sample_labels=False, annotated_subset=None):
 
     stage1_model_basename = subset + '_' + label + '_year_' + target_year + '_LR_' + penalty + '_' + str(dh)
     if sample_labels:
@@ -293,7 +293,7 @@ def stage2(project_dir, subset, target_year, config_file, penalty='l1', suffix='
     for f in top_features:
         print(f)
 
-    if annotation_config is not None:
+    if annotated_subset is not None:
         fightin_lexicon, scores = fightin_words.load_from_config_files(annotation_config, config_file, n=n)
         for i in range(len(fightin_lexicon)):
             print(fightin_lexicon[i], scores[i])

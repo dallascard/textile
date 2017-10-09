@@ -102,23 +102,19 @@ def log_odds_normalized_diff(first_counts, second_counts, alphas):
     return word_scores
 
 
-def load_from_config_files(project, subset, items_to_use, target_config_file, background_config_file, n=100, verbose=True):
+def load_from_config_files(project, target_subset, background_subset, items_to_use, config_file, n=100, verbose=True):
 
-    features_dir = dirs.dir_features(project, subset)
+    target_features_dir = dirs.dir_features(project, target_subset)
+    background_features_dir = dirs.dir_features(project, background_subset)
 
-    target_config = fh.read_json(target_config_file)
-    target_feature_defs = []
-    for f in target_config['feature_defs']:
-        target_feature_defs.append(features.parse_feature_string(f))
+    config = fh.read_json(config_file)
+    feature_defs = []
+    for f in config['feature_defs']:
+        feature_defs.append(features.parse_feature_string(f))
 
-    background_config = fh.read_json(background_config_file)
-    background_feature_defs = []
-    for f in background_config['feature_defs']:
-        background_feature_defs.append(features.parse_feature_string(f))
+    target_feature = features.load_and_process_features_for_training(target_features_dir, feature_defs, items_to_use, verbose=False)
 
-    target_feature = features.load_and_process_features_for_training(features_dir, target_feature_defs, items_to_use, verbose=False)
-
-    background_feature = features.load_and_process_features_for_training(features_dir, background_feature_defs, items_to_use, verbose=False)
+    background_feature = features.load_and_process_features_for_training(background_features_dir, feature_defs, items_to_use, verbose=False)
 
     return select_features(target_feature, background_feature, n=n)
 
