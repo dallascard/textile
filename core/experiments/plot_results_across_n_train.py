@@ -206,8 +206,8 @@ def main():
         dot_size = 5
         linewidth = 2
 
-        if objective == 'f1' and not no_ACC:
-            if base == 'mfc':
+        if objective == 'f1':
+            if base == 'mfc' and not no_ACC:
                 ax.scatter(np.array(x)-1.5*offset, ACC, c=CB6[0], alpha=0.5, s=dot_size)
                 ax.plot(n_train_means, ACC_means, label='TPR/FRP correction', c=CB6[0], linewidth=linewidth)
 
