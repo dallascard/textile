@@ -41,6 +41,10 @@ def main():
                       help='Hidden dimension for MLP: default=%default')
     parser.add_option('--offset', dest='offset', default=9,
                       help='Offset: default=%default')
+    parser.add_option('--no_ACC', action="store_true", dest="no_ACC", default=False,
+                      help='Do not plot ACC: default=%default')
+    parser.add_option('--no_train', action="store_true", dest="no_train", default=False,
+                      help='Do not plot train level: default=%default')
 
     (options, args) = parser.parse_args()
 
@@ -56,6 +60,8 @@ def main():
     penalty = options.penalty
     dh = str(int(options.dh))
     offset = int(options.offset)
+    no_ACC = options.no_ACC
+    no_train_plot = options.no_train
 
     fig, ax = plt.subplots()
 
@@ -200,22 +206,22 @@ def main():
         dot_size = 5
         linewidth = 2
 
-        if objective == 'f1':
+        if objective == 'f1' and not no_ACC:
             if base == 'mfc':
                 ax.scatter(np.array(x)-1.5*offset, ACC, c=CB6[0], alpha=0.5, s=dot_size)
-                ax.plot(n_train_means, ACC_means, label='ACC', c=CB6[0], linewidth=linewidth)
+                ax.plot(n_train_means, ACC_means, label='TPR/FRP correction', c=CB6[0], linewidth=linewidth)
 
             ax.scatter(np.array(x)-0.5*offset, CC, c=CB6[1], alpha=0.5, s=dot_size)
-            ax.plot(n_train_means, CC_means, label='CC', c=CB6[1], linewidth=linewidth)
+            ax.plot(n_train_means, CC_means, label='predicted labels', c=CB6[1], linewidth=linewidth)
 
         if objective == 'f1':
             ax.scatter(np.array(x)+0.5*offset, PCC_nontrain, c=CB6[2], alpha=0.5, s=dot_size)
-            ax.plot(n_train_means, PCC_means, label='PCC (acc)', c=CB6[2], linewidth=linewidth)
+            ax.plot(n_train_means, PCC_means, label='predicted probabilites', c=CB6[2], linewidth=linewidth)
         else:
             ax.scatter(np.array(x)+1.5*offset, PCC_nontrain, c=CB6[3], alpha=0.5, s=dot_size)
-            ax.plot(n_train_means, PCC_means, label='PCC (cal)', c=CB6[3], linewidth=linewidth)
+            ax.plot(n_train_means, PCC_means, label='tuned for calibration', c=CB6[3], linewidth=linewidth)
 
-        if objective == 'calibration':
+        if objective == 'calibration' and no_train_plot:
             ax.plot([np.min(n_train_means), np.max(n_train_means)], [np.mean(train_means), np.mean(train_means)], 'k--', label='Train', alpha=0.5, linewidth=1)
         #if objective == 'f1':
         #    ax.scatter(np.array(x)+2.5*offset, Venn, c=CB6[5], alpha=0.5, s=dot_size)
