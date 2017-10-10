@@ -219,15 +219,16 @@ def main():
             ax.plot([np.min(n_train_means), np.max(n_train_means)], [np.mean(PCC_means), np.mean(PCC_means)], label='tuned for calibration', c=CB6[3], linewidth=linewidth, linestyle='dashed', alpha=0.9)
 
         if objective == 'f1':
-            if not no_SRS:
-                ax.scatter(np.array(x), SRS, c=CB6[4], alpha=0.5, s=dot_size)
-                ax.plot(n_train_means, SRS_means,  label='SRS', c=CB6[4], linewidth=linewidth, alpha=0.8)
-                #ax.plot(n_train_means, np.array(SRS_means) + np.array(SRS_stds),  label='SRS', c=CB6[4], linestyle='dashed')
 
             if not no_IVAP:
                 ax.scatter(np.array(x)+offset, Venn, c=CB6[5], alpha=0.5, s=dot_size)
                 ax.plot(n_train_means, Venn_means,  label='IVAP', c=CB6[5], linewidth=linewidth, alpha=0.8)
                 #ax.plot(n_train_means, np.array(Venn_means) + np.array(Venn_stds),  label='SRS', c=CB6[5], linestyle='dashed')
+
+            if not no_SRS:
+                ax.scatter(np.array(x), SRS, c=CB6[4], alpha=0.5, s=dot_size)
+                ax.plot(n_train_means, SRS_means,  label='SRS', c=CB6[4], linewidth=linewidth, alpha=0.8)
+                #ax.plot(n_train_means, np.array(SRS_means) + np.array(SRS_stds),  label='SRS', c=CB6[4], linestyle='dashed')
 
             print("ttest")
             for val in target_values:
