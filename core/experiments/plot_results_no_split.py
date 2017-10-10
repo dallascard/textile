@@ -37,6 +37,11 @@ def main():
                       help='Hidden dimension for MLP: default=%default')
     parser.add_option('--offset', dest='offset', default=10,
                       help='Offset: default=%default')
+    parser.add_option('--no_PCC_cal', action="store_true", dest="no_PCC_cal", default=False,
+                      help='Do not plot PCC cal: default=%default')
+    parser.add_option('--no_SRS', action="store_true", dest="no_SRS", default=False,
+                      help='Do not plot SRS: default=%default')
+
 
     (options, args) = parser.parse_args()
     output_file = args[0]
@@ -49,6 +54,8 @@ def main():
     penalty = options.penalty
     dh = str(int(options.dh))
     offset = float(options.offset)
+    no_PCC_cal = options.no_PCC_cal
+    no_SRS = options.no_SRS
 
     fig, ax = plt.subplots()
 
@@ -184,7 +191,7 @@ def main():
         if objective == 'f1':
             ax.scatter(np.array(x)-0.5*offset, PCC_nontrain, c=CB6[2], alpha=0.5, s=dot_size)
             ax.plot(n_train_means, PCC_means, label='PCC (acc)', c=CB6[2], linewidth=linewidth)
-        else:
+        elif not no_PCC_cal:
             ax.scatter(np.array(x)+0.5*offset, PCC_nontrain, c=CB6[3], alpha=0.5, s=dot_size)
             ax.plot(n_train_means, PCC_means, label='PCC (cal)', c=CB6[3], linewidth=linewidth)
         #ax.plot(n_train_means, np.array(PCC_means) + np.array(PCC_stds), label=name + ' (+1std)', linestyle='dashed', alpha=0.5, c=colors[1])
@@ -192,7 +199,7 @@ def main():
 
         #ax.plot(n_train_means, Venn_means,  label='Venn' + objective[:3], alpha=0.5)
 
-        if objective == 'calibration':
+        if objective == 'calibration' and not no_SRS:
             ax.scatter(np.array(x)+1.5*offset, SRS, c=CB6[4], alpha=0.5, s=dot_size)
             ax.plot(n_train_means, SRS_means,  label='SRS', c=CB6[4], linewidth=linewidth)
             #ax.plot(n_train_means, np.array(SRS_means) + np.array(SRS_stds), label='SRS' + ' (+1std)', linestyle='dashed', alpha=0.5, c=colors[2])
