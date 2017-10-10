@@ -221,7 +221,7 @@ def main():
             ax.scatter(np.array(x)+1.5*offset, PCC_nontrain, c=CB6[3], alpha=0.5, s=dot_size)
             ax.plot(n_train_means, PCC_means, label='tuned for calibration', c=CB6[3], linewidth=linewidth)
 
-        if objective == 'calibration' and no_train_plot:
+        if objective == 'calibration' and not no_train_plot:
             ax.plot([np.min(n_train_means), np.max(n_train_means)], [np.mean(train_means), np.mean(train_means)], 'k--', label='Train', alpha=0.5, linewidth=1)
         #if objective == 'f1':
         #    ax.scatter(np.array(x)+2.5*offset, Venn, c=CB6[5], alpha=0.5, s=dot_size)
