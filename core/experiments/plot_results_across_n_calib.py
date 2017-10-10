@@ -42,6 +42,8 @@ def main():
                       help='offset: default=%default')
     parser.add_option('--averaged', action="store_true", dest="averaged", default=False,
                       help='Use value of averaged with calib: default=%default')
+    parser.add_option('--no_PCC_cal', action="store_true", dest="no_PCC_cal", default=False,
+                      help='Use value of averaged with calib: default=%default')
 
     (options, args) = parser.parse_args()
     output_file = args[0]
@@ -57,6 +59,7 @@ def main():
     dh = str(int(options.dh))
     offset = int(options.offset)
     averaged = options.averaged
+    no_PCC_cal = options.no_PCC_cal
 
     if averaged:
         venn_target = 'Venn_averaged'
@@ -210,16 +213,17 @@ def main():
 
         if objective == 'calibration':
             ax.scatter(np.array(x)-offset, PCC_nontrain, c=CB6[3], alpha=0.5, s=dot_size)
-            ax.plot([np.min(n_train_means), np.max(n_train_means)], [np.mean(PCC_means), np.mean(PCC_means)], label='PCC (cal)', c=CB6[3], linewidth=linewidth, linestyle='dashed', alpha=0.9)
+            ax.plot([np.min(n_train_means), np.max(n_train_means)], [np.mean(PCC_means), np.mean(PCC_means)], label='tuned for calibration', c=CB6[3], linewidth=linewidth, linestyle='dashed', alpha=0.9)
 
         if objective == 'f1':
             ax.scatter(np.array(x), SRS, c=CB6[4], alpha=0.5, s=dot_size)
             ax.plot(n_train_means, SRS_means,  label='SRS', c=CB6[4], linewidth=linewidth, alpha=0.8)
             #ax.plot(n_train_means, np.array(SRS_means) + np.array(SRS_stds),  label='SRS', c=CB6[4], linestyle='dashed')
 
-            ax.scatter(np.array(x)+offset, Venn, c=CB6[5], alpha=0.5, s=dot_size)
-            ax.plot(n_train_means, Venn_means,  label='IVAP', c=CB6[5], linewidth=linewidth, alpha=0.8)
-            #ax.plot(n_train_means, np.array(Venn_means) + np.array(Venn_stds),  label='SRS', c=CB6[5], linestyle='dashed')
+            if not no_PCC_cal:
+                ax.scatter(np.array(x)+offset, Venn, c=CB6[5], alpha=0.5, s=dot_size)
+                ax.plot(n_train_means, Venn_means,  label='IVAP', c=CB6[5], linewidth=linewidth, alpha=0.8)
+                #ax.plot(n_train_means, np.array(Venn_means) + np.array(Venn_stds),  label='SRS', c=CB6[5], linestyle='dashed')
 
             print("ttest")
             for val in target_values:
