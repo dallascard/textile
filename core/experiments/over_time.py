@@ -292,7 +292,10 @@ def test_over_time(project_dir, subset, config_file, first_year, stage1_logfile=
             results_df.loc['cross_val'] = [dev_f1, dev_acc, dev_cal_mae, dev_cal_est]
 
             # predict on test data
-            test_predictions_df, test_pred_probs_df, test_pred_proportions = predict.predict(project_dir, model, model_name, subset, label, items_to_use=test_items, verbose=verbose)
+            force_dense = False
+            if model_type == 'MLP':
+                force_dense = True
+            test_predictions_df, test_pred_probs_df, test_pred_proportions = predict.predict(project_dir, model, model_name, subset, label, items_to_use=test_items, verbose=verbose, force_dense=force_dense)
             f1_test, acc_test = evaluate_predictions.evaluate_predictions(test_labels_df, test_predictions_df, test_pred_probs_df, pos_label=pos_label, average=average)
             true_test_vector = np.argmax(test_labels_df.as_matrix(), axis=1)
             #test_cal_mae = evaluation.eval_proportions_mae(test_labels_df.as_matrix(), test_pred_probs_df.as_matrix())

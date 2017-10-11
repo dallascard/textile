@@ -83,6 +83,7 @@ def predict(project_dir, model, model_name, test_subset, label_name, items_to_us
     else:
         X = features_concat.get_counts()
     if force_dense:
+        assert X.size < 10000000
         X = np.array(X.todense())
 
     print("Feature matrix shape: (%d, %d)" % X.shape)
