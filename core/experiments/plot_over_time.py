@@ -70,7 +70,7 @@ def plot_over_time(logfiles):
         print(logfile)
         basename = os.path.basename(logfile)
 
-        log = fh.read_json(logfiles)
+        log = fh.read_json(logfile)
         model_basename = over_time.make_model_basename(log)
 
         project_dir = log['project']
