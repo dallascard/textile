@@ -377,7 +377,7 @@ class tf_MLP:
                         epochs_since_improvement += 1
                         print("Epochs since improvement = %d" % epochs_since_improvement)
 
-                else:
+                elif self.objective == 'calibration':
                     #print(dev_probs)
                     dev_cal_rmse = evaluation.evaluate_calibration_rmse(Y_dev, dev_probs, soft_labels=True)
                     print("Dev RMSE: %0.4f" % dev_cal_rmse)
@@ -391,6 +391,8 @@ class tf_MLP:
                     else:
                         epochs_since_improvement += 1
                         print("Epochs since improvement = %d" % epochs_since_improvement)
+                else:
+                    sys.exit('objective not recognized')
 
                 if early_stopping and epoch >= min_epochs and epochs_since_improvement > patience:
                     print("Patience exceeded. Done")

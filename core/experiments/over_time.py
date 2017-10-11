@@ -16,6 +16,8 @@ from core.util import dirs
 def main():
     usage = "%prog project_dir subset model_config.json"
     parser = OptionParser(usage=usage)
+    parser.add_option('--stage', dest='stage', default=1,
+                      help='Stage [1|2]: 2 uses feature selection from 1: default=%default')
     #parser.add_option('--n_train', dest='n_train', default=100,
     #                  help='Number of training instances to use (0 for all): default=%default')
     #parser.add_option('--n_calib', dest='n_calib', default=100,
@@ -28,24 +30,34 @@ def main():
                       help='Suffix to mdoel name: default=%default')
     parser.add_option('--model', dest='model', default='LR',
                       help='Model type [LR|MLP]: default=%default')
+    parser.add_option('--loss', dest='loss', default='log',
+                      help='Loss function [log|brier]: default=%default')
+    parser.add_option('--penalty', dest='penalty', default='l2',
+                      help='Regularization type: default=%default')
+    parser.add_option('--no_intercept', action="store_true", dest="no_intercept", default=False,
+                      help='Use to fit a model with no intercept: default=%default')
     parser.add_option('--dh', dest='dh', default=100,
                       help='Hidden layer size for MLP [0 for None]: default=%default')
+    parser.add_option('--nonlinearity', dest='nonlinearity', default='tanh',
+                      help='Nonlinearity for an MLP [tanh|sigmoid|relu]: default=%default')
     parser.add_option('--alpha_min', dest='alpha_min', default=0.01,
                       help='Minimum value of training hyperparameter: default=%default')
     parser.add_option('--alpha_max', dest='alpha_max', default=1000,
                       help='Maximum value of training hyperparameter: default=%default')
+    parser.add_option('--n_alphas', dest='n_alphas', default=8,
+                      help='Number of alpha values to try: default=%default')
     #parser.add_option('--ensemble', action="store_true", dest="ensemble", default=False,
     #                  help='Make an ensemble from cross-validation, instead of training one model: default=%default')
     parser.add_option('--label', dest='label', default='label',
                       help='Label name: default=%default')
     #parser.add_option('--cshift', dest='cshift', default=None,
     #                  help='Covariate shift method [None|classify]: default=%default')
-    parser.add_option('--penalty', dest='penalty', default='l2',
-                      help='Regularization type: default=%default')
-    parser.add_option('--no_intercept', action="store_true", dest="no_intercept", default=False,
-                      help='Use to fit a model with no intercept: default=%default')
-    #parser.add_option('--objective', dest='objective', default='f1',
-    #                  help='Objective for choosing best alpha [calibration|f1]: default=%default')
+    parser.add_option('--objective', dest='objective', default='f1',
+                      help='Objective for choosing best alpha [calibration|f1]: default=%default')
+    parser.add_option('--early', action="store_true", dest="early_stopping", default=False,
+                      help='Use early stopping for MLP: default=%default')
+    parser.add_option('--group', action="store_true", dest="group", default=False,
+                      help='Group identical feature vectors: default=%default')
     parser.add_option('--n_dev_folds', dest='n_dev_folds', default=5,
                       help='Number of dev folds for tuning regularization: default=%default')
     #parser.add_option('--repeats', dest='repeats', default=3,
@@ -67,25 +79,29 @@ def main():
     subset = args[1]
     config_file = args[2]
 
-
+    stage = int(options.stage)
     #n_train = int(options.n_train)
     #n_calib = int(options.n_calib)
     first_year = int(options.first_year)
     sample_labels = options.sample
     suffix = options.suffix
     model_type = options.model
-    #loss = options.loss
+    loss = options.loss
     dh = int(options.dh)
+    nonlinearity = options.nonlinearity
     alpha_min = float(options.alpha_min)
     alpha_max = float(options.alpha_max)
+    n_alphas = int(options.n_alphas)
     do_ensemble = True
     #exclude_calib = options.exclude_calib
     #calib_pred = options.calib_pred
     label = options.label
     penalty = options.penalty
     #cshift = options.cshift
-    #objective = options.objective
+    objective = options.objective
+    early_stopping = options.early_stopping
     intercept = not options.no_intercept
+    group_identical = options.group_identical
     n_dev_folds = int(options.n_dev_folds)
     #repeats = int(options.repeats)
     seed = options.seed
@@ -99,21 +115,21 @@ def main():
 
     average = 'micro'
 
-    stage1(project_dir, subset, config_file, first_year, penalty, suffix, model_type, do_ensemble, dh, label, intercept, n_dev_folds, verbose, average, seed, alpha_min, alpha_max, sample_labels, annotated_subset=annotated, n_terms=n_terms)
+    test_over_time(project_dir, subset, config_file, first_year, stage, penalty, suffix, model_type, loss, objective, do_ensemble, dh, label, intercept, n_dev_folds, verbose, average, seed, alpha_min, alpha_max, n_alphas, sample_labels, group_identical, annotated, n_terms, nonlinearity, early_stopping=early_stopping)
 
     #stage2(project_dir, subset, config_file, penalty, suffix, do_ensemble, dh, label, intercept, n_dev_folds, verbose, average, seed, alpha_min, alpha_max, sample_labels, annotated_subset=annotated, n_terms=n_terms)
 
 
-def stage1(project_dir, subset, config_file, first_year, penalty='l2', suffix='', model_type='LR', do_ensemble=True, dh=100, label='label', intercept=True, n_dev_folds=5, verbose=False, average='micro', seed=None, alpha_min=0.01, alpha_max=1000.0, sample_labels=False, annotated_subset=None, n_terms=100):
-
+def test_over_time(project_dir, subset, config_file, first_year, stage=1, penalty='l2', suffix='', model_type='LR', loss='log', objective='f1', do_ensemble=True, dh=100, label='label', intercept=True, n_dev_folds=5, verbose=False, average='micro', seed=None, alpha_min=0.01, alpha_max=1000.0, n_alpha=8, sample_labels=False, group_identical=False, annotated_subset=None, n_terms=0, nonlinearity='tanh', init_lr=1e-4, min_epochs=2, max_epochs=100, patience=8, tol=1e-4, early_stopping=False):
+    # Just run a regular model, one per year, training on the past, and save the reults
 
     model_basename = subset + '_' + label + '_' + 'year' + '_' + model_type + '_' + penalty + '_' + str(dh)
-    #model_basename +=  '_' + str(n_train) + '_' + str(n_calib) + '_' + objective
-    #if cshift is not None:
-    #    model_basename += '_cshift'
     if sample_labels:
         model_basename += '_sampled'
     model_basename += suffix
+    stage1_model_basename = model_basename
+    if stage == 2:
+        model_basename += '_stage2'
 
     # save the experiment parameters to a log file
     logfile = os.path.join(dirs.dir_logs(project_dir), model_basename + '.json')
@@ -171,13 +187,28 @@ def stage1(project_dir, subset, config_file, first_year, penalty='l2', suffix=''
             n_items, n_classes = labels_df.shape
 
             vocab = None
+            fightin_lexicon = None
             if annotated_subset is not None:
                 print("Determining fightin' words")
                 model_name += '_fight'
                 fightin_lexicon, scores = fightin_words.load_from_config_files(project_dir, annotated_subset, subset, config_file, items_to_use=train_items_all, n=n_terms)
                 vocab = fightin_lexicon
 
-            # add in a stage to eliminate items with no labels?
+            if stage == 2:
+                print("Loading feature from stage 1")
+                # load features from previous model
+                top_features = get_top_features.get_top_features(os.path.join(dirs.dir_models(project_dir), stage1_model_basename), n_terms)
+                lr_features, weights = zip(*top_features)
+                vocab = lr_features
+
+                if annotated_subset is not None:
+                    print("\nTaking intersection:")
+                    intersection = set(lr_features).intersection(set(fightin_lexicon))
+                    vocab = intersection
+                    for w in intersection:
+                        print(w)
+
+            # add in a stage to eliminate items with no labels
             print("Subsetting items with labels")
             label_sums_df = labels_df.sum(axis=1)
             labeled_item_selector = label_sums_df > 0
@@ -239,8 +270,8 @@ def stage1(project_dir, subset, config_file, first_year, penalty='l2', suffix=''
             results_df = pd.DataFrame([], columns=['f1', 'acc', 'mae', 'estimated calibration'])
 
             # Now train a model on the training data, saving the calibration data for calibration
-            print("Training model on training data only")
-            model, dev_f1, dev_acc, dev_cal_mae, dev_cal_est = train.train_model_with_labels(project_dir, 'LR', 'log', model_name, subset, sampled_labels_df, feature_defs, weights_df=weights_df, items_to_use=train_items, penalty='l2', alpha_min=alpha_min, alpha_max=alpha_max,  intercept=intercept, objective='f1', n_dev_folds=n_dev_folds, do_ensemble=do_ensemble, dh=dh, seed=seed, pos_label=pos_label, vocab=vocab, verbose=verbose)
+            print("Training a model")
+            model, dev_f1, dev_acc, dev_cal_mae, dev_cal_est = train.train_model_with_labels(project_dir, model_type, loss, model_name, subset, sampled_labels_df, feature_defs, weights_df=weights_df, items_to_use=train_items, penalty='l2', alpha_min=alpha_min, alpha_max=alpha_max, n_alphas=n_alphas, intercept=intercept, objective=objective, n_dev_folds=n_dev_folds, do_ensemble=do_ensemble, dh=dh, seed=seed, pos_label=pos_label, vocab=vocab, group_identical=group_identical, nonlinearity=nonlinearity, init_lr=init_lr, min_epochs=min_epochs, max_epochs=max_epochs, patience=patience, tol=tol, early_stopping=early_stopping, verbose=verbose)
             results_df.loc['cross_val'] = [dev_f1, dev_acc, dev_cal_mae, dev_cal_est]
 
             # predict on test data
@@ -268,93 +299,6 @@ def stage1(project_dir, subset, config_file, first_year, penalty='l2', suffix=''
             results_df.to_csv(os.path.join(dirs.dir_models(project_dir), model_name, 'accuracy.csv'))
             output_df.to_csv(os.path.join(dirs.dir_models(project_dir), model_name, 'results.csv'))
 
-
-def stage2(project_dir, subset, config_file, penalty='l1', suffix='', do_ensemble=True, dh=100, label='label', intercept=True, n_dev_folds=5, verbose=False, average='micro', seed=None, alpha_min=0.01, alpha_max=1000.0, sample_labels=False, annotated_subset=None, n_terms=100):
-
-    stage1_model_basename = subset + '_' + label + '_year' + '_LR_' + penalty + '_' + str(dh)
-    if sample_labels:
-        stage1_model_basename += '_sampled'
-    stage1_model_basename += suffix + '_all_LR_l2'
-
-    stage2_model_basename = subset + '_' + label + '_year_' + target_year + '_LR_' + penalty + '_' + str(dh)
-    if sample_labels:
-        stage2_model_basename += '_sampled'
-    stage2_model_basename += suffix
-
-
-    # save the experiment parameters to a log file
-    logfile = os.path.join(dirs.dir_logs(project_dir), stage2_model_basename + '.json')
-    fh.makedirs(dirs.dir_logs(project_dir))
-    log = {
-        'project': project_dir,
-        'subset': subset,
-        'config_file': config_file,
-        'suffix': suffix,
-        'dh': dh,
-        'alpha_min': alpha_min,
-        'alpha_max': alpha_max,
-        'do_ensemble': do_ensemble,
-        'label': label,
-        'intercept': intercept,
-        'n_dev_folds': n_dev_folds,
-        'average': average,
-        'sample_labels': sample_labels
-    }
-    fh.write_to_json(log, logfile)
-
-    # load the file that contains metadata about each item
-    metadata_file = os.path.join(dirs.dir_subset(project_dir, subset), 'metadata.csv')
-    metadata = fh.read_csv_to_df(metadata_file)
-    #field_vals = list(set(metadata['year'].values))
-    #field_vals.sort()
-    #print("Splitting data according to :", field_vals)
-
-    # first, split into training and non-train data based on the field of interest
-    test_selector_all = metadata['year'] == int(target_year)
-    test_subset_all = metadata[test_selector_all]
-    test_items_all = test_subset_all.index.tolist()
-    n_test_all = len(test_items_all)
-
-    train_selector_all = metadata['year'] < int(target_year)
-    train_subset_all = metadata[train_selector_all]
-    train_items_all = list(train_subset_all.index)
-    n_train_all = len(train_items_all)
-
-    # load all labels
-    label_dir = dirs.dir_labels(project_dir, subset)
-    labels_df = fh.read_csv_to_df(os.path.join(label_dir, label + '.csv'), index_col=0, header=0)
-    n_items, n_classes = labels_df.shape
-
-    # add in a stage to eliminate items with no labels?
-    print("Subsetting items with labels")
-    label_sums_df = labels_df.sum(axis=1)
-    labeled_item_selector = label_sums_df > 0
-    labels_df = labels_df[labeled_item_selector]
-    n_items, n_classes = labels_df.shape
-    labeled_items = set(labels_df.index)
-
-    train_items = [i for i in train_items_all if i in labeled_items]
-    test_items = [i for i in test_items_all if i in labeled_items]
-    n_train = len(train_items)
-    n_test = len(test_items)
-
-    print("LR features")
-    # load features from previous model
-    top_features = get_top_features.get_top_features(os.path.join(dirs.dir_models(project_dir), stage1_model_basename), n_terms)
-    lr_features, weights = zip(*top_features)
-    for i in range(n_terms):
-        print(lr_features[i], weights[i])
-
-    print("\nFightin' features")
-    if annotated_subset is not None:
-        fightin_lexicon, scores = fightin_words.load_from_config_files(project_dir, annotated_subset, subset, config_file, n=n_terms)
-        for i in range(n_terms):
-            print(fightin_lexicon[i], scores[i])
-
-        print("\nIntersection")
-        intersection = set(lr_features).intersection(set(fightin_lexicon))
-        for w in intersection:
-            print(w)
 
 
 
