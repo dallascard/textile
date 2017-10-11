@@ -87,6 +87,10 @@ def plot_over_time(logfiles):
             n_train_values.append(df.loc['PCC_test', 'N'])
             pcc_values.append(df.loc['PCC_test', 'MAE'])
 
+        order = np.argsort(n_train_values)
+        n_train_values = np.array(n_train_values)[order]
+        pcc_values = np.array(pcc_values)[order]
+
         #print(n_train_values)
         #print(pcc_values)
         ax.scatter(n_train_values, pcc_values, label=basename)
