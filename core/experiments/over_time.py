@@ -16,8 +16,8 @@ from core.util import dirs
 def main():
     usage = "%prog project_dir subset model_config.json"
     parser = OptionParser(usage=usage)
-    parser.add_option('--stage', dest='stage', default=1,
-                      help='Stage [1|2]: 2 uses feature selection from 1: default=%default')
+    parser.add_option('--stage2', dest='logfile', default=None,
+                      help='run stage 2 using logfile from stage 1: default=%default')
     #parser.add_option('--n_train', dest='n_train', default=100,
     #                  help='Number of training instances to use (0 for all): default=%default')
     #parser.add_option('--n_calib', dest='n_calib', default=100,
@@ -79,7 +79,7 @@ def main():
     subset = args[1]
     config_file = args[2]
 
-    stage = int(options.stage)
+    stage1_logfile = options.logfile
     #n_train = int(options.n_train)
     #n_calib = int(options.n_calib)
     first_year = int(options.first_year)
@@ -115,35 +115,20 @@ def main():
 
     average = 'micro'
 
-    test_over_time(project_dir, subset, config_file, first_year, stage, penalty, suffix, model_type, loss, objective, do_ensemble, dh, label, intercept, n_dev_folds, verbose, average, seed, alpha_min, alpha_max, n_alphas, sample_labels, group_identical, annotated, n_terms, nonlinearity, early_stopping=early_stopping)
+    test_over_time(project_dir, subset, config_file, first_year, stage1_logfile, penalty, suffix, model_type, loss, objective, do_ensemble, dh, label, intercept, n_dev_folds, verbose, average, seed, alpha_min, alpha_max, n_alphas, sample_labels, group_identical, annotated, n_terms, nonlinearity, early_stopping=early_stopping)
 
     #stage2(project_dir, subset, config_file, penalty, suffix, do_ensemble, dh, label, intercept, n_dev_folds, verbose, average, seed, alpha_min, alpha_max, sample_labels, annotated_subset=annotated, n_terms=n_terms)
 
 
-def test_over_time(project_dir, subset, config_file, first_year, stage=1, penalty='l2', suffix='', model_type='LR', loss='log', objective='f1', do_ensemble=True, dh=100, label='label', intercept=True, n_dev_folds=5, verbose=False, average='micro', seed=None, alpha_min=0.01, alpha_max=1000.0, n_alphas=8, sample_labels=False, group_identical=False, annotated_subset=None, n_terms=0, nonlinearity='tanh', init_lr=1e-4, min_epochs=2, max_epochs=100, patience=8, tol=1e-4, early_stopping=False):
+def test_over_time(project_dir, subset, config_file, first_year, stage1_logfile=None, penalty='l2', suffix='', model_type='LR', loss='log', objective='f1', do_ensemble=True, dh=100, label='label', intercept=True, n_dev_folds=5, verbose=False, average='micro', seed=None, alpha_min=0.01, alpha_max=1000.0, n_alphas=8, sample_labels=False, group_identical=False, annotated_subset=None, n_terms=0, nonlinearity='tanh', init_lr=1e-4, min_epochs=2, max_epochs=100, patience=8, tol=1e-4, early_stopping=False):
     # Just run a regular model, one per year, training on the past, and save the reults
 
-    model_basename = subset + '_' + label + '_' + 'year' + '_' + model_type + '_' + penalty + '_' + str(dh) + '_' + objective
-    if sample_labels:
-        model_basename += '_sampled'
-    model_basename += suffix
-    if group_identical:
-        model_basename += '_grouped'
-    if annotated_subset:
-        model_basename += '_annotated'
-    stage1_model_basename = model_basename
-    if stage == 2:
-        model_basename += '_stage2_' + str(n_terms)
-
-    # save the experiment parameters to a log file
-    logfile = os.path.join(dirs.dir_logs(project_dir), model_basename + '.json')
-    fh.makedirs(dirs.dir_logs(project_dir))
     log = {
         'project': project_dir,
         'subset': subset,
         'config_file': config_file,
         'first_year': first_year,
-        'stage': stage,
+        'stage1_logfile': stage1_logfile,
         'penalty': penalty,
         'suffix': suffix,
         'model_type': model_type,
@@ -172,6 +157,16 @@ def test_over_time(project_dir, subset, config_file, first_year, stage=1, penalt
         'early_stopping': early_stopping
     }
 
+    model_basename = make_model_basename(log)
+    stage1_log = fh.read_json(stage1_logfile)
+    stage1_model_basename = ''
+    if stage1_logfile is not None:
+        stage1_model_basename = make_model_basename(stage1_log)
+
+    # save the experiment parameters to a log file
+    logfile = os.path.join(dirs.dir_logs(project_dir), model_basename + '.json')
+    fh.makedirs(dirs.dir_logs(project_dir))
+
     fh.write_to_json(log, logfile)
 
     # load the features specified in the config file
@@ -191,6 +186,7 @@ def test_over_time(project_dir, subset, config_file, first_year, stage=1, penalt
         if int(target_year) >= first_year:
             print("\nTesting on %s" % target_year)
             model_name = model_basename + '_' + str(target_year)
+            stage1_model_name = stage1_model_basename + '_' + str(target_year)
             # first, split into training and non-train data based on the field of interest
             test_selector_all = metadata['year'] == int(target_year)
             test_subset_all = metadata[test_selector_all]
@@ -210,17 +206,15 @@ def test_over_time(project_dir, subset, config_file, first_year, stage=1, penalt
             n_items, n_classes = labels_df.shape
 
             vocab = None
-            fightin_lexicon = None
-            if annotated_subset is not None:
-                print("Determining fightin' words")
-                model_name += '_fight'
-                fightin_lexicon, scores = fightin_words.load_from_config_files(project_dir, annotated_subset, subset, config_file, items_to_use=train_items_all, n=n_terms)
-                vocab = fightin_lexicon
+            if stage1_logfile is not None:
+                fightin_lexicon = None
+                if annotated_subset is not None:
+                    print("Determining fightin' words")
+                    fightin_lexicon, scores = fightin_words.load_from_config_files(project_dir, annotated_subset, subset, config_file, items_to_use=train_items_all, n=n_terms)
 
-            if stage == 2:
                 print("Loading feature from stage 1")
                 # load features from previous model
-                top_features = get_top_features.get_top_features(os.path.join(dirs.dir_models(project_dir), stage1_model_basename), n_terms)
+                top_features = get_top_features.get_top_features(os.path.join(dirs.dir_models(project_dir), stage1_model_name), n_terms)
                 lr_features, weights = zip(*top_features)
                 vocab = lr_features
 
@@ -323,6 +317,19 @@ def test_over_time(project_dir, subset, config_file, first_year, stage=1, penalt
             output_df.to_csv(os.path.join(dirs.dir_models(project_dir), model_name, 'results.csv'))
 
 
+def make_model_basename(log):
+    model_basename = log['subset'] + '_' + log['label'] + '_' + 'year' + '_' + log['model_type'] + '_' + log['penalty']
+    model_basename += '_' + str(log['dh']) + '_' + log['objective']
+    if log['sample_labels']:
+        model_basename += '_sampled'
+    model_basename += log['suffix']
+    if log['group_identical']:
+        model_basename += '_grouped'
+    if log['annotated_subset']:
+        model_basename += '_fight'
+    if log['stage1_logfile'] is not None:
+        model_basename += '_stage2_' + str(log['n_terms'])
+    return model_basename
 
 
 def get_estimate_and_std(labels_df, use_n_annotations=False):
