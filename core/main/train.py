@@ -342,7 +342,7 @@ def train_model_with_labels(project_dir, model_type, loss, model_name, subset, l
             for train_indices, dev_indices in kfold.split(X):
                 print("Starting fold %d" % fold)
                 name = model_name + '_' + str(fold)
-                model = mlp.MLP(dimensions=dimensions, loss_function=loss, nonlinearity=nonlinearity, penalty=penalty, reg_strength=0, output_dir=output_dir, name=name, pos_label=pos_label, objective=objective)
+                model = mlp.MLP(dimensions=dimensions, loss_function=loss, nonlinearity=nonlinearity, penalty=penalty, reg_strength=alpha, output_dir=output_dir, name=name, pos_label=pos_label, objective=objective)
 
                 X_train = X[train_indices, :]
                 Y_train = Y[train_indices, :]
