@@ -90,7 +90,7 @@ def plot_over_time(logfiles):
         #print(n_train_values)
         #print(pcc_values)
         ax.scatter(n_train_values, pcc_values, label=basename)
-        ax.plot([n_train_values[0], n_train_values[-1]], [np.mean(pcc_values, np.mean(pcc_values))], label=basename)
+        ax.plot([n_train_values[0], n_train_values[-1]], [np.mean(pcc_values), np.mean(pcc_values)], label=basename)
 
     ax.legend()
     fig.savefig('test.pdf', bbox_inches='tight')
