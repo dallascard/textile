@@ -158,9 +158,9 @@ def test_over_time(project_dir, subset, config_file, first_year, stage1_logfile=
     }
 
     model_basename = make_model_basename(log)
-    stage1_log = fh.read_json(stage1_logfile)
     stage1_model_basename = ''
     if stage1_logfile is not None:
+        stage1_log = fh.read_json(stage1_logfile)
         stage1_model_basename = make_model_basename(stage1_log)
 
     # save the experiment parameters to a log file
