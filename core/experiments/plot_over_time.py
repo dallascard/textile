@@ -56,9 +56,9 @@ def main():
     #penalty = options.penalty
     #cshift = options.cshift
     #objective = options.objective
-    intercept = not options.no_intercept
+    #intercept = not options.no_intercept
     #repeats = int(options.repeats)
-    verbose = options.verbose
+    #verbose = options.verbose
 
     plot_over_time(logfile)
 
