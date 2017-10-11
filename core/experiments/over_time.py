@@ -32,7 +32,7 @@ def main():
                       help='Model type [LR|MLP]: default=%default')
     parser.add_option('--loss', dest='loss', default='log',
                       help='Loss function [log|brier]: default=%default')
-    parser.add_option('--penalty', dest='penalty', default='l2',
+    parser.add_option('--penalty', dest='penalty', default='l1',
                       help='Regularization type: default=%default')
     parser.add_option('--no_intercept', action="store_true", dest="no_intercept", default=False,
                       help='Use to fit a model with no intercept: default=%default')
@@ -101,7 +101,7 @@ def main():
     objective = options.objective
     early_stopping = options.early_stopping
     intercept = not options.no_intercept
-    group_identical = options.group_identical
+    group_identical = options.group
     n_dev_folds = int(options.n_dev_folds)
     #repeats = int(options.repeats)
     seed = options.seed
