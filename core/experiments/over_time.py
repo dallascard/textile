@@ -120,16 +120,20 @@ def main():
     #stage2(project_dir, subset, config_file, penalty, suffix, do_ensemble, dh, label, intercept, n_dev_folds, verbose, average, seed, alpha_min, alpha_max, sample_labels, annotated_subset=annotated, n_terms=n_terms)
 
 
-def test_over_time(project_dir, subset, config_file, first_year, stage=1, penalty='l2', suffix='', model_type='LR', loss='log', objective='f1', do_ensemble=True, dh=100, label='label', intercept=True, n_dev_folds=5, verbose=False, average='micro', seed=None, alpha_min=0.01, alpha_max=1000.0, n_alpha=8, sample_labels=False, group_identical=False, annotated_subset=None, n_terms=0, nonlinearity='tanh', init_lr=1e-4, min_epochs=2, max_epochs=100, patience=8, tol=1e-4, early_stopping=False):
+def test_over_time(project_dir, subset, config_file, first_year, stage=1, penalty='l2', suffix='', model_type='LR', loss='log', objective='f1', do_ensemble=True, dh=100, label='label', intercept=True, n_dev_folds=5, verbose=False, average='micro', seed=None, alpha_min=0.01, alpha_max=1000.0, n_alphas=8, sample_labels=False, group_identical=False, annotated_subset=None, n_terms=0, nonlinearity='tanh', init_lr=1e-4, min_epochs=2, max_epochs=100, patience=8, tol=1e-4, early_stopping=False):
     # Just run a regular model, one per year, training on the past, and save the reults
 
-    model_basename = subset + '_' + label + '_' + 'year' + '_' + model_type + '_' + penalty + '_' + str(dh)
+    model_basename = subset + '_' + label + '_' + 'year' + '_' + model_type + '_' + penalty + '_' + str(dh) + '_' + objective
     if sample_labels:
         model_basename += '_sampled'
     model_basename += suffix
+    if group_identical:
+        model_basename += '_grouped'
+    if annotated_subset:
+        model_basename += '_annotated'
     stage1_model_basename = model_basename
     if stage == 2:
-        model_basename += '_stage2'
+        model_basename += '_stage2_' + str(n_terms)
 
     # save the experiment parameters to a log file
     logfile = os.path.join(dirs.dir_logs(project_dir), model_basename + '.json')
@@ -138,17 +142,36 @@ def test_over_time(project_dir, subset, config_file, first_year, stage=1, penalt
         'project': project_dir,
         'subset': subset,
         'config_file': config_file,
+        'first_year': first_year,
+        'stage': stage,
+        'penalty': penalty,
         'suffix': suffix,
-        'dh': dh,
-        'alpha_min': alpha_min,
-        'alpha_max': alpha_max,
+        'model_type': model_type,
+        'loss': loss,
+        'objective': objective,
         'do_ensemble': do_ensemble,
+        'dh': dh,
         'label': label,
         'intercept': intercept,
         'n_dev_folds': n_dev_folds,
         'average': average,
-        'sample_labels': sample_labels
+        'seed': seed,
+        'alpha_min': alpha_min,
+        'alpha_max': alpha_max,
+        'n_alphas': n_alphas,
+        'sample_labels': sample_labels,
+        'group_identical': group_identical,
+        'annotated_subset': annotated_subset,
+        'n_terms': n_terms,
+        'nonlinearity': nonlinearity,
+        'init_lr': init_lr,
+        'min_epochs': min_epochs,
+        'max_epochs': max_epochs,
+        'patience': patience,
+        'tol': tol,
+        'early_stopping': early_stopping
     }
+
     fh.write_to_json(log, logfile)
 
     # load the features specified in the config file
