@@ -341,6 +341,11 @@ def train_model_with_labels(project_dir, model_type, loss, model_name, subset, l
         best_dev_acc = 0.0
         best_dev_cal_mae = 0.0
         best_dev_cal_est = 0.0
+
+        if sparse.issparse(X):
+            assert X.size < 1000000
+            X = np.array(X.todense())
+
         for alpha_i, alpha in enumerate(alphas):
             alpha_models[alpha] = []
 
