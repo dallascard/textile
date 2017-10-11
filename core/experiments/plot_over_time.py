@@ -67,6 +67,7 @@ def plot_over_time(logfiles):
     fig, ax = plt.subplots()
 
     for logfile in logfiles:
+        print(logfile)
         basename = os.path.basename(logfile)
 
         log = fh.read_json(logfiles)
