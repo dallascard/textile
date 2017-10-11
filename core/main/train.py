@@ -178,7 +178,7 @@ def train_model_with_labels(project_dir, model_type, loss, model_name, subset, l
                 vector = X[i, :].todense().ravel()
             else:
                 vector = np.array(X[i, :]).ravel()
-            key = ''.join([str(int(s)) for s in vector.todense()])
+            key = ''.join([str(int(s)) for s in vector])
             X_counts[key] += np.sum(Y_orig[i, :])
             X_n_pos[key] += Y_orig[i, 1]
 
