@@ -13,7 +13,7 @@ import matplotlib.pyplot as plt
 
 
 def main():
-    usage = "%prog logfile.json"
+    usage = "%prog logfile1.json [logfile2.json ...]"
     parser = OptionParser(usage=usage)
     #parser.add_option('--n_train', dest='n_train', default=100,
     #                  help='Number of training instances to use (0 for all): default=%default')
@@ -44,7 +44,7 @@ def main():
 
     #project_dir = args[0]
     #subset = args[1]
-    logfile = args[0]
+    logfiles = args
 
     #n_train = int(options.n_train)
     #n_calib = int(options.n_calib)
@@ -60,47 +60,35 @@ def main():
     #repeats = int(options.repeats)
     #verbose = options.verbose
 
-    plot_over_time(logfile)
+    plot_over_time(logfiles)
 
 
-def plot_over_time(logfile):
-    log = fh.read_json(logfile)
-    model_basename = over_time.make_model_basename(log)
+def plot_over_time(logfiles):
+    fig, ax = plt.subplots()
 
-    project_dir = log['project']
+    for logfile in logfiles:
+        dirname, basename = os.path.basename(logfile)
 
-    files = glob.glob(os.path.join(dirs.dir_models(project_dir), model_basename + '_????', 'results.csv'))
-    print(files)
+        log = fh.read_json(logfiles)
+        model_basename = over_time.make_model_basename(log)
 
-    n_train_values = []
-    pcc_values = []
-    for f in files:
-        df = fh.read_csv_to_df(f)
-        n_train_values.append(df.loc['PCC_test', 'N'])
-        pcc_values.append(df.loc['PCC_test', 'MAE'])
+        project_dir = log['project']
 
-    print(n_train_values)
-    print(pcc_values)
+        files = glob.glob(os.path.join(dirs.dir_models(project_dir), model_basename + '_????', 'results.csv'))
+        print(files)
 
-    #fig, ax = plt.subplots()
-    #ax.scatter(n_train_values, pcc_values, label='all')
+        n_train_values = []
+        pcc_values = []
+        for f in files:
+            df = fh.read_csv_to_df(f)
+            n_train_values.append(df.loc['PCC_test', 'N'])
+            pcc_values.append(df.loc['PCC_test', 'MAE'])
 
+        #print(n_train_values)
+        #print(pcc_values)
+        ax.scatter(n_train_values, pcc_values, label=basename)
 
-    """
-    files = glob.glob(os.path.join(dirs.dir_models(project_dir), model_basename + '_????', 'results.csv'))
-    print(files)
-
-    n_train_values = []
-    pcc_values = []
-    for f in files:
-        df = fh.read_csv_to_df(f)
-        n_train_values.append(df.loc['PCC_test', 'N'])
-        pcc_values.append(df.loc['PCC_test', 'MAE'])
-
-    ax.scatter(n_train_values, pcc_values, label='fight')
-    ax.legend()
     fig.savefig('test.pdf', bbox_inches='tight')
-    """
 
 
 if __name__ == '__main__':
