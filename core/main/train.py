@@ -174,8 +174,11 @@ def train_model_with_labels(project_dir, model_type, loss, model_name, subset, l
     if group_identical:
         Y = np.zeros([n_items, 2])
         for i in range(n_items):
-            vector = np.array(X[i, :]).ravel()
-            key = ''.join([str(int(s)) for s in vector])
+            if sparse.issparse(X):
+                vector = X[i, :].todense().ravel()
+            else:
+                vector = np.array(X[i, :]).ravel()
+            key = ''.join([str(int(s)) for s in vector.todense()])
             X_counts[key] += np.sum(Y_orig[i, :])
             X_n_pos[key] += Y_orig[i, 1]
 
@@ -188,7 +191,10 @@ def train_model_with_labels(project_dir, model_type, loss, model_name, subset, l
 
         for i in range(n_items):
             if group_identical:
-                vector = np.array(X[i, :]).ravel()
+                if sparse.issparse(X):
+                    vector = X[i, :].todense().ravel()
+                else:
+                    vector = np.array(X[i, :]).ravel()
                 key = ''.join([str(int(s)) for s in vector])
                 Y[i, 0] = 1 - X_n_pos[key] / float(X_counts[key])
                 Y[i, 1] = X_n_pos[key] / float(X_counts[key])
