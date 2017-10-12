@@ -183,6 +183,7 @@ def main():
                 mean_df += results[['N', 'estimate', 'RMSE', 'contains_test']]
                 max_df = np.maximum(max_df, results[['N', 'estimate', 'RMSE', 'contains_test']])
                 x.append(val)
+                train.append(df.loc['train', 'RMSE'])
                 ACC.append(df.loc['ACC', 'RMSE'])
                 CC.append(df.loc['CC_nontrain', 'RMSE'])
                 PCC_nontrain.append(df.loc['PCC_nontrain', 'RMSE'])
@@ -191,7 +192,7 @@ def main():
 
             mean_df = mean_df / float(n_files)
 
-            n_train_means.append(int(val))
+            #n_train_means.append(int(val))
             train_means.append(mean_df.loc['train', 'RMSE'])
             ACC_means.append(mean_df.loc['ACC', 'RMSE'])
             CC_means.append(mean_df.loc['CC_nontrain', 'RMSE'])
@@ -227,7 +228,7 @@ def main():
                 ax.plot(n_train_means, PCC_means, label='tuned for calibration', c=CB6[3], linewidth=linewidth)
 
         if objective == 'calibration' and not no_train_plot:
-            ax.scatter(np.array(x)+2.5*offset, n_train_values, c=CB6[4], alpha=0.5, s=dot_size)
+            ax.scatter(np.array(x)+2.5*offset, train, c=CB6[4], alpha=0.5, s=dot_size)
             ax.plot([np.min(n_train_means), np.max(n_train_means)], [np.mean(train_means), np.mean(train_means)], c=CB6[4], label='SRS', linewidth=linewidth)
         #if objective == 'f1':
         #    ax.scatter(np.array(x)+2.5*offset, Venn, c=CB6[5], alpha=0.5, s=dot_size)
