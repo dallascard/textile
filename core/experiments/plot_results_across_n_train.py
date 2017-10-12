@@ -193,7 +193,7 @@ def main():
 
             mean_df = mean_df / float(n_files)
 
-            #n_train_means.append(int(val))
+            n_train_means.append(int(val))
             train_means.append(mean_df.loc['train', 'RMSE'])
             ACC_means.append(mean_df.loc['ACC', 'RMSE'])
             CC_means.append(mean_df.loc['CC_nontrain', 'RMSE'])
