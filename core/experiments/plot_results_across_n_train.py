@@ -170,6 +170,7 @@ def main():
             mean_df = pd.DataFrame(results[['N', 'estimate', 'RMSE', 'contains_test']].copy())
             max_df = pd.DataFrame(results[['N', 'estimate', 'RMSE', 'contains_test']].copy())
             x.append(val)
+            train.append(df.loc['train', 'RMSE'])
             ACC.append(df.loc['ACC', 'RMSE'])
             CC.append(df.loc['CC_nontrain', 'RMSE'])
             PCC_nontrain.append(df.loc['PCC_nontrain', 'RMSE'])
