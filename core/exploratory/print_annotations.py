@@ -63,41 +63,25 @@ SOURCES = {
 
 
 def main():
-    usage = "%prog project_name path/to/documents.json metadata.json target_frame"
+    usage = "%prog path/to/documents.json index target_frame"
     parser = OptionParser(usage=usage)
-    parser.add_option('-y', dest='year', default=2004,
-                      help='Year at which to divide data: default=%default')
-    #parser.add_option('--boolarg', action="store_true", dest="boolarg", default=False,
-    #                  help='Keyword argument: default=%default')
 
     (options, args) = parser.parse_args()
 
-    project = args[0]
-    data_file = args[1]
-    metadata_file = args[2]
-    target_frame = args[3]
-    output_prefix = target_frame + '_annotations'
-
-    threshold = int(options.year)
-
-    convert_mfc(project, data_file, output_prefix, threshold, metadata_file, target_frame)
-
-
-def convert_mfc(project, data_file, output_prefix, threshold, metadata_file, target_frame):
-    fh.makedirs(dirs.dir_data_raw(project))
+    data_file = args[0]
+    index = int(args[1])
+    target_frame = args[2]
 
     data = fh.read_json(data_file)
-    output = {}
-    sources = set()
-    year_group_sizes = defaultdict(int)
-
-    metadata = fh.read_json(metadata_file)
 
     keys = list(data.keys())
     keys.sort()
 
-    for k in keys:
-        phrases = []
+    phrases = []
+
+    while len(phrases) == 0:
+        k = keys[index]
+
         text = data[k]['text']
         framing_annotations = data[k]['annotations']['framing']
         # extract all annotations, double counting for doubly-annotated
@@ -108,42 +92,16 @@ def convert_mfc(project, data_file, output_prefix, threshold, metadata_file, tar
                 start = int(a['start'])
                 end = int(a['end'])
                 if FRAMES[frame] == target_frame:
-                    phrases.append(text[start:end])
+                    phrases.append(annotator + ':' + text[start:end])
 
-        year = int(metadata[k]['year'])
-        month = int(metadata[k]['month'])
-        source = SOURCES[metadata[k]['source']]
+        if len(phrases) > 0:
+            print(index)
+            print('\n'.join(phrases))
 
-        # only export those items with annotations
-        if len(phrases) > 0 and year >= 1990:
-            if year < threshold:
-                year_group = 'pre_' + str(threshold)
-            else:
-                year_group = 'gte_' + str(threshold)
-            year_group_sizes[year_group] += 1
-            sources.add(source)
+        index += 1
 
-            # keep all annotations
-            output[k] = {'text': '\n\n'.join(phrases), 'year': int(year), 'year_group': year_group, 'month': month, 'source': source}
+    print()
 
-    print(year_group_sizes)
-    print(len(output))
-
-    print("Loading non-annotated files")
-
-    print("Saving %d articles" % len(output))
-    output_file = os.path.join(dirs.dir_data_raw(project), output_prefix + '.json')
-    fh.write_to_json(output, output_filename=output_file)
-
-
-def get_source(source):
-    if source.startswith('new york times blogs'):
-        source = 'NY_Times_blogs'
-    elif source.startswith('washington post blogs'):
-        source = 'Washington_Post_blogs'
-    else:
-        source = SOURCES[source]
-    return source
 
 if __name__ == '__main__':
     main()

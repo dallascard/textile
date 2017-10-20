@@ -159,6 +159,8 @@ def train_model_with_labels(project_dir, model_type, loss, model_name, subset, l
 
     features_concat = features.concatenate(feature_list)
     col_names = features_concat.get_col_names()
+    if len(col_names) < 200:
+        print(col_names)
 
     if features_concat.sparse:
         X = features_concat.get_counts().tocsr()
@@ -167,20 +169,19 @@ def train_model_with_labels(project_dir, model_type, loss, model_name, subset, l
     Y_orig = labels_df.as_matrix()
     n_items, n_features = X.shape
 
-    # get the positive proportion for each feature vector
-    X_counts = defaultdict(int)
-    X_n_pos = defaultdict(int)
-
     if group_identical:
-        Y = np.zeros([n_items, 2])
+        # get the positive proportion for each feature vector
+        X_counts = defaultdict(int)
+        X_n_pos = defaultdict(int)
+
         for i in range(n_items):
             if sparse.issparse(X):
                 vector = np.array(X[i, :].todense()).ravel()
             else:
                 vector = np.array(X[i, :]).ravel()
             key = ''.join([str(int(s)) for s in vector])
-            X_counts[key] += np.sum(Y_orig[i, :])
-            X_n_pos[key] += Y_orig[i, 1]
+            X_counts[key] += int(np.sum(Y_orig[i, :]))
+            X_n_pos[key] += int(Y_orig[i, 1])
 
         keys = list(X_counts.keys())
         keys.sort()
@@ -189,17 +190,18 @@ def train_model_with_labels(project_dir, model_type, loss, model_name, subset, l
         for key in keys:
             key_probs[key] = X_n_pos[key] / float(X_counts[key])
 
-        for i in range(n_items):
-            if group_identical:
-                if sparse.issparse(X):
-                    vector = np.array(X[i, :].todense()).ravel()
-                else:
-                    vector = np.array(X[i, :]).ravel()
-                key = ''.join([str(int(s)) for s in vector])
-                Y[i, 0] = 1 - X_n_pos[key] / float(X_counts[key])
-                Y[i, 1] = X_n_pos[key] / float(X_counts[key])
-    else:
-        Y = Y_orig
+        """
+        for i in range(n_features):
+            vector = np.zeros(n_features)
+            vector[i] = 1
+            key = ''.join([str(int(s)) for s in vector])
+            if key in key_probs:
+                print(key, key_probs[key])
+        """
+
+        fh.write_to_json({'X_counts': X_counts, 'X_n_pos': X_n_pos}, os.path.join(output_dir, 'training_patterns.json'))
+
+    Y = Y_orig
 
     print("Train feature matrix shape: (%d, %d)" % X.shape)
 
@@ -671,7 +673,7 @@ def prepare_data(X, Y, weights=None, predictions=None, loss='log'):
             labels = Y[i, :]
             # sum the total number of annotations given to this item
             total = float(labels.sum())
-            # otherwise, duplicate items with all labels and weights
+            # duplicate items with all labels and weights
             for index, count in enumerate(labels):
                 # if there is at least one annotation for this class
                 if count > 0:

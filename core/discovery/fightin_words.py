@@ -9,6 +9,7 @@ from ..util import dirs
 from ..util import file_handling as fh
 from ..util.misc import printv
 
+
 def main():
     usage = "%prog target_feature.json background_feature.json"
     parser = OptionParser(usage=usage)
@@ -42,7 +43,7 @@ def load_and_select_features(target_json_file, bkgrnd_json_file, n=100):
         print(vocab[i], scores[i])
 
 
-def select_features(feature, background_feature, n=100, remove_stopwords=True):
+def select_features(feature, background_feature, n=None, remove_stopwords=True):
     """
     Use the method from "Fightin' Words: Lexical Feature Selection and Evaluation for Identifying the Content of
     Political Conflict" by Monroe, Colaresi and Quinn for feature selection.
@@ -83,6 +84,9 @@ def select_features(feature, background_feature, n=100, remove_stopwords=True):
     word_scores = log_odds_normalized_diff(target_counts, bkgrnd_counts, alphas)
     order = list(np.argsort(np.abs(word_scores)))
     order.reverse()
+    if n is None:
+        n = np.sum(word_scores > 0)
+        print("Setting n to %d" % n)
     vocab = [full_vocab[i] for i in order[:n]]
     scores = [word_scores[i] for i in order[:n]]
     return vocab, scores
@@ -108,7 +112,7 @@ def log_odds_normalized_diff(first_counts, second_counts, alphas):
     return word_scores
 
 
-def load_from_config_files(project, target_subset, background_subset, config_file, items_to_use=None, n=100, verbose=True):
+def load_from_config_files(project, target_subset, background_subset, config_file, items_to_use=None, n=None, remove_stopwords=False):
 
     target_features_dir = dirs.dir_features(project, target_subset)
     background_features_dir = dirs.dir_features(project, background_subset)
@@ -122,7 +126,7 @@ def load_from_config_files(project, target_subset, background_subset, config_fil
 
     background_feature, _ = features.load_and_process_features_for_training(background_features_dir, feature_defs, items_to_use, verbose=False)
 
-    return select_features(target_feature, background_feature, n=n)
+    return select_features(target_feature, background_feature, n=n, remove_stopwords=remove_stopwords)
 
 
 def get_stopwords():
@@ -135,6 +139,7 @@ def get_stopwords():
     punctuation = {'.', ',', '-', ';', '?', "'", '"', '!', '<', '>', '(', ')', ':'}
     my_stopwords = suffixes.union(pronouns).union(determiners).union(prepositions).union(transitional).union(common_verbs).union(punctuation)
     return my_stopwords
+
 
 if __name__ == '__main__':
     main()

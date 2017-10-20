@@ -92,7 +92,7 @@ def main():
     alpha_min = float(options.alpha_min)
     alpha_max = float(options.alpha_max)
     n_alphas = int(options.n_alphas)
-    do_ensemble = True
+    do_ensemble = False
     #exclude_calib = options.exclude_calib
     #calib_pred = options.calib_pred
     label = options.label
@@ -182,13 +182,18 @@ def test_over_time(project_dir, subset, config_file, first_year, stage1_logfile=
     field_vals.sort()
     print("Splitting data according to :", field_vals)
 
+    # DEBUG:
+    field_vals = ['2009']
+
     for target_year in field_vals:
         if int(target_year) >= first_year:
             print("\nTesting on %s" % target_year)
             model_name = model_basename + '_' + str(target_year)
             stage1_model_name = stage1_model_basename + '_' + str(target_year)
             # first, split into training and non-train data based on the field of interest
-            test_selector_all = metadata['year'] == int(target_year)
+
+            # DEBUG!!
+            test_selector_all = metadata['year'] >= int(target_year)
             test_subset_all = metadata[test_selector_all]
             test_items_all = test_subset_all.index.tolist()
             n_test_all = len(test_items_all)
@@ -210,20 +215,47 @@ def test_over_time(project_dir, subset, config_file, first_year, stage1_logfile=
                 fightin_lexicon = None
                 if annotated_subset is not None:
                     print("Determining fightin' words")
-                    fightin_lexicon, scores = fightin_words.load_from_config_files(project_dir, annotated_subset, subset, config_file, items_to_use=train_items_all, n=n_terms)
+                    fightin_lexicon, scores = fightin_words.load_from_config_files(project_dir, annotated_subset, subset, config_file, items_to_use=train_items_all, n=n_terms, remove_stopwords=True)
+                    fightin_lexicon_test, scores = fightin_words.load_from_config_files(project_dir, annotated_subset, subset, config_file, items_to_use=test_items_all, n=n_terms, remove_stopwords=True)
+                    print(fightin_lexicon)
+                    #print(fightin_lexicon_test)
+                    #vocab = list(fightin_lexicon)
+                    #vocab.sort()
 
                 print("Loading feature from stage 1")
                 # load features from previous model
                 top_features = get_top_features.get_top_features(os.path.join(dirs.dir_models(project_dir), stage1_model_name), n_terms)
                 lr_features, weights = zip(*top_features)
-                vocab = lr_features
+                vocab = list(lr_features)
+
+                #if annotated_subset is not None:
+                #    print("\nTaking intersection:")
+                #    intersection = set(lr_features).intersection(set(fightin_lexicon))
+                #    vocab = list(intersection)
+                #    vocab.sort()
+                #    for w in vocab:
+                #        print(w)
+
+
+                stopwords = {'as_the', 'by_a', 'civil_unions', 'gay_couples', 'gay_marriages', 'has_been', 'man_and',
+                             'sex_couples', 'sex_marriage', 'sex_marriages', 'that_the', 'to_marry', 'will_be',
+                             'with_a', 'would_be', 'and_lesbians', 'ban_same', 'by_a', 'a_state',
+                             'marriage_to', 'new_jersey', 'constitution_to', 'sex_couples', 'the_massachusetts',
+                             'in_massachusetts', 'gay_couples', 'civil_unions', 'marriage_licenses', 'the_supreme',
+                             'a_marriage', 'couples_in', 'a_federal', 'and_their', 'law_and', 'a_long'
+                             }
+
+                vocab = [w for w in vocab if w not in stopwords]
+
+                for w in vocab:
+                    print(w)
+
+                vocab.sort()
 
                 if annotated_subset is not None:
-                    print("\nTaking intersection:")
-                    intersection = set(lr_features).intersection(set(fightin_lexicon))
-                    vocab = intersection
-                    for w in intersection:
-                        print(w)
+                    print("Missing:")
+                    print(set(fightin_lexicon_test) - set(vocab))
+
 
             # add in a stage to eliminate items with no labels
             print("Subsetting items with labels")
@@ -295,7 +327,7 @@ def test_over_time(project_dir, subset, config_file, first_year, stage1_logfile=
             force_dense = False
             if model_type == 'MLP':
                 force_dense = True
-            test_predictions_df, test_pred_probs_df, test_pred_proportions = predict.predict(project_dir, model, model_name, subset, label, items_to_use=test_items, verbose=verbose, force_dense=force_dense)
+            test_predictions_df, test_pred_probs_df, test_pred_proportions = predict.predict(project_dir, model, model_name, subset, label, items_to_use=test_items, verbose=verbose, force_dense=force_dense, group_identical=group_identical)
             f1_test, acc_test = evaluate_predictions.evaluate_predictions(test_labels_df, test_predictions_df, test_pred_probs_df, pos_label=pos_label, average=average)
             true_test_vector = np.argmax(test_labels_df.as_matrix(), axis=1)
             #test_cal_mae = evaluation.eval_proportions_mae(test_labels_df.as_matrix(), test_pred_probs_df.as_matrix())

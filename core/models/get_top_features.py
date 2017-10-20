@@ -53,7 +53,7 @@ def get_top_features(model_dir, n_terms, default_model_type=None):
                     totals[coef] += value
 
     coef_totals = [(coef, value) for coef, value in totals.items()]
-    coef_totals = sorted(coef_totals, key=lambda x: abs(x[1]))
+    coef_totals = sorted(coef_totals, key=lambda x: x[1])
     coef_totals.reverse()
 
     return coef_totals[:n_terms]

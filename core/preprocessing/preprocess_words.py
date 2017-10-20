@@ -3,6 +3,7 @@ import re
 from collections import Counter
 from optparse import OptionParser
 
+import numpy as np
 from spacy.en import English
 
 from ..util import file_handling as fh
@@ -57,6 +58,7 @@ def preprocess_words(project_dir, subset, ngrams=2, lower=False, lemmatize=False
     items = []
     unigrams = {}
     bigrams = {}
+    trigrams = {}
 
     print("Parsing text")
 
@@ -90,7 +92,10 @@ def preprocess_words(project_dir, subset, ngrams=2, lower=False, lemmatize=False
 
             unigrams[name] = extract_unigram_feature(parse, percept)
             if ngrams > 1:
-                bigrams[name] = extract_bigram_feature(parse, percept)
+                #bigrams[name] = extract_bigram_feature(parse, percept)
+                bigrams[name] = extract_ngram_feature(parse, percept, n=2)
+            if ngrams > 2:
+                trigrams[name] = extract_ngram_feature(parse, percept, n=3)
 
         else:
             # for fast processing:
@@ -105,6 +110,7 @@ def preprocess_words(project_dir, subset, ngrams=2, lower=False, lemmatize=False
                 counter.update([percept(parse[i]) + '_' + percept(parse[i+1]) for i in range(len(parse)-1)])
                 bigrams[name] = dict(counter)
 
+
     #print("Creating word features")
     #word_feature = features.create_from_dict_of_counts('unigrams', unigrams)
     #word_feature.save_feature(dirs.dir_features(project_dir, subset))
@@ -112,6 +118,8 @@ def preprocess_words(project_dir, subset, ngrams=2, lower=False, lemmatize=False
     feature_dicts = {'unigrams': unigrams}
     if ngrams > 1:
         feature_dicts['bigrams'] = bigrams
+    if ngrams > 2:
+        feature_dicts['trigrams'] = trigrams
 
     #if ngrams > 1:
     #    bigram_feature = features.create_from_dict_of_counts('bigrams', bigrams)
@@ -152,11 +160,26 @@ def extract_bigram_feature(parse, percept):
     counter = Counter()
     for sent in parse.sents:
         if len(sent) > 1:
-            for i in range(len(sent)-1):
+            for i in range(len(sent) - 1):
                 percept1 = percept(sent[i])
                 percept2 = percept(sent[i+1])
                 if len(percept1) > 0 and len(percept2) > 0:
-                    counter.update([percept1 + '_' + percept2])
+                    if re.match('[a-zA-Z0-9]', percept1) is not None and re.match('[a-zA-Z0-9]', percept2) is not None:
+                        counter.update([percept1 + '_' + percept2])
+
+    return dict(counter)
+
+
+def extract_ngram_feature(parse, percept, n=3):
+    counter = Counter()
+    for sent in parse.sents:
+        if len(sent) > 1:
+            for i in range(len(sent) - (n-1)):
+                percepts = [percept(sent[j]) for j in range(i, i+n)]
+                if np.prod([len(p) for p in percepts]) > 0:
+                    if np.prod([re.match(r'[a-zA-Z0-9]', p) is not None for p in percepts]):
+                        counter.update(['_'.join(percepts)])
+
     return dict(counter)
 
 

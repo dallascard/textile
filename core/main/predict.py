@@ -1,9 +1,11 @@
 import os
 import sys
 from optparse import OptionParser
+from collections import defaultdict
 
 import numpy as np
 import pandas as pd
+from scipy import sparse
 
 from ..util import dirs
 from ..util import file_handling as fh
@@ -42,7 +44,7 @@ def load_and_predict(project_dir, model_type, model_name, test_subset, label_nam
     predict(project_dir, model, model_name, test_subset, label_name, items_to_use=items_to_use)
 
 
-def predict(project_dir, model, model_name, test_subset, label_name, items_to_use=None, verbose=False, force_dense=False):
+def predict(project_dir, model, model_name, test_subset, label_name, items_to_use=None, verbose=False, force_dense=False, group_identical=False):
 
     model_dir = os.path.join(dirs.dir_models(project_dir), model_name)
 
@@ -86,7 +88,47 @@ def predict(project_dir, model, model_name, test_subset, label_name, items_to_us
         assert X.size < 10000000
         X = np.array(X.todense())
 
+    n_items, n_labels = X.shape
     print("Feature matrix shape: (%d, %d)" % X.shape)
+
+    if group_identical:
+        label_dir = dirs.dir_labels(project_dir, test_subset)
+        labels_df = fh.read_csv_to_df(os.path.join(label_dir, label_name + '.csv'), index_col=0, header=0)
+        Y = labels_df.as_matrix()
+
+        X_counts = defaultdict(int)
+        X_n_pos = defaultdict(int)
+
+        for i in range(n_items):
+            if sparse.issparse(X):
+                vector = np.array(X[i, :].todense()).ravel()
+            else:
+                vector = np.array(X[i, :]).ravel()
+            key = ''.join([str(int(s)) for s in vector])
+            X_counts[key] += np.sum(Y[i, :])
+            X_n_pos[key] += Y[i, 1]
+
+        keys = list(X_counts.keys())
+        keys.sort()
+
+        train_patterns = fh.read_json(os.path.join(model_dir, 'training_patterns.json'))
+        X_counts_train = train_patterns['X_counts']
+        X_n_pos_train = train_patterns['X_n_pos']
+
+        patterns = list(X_counts.keys())
+        counts = [X_counts[key] for key in patterns]
+        order = list(np.argsort(counts))
+        order.reverse()
+        most_common_keys = [patterns[i] for i in order[:10]]
+        for key in most_common_keys:
+            print('key: %s' % key)
+            print('test: %f (%d / %d)' % (X_n_pos[key] / float(X_counts[key]),  X_n_pos[key], X_counts[key]))
+            if key in X_n_pos_train:
+                print('train: %f (%d / %d)' % (X_n_pos_train[key] / float(X_counts_train[key]),  X_n_pos_train[key], X_counts_train[key]))
+            else:
+                print('train: %f (%d / %d)' % (0.0, 0, 0))
+            prob = model.predict_probs(sparse.csr_matrix([int(i) for i in key]))
+            print('pred:', prob)
 
     print("Doing prediction")
     predictions = model.predict(X)

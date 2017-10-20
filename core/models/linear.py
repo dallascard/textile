@@ -15,7 +15,7 @@ class LinearClassifier:
     """
     Wrapper class for logistic regression from sklearn
     """
-    def __init__(self, alpha, loss_function='log', penalty='l2', fit_intercept=True, output_dir=None, name='model', pos_label=1):
+    def __init__(self, alpha, loss_function='log', penalty='l2', fit_intercept=True, output_dir=None, name='model', pos_label=1, save_data=False):
         self._model_type = 'LR'
         self._alpha = alpha
         self._loss_function = loss_function
@@ -35,6 +35,10 @@ class LinearClassifier:
         self._dev_acc_cfm = None
         self._dev_pvc_cfm = None
         self._venn_info = None
+        self._save_data = save_data
+        self._X_train = None
+        self._Y_train = None
+        self._w_train = None
 
         # create a variable to store the label proportions in the training data
         self._train_proportions = None
@@ -49,10 +53,13 @@ class LinearClassifier:
     def get_loss_function(self):
         return self._loss_function
 
-    def set_model(self, model, train_proportions, col_names, n_classes):
+    def set_model(self, model, train_proportions, col_names, n_classes, X_train=None, Y_train=None, train_weights=None):
         self._col_names = col_names
         self._train_proportions = train_proportions
         self._n_classes = n_classes
+        self._X_train = X_train
+        self._Y_train = Y_train
+        self._w_train = train_weights
         if model is None:
             self._model = None
         else:
@@ -94,15 +101,6 @@ class LinearClassifier:
         else:
             if self._loss_function == 'log':
                 self._model = LogisticRegression(penalty=self._penalty, C=self._alpha, fit_intercept=self._fit_intercept)
-            elif self._loss_function == 'brier':
-                if self._penalty == 'l1':
-                    self._model = Lasso(alpha=self._alpha, fit_intercept=self._fit_intercept)
-                elif self._penalty == 'l2':
-                    self._model = Ridge(alpha=self._alpha, fit_intercept=self._fit_intercept)
-                elif self._penalty is None:
-                    self._model = LinearRegression(fit_intercept=self._fit_intercept)
-                else:
-                    sys.exit('penalty %s not supported with %s loss' % (self._penalty, self._loss_function))
             else:
                 sys.exit('Loss function %s not supported' % self._loss_function)
             # train the model using a vector of labels
@@ -124,6 +122,11 @@ class LinearClassifier:
             if self._n_classes == 2:
                 self._venn_info = np.vstack([Y_dev[:, 1], dev_pred_probs[:, 1], dev_weights]).T
                 assert self._venn_info.shape == (len(dev_labels), 3)
+
+        if self._save_data:
+            self._X_train = X_train.copy()
+            self._Y_train = Y_train.copy()
+            self._w_train = train_weights.copy()
 
     def predict(self, X):
         # if we've stored a default value, then that is our prediction
@@ -166,11 +169,15 @@ class LinearClassifier:
         predictions = np.argmax(pred_probs, axis=1)
         cc = calibration.cc(predictions, self._n_classes, weights)
         pcc = calibration.pcc(pred_probs, weights)
-        if self._n_classes == 2:
-            acc = calibration.apply_acc_binary(predictions, self._dev_acc_cfm, weights)
+        if self._dev_acc_cfm is not None:
+            if self._n_classes == 2:
+                acc = calibration.apply_acc_binary(predictions, self._dev_acc_cfm, weights)
+            else:
+                acc = calibration.apply_acc_bounded_lstsq(predictions, self._dev_acc_cfm)
+            pvc = calibration.apply_pvc(predictions, self._dev_pvc_cfm, weights)
         else:
-            acc = calibration.apply_acc_bounded_lstsq(predictions, self._dev_acc_cfm)
-        pvc = calibration.apply_pvc(predictions, self._dev_pvc_cfm, weights)
+            acc = [0, 0]
+            pvc = [0, 0]
         return cc, pcc, acc, pvc
 
     def get_penalty(self):
@@ -270,11 +277,14 @@ class LinearClassifier:
                   'train_f1': self._train_f1,
                   'train_acc': self._train_acc,
                   'dev_f1': self._dev_f1,
-                  'dev_acc': self._dev_acc
+                  'dev_acc': self._dev_acc,
+                  'save_data': self._save_data
                   }
         fh.write_to_json(output, os.path.join(self._output_dir, self._name + '_metadata.json'), sort_keys=False)
         fh.write_to_json(self.get_col_names(), os.path.join(self._output_dir, self._name + '_col_names.json'), sort_keys=False)
         np.savez(os.path.join(self._output_dir, self._name + '_dev_info.npz'), acc_cfm=self._dev_acc_cfm, pvc_cfm=self._dev_pvc_cfm, venn_info=self._venn_info)
+        if self._save_data:
+            np.savez(os.path.join(self._output_dir, self._name + '_training_data.npz'), X_train=self._X_train, Y_train=self._Y_train, train_weights=self._w_train)
 
 
 def load_from_file(model_dir, name):
@@ -287,9 +297,22 @@ def load_from_file(model_dir, name):
     fit_intercept = input['fit_intercept']
     loss = input['loss']
 
-    classifier = LinearClassifier(alpha, loss, penalty, fit_intercept, output_dir=model_dir, name=name)
+    save_data = False
+    if 'save_data' in input:
+        save_data = input['save_data']
+
+    X_train = None
+    Y_train = None
+    train_weights = None
+    if save_data:
+        training_data = np.load(os.path.join(model_dir, name + '_training_data.npz'))
+        X_train = training_data['X_train']
+        Y_train = training_data['Y_train']
+        train_weights = training_data['training_weights']
+
+    classifier = LinearClassifier(alpha, loss, penalty, fit_intercept, output_dir=model_dir, name=name, save_data=save_data)
     model = joblib.load(os.path.join(model_dir, name + '.pkl'))
-    classifier.set_model(model, train_proportions, col_names, n_classes)
+    classifier.set_model(model, train_proportions, col_names, n_classes, X_train, Y_train, train_weights)
     dev_info = np.load(os.path.join(model_dir, name + '_dev_info.npz'))
     classifier._dev_acc_cfm = dev_info['acc_cfm']
     classifier._dev_pvc_cfm = dev_info['pvc_cfm']
