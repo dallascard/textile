@@ -101,14 +101,21 @@ def convert_mfc(project, data_file, output_prefix, threshold, metadata_file, tar
         text = data[k]['text']
         framing_annotations = data[k]['annotations']['framing']
         # extract all annotations, double counting for doubly-annotated
+        n_framing_annotators = len(framing_annotations.keys())
         for annotator, annotation_list in framing_annotations.items():
             # look for presence of each frame
+            annotation_list = list(annotation_list)
+            annotation_list = sorted(annotation_list, key=lambda x: x['start'])
+            prev_end = 0
             for a in annotation_list:
                 frame = int(a['code']) - 1
                 start = int(a['start'])
+                if start < prev_end:
+                    start = prev_end
                 end = int(a['end'])
                 if FRAMES[frame] == target_frame:
                     phrases.append(text[start:end])
+                    prev_end = end
 
         year = int(metadata[k]['year'])
         month = int(metadata[k]['month'])
@@ -124,7 +131,11 @@ def convert_mfc(project, data_file, output_prefix, threshold, metadata_file, tar
             sources.add(source)
 
             # keep all annotations
-            output[k] = {'text': '\n\n'.join(phrases), 'year': int(year), 'year_group': year_group, 'month': month, 'source': source}
+            output[k] = {'text': '\n\n'.join(phrases), target_frame: {0: 0, 1: n_framing_annotators},
+                         'n_annotators': n_framing_annotators,
+                         'year': int(year), 'year_group': year_group, 'month': month, 'source': source}
+
+
 
     print(year_group_sizes)
     print(len(output))

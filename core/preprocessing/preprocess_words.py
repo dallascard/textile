@@ -21,7 +21,7 @@ def main():
     parser.add_option('--lemmatize', action="store_true", dest="lemmatize", default=False,
                       help='Use lemmas instead of words: default=%default')
     parser.add_option('-n', dest='ngrams', default=2,
-                      help='Max degree of word n-grams [1 or 2]: default=%default')
+                      help='Max degree of word n-grams: default=%default')
     parser.add_option('--fast', action="store_true", dest="fast", default=False,
                       help='Only do things that are fast (i.e. only splitting, no parsing, no lemmas): default=%default')
     parser.add_option('-d', dest='display', default=1000,
@@ -58,7 +58,9 @@ def preprocess_words(project_dir, subset, ngrams=2, lower=False, lemmatize=False
     items = []
     unigrams = {}
     bigrams = {}
-    trigrams = {}
+    ngram_dicts = {}
+    for n in range(2, ngrams+1):
+        ngram_dicts[n] = {}
 
     print("Parsing text")
 
@@ -91,11 +93,8 @@ def preprocess_words(project_dir, subset, ngrams=2, lower=False, lemmatize=False
                 percept = get_word
 
             unigrams[name] = extract_unigram_feature(parse, percept)
-            if ngrams > 1:
-                #bigrams[name] = extract_bigram_feature(parse, percept)
-                bigrams[name] = extract_ngram_feature(parse, percept, n=2)
-            if ngrams > 2:
-                trigrams[name] = extract_ngram_feature(parse, percept, n=3)
+            for n in range(2, ngrams+1):
+                ngram_dicts[n][name] = extract_ngram_feature(parse, percept, n=n)
 
         else:
             # for fast processing:
@@ -116,14 +115,9 @@ def preprocess_words(project_dir, subset, ngrams=2, lower=False, lemmatize=False
     #word_feature.save_feature(dirs.dir_features(project_dir, subset))
 
     feature_dicts = {'unigrams': unigrams}
-    if ngrams > 1:
-        feature_dicts['bigrams'] = bigrams
-    if ngrams > 2:
-        feature_dicts['trigrams'] = trigrams
-
-    #if ngrams > 1:
-    #    bigram_feature = features.create_from_dict_of_counts('bigrams', bigrams)
-    #    bigram_feature.save_feature(dirs.dir_features(project_dir, subset))
+    for n in range(2, ngrams+1):
+        key = 'n' + str(n) + 'grams'
+        feature_dicts[key] = ngram_dicts[n]
 
     print("Creating features")
     for k, v in feature_dicts.items():

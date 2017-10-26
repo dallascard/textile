@@ -30,8 +30,6 @@ def main():
                       help='Suffix to mdoel name: default=%default')
     parser.add_option('--model', dest='model', default='LR',
                       help='Model type [LR|MLP]: default=%default')
-    parser.add_option('--DL', action="store_true", dest="DL", default=False,
-                      help='Try a decision list: default=%default')
     parser.add_option('--loss', dest='loss', default='log',
                       help='Loss function [log|brier]: default=%default')
     parser.add_option('--penalty', dest='penalty', default='l1',
@@ -88,7 +86,6 @@ def main():
     sample_labels = options.sample
     suffix = options.suffix
     model_type = options.model
-    DL = options.DL
     loss = options.loss
     dh = int(options.dh)
     nonlinearity = options.nonlinearity
@@ -118,12 +115,12 @@ def main():
 
     average = 'micro'
 
-    test_over_time(project_dir, subset, config_file, first_year, stage1_logfile, penalty, suffix, model_type, loss, objective, do_ensemble, dh, label, intercept, n_dev_folds, verbose, average, seed, alpha_min, alpha_max, n_alphas, sample_labels, group_identical, annotated, n_terms, nonlinearity, early_stopping=early_stopping, DL=DL)
+    test_over_time(project_dir, subset, config_file, first_year, stage1_logfile, penalty, suffix, model_type, loss, objective, do_ensemble, dh, label, intercept, n_dev_folds, verbose, average, seed, alpha_min, alpha_max, n_alphas, sample_labels, group_identical, annotated, n_terms, nonlinearity, early_stopping=early_stopping)
 
     #stage2(project_dir, subset, config_file, penalty, suffix, do_ensemble, dh, label, intercept, n_dev_folds, verbose, average, seed, alpha_min, alpha_max, sample_labels, annotated_subset=annotated, n_terms=n_terms)
 
 
-def test_over_time(project_dir, subset, config_file, first_year, stage1_logfile=None, penalty='l2', suffix='', model_type='LR', loss='log', objective='f1', do_ensemble=True, dh=100, label='label', intercept=True, n_dev_folds=5, verbose=False, average='micro', seed=None, alpha_min=0.01, alpha_max=1000.0, n_alphas=8, sample_labels=False, group_identical=False, annotated_subset=None, n_terms=0, nonlinearity='tanh', init_lr=1e-4, min_epochs=2, max_epochs=100, patience=8, tol=1e-4, early_stopping=False, DL=False):
+def test_over_time(project_dir, subset, config_file, first_year, stage1_logfile=None, penalty='l2', suffix='', model_type='LR', loss='log', objective='f1', do_ensemble=True, dh=100, label='label', intercept=True, n_dev_folds=5, verbose=False, average='micro', seed=None, alpha_min=0.01, alpha_max=1000.0, n_alphas=8, sample_labels=False, group_identical=False, annotated_subset=None, n_terms=0, nonlinearity='tanh', init_lr=1e-4, min_epochs=2, max_epochs=100, patience=8, tol=1e-4, early_stopping=False):
     # Just run a regular model, one per year, training on the past, and save the reults
 
     log = {
@@ -213,49 +210,6 @@ def test_over_time(project_dir, subset, config_file, first_year, stage1_logfile=
             labels_df = fh.read_csv_to_df(os.path.join(label_dir, label + '.csv'), index_col=0, header=0)
             n_items, n_classes = labels_df.shape
 
-            vocab = None
-            if stage1_logfile is not None:
-
-                """
-                fightin_lexicon = None
-                if annotated_subset is not None:
-                    print("Determining fightin' words")
-                    fightin_words.find_most_annotated_features(project_dir, annotated_subset, subset, config_file, items_to_use=train_items_all, remove_stopwords=False)
-                    fightin_lexicon, scores = fightin_words.load_from_config_files(project_dir, annotated_subset, subset, config_file, items_to_use=train_items_all, n=n_terms, remove_stopwords=True)
-                    fightin_lexicon_test, scores = fightin_words.load_from_config_files(project_dir, annotated_subset, subset, config_file, items_to_use=test_items_all, n=n_terms, remove_stopwords=True)
-                    print(fightin_lexicon)
-                    #print(fightin_lexicon_test)
-                    #vocab = list(fightin_lexicon)
-                    #vocab.sort()
-                """
-
-                print("Loading feature from stage 1")
-                # load features from previous model
-                top_features = get_top_features.get_top_features(os.path.join(dirs.dir_models(project_dir), stage1_model_name), n_terms)
-                lr_features, weights = zip(*top_features)
-                vocab = list(lr_features)
-
-                #if annotated_subset is not None:
-                #    print("\nTaking intersection:")
-                #    intersection = set(lr_features).intersection(set(fightin_lexicon))
-                #    vocab = list(intersection)
-                #    vocab.sort()
-                #    for w in vocab:
-                #        print(w)
-
-
-                #vocab = [w for w in vocab if w not in stopwords]
-
-                for w in vocab:
-                    print(w)
-
-                vocab.sort()
-
-                #if annotated_subset is not None:
-                #    print("Missing:")
-                #    print(set(fightin_lexicon_test) - set(vocab))
-
-
             # add in a stage to eliminate items with no labels
             print("Subsetting items with labels")
             label_sums_df = labels_df.sum(axis=1)
@@ -317,6 +271,8 @@ def test_over_time(project_dir, subset, config_file, first_year, stage1_logfile=
 
             results_df = pd.DataFrame([], columns=['f1', 'acc', 'mae', 'estimated calibration'])
 
+
+
             # Now train a model on the training data, saving the calibration data for calibration
             print("Training a model")
             model, dev_f1, dev_acc, dev_cal_mae, dev_cal_est = train.train_model_with_labels(project_dir, model_type, loss, model_name, subset, sampled_labels_df, feature_defs, weights_df=weights_df, items_to_use=train_items, penalty='l2', alpha_min=alpha_min, alpha_max=alpha_max, n_alphas=n_alphas, intercept=intercept, objective=objective, n_dev_folds=n_dev_folds, do_ensemble=do_ensemble, dh=dh, seed=seed, pos_label=pos_label, vocab=vocab, group_identical=group_identical, nonlinearity=nonlinearity, init_lr=init_lr, min_epochs=min_epochs, max_epochs=max_epochs, patience=patience, tol=tol, early_stopping=early_stopping, verbose=verbose)
@@ -347,36 +303,8 @@ def test_over_time(project_dir, subset, config_file, first_year, stage1_logfile=
             output_df.loc['ACC_internal'] = [n_train, 'train', 'test', 'n/a', test_acc_estimate_internal[1], test_acc_rmse_internal, np.nan, np.nan, np.nan]
             output_df.loc['PVC_internal'] = [n_train, 'train', 'nontrain', 'predicted', test_pvc_estimate_internal[1], test_pvc_rmse_internal, np.nan, np.nan, np.nan]
 
-            """
-            if DL:
-                print("Training a model")
-                model_type = 'DL'
-                DL_model_name = model_name + '_DL'
-                model, _, _, _, _ = train.train_model_with_labels(project_dir, model_type, loss, DL_model_name, subset, sampled_labels_df, feature_defs, weights_df=weights_df, items_to_use=train_items, penalty='l2', alpha_min=alpha_min, alpha_max=alpha_max, n_alphas=n_alphas, intercept=intercept, objective=objective, n_dev_folds=n_dev_folds, do_ensemble=do_ensemble, dh=dh, seed=seed, pos_label=pos_label, vocab=vocab, group_identical=group_identical, nonlinearity=nonlinearity, init_lr=init_lr, min_epochs=min_epochs, max_epochs=max_epochs, patience=patience, tol=tol, early_stopping=early_stopping, verbose=verbose)
-
-                # predict on test data
-                force_dense = False
-                if model_type == 'MLP':
-                    force_dense = True
-                test_predictions_df, test_pred_probs_df, test_pred_proportions = predict.predict(project_dir, model, DL_model_name, subset, label, items_to_use=test_items, verbose=verbose, force_dense=force_dense, group_identical=group_identical)
-                f1_test, acc_test = evaluate_predictions.evaluate_predictions(test_labels_df, test_predictions_df, test_pred_probs_df, pos_label=pos_label, average=average)
-                true_test_vector = np.argmax(test_labels_df.as_matrix(), axis=1)
-
-                #test_cal_mae = evaluation.eval_proportions_mae(test_labels_df.as_matrix(), test_pred_probs_df.as_matrix())
-                test_cal_est = evaluation.evaluate_calibration_rmse(true_test_vector, test_pred_probs_df.as_matrix(), min_bins=1, max_bins=1)
-                test_cc_estimate, test_pcc_estimate, test_acc_estimate_internal, test_pvc_estimate_internal = test_pred_proportions
-
-                test_cc_mae = np.mean(np.abs(test_cc_estimate[1] - target_estimate))
-                test_pcc_mae = np.mean(np.abs(test_pcc_estimate[1] - target_estimate))
-
-                output_df.loc['CC_test_DL'] = [n_train, 'train', 'test', 'n/a', test_cc_estimate[1], test_cc_mae, np.nan, np.nan, np.nan]
-                output_df.loc['PCC_test_DL'] = [n_train, 'train', 'test', 'n/a', test_pcc_estimate[1], test_pcc_mae, np.nan, np.nan, np.nan]
-            """
-
             results_df.to_csv(os.path.join(dirs.dir_models(project_dir), model_name, 'accuracy.csv'))
             output_df.to_csv(os.path.join(dirs.dir_models(project_dir), model_name, 'results.csv'))
-
-
 
 
 def make_model_basename(log):
@@ -417,6 +345,8 @@ def get_estimate_and_std(labels_df, use_n_annotations=False):
     # estimate the variance by pretending this is a binomial distribution
     std = np.sqrt(estimate * (1 - estimate) / float(n))
     return props, estimate, std
+
+
 
 
 if __name__ == '__main__':

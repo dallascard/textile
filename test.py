@@ -12,9 +12,9 @@ from core.preprocessing import preprocess_words
 
 
 project_dir = 'projects/mfc/samesex'
-subset = 'pro_tone'
-model_type = 'LR'
-label = 'label'
+subset = 'framing'
+model_type = 'DL'
+label = 'Legality'
 #field_name = 'year_group'
 config_file = 'config/default.json'
 do_ensemble = True
@@ -27,6 +27,6 @@ annotated_subset = 'Legality_annotations'
 
 #fightin_words.load_and_select_features('projects/mfc/samesex/data/subsets/framing/features/unigramsfast.json', 'projects/mfc/samesex/data/subsets/Legality_annotations/features/unigramsfast.json')
 
-#over_time.test_over_time(project_dir, subset, config_file, '1996', stage1_logfile=stage1_logfile, do_ensemble=False, label='Legality', group_identical=True, annotated_subset=annotated_subset)
+over_time.test_over_time(project_dir, subset, config_file, 1990, model_type=model_type, do_ensemble=True, label='Legality', group_identical=False, annotated_subset=None, n_dev_folds=5)
 
-preprocess_words.preprocess_words('projects/mfc/samesex', 'framing', lower=True, ngrams=2)
+#preprocess_words.preprocess_words('projects/mfc/samesex', 'framing', lower=True, ngrams=2)

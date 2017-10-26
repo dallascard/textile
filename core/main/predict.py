@@ -12,6 +12,7 @@ from ..util import file_handling as fh
 from ..models import load_model
 from ..preprocessing import features
 from ..util.misc import printv
+from ..main import train
 
 
 def main():
@@ -91,10 +92,55 @@ def predict(project_dir, model, model_name, test_subset, label_name, items_to_us
     n_items, n_labels = X.shape
     print("Feature matrix shape: (%d, %d)" % X.shape)
 
+    """
     if group_identical:
         label_dir = dirs.dir_labels(project_dir, test_subset)
         labels_df = fh.read_csv_to_df(os.path.join(label_dir, label_name + '.csv'), index_col=0, header=0)
-        Y = labels_df.as_matrix()
+        Y = labels_df.loc[items_to_use].as_matrix()
+
+        X_counts = defaultdict(int)
+        X_n_pos = defaultdict(int)
+
+        for i in range(n_items):
+            if sparse.issparse(X):
+                vector = np.array(X[i, :].todense()).ravel()
+            else:
+                vector = np.array(X[i, :]).ravel()
+            key = ''.join([str(int(s)) for s in vector])
+            X_counts[key] += np.sum(Y[i, :])
+            X_n_pos[key] += Y[i, 1]
+
+        keys = list(X_counts.keys())
+        keys.sort()
+
+        train_patterns = fh.read_json(os.path.join(model_dir, 'training_patterns.json'))
+        X_counts_train = train_patterns['X_counts']
+        X_n_pos_train = train_patterns['X_n_pos']
+
+        patterns = list(X_counts.keys())
+        counts = [X_counts[key] for key in patterns]
+        order = list(np.argsort(counts))
+        order.reverse()
+        most_common_keys = [patterns[i] for i in order[:10]]
+        for key in most_common_keys:
+            print('key: %s' % key)
+            print('test: %f (%d / %d)' % (X_n_pos[key] / float(X_counts[key]),  X_n_pos[key], X_counts[key]))
+            if key in X_n_pos_train:
+                print('train: %f (%d / %d)' % (X_n_pos_train[key] / float(X_counts_train[key]),  X_n_pos_train[key], X_counts_train[key]))
+            else:
+                print('train: %f (%d / %d)' % (0.0, 0, 0))
+            prob = model.predict_probs(sparse.csr_matrix([int(i) for i in key]))
+            print('pred:', prob)
+
+        #for index, item in enumerate(items_to_use):
+        #    print(X[index], item, Y[index])
+    """
+
+    if group_identical:
+        print("One by one")
+        label_dir = dirs.dir_labels(project_dir, test_subset)
+        labels_df = fh.read_csv_to_df(os.path.join(label_dir, label_name + '.csv'), index_col=0, header=0)
+        Y = labels_df.loc[items_to_use].as_matrix()
 
         X_counts = defaultdict(int)
         X_n_pos = defaultdict(int)
@@ -146,6 +192,15 @@ def predict(project_dir, model, model_name, test_subset, label_name, items_to_us
     print("Done")
 
     pred_proportions = model.predict_proportions(X)
+
+    if model.get_model_type() == 'DL':
+        label_dir = dirs.dir_labels(project_dir, test_subset)
+        labels_df = fh.read_csv_to_df(os.path.join(label_dir, label_name + '.csv'), index_col=0, header=0)
+        Y = labels_df.loc[items_to_use].as_matrix()
+        n_items, n_classes = Y.shape
+        weights = np.ones(n_items)
+        X, Y, w = train.prepare_data(X, Y, weights=weights, loss='log', normalize=True)
+        model.test(X, Y, w)
 
     return predictions_df, pred_probs_df, pred_proportions
 

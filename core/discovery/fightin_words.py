@@ -141,5 +141,49 @@ def get_stopwords():
     return my_stopwords
 
 
+def find_most_annotated_features(project, target_subset, background_subset, config_file, items_to_use=None, remove_stopwords=False):
+    target_features_dir = dirs.dir_features(project, target_subset)
+    background_features_dir = dirs.dir_features(project, background_subset)
+
+    config = fh.read_json(config_file)
+    feature_defs = []
+    for f in config['feature_defs']:
+        feature_defs.append(features.parse_feature_string(f))
+
+    background_feature, _ = features.load_and_process_features_for_training(background_features_dir, feature_defs, items_to_use, verbose=False)
+    target_feature, _ = features.load_and_process_features_for_training(target_features_dir, feature_defs, items_to_use, verbose=False)
+
+    print("Enforcing identical vocabularies")
+    target_feature.set_terms(background_feature.get_terms())
+
+    print("Dividing by number of annotators")
+    target_metadata_file = os.path.join(dirs.dir_subset(project, target_subset), 'metadata.csv')
+    metadata_df = fh.read_csv_to_df(target_metadata_file)
+    n_annotators = metadata_df['n_annotators']
+    if items_to_use is not None:
+        n_annotators = n_annotators.loc[items_to_use]
+
+    assert list(n_annotators.index) == background_feature.get_items()
+    print(target_feature.counts.shape)
+    n_items, n_features = target_feature.counts.shape
+    for i, item in enumerate(target_feature.get_items()):
+        if n_annotators.loc[item] > 0:
+            target_feature.counts[i, :] /= float(n_annotators.loc[item])
+
+    total_counts = np.array(background_feature.counts.sum(axis=0)).reshape((n_features, )) + 2.0
+    annotated_counts = np.array(target_feature.counts.sum(axis=0), dtype=float).reshape((n_features, )) + 1.0
+
+    for term in ['court', 'supreme', 'state', 'supreme_court', 'legal']:
+        index = background_feature.get_terms().index(term)
+        print(term, annotated_counts[index], total_counts[index])
+
+    ratio = annotated_counts / total_counts
+    order = np.argsort(ratio)
+    terms = list(background_feature.get_terms())
+    print(len(terms))
+    for i in range(1, 50):
+        print(terms[order[-i]], annotated_counts[order[-i]], total_counts[order[-i]])
+
+
 if __name__ == '__main__':
     main()

@@ -10,7 +10,7 @@ from sklearn.model_selection import KFold
 
 from ..util import file_handling as fh
 from ..models import linear, mlp, evaluation, calibration, ensemble
-from ..models import load_model
+from ..models import decision_list
 from ..models import get_top_features
 from ..preprocessing import features
 from ..util import dirs
@@ -425,6 +425,103 @@ def train_model_with_labels(project_dir, model_type, loss, model_name, subset, l
         else:
             full_model = None
 
+    elif model_type == 'DL':  # decision list
+
+        """
+        fold = 1
+        alpha = 1.0
+        alpha_i = 0
+        stoplist = []
+        for train_indices, dev_indices in kfold.split(X):
+
+            name = model_name + '_' + str(fold)
+            model = decision_list.DL(alpha=1.0, output_dir=output_dir, name=name, pos_label=pos_label)
+
+            X_train = X[train_indices, :]
+            Y_train = Y[train_indices, :]
+            X_dev = X[dev_indices, :]
+            Y_dev = Y[dev_indices, :]
+            w_train = weights[train_indices]
+            w_dev = weights[dev_indices]
+            X_train, Y_train, w_train = prepare_data(X_train, Y_train, w_train, loss=loss)
+            X_dev, Y_dev, w_dev = prepare_data(X_dev, Y_dev, w_dev, loss=loss)
+
+            model.fit(X_train, Y_train, train_weights=w_train, X_dev=X_dev, Y_dev=Y_dev, dev_weights=w_dev, col_names=col_names, interactive=True, stoplist=stoplist)
+
+            stoplist.extend(model.get_stoplist())
+            print(stoplist)
+
+            train_predictions = model.predict(X_train)
+            dev_predictions = model.predict(X_dev)
+            dev_pred_probs = model.predict_probs(X_dev)
+
+            alpha_models[alpha].append(model)
+            #print("Adding model to list for %.4f; new length = %d" % alpha, len(alpha_models[alpha]))
+
+            y_train_vector = np.argmax(Y_train, axis=1)
+            y_dev_vector = np.argmax(Y_dev, axis=1)
+
+            # internally compute the correction matrices
+            #alpha_acc_cfms.append(calibration.compute_acc(y_dev_vector, dev_predictions, n_classes, weights=w_dev))
+            #alpha_pvc_cfms.append(calibration.compute_pvc(y_dev_vector, dev_predictions, n_classes, weights=w_dev))
+
+            train_f1 = evaluation.f1_score(y_train_vector, train_predictions, n_classes, pos_label=pos_label, weights=w_train)
+            dev_f1 = evaluation.f1_score(y_dev_vector, dev_predictions, n_classes, pos_label=pos_label, weights=w_dev)
+            dev_acc = evaluation.acc_score(y_dev_vector, dev_predictions, n_classes, weights=w_dev)
+            dev_proportions = evaluation.compute_proportions(Y_dev, w_dev)
+            pred_proportions = evaluation.compute_proportions(dev_pred_probs, w_dev)
+            dev_cal_mae = evaluation.eval_proportions_mae(dev_proportions, pred_proportions)
+            dev_cal_est = evaluation.evaluate_calibration_rmse(y_dev_vector, dev_pred_probs)
+
+            print(train_f1, dev_f1, dev_acc, dev_cal_mae, dev_cal_est)
+
+            mean_train_f1s[alpha_i] += train_f1 / float(n_dev_folds)
+            mean_dev_f1s[alpha_i] += dev_f1 / float(n_dev_folds)
+            mean_dev_acc[alpha_i] += dev_acc / float(n_dev_folds)
+            mean_dev_cal_mae[alpha_i] += dev_cal_mae / float(n_dev_folds)
+            mean_dev_cal_est[alpha_i] += dev_cal_est / float(n_dev_folds)
+            mean_model_size[alpha_i] += model.get_model_size() / float(n_dev_folds)
+            fold += 1
+
+        print("%d\t%0.2f\t%.1f\t%0.3f\t%0.3f\t%0.3f\t%0.3f\t%0.3f" % (alpha_i, alpha, mean_model_size[alpha_i], mean_train_f1s[alpha_i], mean_dev_f1s[alpha_i], mean_dev_acc[alpha_i], mean_dev_cal_mae[alpha_i], mean_dev_cal_est[alpha_i]))
+
+        best_alpha_index = 0
+        best_alpha = alphas[best_alpha_index]
+        best_dev_f1 = mean_dev_f1s[best_alpha_index]
+        best_dev_acc = mean_dev_acc[best_alpha_index]
+        best_dev_cal_mae = mean_dev_cal_mae[best_alpha_index]
+        best_dev_cal_est = mean_dev_cal_est[best_alpha_index]
+        print("Best: alpha = %.3f, dev f1 = %.3f, dev cal mae = %.3f, dev calibration estimate= %0.3f" % (best_alpha, best_dev_f1, best_dev_cal_mae, best_dev_cal_est))
+
+        best_models = alpha_models[best_alpha]
+        print("Number of best models = %d" % len(best_models))
+
+        if save_model:
+            print("Saving models")
+            for model in best_models:
+                model.save()
+
+        if do_ensemble:
+            printv("Saving ensemble", verbose)
+            fold = 1
+            for model_i, model in enumerate(best_models):
+                name = model_name + '_' + str(fold)
+                model_ensemble.add_model(model, name)
+                fold += 1
+            full_model = model_ensemble
+            full_model.save()
+        """
+
+        printv("Training full model", verbose)
+        full_model = decision_list.DL(alpha=0.1, output_dir=output_dir, name=model_name, pos_label=pos_label)
+        X, Y, w = prepare_data(X, Y, weights, loss=loss)
+        full_model.fit(X, Y, train_weights=w, col_names=col_names)
+        full_model.save()
+        best_dev_f1 = 0
+        best_dev_acc = 0
+        best_dev_cal_mae = 0
+        best_dev_cal_est = 0
+
     else:
         sys.exit("Model type %s not recognized" % model_type)
 
@@ -647,8 +744,7 @@ def train_brier_grouped(project_dir, model_name, subset, labels_df, feature_defs
 
 
 
-
-def prepare_data(X, Y, weights=None, predictions=None, loss='log'):
+def prepare_data(X, Y, weights=None, predictions=None, loss='log', normalize=True):
     """
     Expand the feature matrix and label matrix by converting items with multiple labels to multiple rows with 1 each
     :param X: feature matrix (n_items, n_features)
@@ -656,6 +752,7 @@ def prepare_data(X, Y, weights=None, predictions=None, loss='log'):
     :param weights: (n_items, )
     :param predictions: optional vector of predcitions to expand in parallel
     :param loss: loss function (determines whether to expand or average
+    :param normalize: convert labels into a weighted combination that adds to one
     :return: 
     """
     n_items, n_classes = Y.shape
@@ -683,7 +780,10 @@ def prepare_data(X, Y, weights=None, predictions=None, loss='log'):
                     label_vector[index] = 1
                     Y_list.append(label_vector)
                     # give it a weight based on prior weighting and the proportion of annotations for this class
-                    weights_list.append(weights[i] * count/total)
+                    if normalize:
+                        weights_list.append(weights[i] * count/total)
+                    else:
+                        weights_list.append(weights[i] * count)
                     # also append the prediction if given
                     if predictions is not None:
                         pred_list.append(predictions[i])
