@@ -16,8 +16,6 @@ from core.util import dirs
 def main():
     usage = "%prog project_dir subset model_config.json"
     parser = OptionParser(usage=usage)
-    parser.add_option('--stage2', dest='logfile', default=None,
-                      help='run stage 2 using logfile from stage 1: default=%default')
     #parser.add_option('--n_train', dest='n_train', default=100,
     #                  help='Number of training instances to use (0 for all): default=%default')
     #parser.add_option('--n_calib', dest='n_calib', default=100,
@@ -28,8 +26,8 @@ def main():
                       help='Sample labels instead of averaging: default=%default')
     parser.add_option('--suffix', dest='suffix', default='',
                       help='Suffix to mdoel name: default=%default')
-    parser.add_option('--model', dest='model', default='LR',
-                      help='Model type [LR|MLP]: default=%default')
+    #parser.add_option('--model', dest='model', default='LR',
+    #                  help='Model type [LR|MLP]: default=%default')
     parser.add_option('--loss', dest='loss', default='log',
                       help='Loss function [log|brier]: default=%default')
     parser.add_option('--penalty', dest='penalty', default='l1',
@@ -79,13 +77,12 @@ def main():
     subset = args[1]
     config_file = args[2]
 
-    stage1_logfile = options.logfile
     #n_train = int(options.n_train)
     #n_calib = int(options.n_calib)
     first_year = int(options.first_year)
     sample_labels = options.sample
     suffix = options.suffix
-    model_type = options.model
+    #model_type = options.model
     loss = options.loss
     dh = int(options.dh)
     nonlinearity = options.nonlinearity
@@ -115,12 +112,10 @@ def main():
 
     average = 'micro'
 
-    test_over_time(project_dir, subset, config_file, first_year, stage1_logfile, penalty, suffix, model_type, loss, objective, do_ensemble, dh, label, intercept, n_dev_folds, verbose, average, seed, alpha_min, alpha_max, n_alphas, sample_labels, group_identical, annotated, n_terms, nonlinearity, early_stopping=early_stopping)
-
-    #stage2(project_dir, subset, config_file, penalty, suffix, do_ensemble, dh, label, intercept, n_dev_folds, verbose, average, seed, alpha_min, alpha_max, sample_labels, annotated_subset=annotated, n_terms=n_terms)
+    test_over_time(project_dir, subset, config_file, first_year, penalty, suffix, loss, objective, do_ensemble, dh, label, intercept, n_dev_folds, verbose, average, seed, alpha_min, alpha_max, n_alphas, sample_labels, group_identical, annotated, n_terms, nonlinearity, early_stopping=early_stopping)
 
 
-def test_over_time(project_dir, subset, config_file, first_year, stage1_logfile=None, penalty='l2', suffix='', model_type='LR', loss='log', objective='f1', do_ensemble=True, dh=100, label='label', intercept=True, n_dev_folds=5, verbose=False, average='micro', seed=None, alpha_min=0.01, alpha_max=1000.0, n_alphas=8, sample_labels=False, group_identical=False, annotated_subset=None, n_terms=0, nonlinearity='tanh', init_lr=1e-4, min_epochs=2, max_epochs=100, patience=8, tol=1e-4, early_stopping=False):
+def test_over_time(project_dir, subset, config_file, first_year, penalty='l2', suffix='', loss='log', objective='f1', do_ensemble=True, dh=100, label='label', intercept=True, n_dev_folds=5, verbose=False, average='micro', seed=None, alpha_min=0.01, alpha_max=1000.0, n_alphas=8, sample_labels=False, group_identical=False, annotated_subset=None, n_terms=0, nonlinearity='tanh', init_lr=1e-4, min_epochs=2, max_epochs=100, patience=8, tol=1e-4, early_stopping=False):
     # Just run a regular model, one per year, training on the past, and save the reults
 
     log = {
@@ -128,10 +123,8 @@ def test_over_time(project_dir, subset, config_file, first_year, stage1_logfile=
         'subset': subset,
         'config_file': config_file,
         'first_year': first_year,
-        'stage1_logfile': stage1_logfile,
         'penalty': penalty,
         'suffix': suffix,
-        'model_type': model_type,
         'loss': loss,
         'objective': objective,
         'do_ensemble': do_ensemble,
@@ -158,10 +151,6 @@ def test_over_time(project_dir, subset, config_file, first_year, stage1_logfile=
     }
 
     model_basename = make_model_basename(log)
-    stage1_model_basename = ''
-    if stage1_logfile is not None:
-        stage1_log = fh.read_json(stage1_logfile)
-        stage1_model_basename = make_model_basename(stage1_log)
 
     # save the experiment parameters to a log file
     logfile = os.path.join(dirs.dir_logs(project_dir), model_basename + '.json')
@@ -183,13 +172,12 @@ def test_over_time(project_dir, subset, config_file, first_year, stage1_logfile=
     print("Splitting data according to :", field_vals)
 
     # DEBUG:
-    field_vals = ['2009']
+    field_vals = ['2010']
 
     for target_year in field_vals:
         if int(target_year) >= first_year:
             print("\nTesting on %s" % target_year)
             model_name = model_basename + '_' + str(target_year)
-            stage1_model_name = stage1_model_basename + '_' + str(target_year)
             # first, split into training and non-train data based on the field of interest
 
             ## DEBUG!
@@ -271,17 +259,14 @@ def test_over_time(project_dir, subset, config_file, first_year, stage1_logfile=
 
             results_df = pd.DataFrame([], columns=['f1', 'acc', 'mae', 'estimated calibration'])
 
-
-
             # Now train a model on the training data, saving the calibration data for calibration
-            print("Training a model")
-            model, dev_f1, dev_acc, dev_cal_mae, dev_cal_est = train.train_model_with_labels(project_dir, model_type, loss, model_name, subset, sampled_labels_df, feature_defs, weights_df=weights_df, items_to_use=train_items, penalty='l2', alpha_min=alpha_min, alpha_max=alpha_max, n_alphas=n_alphas, intercept=intercept, objective=objective, n_dev_folds=n_dev_folds, do_ensemble=do_ensemble, dh=dh, seed=seed, pos_label=pos_label, vocab=vocab, group_identical=group_identical, nonlinearity=nonlinearity, init_lr=init_lr, min_epochs=min_epochs, max_epochs=max_epochs, patience=patience, tol=tol, early_stopping=early_stopping, verbose=verbose)
+            print("Training a LR model")
+            model_name = model_name + '_LR'
+            model, dev_f1, dev_acc, dev_cal_mae, dev_cal_est = train.train_model_with_labels(project_dir, 'LR', 'log', model_name, subset, sampled_labels_df, feature_defs, weights_df=weights_df, items_to_use=train_items, penalty='l2', alpha_min=alpha_min, alpha_max=alpha_max, n_alphas=n_alphas, intercept=intercept, objective=objective, n_dev_folds=n_dev_folds, do_ensemble=do_ensemble, dh=dh, seed=seed, pos_label=pos_label, vocab=None, group_identical=group_identical, nonlinearity=nonlinearity, init_lr=init_lr, min_epochs=min_epochs, max_epochs=max_epochs, patience=patience, tol=tol, early_stopping=early_stopping, verbose=verbose)
             results_df.loc['cross_val'] = [dev_f1, dev_acc, dev_cal_mae, dev_cal_est]
 
             # predict on test data
             force_dense = False
-            if model_type == 'MLP':
-                force_dense = True
             test_predictions_df, test_pred_probs_df, test_pred_proportions = predict.predict(project_dir, model, model_name, subset, label, items_to_use=test_items, verbose=verbose, force_dense=force_dense, group_identical=group_identical)
             f1_test, acc_test = evaluate_predictions.evaluate_predictions(test_labels_df, test_predictions_df, test_pred_probs_df, pos_label=pos_label, average=average)
             true_test_vector = np.argmax(test_labels_df.as_matrix(), axis=1)
@@ -306,9 +291,42 @@ def test_over_time(project_dir, subset, config_file, first_year, stage1_logfile=
             results_df.to_csv(os.path.join(dirs.dir_models(project_dir), model_name, 'accuracy.csv'))
             output_df.to_csv(os.path.join(dirs.dir_models(project_dir), model_name, 'results.csv'))
 
+            # Now train a model on the training data, saving the calibration data for calibration
+            print("Training a model")
+            #model_name = model_name[:-3] + "_DL"
+            model_name = model_name + "_DL"
+            model, dev_f1, dev_acc, dev_cal_mae, dev_cal_est = train.train_model_with_labels(project_dir, 'DL', 'log', model_name, subset, sampled_labels_df, feature_defs, weights_df=weights_df, items_to_use=train_items, penalty='l2', alpha_min=alpha_min, alpha_max=alpha_max, n_alphas=n_alphas, intercept=intercept, objective=objective, n_dev_folds=2, do_ensemble=do_ensemble, dh=dh, seed=seed, pos_label=pos_label, vocab=None, group_identical=group_identical, nonlinearity=nonlinearity, init_lr=init_lr, min_epochs=min_epochs, max_epochs=max_epochs, patience=patience, tol=tol, early_stopping=early_stopping, verbose=verbose)
+            results_df.loc['cross_val'] = [dev_f1, dev_acc, dev_cal_mae, dev_cal_est]
+
+            # predict on test data
+            force_dense = False
+
+            test_predictions_df, test_pred_probs_df, test_pred_proportions = predict.predict(project_dir, model, model_name, subset, label, items_to_use=test_items, verbose=verbose, force_dense=force_dense, group_identical=group_identical)
+            f1_test, acc_test = evaluate_predictions.evaluate_predictions(test_labels_df, test_predictions_df, test_pred_probs_df, pos_label=pos_label, average=average)
+            true_test_vector = np.argmax(test_labels_df.as_matrix(), axis=1)
+            test_cal_est = evaluation.evaluate_calibration_rmse(true_test_vector, test_pred_probs_df.as_matrix(), min_bins=1, max_bins=1)
+            test_cc_estimate, test_pcc_estimate, test_acc_estimate_internal, test_pvc_estimate_internal = test_pred_proportions
+
+            test_cc_mae = np.mean(np.abs(test_cc_estimate[1] - target_estimate))
+            test_pcc_mae = np.mean(np.abs(test_pcc_estimate[1] - target_estimate))
+
+            results_df.loc['test'] = [f1_test, acc_test, test_pcc_mae, test_cal_est]
+
+            output_df.loc['CC_test'] = [n_train, 'train', 'test', 'n/a', test_cc_estimate[1], test_cc_mae, np.nan, np.nan, np.nan]
+            output_df.loc['PCC_test'] = [n_train, 'train', 'test', 'n/a', test_pcc_estimate[1], test_pcc_mae, np.nan, np.nan, np.nan]
+
+            test_acc_rmse_internal = np.sqrt((test_acc_estimate_internal[1] - target_estimate) ** 2)
+            test_pvc_rmse_internal = np.sqrt((test_pvc_estimate_internal[1] - target_estimate) ** 2)
+
+            output_df.loc['ACC_internal'] = [n_train, 'train', 'test', 'n/a', test_acc_estimate_internal[1], test_acc_rmse_internal, np.nan, np.nan, np.nan]
+            output_df.loc['PVC_internal'] = [n_train, 'train', 'nontrain', 'predicted', test_pvc_estimate_internal[1], test_pvc_rmse_internal, np.nan, np.nan, np.nan]
+
+            results_df.to_csv(os.path.join(dirs.dir_models(project_dir), model_name, 'accuracy.csv'))
+            output_df.to_csv(os.path.join(dirs.dir_models(project_dir), model_name, 'results.csv'))
+
 
 def make_model_basename(log):
-    model_basename = log['subset'] + '_' + log['label'] + '_' + 'year' + '_' + log['model_type'] + '_' + log['penalty']
+    model_basename = log['subset'] + '_' + log['label'] + '_' + 'year' + '_' + log['penalty']
     model_basename += '_' + str(log['dh']) + '_' + log['objective']
     if log['sample_labels']:
         model_basename += '_sampled'
@@ -317,8 +335,6 @@ def make_model_basename(log):
         model_basename += '_grouped'
     if log['annotated_subset']:
         model_basename += '_fight'
-    if log['stage1_logfile'] is not None:
-        model_basename += '_stage2_' + str(log['n_terms'])
     return model_basename
 
 

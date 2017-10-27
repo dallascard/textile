@@ -11,23 +11,84 @@ from sklearn.linear_model import LinearRegression, Lasso, Ridge
 
 from ..util import file_handling as fh
 from ..models import evaluation, calibration
+from ..main import train
 
 
 class DecisionList:
 
-    def __init__(self, depth=0, alpha=1.0, min_df=10, max_depth=50):
-        self._depth = depth
+    def __init__(self, alpha=1.0, max_depth=50):
         self._alpha = alpha
-        self._min_df = min_df
         self._max_depth = max_depth
-        self._feature_index = None
-        self._feature_name = None
+        self._feature_indices = None
+        self._feature_names = None
         self._present_obs = None
         self._absent_props = None
-        self._child = None
         self._stoplist = []
+        self._resid_model = None
+        self._col_names = None
 
-    def fit(self, X, Y, w, all_col_names, reduced_col_names=None, interactive=True, stoplist=None):
+    def fit(self, X, Y, w, feature_list, all_col_names):
+        self._feature_names = []
+        self._feature_indices = []
+        self._present_obs = np.zeros([self._max_depth, 2])
+        self._absent_props = np.zeros([self._max_depth, 2])
+
+        self._col_names = all_col_names
+        col_names = all_col_names[:]
+
+        depth = 0
+        list_index = 0
+        while depth < self._max_depth:
+            n_items, n_features = X.shape
+            feature = feature_list[list_index]
+
+            if feature not in col_names:
+                print("Skipping %s" % feature)
+                list_index += 1
+
+            if feature in col_names:
+                self._feature_names.append(feature)
+                feature_index = col_names.index(feature)
+                orig_index = all_col_names.index(feature)
+                self._feature_indices.append(orig_index)
+
+                # get the label counts for each feature
+                counts = np.zeros((2, n_features), dtype=float)
+                for j in range(2):
+                    indices = Y[:, j] == 1
+                    counts[j, :] = X[indices, :].T.dot(w[indices]) + self._alpha
+
+                self._present_obs[depth, :] = np.array([counts[0, feature_index], counts[1, feature_index]])
+
+                # subset the rows without that feature
+                if sparse.issparse(X):
+                    absent_indices = np.array(X[:, feature_index].todense()) == 0
+                    absent_indices = np.reshape(absent_indices, (n_items, ))
+                else:
+                    absent_indices = X[:, feature_index] == 0
+
+                X = X[absent_indices, :]
+                Y = Y[absent_indices, :]
+                w = w[absent_indices]
+
+                # record the label proportion in the remaining items
+                absent_prop = np.sum(Y[:, 1] * w) / np.sum(w)
+                self._absent_props[depth, :] = np.array([2.0 - 2.0 * absent_prop, 2.0 * absent_prop])
+
+                print("Adding", feature, self._present_obs[depth, :], absent_prop)
+
+                # subset the features that meet the minimum frequency requirement
+                col_index = np.ones(n_features, dtype=bool)
+                col_index[feature_index] = False
+                X = X[:, col_index]
+                col_names = [col_names[i] for i in range(len(col_index)) if col_index[i] > 0]
+
+                depth += 1
+                list_index += 1
+
+
+    """
+    def fit_interactive(self, X, Y, w, all_col_names, reduced_col_names=None, stoplist=None):
 
         if reduced_col_names is None:
             reduced_col_names = all_col_names[:]
@@ -38,7 +99,6 @@ class DecisionList:
         while command != 'stop':
             n_remaining, n_features = X.shape
 
-            # just record the overall observed proportions in the first node
             # get the label counts for each feature
             counts = np.zeros((2, n_features), dtype=float)
             for j in range(2):
@@ -59,10 +119,7 @@ class DecisionList:
 
             else:
                 print(name, counts[:, most_predictive])
-                if interactive:
-                    command = input("Inculde %s [y]/n/stop: " % name)
-                else:
-                    command = 'y'
+                command = input("Inculde %s [y]/n/stop: " % name)
 
                 if command != 'n' and command != 'stop':
                     print("Including")
@@ -95,7 +152,7 @@ class DecisionList:
 
                     if self._depth < self._max_depth:
                         list = DecisionList(self._depth + 1, alpha=self._alpha, min_df=self._min_df, max_depth=self._max_depth)
-                        if list.fit(X, Y, w, all_col_names, reduced_col_names, interactive=interactive, stoplist=stoplist):
+                        if list.fit_interactive(X, Y, w, all_col_names, reduced_col_names, stoplist=stoplist):
                             self._child = list
                     return True
 
@@ -108,51 +165,56 @@ class DecisionList:
 
                 elif command == 'stop':
                     return False
+    """
 
     def print_list(self):
-        print(self._feature_name, ':', self._present_obs)
-        if self._child is not None:
-            self._child.print_list()
-        else:
-            print("Remainder:", self._absent_props[1] / np.sum(self._absent_props))
+        for depth in range(self._max_depth):
+            print(self._feature_names[depth], ':', self._present_obs[depth, :], self._absent_props[depth, :])
 
     def predict(self, X):
-        n_items, n_features = X.shape
-        predictions = np.zeros(n_items, dtype=int)
-        for i in range(n_items):
-            if sparse.issparse(X):
-                prob_i = self._predict_probs_for_one_item(np.reshape(np.array(X[i, :].todense()), (n_features, )))
-            else:
-                prob_i = self._predict_probs_for_one_item(X[i, :])
-            predictions[i] = int(prob_i > 0.5)
+        probs = np.array(self.predict_probs(X))
+        predictions = np.argmax(probs, axis=1)
         return predictions
 
     def predict_probs(self, X):
         n_items, n_features = X.shape
-        n_classes = 2
-        probs = np.zeros((n_items, n_classes))
-        for i in range(n_items):
+
+        X_copy = X.copy()
+        for feature in self._feature_names:
+            feature_index = self._col_names.index(feature)
+            X_copy[:, feature_index] = 0
+
+        # apply the residual prediction to all items
+        probs = self._resid_model.predict_probs(X_copy)
+        print(np.mean(probs, axis=0))
+
+        # then go through the decision list in reverse order, assigning observed proportions to those items
+        for depth in range(self._max_depth-1, -1, -1):
+            feature = self._feature_names[depth]
+            feature_index = self._col_names.index(feature)
             if sparse.issparse(X):
-                prob_i = self._predict_probs_for_one_item(np.reshape(np.array(X[i, :].todense()), (n_features, )))
+                selector = np.array(np.array(X[:, feature_index].todense()) > 0, dtype=bool).reshape((n_items, ))
             else:
-                prob_i = self._predict_probs_for_one_item(X[i, :])
-            probs[i, :] = [1.0 - prob_i, prob_i]
+                selector = np.array(X[:, feature_index] > 0, dtype=bool)
+            probs[selector, :] = self._present_obs[depth, :] / np.sum(self._present_obs[depth, :])
+        print(np.mean(probs, axis=0))
         return probs
 
+    """
     def _predict_probs_for_one_item(self, x):
         obs_i = self._get_obs_for_one_item(x)
         return obs_i[1] / float(np.sum(obs_i))
 
     def _get_obs_for_one_item(self, x):
-        #if self._feature_index < 0:
-        #    return self._child._get_obs_for_one_item(x)
-        if x[self._feature_index] > 0:
-            return self._present_obs
-        elif self._child is not None:
-            return self._child._get_obs_for_one_item(x)
-        else:
-            return self._absent_props
+        n_features = len(x)
+        for depth in range(self._max_depth):
+            if x[self._feature_indices[depth]] > 0:
+                return self._present_obs[depth, :]
+        pred_probs = self._resid_model.predict_probs(x.reshape(1, n_features))
+        return [1.0 - pred_probs, pred_probs]
+    """
 
+    """
     def get_betas(self, X):
         n_items, n_features = X.shape
         n_classes = 2
@@ -160,78 +222,52 @@ class DecisionList:
         for i in range(n_items):
             betas[i, :] = self._get_obs_for_one_item(X[i, :])
         return betas
+    """
 
-    def collect_stopwords(self):
-        stoplist = self._stoplist[:]
-        if self._child is not None:
-            stoplist.extend(self._child.collect_stopwords())
-        return stoplist
+    def train_resid(self, X_all, Y_all, w_all, col_names, name, output_dir=None, n_classes=2, objective='f1', penalty='l1', pos_label=1, do_ensemble=True, save_model=True):
+        self._resid_model = train.train_lr_model_with_cv(X_all, Y_all, w_all, col_names, name, output_dir=output_dir, n_classes=n_classes, objective=objective, loss='log', penalty=penalty, intercept=True, n_dev_folds=5, alpha_min=0.01, alpha_max=1000.0, n_alphas=8, pos_label=pos_label, do_ensemble=do_ensemble, prep_data=False, save_model=save_model)
 
     def test(self, X, Y, w, col_names, running_error=0.0, running_count=0.0):
-        n_items, n_features = X.shape
+
         dev_prop = float(np.sum(Y[:, 1] * w) / np.sum(w))
         print("Observed proportions % 0.4f" % dev_prop)
 
-        """
-        if self._depth == 0:
-            stopping_props = self._absent_props
-            a = stopping_props[1]
-            b = stopping_props[0]
-            mean = (a / (a + b))
-            var = a * b / ((a + b) ** 2 * (a + b + 1))
-            stopping_error = np.abs(dev_prop - mean) * n_items
-            stopping_var = var
+        for depth in range(self._max_depth):
+            n_items, n_features = X.shape
+            if sparse.issparse(X):
+                present_indices = np.array(X[:, self._feature_indices[depth]].todense()) > 0
+                present_indices = np.reshape(present_indices, (n_items, ))
+            else:
+                present_indices = X[:, self._feature_indices[depth]] > 0
 
-            print("Stopping pred: %0.5f; Stopping error: %0.5f; Stopping var: %0.5f" % (mean, stopping_error, stopping_var))
-            self._child.test(X, Y, w, col_names, 0.0, 0.0)
-        """
+            if np.sum(present_indices) > 0:
+                dev_prop_present = np.sum(Y[present_indices, 1] * w[present_indices]) / np.sum(w[present_indices])
+                pred_props = self._present_obs[depth, :]
+                a = pred_props[1]
+                b = pred_props[0]
+                mean = a / (a + b)
+                var = a * b / ((a + b) ** 2 * (a + b + 1))
+                running_count += np.sum(present_indices)
+                present_error = np.abs(dev_prop_present - mean) * np.sum(present_indices)
+                present_var = var
+                a = self._absent_props[depth, 1]
+                b = self._absent_props[depth, 0]
+                mean = (a / (a + b))
+                var = a * b / ((a + b) ** 2 * (a + b + 1))
+                default_error = np.abs(dev_prop_present - mean) * np.sum(present_indices)
+                default_var = var
+                print(self._feature_names[depth], self._present_obs[depth, :], self._present_obs[depth, 1] / np.sum(self._present_obs[depth, :]), Y[present_indices, :].sum(axis=0), dev_prop_present, present_error / float(np.sum(present_indices)), (running_error + present_error) / float(running_count), running_error + default_error)
 
+            if sparse.issparse(X):
+                absent_indices = np.array(X[:, self._feature_indices[depth]].todense()) == 0
+                absent_indices = np.reshape(absent_indices, (n_items, ))
+            else:
+                absent_indices = X[:, self._feature_indices[depth]] == 0
 
-        if sparse.issparse(X):
-            present_indices = np.array(X[:, self._feature_index].todense()) > 0
-            present_indices = np.reshape(present_indices, (n_items, ))
-        else:
-            present_indices = X[:, self._feature_index] > 0
+            X = X[absent_indices, :]
+            Y = Y[absent_indices, :]
+            w = w[absent_indices]
 
-        if np.sum(present_indices) > 0:
-            dev_prop_present = np.sum(Y[present_indices, 1] * w[present_indices]) / np.sum(w[present_indices])
-            pred_props = self._present_obs
-            a = pred_props[1]
-            b = pred_props[0]
-            mean = a / (a + b)
-            var = a * b / ((a + b) ** 2 * (a + b + 1))
-            running_count += np.sum(present_indices)
-            present_error = np.abs(dev_prop_present - mean) * np.sum(present_indices)
-            present_var = var
-            a = self._absent_props[1]
-            b = self._absent_props[0]
-            mean = (a / (a + b))
-            var = a * b / ((a + b) ** 2 * (a + b + 1))
-            default_error = np.abs(dev_prop_present - mean) * np.sum(present_indices)
-            default_var = var
-            print(self._feature_name, self._present_obs, self._present_obs[1] / np.sum(self._present_obs), Y[present_indices, :].sum(axis=0), dev_prop_present, present_error / float(np.sum(present_indices)), (running_error + present_error) / float(running_count), running_error + default_error)
-        else:
-            print("skipping %s" % self._feature_name)
-            present_error = 0.0
-
-        if sparse.issparse(X):
-            absent_indices = np.array(X[:, self._feature_index].todense()) == 0
-            absent_indices = np.reshape(absent_indices, (n_items, ))
-        else:
-            absent_indices = X[:, self._feature_index] == 0
-        """
-        dev_prop_absent = np.sum(Y[absent_indices, 1] * w[absent_indices]) / np.sum(w[absent_indices])
-        absent_props = self._absent_props
-        a = absent_props[1]
-        b = absent_props[0]
-        mean = a / (a + b)
-        var = a * b / ((a + b) ** 2 * (a + b + 1))
-        absent_se = np.abs(dev_prop_absent - mean) ** 2 * np.sum(absent_indices)
-        absent_var = var * np.sum(absent_indices)
-        """
-
-        if self._child is not None:
-            self._child.test(X[absent_indices, :], Y[absent_indices, :], w[absent_indices], col_names, running_error + present_error, running_count)
 
 
 class DL:
@@ -259,6 +295,8 @@ class DL:
         self._train_proportions = None
         # variable to hold the sklearn model
         self._model = None
+        # variable to hold the residual LR model
+        self._resid_model = None
         # variable to hold the column names of the feature matrix
         self._col_names = None
 
@@ -277,7 +315,54 @@ class DL:
         else:
             self._model = model
 
-    def fit(self, X_train, Y_train, train_weights=None, col_names=None, X_dev=None, Y_dev=None, dev_weights=None, min_df=5, max_depth=100, interactive=True, stoplist=None, *args, **kwargs):
+    def feature_selection(self, X, Y, w, orig_col_names, max_features=50, interactive=False, stoplist=None):
+
+        _, n_classes = Y.shape
+        self._n_classes = n_classes
+        assert n_classes == 2
+
+        col_names = orig_col_names[:]
+
+        features = []
+
+        while len(features) < max_features:
+            n_items, n_features = X.shape
+            # get the label counts for each feature
+            counts = np.zeros((2, n_features), dtype=float)
+            for j in range(2):
+                indices = Y[:, j] == 1
+                counts[j, :] = X[indices, :].T.dot(w[indices]) + self._alpha
+
+            ratio = counts[1, :] / counts.sum(axis=0)
+            index = int(np.argmax(ratio))
+            feature = col_names[index]
+
+            if feature in stoplist:
+                print("Skipping", feature)
+            else:
+                print("Selecting", feature, counts[:, index])
+                features.append(feature)
+
+                # subset the rows without that feature
+                if sparse.issparse(X):
+                    absent_indices = np.array(X[:, index].todense()) == 0
+                    absent_indices = np.reshape(absent_indices, (n_items, ))
+                else:
+                    absent_indices = X[:, index] == 0
+
+                X = X[absent_indices, :]
+                Y = Y[absent_indices, :]
+                w = w[absent_indices]
+
+            # remove the feature
+            col_index = np.ones(n_features, dtype=bool)
+            col_index[index] = False
+            X = X[:, col_index]
+            col_names = [col_names[i] for i in range(len(col_index)) if col_index[i] > 0]
+
+        return features
+
+    def fit(self, X_train, Y_train, train_weights=None, col_names=None, feature_list=None, X_dev=None, Y_dev=None, dev_weights=None, max_features=100, interactive=False, stoplist=None, objective='f1', penalty='l1'):
         """
         Fit a classifier to data
         :param X: feature matrix: np.array(size=(n_items, n_features))
@@ -290,6 +375,9 @@ class DL:
         _, n_classes = Y_train.shape
         self._n_classes = n_classes
         assert n_classes == 2
+
+        print("X_train.shape", X_train.shape)
+        print("X_dev.shape", X_dev.shape)
 
         # store the proportion of class labels in the training data
         if train_weights is None:
@@ -309,20 +397,50 @@ class DL:
             self._model = None
 
         else:
-            self._model = DecisionList(depth=0, alpha=self._alpha, min_df=min_df, max_depth=max_depth)
+            if feature_list is None:
+                if X_dev is not None and Y_dev is not None:
+                    print("Using dev data to do feature selection")
+                    feature_list = self.feature_selection(X_dev, Y_dev, dev_weights, col_names, max_features, interactive, stoplist)
+                else:
+                    print("Using training data to do feature selection (double-dipping?)")
+                    feature_list = self.feature_selection(X_train, Y_train, train_weights, col_names, max_features, interactive, stoplist)
 
-            self._model.fit(X_train, Y_train, train_weights, col_names, interactive=interactive, stoplist=stoplist)
+            self._model = DecisionList(alpha=self._alpha, max_depth=max_features)
+            self._model.fit(X_train, Y_train, train_weights, feature_list, col_names)
 
-            print("\nFinal model")
-            self._model.print_list()
+            print("X_train.shape", X_train.shape)
+            print("X_dev.shape", X_dev.shape)
 
-            if X_dev is not None and Y_dev is not None:
-                dev_labels = np.argmax(Y_dev, axis=1)
-                dev_pred = self.predict(X_dev)
-                self._dev_acc = evaluation.acc_score(dev_labels, dev_pred, n_classes=n_classes, weights=dev_weights)
-                self._dev_f1 = evaluation.f1_score(dev_labels, dev_pred, n_classes=n_classes, pos_label=self._pos_label, weights=dev_weights)
-                self._dev_acc_cfm = calibration.compute_acc(dev_labels, dev_pred, n_classes, weights=dev_weights)
-                self._dev_pvc_cfm = calibration.compute_pvc(dev_labels, dev_pred, n_classes, weights=dev_weights)
+            # Now fit a basic LR model to the remaining features
+            if X_dev is not None:
+                if sparse.issparse(X_train):
+                    X_all = sparse.vstack([X_train, X_dev])
+                else:
+                    X_all = np.vstack([X_train, X_dev])
+                Y_all = np.vstack([Y_train, Y_dev])
+                w_all = np.r_[train_weights, dev_weights]
+            else:
+                X_all = X_train
+                Y_all = Y_train
+                w_all = train_weights
+
+            print("X_all.shape", X_all.shape)
+
+            # remove items that have features in our feature list
+            for feature in self._model._feature_names:
+                n_items, n_features = X_all.shape
+                feature_index = self._model._col_names.index(feature)
+                if sparse.issparse(X_all):
+                    selector = np.array(np.array(X_all[:, feature_index].todense()) == 0, dtype=bool).reshape((n_items, ))
+                else:
+                    selector = np.array(X_all[:, feature_index] == 0, dtype=bool)
+                X_all = X_all[selector, :]
+                Y_all = Y_all[selector, :]
+                w_all = w_all[selector]
+
+            print("X_all.shape", X_all.shape)
+
+            self._model.train_resid(X_all, Y_all, w_all, col_names, self._name + '_resid', output_dir=self._output_dir, n_classes=2, objective='calibration', penalty='l1', pos_label=1, do_ensemble=True, save_model=True)
 
     def predict(self, X):
         # if we've stored a default value, then that is our prediction

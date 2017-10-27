@@ -40,7 +40,7 @@ def main():
                       help='Use to fit a model with no intercept: default=%default')
     parser.add_option('--dh', dest='dh', default=100,
                       help='Hidden layer size for MLP [0 for None]: default=%default')
-    parser.add_option('--nonlinearity', dest='nonlinearity', default='tanh',
+    parser.add_option('--nonlinearity',  dest='nonlinearity', default='tanh',
                       help='Nonlinearity for an MLP [tanh|sigmoid|relu]: default=%default')
     parser.add_option('--alpha_min', dest='alpha_min', default=0.01,
                       help='Minimum value of training hyperparameter: default=%default')

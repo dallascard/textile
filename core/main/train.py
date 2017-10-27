@@ -427,16 +427,18 @@ def train_model_with_labels(project_dir, model_type, loss, model_name, subset, l
 
     elif model_type == 'DL':  # decision list
 
-        """
         fold = 1
-        alpha = 1.0
+        alpha = 1
         alpha_i = 0
+        alphas[alpha_i] = alpha
         stoplist = []
+        alpha_models = {}
+        alpha_models[alpha] = []
+
         for train_indices, dev_indices in kfold.split(X):
-
             name = model_name + '_' + str(fold)
-            model = decision_list.DL(alpha=1.0, output_dir=output_dir, name=name, pos_label=pos_label)
 
+            # split data
             X_train = X[train_indices, :]
             Y_train = Y[train_indices, :]
             X_dev = X[dev_indices, :]
@@ -446,10 +448,29 @@ def train_model_with_labels(project_dir, model_type, loss, model_name, subset, l
             X_train, Y_train, w_train = prepare_data(X_train, Y_train, w_train, loss=loss)
             X_dev, Y_dev, w_dev = prepare_data(X_dev, Y_dev, w_dev, loss=loss)
 
-            model.fit(X_train, Y_train, train_weights=w_train, X_dev=X_dev, Y_dev=Y_dev, dev_weights=w_dev, col_names=col_names, interactive=True, stoplist=stoplist)
+            print(X_train.shape, X_dev.shape)
 
-            stoplist.extend(model.get_stoplist())
-            print(stoplist)
+            # train a LR model on half the data
+            #lr_model = train_lr_model_with_cv(X_train, Y_train, w_train, col_names, name + '_s1LR', output_dir=output_dir, n_classes=n_classes, objective='f1', loss='log', penalty=penalty, intercept=intercept, n_dev_folds=2, alpha_min=alpha_min, alpha_max=alpha_max, n_alphas=n_alphas, pos_label=pos_label, do_ensemble=False, prep_data=False)
+
+            #totals = defaultdict(float)
+            #coefs = lr_model.get_coefs(target_class=0)
+            #for coef, value in coefs:
+            #    totals[coef] += value
+
+            #coef_totals = [(coef, value) for coef, value in totals.items()]
+            #coef_totals = sorted(coef_totals, key=lambda x: x[1])
+            #coef_totals.reverse()
+
+            #feature_list = [word for word, value in coef_totals]
+            #print(feature_list[:25])
+
+            model = decision_list.DL(alpha=1.0, output_dir=output_dir, name=name, pos_label=pos_label)
+
+            stoplist = {'of_new_paltz'}
+            #feature_list = model.feature_selection(X_train, Y_train, w_train, col_names, max_features=25, stoplist=stoplist)
+
+            model.fit(X_train, Y_train, train_weights=w_train, col_names=col_names, X_dev=X_dev, Y_dev=Y_dev, dev_weights=w_dev, max_features=50, interactive=False, stoplist=stoplist)
 
             train_predictions = model.predict(X_train)
             dev_predictions = model.predict(X_dev)
@@ -501,31 +522,129 @@ def train_model_with_labels(project_dir, model_type, loss, model_name, subset, l
             for model in best_models:
                 model.save()
 
-        if do_ensemble:
-            printv("Saving ensemble", verbose)
-            fold = 1
-            for model_i, model in enumerate(best_models):
-                name = model_name + '_' + str(fold)
-                model_ensemble.add_model(model, name)
-                fold += 1
-            full_model = model_ensemble
-            full_model.save()
-        """
+        printv("Saving ensemble", verbose)
+        fold = 1
 
-        printv("Training full model", verbose)
-        full_model = decision_list.DL(alpha=0.1, output_dir=output_dir, name=model_name, pos_label=pos_label)
-        X, Y, w = prepare_data(X, Y, weights, loss=loss)
-        full_model.fit(X, Y, train_weights=w, col_names=col_names)
+        # DEBUG: just take one of the models for now
+        full_model = best_models[0]
+        #full_model = ensemble.Ensemble(output_dir, model_name)
+        #for model_i, model in enumerate(best_models):
+        #    name = model_name + '_' + str(fold)
+        #    full_model.add_model(model, name)
+        #    fold += 1
         full_model.save()
-        best_dev_f1 = 0
-        best_dev_acc = 0
-        best_dev_cal_mae = 0
-        best_dev_cal_est = 0
 
     else:
         sys.exit("Model type %s not recognized" % model_type)
 
     return full_model, best_dev_f1, best_dev_acc, best_dev_cal_mae, best_dev_cal_est
+
+
+
+def train_lr_model_with_cv(X, Y, weights, col_names, name, output_dir=None, n_classes=2, objective='f1', loss='log', penalty='l2', intercept=True, n_dev_folds=5, alpha_min=0.01, alpha_max=1000.0, n_alphas=8, pos_label=1, do_ensemble=False, prep_data=True, save_model=True):
+
+    kfold = KFold(n_splits=n_dev_folds, shuffle=True)
+    if n_alphas > 1:
+        alpha_factor = np.power(alpha_max / alpha_min, 1.0/(n_alphas-1))
+        alphas = np.array(alpha_min * np.power(alpha_factor, np.arange(n_alphas)))
+    else:
+        alphas = [alpha_min]
+
+    mean_train_f1s = np.zeros(n_alphas)
+    mean_dev_f1s = np.zeros(n_alphas)
+    mean_dev_acc = np.zeros(n_alphas)
+    mean_dev_cal_mae = np.zeros(n_alphas)  # track the calibration across the range of probabilities (using bins)
+    mean_dev_cal_est = np.zeros(n_alphas)  # track the calibration overall
+    mean_model_size = np.zeros(n_alphas)
+
+    alpha_models = {}
+    model_ensemble = None
+    if do_ensemble:
+        model_ensemble = ensemble.Ensemble(output_dir, name)
+
+    for alpha_i, alpha in enumerate(alphas):
+        alpha_models[alpha] = []
+
+        fold = 1
+        for train_indices, dev_indices in kfold.split(X):
+            name = 'temp' + str(fold)
+            model = linear.LinearClassifier(alpha, loss_function=loss, penalty=penalty, fit_intercept=intercept, output_dir=output_dir, name=name, pos_label=pos_label)
+
+            X_train = X[train_indices, :]
+            Y_train = Y[train_indices, :]
+            X_dev = X[dev_indices, :]
+            Y_dev = Y[dev_indices, :]
+            w_train = weights[train_indices]
+            w_dev = weights[dev_indices]
+            if prep_data:
+                X_train, Y_train, w_train = prepare_data(X_train, Y_train, w_train, loss=loss)
+                X_dev, Y_dev, w_dev = prepare_data(X_dev, Y_dev, w_dev, loss=loss)
+
+            model.fit(X_train, Y_train, train_weights=w_train, X_dev=X_dev, Y_dev=Y_dev, dev_weights=w_dev, col_names=col_names)
+
+            train_predictions = model.predict(X_train)
+            dev_predictions = model.predict(X_dev)
+            dev_pred_probs = model.predict_probs(X_dev)
+
+            alpha_models[alpha].append(model)
+
+            y_train_vector = np.argmax(Y_train, axis=1)
+            y_dev_vector = np.argmax(Y_dev, axis=1)
+
+            train_f1 = evaluation.f1_score(y_train_vector, train_predictions, n_classes, pos_label=pos_label, weights=w_train)
+            dev_f1 = evaluation.f1_score(y_dev_vector, dev_predictions, n_classes, pos_label=pos_label, weights=w_dev)
+            dev_acc = evaluation.acc_score(y_dev_vector, dev_predictions, n_classes, weights=w_dev)
+            dev_proportions = evaluation.compute_proportions(Y_dev, w_dev)
+            pred_proportions = evaluation.compute_proportions(dev_pred_probs, w_dev)
+            dev_cal_mae = evaluation.eval_proportions_mae(dev_proportions, pred_proportions)
+            dev_cal_est = evaluation.evaluate_calibration_rmse(y_dev_vector, dev_pred_probs)
+
+            mean_train_f1s[alpha_i] += train_f1 / float(n_dev_folds)
+            mean_dev_f1s[alpha_i] += dev_f1 / float(n_dev_folds)
+            mean_dev_acc[alpha_i] += dev_acc / float(n_dev_folds)
+            mean_dev_cal_mae[alpha_i] += dev_cal_mae / float(n_dev_folds)
+            mean_dev_cal_est[alpha_i] += dev_cal_est / float(n_dev_folds)
+            mean_model_size[alpha_i] += model.get_model_size() / float(n_dev_folds)
+            fold += 1
+
+        print("%d\t%0.2f\t%.1f\t%0.3f\t%0.3f\t%0.3f\t%0.3f\t%0.3f" % (alpha_i, alpha, mean_model_size[alpha_i], mean_train_f1s[alpha_i], mean_dev_f1s[alpha_i], mean_dev_acc[alpha_i], mean_dev_cal_mae[alpha_i], mean_dev_cal_est[alpha_i]))
+
+    if objective == 'f1':
+        best_alpha_index = mean_dev_f1s.argmax()
+        print("Using best f1: %d" % best_alpha_index)
+    elif objective == 'calibration':
+        best_alpha_index = mean_dev_cal_est.argmin()
+        print("Using best calibration: %d" % best_alpha_index)
+    else:
+        sys.exit("Objective not recognized")
+
+    best_alpha = alphas[best_alpha_index]
+    best_dev_f1 = mean_dev_f1s[best_alpha_index]
+    best_dev_cal_mae = mean_dev_cal_mae[best_alpha_index]
+    best_dev_cal_est = mean_dev_cal_est[best_alpha_index]
+    print("Best: alpha = %.3f, dev f1 = %.3f, dev cal mae = %.3f, dev calibration estimate= %0.3f" % (best_alpha, best_dev_f1, best_dev_cal_mae, best_dev_cal_est))
+
+    best_models = alpha_models[best_alpha]
+    print("Number of best models = %d" % len(best_models))
+
+    if do_ensemble:
+        fold = 1
+        for model_i, model in enumerate(best_models):
+            name = 'temp' + '_' + str(fold)
+            model_ensemble.add_model(model, name)
+            fold += 1
+        full_model = model_ensemble
+
+    else:
+        print("Training full model")
+        full_model = linear.LinearClassifier(best_alpha, loss_function=loss, penalty=penalty, fit_intercept=intercept, output_dir=output_dir, name=name, pos_label=pos_label)
+        if prep_data:
+            X, Y, weights = prepare_data(X, Y, weights, loss=loss)
+        full_model.fit(X, Y, train_weights=weights, col_names=col_names)
+
+    if save_model:
+        full_model.save()
+    return full_model
 
 
 def train_brier_grouped(project_dir, model_name, subset, labels_df, feature_defs, weights_df=None,

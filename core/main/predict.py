@@ -194,6 +194,7 @@ def predict(project_dir, model, model_name, test_subset, label_name, items_to_us
     pred_proportions = model.predict_proportions(X)
 
     if model.get_model_type() == 'DL':
+        print("Testing DL model")
         label_dir = dirs.dir_labels(project_dir, test_subset)
         labels_df = fh.read_csv_to_df(os.path.join(label_dir, label_name + '.csv'), index_col=0, header=0)
         Y = labels_df.loc[items_to_use].as_matrix()
