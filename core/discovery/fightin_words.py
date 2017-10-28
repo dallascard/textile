@@ -166,14 +166,21 @@ def find_most_annotated_features(project, target_subset, background_subset, conf
     assert list(n_annotators.index) == background_feature.get_items()
     print(target_feature.counts.shape)
     n_items, n_features = target_feature.counts.shape
+    annotated_items = set()
     for i, item in enumerate(target_feature.get_items()):
         if n_annotators.loc[item] > 0:
+            annotated_items.add(item)
             target_feature.counts[i, :] /= float(n_annotators.loc[item])
 
-    total_counts = np.array(background_feature.counts.sum(axis=0)).reshape((n_features, )) + 2.0
-    annotated_counts = np.array(target_feature.counts.sum(axis=0), dtype=float).reshape((n_features, )) + 1.0
+    #background_selector = [True if item in annotated_items else False for i, item in enumerate(background_feature.get_items())]
+    #target_selector = [True if item in annotated_items else False for i, item in enumerate(target_feature.get_items())]
+    background_selector = [i for i, item in enumerate(background_feature.get_items()) if item in annotated_items]
+    target_selector = [i for i, item in enumerate(target_feature.get_items()) if item in annotated_items]
 
-    for term in ['court', 'supreme', 'state', 'supreme_court', 'legal']:
+    total_counts = np.array(background_feature.counts[background_selector, :].sum(axis=0)).reshape((n_features, )) + 2.0
+    annotated_counts = np.array(target_feature.counts[target_selector, :].sum(axis=0), dtype=float).reshape((n_features, )) + 1.0
+
+    for term in ['court', 'supreme', 'state', 'supreme_court', 'legal', 'superior_court']:
         index = background_feature.get_terms().index(term)
         print(term, annotated_counts[index], total_counts[index])
 
@@ -181,7 +188,7 @@ def find_most_annotated_features(project, target_subset, background_subset, conf
     order = np.argsort(ratio)
     terms = list(background_feature.get_terms())
     print(len(terms))
-    for i in range(1, 50):
+    for i in range(1, 200):
         print(terms[order[-i]], annotated_counts[order[-i]], total_counts[order[-i]])
 
 

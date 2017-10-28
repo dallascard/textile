@@ -470,7 +470,7 @@ def train_model_with_labels(project_dir, model_type, loss, model_name, subset, l
             stoplist = {'of_new_paltz'}
             #feature_list = model.feature_selection(X_train, Y_train, w_train, col_names, max_features=25, stoplist=stoplist)
 
-            model.fit(X_train, Y_train, train_weights=w_train, col_names=col_names, X_dev=X_dev, Y_dev=Y_dev, dev_weights=w_dev, max_features=50, interactive=False, stoplist=stoplist)
+            model.fit(X_train, Y_train, train_weights=w_train, col_names=col_names, X_dev=X_dev, Y_dev=Y_dev, dev_weights=w_dev, max_features=7, interactive=False, stoplist=stoplist)
 
             train_predictions = model.predict(X_train)
             dev_predictions = model.predict(X_dev)

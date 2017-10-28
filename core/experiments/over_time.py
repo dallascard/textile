@@ -216,7 +216,6 @@ def test_over_time(project_dir, subset, config_file, first_year, stage1_logfile=
             vocab = None
             if stage1_logfile is not None:
 
-                """
                 fightin_lexicon = None
                 if annotated_subset is not None:
                     print("Determining fightin' words")
@@ -227,7 +226,6 @@ def test_over_time(project_dir, subset, config_file, first_year, stage1_logfile=
                     #print(fightin_lexicon_test)
                     #vocab = list(fightin_lexicon)
                     #vocab.sort()
-                """
 
                 print("Loading feature from stage 1")
                 # load features from previous model

@@ -405,6 +405,9 @@ class DL:
                     print("Using training data to do feature selection (double-dipping?)")
                     feature_list = self.feature_selection(X_train, Y_train, train_weights, col_names, max_features, interactive, stoplist)
 
+            # DEBUG!
+            feature_list = ['rule_of', 'the_lawsuits', 'justice_doris_ling', 'be_unconstitutional', 'was_unconstitutional', 'supreme_court_of', 'court_is_expected_to_rule']
+
             self._model = DecisionList(alpha=self._alpha, max_depth=max_features)
             self._model.fit(X_train, Y_train, train_weights, feature_list, col_names)
 
