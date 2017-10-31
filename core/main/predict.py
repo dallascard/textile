@@ -45,7 +45,7 @@ def load_and_predict(project_dir, model_type, model_name, test_subset, label_nam
     predict(project_dir, model, model_name, test_subset, label_name, items_to_use=items_to_use)
 
 
-def predict(project_dir, model, model_name, test_subset, label_name, items_to_use=None, verbose=False, force_dense=False, group_identical=False):
+def predict(project_dir, model, model_name, test_subset, label_name, items_to_use=None, verbose=False, force_dense=False, group_identical=False, n_samples=10):
 
     model_dir = os.path.join(dirs.dir_models(project_dir), model_name)
 
@@ -203,7 +203,36 @@ def predict(project_dir, model, model_name, test_subset, label_name, items_to_us
         X, Y, w = train.prepare_data(X, Y, weights=weights, loss='log', normalize=True)
         model.test(X, Y, w)
 
-    return predictions_df, pred_probs_df, pred_proportions
+        samples = model.sample(X)
+        return predictions_df, pred_probs_df, pred_proportions, samples
+
+    elif model.get_model_type() == 'ensemble':
+        models = model._models
+
+        samples = []
+        label_dir = dirs.dir_labels(project_dir, test_subset)
+        labels_df = fh.read_csv_to_df(os.path.join(label_dir, label_name + '.csv'), index_col=0, header=0)
+        Y = labels_df.loc[items_to_use].as_matrix()
+        n_items, n_classes = Y.shape
+        weights = np.ones(n_items)
+        X_norm, Y_norm, w_norm = train.prepare_data(X, Y, weights=weights, loss='log', normalize=True)
+
+        for name, m in models.items():
+            if m.get_model_type() == 'DL':
+                m.test(X_norm, Y_norm, w_norm)
+                samples_m = m.sample(X)
+                samples.append(samples_m)
+
+        if len(samples) > 0:
+            samples = np.hstack(samples)
+        else:
+            samples = None
+
+        return predictions_df, pred_probs_df, pred_proportions, samples
+
+
+    else:
+        return predictions_df, pred_probs_df, pred_proportions
 
 
 if __name__ == '__main__':

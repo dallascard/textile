@@ -5,6 +5,7 @@ import tempfile
 
 import numpy as np
 from scipy import sparse
+from scipy.stats import beta
 from sklearn.externals import joblib
 from sklearn.linear_model import LogisticRegression
 from sklearn.linear_model import LinearRegression, Lasso, Ridge
@@ -16,8 +17,9 @@ from ..main import train
 
 class DecisionList:
 
-    def __init__(self, alpha=1.0, max_depth=50):
+    def __init__(self, alpha=1.0, penalty='l2', max_depth=50):
         self._alpha = alpha
+        self._penalty = penalty
         self._max_depth = max_depth
         self._feature_indices = None
         self._feature_names = None
@@ -179,6 +181,7 @@ class DecisionList:
     def predict_probs(self, X):
         n_items, n_features = X.shape
 
+        # make a copy of the data and zero the columns that don't factor into the linear model
         X_copy = X.copy()
         for feature in self._feature_names:
             feature_index = self._col_names.index(feature)
@@ -200,37 +203,46 @@ class DecisionList:
         print(np.mean(probs, axis=0))
         return probs
 
-    """
-    def _predict_probs_for_one_item(self, x):
-        obs_i = self._get_obs_for_one_item(x)
-        return obs_i[1] / float(np.sum(obs_i))
-
-    def _get_obs_for_one_item(self, x):
-        n_features = len(x)
-        for depth in range(self._max_depth):
-            if x[self._feature_indices[depth]] > 0:
-                return self._present_obs[depth, :]
-        pred_probs = self._resid_model.predict_probs(x.reshape(1, n_features))
-        return [1.0 - pred_probs, pred_probs]
-    """
-
-    """
     def get_betas(self, X):
         n_items, n_features = X.shape
-        n_classes = 2
-        betas = np.zeros((n_items, n_classes))
-        for i in range(n_items):
-            betas[i, :] = self._get_obs_for_one_item(X[i, :])
+        betas = np.zeros([n_items, 2])
+
+        # make a copy of the data and zero the columns that don't factor into the linear model
+        X_copy = X.copy()
+        for feature in self._feature_names:
+            feature_index = self._col_names.index(feature)
+            X_copy[:, feature_index] = 0
+
+        # apply the residual prediction to all items
+        probs = self._resid_model.predict_probs(X_copy)
+        betas = 2.0 * probs
+
+        # then go through the decision list in reverse order, assigning observed proportions to those items
+        for depth in range(self._max_depth-1, -1, -1):
+            feature = self._feature_names[depth]
+            feature_index = self._col_names.index(feature)
+            if sparse.issparse(X):
+                selector = np.array(np.array(X[:, feature_index].todense()) > 0, dtype=bool).reshape((n_items, ))
+            else:
+                selector = np.array(X[:, feature_index] > 0, dtype=bool)
+            betas[selector, :] = self._present_obs[depth, :]
         return betas
-    """
+
+    def sample(self, X, n_samples=10):
+        n_items, _ = X.shape
+        betas = self.get_betas(X)
+        samples = beta.rvs(a=betas[:, 1], b=betas[:, 0], size=(n_samples, n_items))
+        return samples
 
     def train_resid(self, X_all, Y_all, w_all, col_names, name, output_dir=None, n_classes=2, objective='f1', penalty='l1', pos_label=1, do_ensemble=True, save_model=True):
         self._resid_model = train.train_lr_model_with_cv(X_all, Y_all, w_all, col_names, name, output_dir=output_dir, n_classes=n_classes, objective=objective, loss='log', penalty=penalty, intercept=True, n_dev_folds=5, alpha_min=0.01, alpha_max=1000.0, n_alphas=8, pos_label=pos_label, do_ensemble=do_ensemble, prep_data=False, save_model=save_model)
 
-    def test(self, X, Y, w, col_names, running_error=0.0, running_count=0.0):
-
+    def test(self, X, Y, w):
         dev_prop = float(np.sum(Y[:, 1] * w) / np.sum(w))
         print("Observed proportions % 0.4f" % dev_prop)
+
+        running_error=0.0
+        running_count=0.0
 
         for depth in range(self._max_depth):
             n_items, n_features = X.shape
@@ -249,6 +261,7 @@ class DecisionList:
                 var = a * b / ((a + b) ** 2 * (a + b + 1))
                 running_count += np.sum(present_indices)
                 present_error = np.abs(dev_prop_present - mean) * np.sum(present_indices)
+                running_error += present_error
                 present_var = var
                 a = self._absent_props[depth, 1]
                 b = self._absent_props[depth, 0]
@@ -256,7 +269,7 @@ class DecisionList:
                 var = a * b / ((a + b) ** 2 * (a + b + 1))
                 default_error = np.abs(dev_prop_present - mean) * np.sum(present_indices)
                 default_var = var
-                print(self._feature_names[depth], self._present_obs[depth, :], self._present_obs[depth, 1] / np.sum(self._present_obs[depth, :]), Y[present_indices, :].sum(axis=0), dev_prop_present, present_error / float(np.sum(present_indices)), (running_error + present_error) / float(running_count), running_error + default_error)
+                print(self._feature_names[depth], self._present_obs[depth, :], self._present_obs[depth, 1] / np.sum(self._present_obs[depth, :]), Y[present_indices, :].sum(axis=0), dev_prop_present, present_error / float(np.sum(present_indices)), running_error / float(running_count))
 
             if sparse.issparse(X):
                 absent_indices = np.array(X[:, self._feature_indices[depth]].todense()) == 0
@@ -274,9 +287,10 @@ class DL:
     """
     Wrapper class for logistic regression from sklearn
     """
-    def __init__(self, alpha=1.0, output_dir=None, name='model', pos_label=1, save_data=False):
+    def __init__(self, alpha=1.0, penalty='l2', output_dir=None, name='model', pos_label=1, max_depth=10, save_data=False):
         self._model_type = 'DL'
         self._alpha = alpha
+        self._penalty = penalty
         self._n_classes = None
         self._loss_function = None
         if output_dir is None:
@@ -289,6 +303,7 @@ class DL:
         self._train_acc = None
         self._dev_f1 = None
         self._dev_acc = None
+        self._max_depth = max_depth
         self._save_data = save_data
 
         # create a variable to store the label proportions in the training data
@@ -315,7 +330,7 @@ class DL:
         else:
             self._model = model
 
-    def feature_selection(self, X, Y, w, orig_col_names, max_features=50, interactive=False, stoplist=None):
+    def feature_selection(self, X, Y, w, orig_col_names, interactive=False, stoplist=None):
 
         _, n_classes = Y.shape
         self._n_classes = n_classes
@@ -325,7 +340,7 @@ class DL:
 
         features = []
 
-        while len(features) < max_features:
+        while len(features) < self._max_depth:
             n_items, n_features = X.shape
             # get the label counts for each feature
             counts = np.zeros((2, n_features), dtype=float)
@@ -362,7 +377,7 @@ class DL:
 
         return features
 
-    def fit(self, X_train, Y_train, train_weights=None, col_names=None, feature_list=None, X_dev=None, Y_dev=None, dev_weights=None, max_features=100, interactive=False, stoplist=None, objective='f1', penalty='l1'):
+    def fit(self, X_train, Y_train, train_weights=None, col_names=None, feature_list=None, X_dev=None, Y_dev=None, dev_weights=None, interactive=False, stoplist=None, objective='f1', penalty='l1'):
         """
         Fit a classifier to data
         :param X: feature matrix: np.array(size=(n_items, n_features))
@@ -400,15 +415,15 @@ class DL:
             if feature_list is None:
                 if X_dev is not None and Y_dev is not None:
                     print("Using dev data to do feature selection")
-                    feature_list = self.feature_selection(X_dev, Y_dev, dev_weights, col_names, max_features, interactive, stoplist)
+                    feature_list = self.feature_selection(X_dev, Y_dev, dev_weights, col_names, interactive, stoplist)
                 else:
                     print("Using training data to do feature selection (double-dipping?)")
-                    feature_list = self.feature_selection(X_train, Y_train, train_weights, col_names, max_features, interactive, stoplist)
+                    feature_list = self.feature_selection(X_train, Y_train, train_weights, col_names, interactive, stoplist)
 
             # DEBUG!
-            feature_list = ['rule_of', 'the_lawsuits', 'justice_doris_ling', 'be_unconstitutional', 'was_unconstitutional', 'supreme_court_of', 'court_is_expected_to_rule']
+            #feature_list = ['rule_of', 'the_lawsuits', 'justice_doris_ling', 'be_unconstitutional', 'was_unconstitutional', 'supreme_court_of', 'court_is_expected_to_rule']
 
-            self._model = DecisionList(alpha=self._alpha, max_depth=max_features)
+            self._model = DecisionList(alpha=self._alpha, penalty=self._penalty, max_depth=self._max_depth)
             self._model.fit(X_train, Y_train, train_weights, feature_list, col_names)
 
             print("X_train.shape", X_train.shape)
@@ -474,8 +489,12 @@ class DL:
         pvc = [0, 0]
         return cc, pcc, acc, pvc
 
+    def sample(self, X, n_samples=10):
+        samples = self._model.sample(X, n_samples=n_samples)
+        return samples
+
     def test(self, X, Y, w):
-        self._model.test(X, Y, w, self._col_names)
+        self._model.test(X, Y, w)
 
     def get_stoplist(self):
         if self._model is None:

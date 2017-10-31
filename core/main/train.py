@@ -97,7 +97,7 @@ def train_model_with_labels(project_dir, model_type, loss, model_name, subset, l
                             objective='f1', n_dev_folds=5, save_model=True, do_ensemble=True, dh=0, seed=None,
                             pos_label=1, vocab=None, group_identical=False, nonlinearity='tanh',
                             init_lr=1e-4, min_epochs=2, max_epochs=100, patience=8, tol=1e-4, early_stopping=True,
-                            verbose=True):
+                            list_size=10, verbose=True):
 
     features_dir = dirs.dir_features(project_dir, subset)
     n_items, n_classes = labels_df.shape
@@ -321,14 +321,16 @@ def train_model_with_labels(project_dir, model_type, loss, model_name, subset, l
                 model_ensemble.add_model(model, name)
                 fold += 1
             full_model = model_ensemble
-            full_model.save()
+            if save_model:
+                full_model.save()
 
         else:
             printv("Training full model", verbose)
             full_model = linear.LinearClassifier(best_alpha, loss_function=loss, penalty=penalty, fit_intercept=intercept, output_dir=output_dir, name=model_name, pos_label=pos_label)
             X, Y, w = prepare_data(X, Y, weights, loss=loss)
             full_model.fit(X, Y, train_weights=w, col_names=col_names)
-            full_model.save()
+            if save_model:
+                full_model.save()
 
     elif model_type == 'MLP':
         if dh > 0:
@@ -465,12 +467,12 @@ def train_model_with_labels(project_dir, model_type, loss, model_name, subset, l
             #feature_list = [word for word, value in coef_totals]
             #print(feature_list[:25])
 
-            model = decision_list.DL(alpha=1.0, output_dir=output_dir, name=name, pos_label=pos_label)
+            model = decision_list.DL(alpha=1.0, penalty=penalty, output_dir=output_dir, name=name, pos_label=pos_label, max_depth=list_size)
 
             stoplist = {'of_new_paltz'}
             #feature_list = model.feature_selection(X_train, Y_train, w_train, col_names, max_features=25, stoplist=stoplist)
 
-            model.fit(X_train, Y_train, train_weights=w_train, col_names=col_names, X_dev=X_dev, Y_dev=Y_dev, dev_weights=w_dev, max_features=7, interactive=False, stoplist=stoplist)
+            model.fit(X_train, Y_train, train_weights=w_train, col_names=col_names, X_dev=X_dev, Y_dev=Y_dev, dev_weights=w_dev, interactive=False, stoplist=stoplist)
 
             train_predictions = model.predict(X_train)
             dev_predictions = model.predict(X_dev)
@@ -522,17 +524,20 @@ def train_model_with_labels(project_dir, model_type, loss, model_name, subset, l
             for model in best_models:
                 model.save()
 
+        if save_model:
+            print("Saving models")
+            for model in best_models:
+                model.save()
+
         printv("Saving ensemble", verbose)
         fold = 1
-
-        # DEBUG: just take one of the models for now
-        full_model = best_models[0]
-        #full_model = ensemble.Ensemble(output_dir, model_name)
-        #for model_i, model in enumerate(best_models):
-        #    name = model_name + '_' + str(fold)
-        #    full_model.add_model(model, name)
-        #    fold += 1
-        full_model.save()
+        for model_i, model in enumerate(best_models):
+            name = model_name + '_' + str(fold)
+            model_ensemble.add_model(model, name)
+            fold += 1
+        full_model = model_ensemble
+        if save_model:
+            full_model.save()
 
     else:
         sys.exit("Model type %s not recognized" % model_type)

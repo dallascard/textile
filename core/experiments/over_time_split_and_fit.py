@@ -20,7 +20,7 @@ def main():
     #                  help='Number of training instances to use (0 for all): default=%default')
     #parser.add_option('--n_calib', dest='n_calib', default=100,
     #                  help='Number of test instances to use for calibration: default=%default')
-    parser.add_option('--first_year', dest='first_year', default=1996,
+    parser.add_option('--first_year', dest='first_year', default=2000,
                       help='First year: default=%default')
     parser.add_option('--sample', action="store_true", dest="sample", default=False,
                       help='Sample labels instead of averaging: default=%default')
@@ -38,6 +38,8 @@ def main():
                       help='Hidden layer size for MLP [0 for None]: default=%default')
     parser.add_option('--nonlinearity', dest='nonlinearity', default='tanh',
                       help='Nonlinearity for an MLP [tanh|sigmoid|relu]: default=%default')
+    parser.add_option('--ls', dest='ls', default=10,
+                      help='List size (for DL): default=%default')
     parser.add_option('--alpha_min', dest='alpha_min', default=0.01,
                       help='Minimum value of training hyperparameter: default=%default')
     parser.add_option('--alpha_max', dest='alpha_max', default=1000,
@@ -85,6 +87,7 @@ def main():
     #model_type = options.model
     loss = options.loss
     dh = int(options.dh)
+    ls = int(options.ls)
     nonlinearity = options.nonlinearity
     alpha_min = float(options.alpha_min)
     alpha_max = float(options.alpha_max)
@@ -112,10 +115,10 @@ def main():
 
     average = 'micro'
 
-    test_over_time(project_dir, subset, config_file, first_year, penalty, suffix, loss, objective, do_ensemble, dh, label, intercept, n_dev_folds, verbose, average, seed, alpha_min, alpha_max, n_alphas, sample_labels, group_identical, annotated, n_terms, nonlinearity, early_stopping=early_stopping)
+    test_over_time(project_dir, subset, config_file, first_year, penalty, suffix, loss, objective, do_ensemble, dh, label, intercept, n_dev_folds, verbose, average, seed, alpha_min, alpha_max, n_alphas, sample_labels, group_identical, annotated, n_terms, nonlinearity, early_stopping=early_stopping, list_size=ls)
 
 
-def test_over_time(project_dir, subset, config_file, first_year, penalty='l2', suffix='', loss='log', objective='f1', do_ensemble=True, dh=100, label='label', intercept=True, n_dev_folds=5, verbose=False, average='micro', seed=None, alpha_min=0.01, alpha_max=1000.0, n_alphas=8, sample_labels=False, group_identical=False, annotated_subset=None, n_terms=0, nonlinearity='tanh', init_lr=1e-4, min_epochs=2, max_epochs=100, patience=8, tol=1e-4, early_stopping=False):
+def test_over_time(project_dir, subset, config_file, first_year, penalty='l2', suffix='', loss='log', objective='f1', do_ensemble=True, dh=100, label='label', intercept=True, n_dev_folds=5, verbose=False, average='micro', seed=None, alpha_min=0.01, alpha_max=1000.0, n_alphas=8, sample_labels=False, group_identical=False, annotated_subset=None, n_terms=0, nonlinearity='tanh', init_lr=1e-4, min_epochs=2, max_epochs=100, patience=8, tol=1e-4, early_stopping=False, list_size=1):
     # Just run a regular model, one per year, training on the past, and save the reults
 
     log = {
@@ -147,7 +150,8 @@ def test_over_time(project_dir, subset, config_file, first_year, penalty='l2', s
         'max_epochs': max_epochs,
         'patience': patience,
         'tol': tol,
-        'early_stopping': early_stopping
+        'early_stopping': early_stopping,
+        'list_size': list_size
     }
 
     model_basename = make_model_basename(log)
@@ -171,17 +175,13 @@ def test_over_time(project_dir, subset, config_file, first_year, penalty='l2', s
     field_vals.sort()
     print("Splitting data according to :", field_vals)
 
-    # DEBUG:
-    field_vals = ['2010']
-
     for target_year in field_vals:
         if int(target_year) >= first_year:
             print("\nTesting on %s" % target_year)
             model_name = model_basename + '_' + str(target_year)
             # first, split into training and non-train data based on the field of interest
 
-            ## DEBUG!
-            test_selector_all = metadata['year'] >= int(target_year)
+            test_selector_all = metadata['year'] == int(target_year)
             test_subset_all = metadata[test_selector_all]
             test_items_all = test_subset_all.index.tolist()
             n_test_all = len(test_items_all)
@@ -260,9 +260,10 @@ def test_over_time(project_dir, subset, config_file, first_year, penalty='l2', s
             results_df = pd.DataFrame([], columns=['f1', 'acc', 'mae', 'estimated calibration'])
 
             # Now train a model on the training data, saving the calibration data for calibration
+
             print("Training a LR model")
             model_name = model_name + '_LR'
-            model, dev_f1, dev_acc, dev_cal_mae, dev_cal_est = train.train_model_with_labels(project_dir, 'LR', 'log', model_name, subset, sampled_labels_df, feature_defs, weights_df=weights_df, items_to_use=train_items, penalty='l2', alpha_min=alpha_min, alpha_max=alpha_max, n_alphas=n_alphas, intercept=intercept, objective=objective, n_dev_folds=n_dev_folds, do_ensemble=do_ensemble, dh=dh, seed=seed, pos_label=pos_label, vocab=None, group_identical=group_identical, nonlinearity=nonlinearity, init_lr=init_lr, min_epochs=min_epochs, max_epochs=max_epochs, patience=patience, tol=tol, early_stopping=early_stopping, verbose=verbose)
+            model, dev_f1, dev_acc, dev_cal_mae, dev_cal_est = train.train_model_with_labels(project_dir, 'LR', 'log', model_name, subset, sampled_labels_df, feature_defs, weights_df=weights_df, items_to_use=train_items, penalty=penalty, alpha_min=alpha_min, alpha_max=alpha_max, n_alphas=n_alphas, intercept=intercept, objective=objective, n_dev_folds=n_dev_folds, do_ensemble=do_ensemble, dh=dh, seed=seed, pos_label=pos_label, vocab=None, group_identical=group_identical, nonlinearity=nonlinearity, init_lr=init_lr, min_epochs=min_epochs, max_epochs=max_epochs, patience=patience, tol=tol, early_stopping=early_stopping, verbose=verbose)
             results_df.loc['cross_val'] = [dev_f1, dev_acc, dev_cal_mae, dev_cal_est]
 
             # predict on test data
@@ -295,13 +296,13 @@ def test_over_time(project_dir, subset, config_file, first_year, penalty='l2', s
             print("Training a model")
             #model_name = model_name[:-3] + "_DL"
             model_name = model_name + "_DL"
-            model, dev_f1, dev_acc, dev_cal_mae, dev_cal_est = train.train_model_with_labels(project_dir, 'DL', 'log', model_name, subset, sampled_labels_df, feature_defs, weights_df=weights_df, items_to_use=train_items, penalty='l2', alpha_min=alpha_min, alpha_max=alpha_max, n_alphas=n_alphas, intercept=intercept, objective=objective, n_dev_folds=2, do_ensemble=do_ensemble, dh=dh, seed=seed, pos_label=pos_label, vocab=None, group_identical=group_identical, nonlinearity=nonlinearity, init_lr=init_lr, min_epochs=min_epochs, max_epochs=max_epochs, patience=patience, tol=tol, early_stopping=early_stopping, verbose=verbose)
+            model, dev_f1, dev_acc, dev_cal_mae, dev_cal_est = train.train_model_with_labels(project_dir, 'DL', 'log', model_name, subset, sampled_labels_df, feature_defs, weights_df=weights_df, items_to_use=train_items, penalty=penalty, alpha_min=alpha_min, alpha_max=alpha_max, n_alphas=n_alphas, intercept=intercept, objective=objective, n_dev_folds=2, do_ensemble=True, dh=dh, seed=seed, pos_label=pos_label, vocab=None, group_identical=group_identical, nonlinearity=nonlinearity, init_lr=init_lr, min_epochs=min_epochs, max_epochs=max_epochs, patience=patience, tol=tol, early_stopping=early_stopping, list_size=list_size, verbose=verbose)
             results_df.loc['cross_val'] = [dev_f1, dev_acc, dev_cal_mae, dev_cal_est]
 
             # predict on test data
             force_dense = False
 
-            test_predictions_df, test_pred_probs_df, test_pred_proportions = predict.predict(project_dir, model, model_name, subset, label, items_to_use=test_items, verbose=verbose, force_dense=force_dense, group_identical=group_identical)
+            test_predictions_df, test_pred_probs_df, test_pred_proportions, samples = predict.predict(project_dir, model, model_name, subset, label, items_to_use=test_items, verbose=verbose, force_dense=force_dense, group_identical=group_identical, n_samples=25)
             f1_test, acc_test = evaluate_predictions.evaluate_predictions(test_labels_df, test_predictions_df, test_pred_probs_df, pos_label=pos_label, average=average)
             true_test_vector = np.argmax(test_labels_df.as_matrix(), axis=1)
             test_cal_est = evaluation.evaluate_calibration_rmse(true_test_vector, test_pred_probs_df.as_matrix(), min_bins=1, max_bins=1)
@@ -321,6 +322,14 @@ def test_over_time(project_dir, subset, config_file, first_year, penalty='l2', s
             output_df.loc['ACC_internal'] = [n_train, 'train', 'test', 'n/a', test_acc_estimate_internal[1], test_acc_rmse_internal, np.nan, np.nan, np.nan]
             output_df.loc['PVC_internal'] = [n_train, 'train', 'nontrain', 'predicted', test_pvc_estimate_internal[1], test_pvc_rmse_internal, np.nan, np.nan, np.nan]
 
+            pcc_samples = np.mean(samples, axis=0)
+            sample_pcc = np.mean(pcc_samples)
+            sample_pcc_lower = np.percentile(pcc_samples, q=2.5)
+            sample_pcc_upper = np.percentile(pcc_samples, q=97.5)
+            sample_pcc_mae = np.mean(np.abs(sample_pcc - target_estimate))
+            sample_pcc_contains_test = target_estimate > sample_pcc_lower and target_estimate < sample_pcc_upper
+            output_df.loc['PCC_samples'] = [n_train, 'train', 'test', 'n/a', sample_pcc, sample_pcc_mae, sample_pcc_lower, sample_pcc_upper, sample_pcc_contains_test]
+
             results_df.to_csv(os.path.join(dirs.dir_models(project_dir), model_name, 'accuracy.csv'))
             output_df.to_csv(os.path.join(dirs.dir_models(project_dir), model_name, 'results.csv'))
 
@@ -335,6 +344,7 @@ def make_model_basename(log):
         model_basename += '_grouped'
     if log['annotated_subset']:
         model_basename += '_fight'
+    model_basename += '_ls' + str(log['list_size'])
     return model_basename
 
 
