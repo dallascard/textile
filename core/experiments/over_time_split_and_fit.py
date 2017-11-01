@@ -20,8 +20,8 @@ def main():
                       help='Number of training instances to use (0 for all): default=%default')
     parser.add_option('--n_calib', dest='n_calib', default=0,
                       help='Number of test instances to use for calibration: default=%default')
-    parser.add_option('--first_year', dest='first_year', default=2000,
-                      help='First year: default=%default')
+    parser.add_option('--year', dest='year', default=2011,
+                      help='Use training data from before this year: default=%default')
     parser.add_option('--sample', action="store_true", dest="sample", default=False,
                       help='Sample labels instead of averaging: default=%default')
     parser.add_option('--suffix', dest='suffix', default='',
@@ -83,7 +83,7 @@ def main():
     if n_train is not None:
         n_train = int(n_train)
     n_calib = int(options.n_calib)
-    first_year = int(options.first_year)
+    year = int(options.year)
     sample_labels = options.sample
     suffix = options.suffix
     model_type = options.model
@@ -117,10 +117,10 @@ def main():
 
     average = 'micro'
 
-    test_over_time(project_dir, subset, config_file, model_type, first_year, n_train, n_calib, penalty, suffix, loss, objective, do_ensemble, dh, label, intercept, n_dev_folds, verbose, average, seed, alpha_min, alpha_max, n_alphas, sample_labels, group_identical, annotated, n_terms, nonlinearity, early_stopping=early_stopping, list_size=ls, repeats=repeats)
+    test_over_time(project_dir, subset, config_file, model_type, year, n_train, n_calib, penalty, suffix, loss, objective, do_ensemble, dh, label, intercept, n_dev_folds, verbose, average, seed, alpha_min, alpha_max, n_alphas, sample_labels, group_identical, annotated, n_terms, nonlinearity, early_stopping=early_stopping, list_size=ls, repeats=repeats)
 
 
-def test_over_time(project_dir, subset, config_file, model_type, first_year, n_train=None, n_calib=0, penalty='l2', suffix='', loss='log', objective='f1', do_ensemble=True, dh=100, label='label', intercept=True, n_dev_folds=5, verbose=False, average='micro', seed=None, alpha_min=0.01, alpha_max=1000.0, n_alphas=8, sample_labels=False, group_identical=False, annotated_subset=None, n_terms=0, nonlinearity='tanh', init_lr=1e-4, min_epochs=2, max_epochs=100, patience=8, tol=1e-4, early_stopping=False, list_size=1, repeats=1):
+def test_over_time(project_dir, subset, config_file, model_type, year, n_train=None, n_calib=0, penalty='l2', suffix='', loss='log', objective='f1', do_ensemble=True, dh=100, label='label', intercept=True, n_dev_folds=5, verbose=False, average='micro', seed=None, alpha_min=0.01, alpha_max=1000.0, n_alphas=8, sample_labels=False, group_identical=False, annotated_subset=None, n_terms=0, nonlinearity='tanh', init_lr=1e-4, min_epochs=2, max_epochs=100, patience=8, tol=1e-4, early_stopping=False, list_size=1, repeats=1):
     # Just run a regular model, one per year, training on the past, and save the reults
 
     log = {
@@ -128,7 +128,7 @@ def test_over_time(project_dir, subset, config_file, model_type, first_year, n_t
         'subset': subset,
         'config_file': config_file,
         'model_type': model_type,
-        'first_year': first_year,
+        'year': year,
         'n_train': n_train,
         'n_calib': n_calib,
         'penalty': penalty,
@@ -181,11 +181,11 @@ def test_over_time(project_dir, subset, config_file, model_type, first_year, n_t
     print("Splitting data according to :", field_vals)
 
     for target_year in field_vals:
-        if int(target_year) >= first_year:
+        if int(target_year) >= year:
             print("\nTesting on %s" % target_year)
             # first, split into training and non-train data based on the field of interest
 
-            test_selector_all = metadata['year'] == int(target_year)
+            test_selector_all = metadata['year'] >= int(target_year)
             test_subset_all = metadata[test_selector_all]
             test_items_all = test_subset_all.index.tolist()
             n_test_all = len(test_items_all)
