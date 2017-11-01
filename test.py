@@ -7,7 +7,7 @@
 
 #from core.experiments import combo
 from core.discovery import fightin_words
-from core.experiments import over_time
+from core.experiments import over_time, over_time_split_and_fit
 from core.preprocessing import preprocess_words
 
 
@@ -27,6 +27,6 @@ annotated_subset = 'Legality_annotations'
 
 #fightin_words.load_and_select_features('projects/mfc/samesex/data/subsets/framing/features/unigramsfast.json', 'projects/mfc/samesex/data/subsets/Legality_annotations/features/unigramsfast.json')
 
-over_time.test_over_time(project_dir, subset, config_file, 1990, model_type=model_type, do_ensemble=True, label='Legality', group_identical=False, annotated_subset=None, n_dev_folds=5)
+over_time_split_and_fit.test_over_time(project_dir, subset, config_file, 'LR', 2012, n_calib=50, do_ensemble=True, label='Legality', group_identical=False, annotated_subset=None, n_dev_folds=5, list_size=1)
 
 #preprocess_words.preprocess_words('projects/mfc/samesex', 'framing', lower=True, ngrams=2)
