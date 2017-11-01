@@ -294,6 +294,7 @@ def train_model_with_labels(project_dir, model_type, loss, model_name, subset, l
             print("Using best calibration: %d" % best_alpha_index)
         else:
             sys.exit("Objective not recognized")
+
         best_alpha = alphas[best_alpha_index]
         best_dev_f1 = mean_dev_f1s[best_alpha_index]
         best_dev_acc = mean_dev_acc[best_alpha_index]
@@ -443,10 +444,8 @@ def train_model_with_labels(project_dir, model_type, loss, model_name, subset, l
             Y_dev = Y[dev_indices, :]
             w_train = weights[train_indices]
             w_dev = weights[dev_indices]
-            X_train, Y_train, w_train = prepare_data(X_train, Y_train, w_train, loss=loss)
-            X_dev, Y_dev, w_dev = prepare_data(X_dev, Y_dev, w_dev, loss=loss)
-
-            print(X_train.shape, X_dev.shape)
+            #X_train, Y_train, w_train = prepare_data(X_train, Y_train, w_train, loss=loss)
+            #X_dev, Y_dev, w_dev = prepare_data(X_dev, Y_dev, w_dev, loss=loss)
 
             # train a LR model on half the data
             #lr_model = train_lr_model_with_cv(X_train, Y_train, w_train, col_names, name + '_s1LR', output_dir=output_dir, n_classes=n_classes, objective='f1', loss='log', penalty=penalty, intercept=intercept, n_dev_folds=2, alpha_min=alpha_min, alpha_max=alpha_max, n_alphas=n_alphas, pos_label=pos_label, do_ensemble=False, prep_data=False)
@@ -465,10 +464,14 @@ def train_model_with_labels(project_dir, model_type, loss, model_name, subset, l
 
             model = decision_list.DL(alpha=1.0, penalty=penalty, output_dir=output_dir, name=name, pos_label=pos_label, max_depth=list_size)
 
-            stoplist = {'of_new_paltz'}
+            #stoplist = {'of_new_paltz'}
+            stoplist = {}
             #feature_list = model.feature_selection(X_train, Y_train, w_train, col_names, max_features=25, stoplist=stoplist)
 
-            model.fit(X_train, Y_train, train_weights=w_train, col_names=col_names, X_dev=X_dev, Y_dev=Y_dev, dev_weights=w_dev, interactive=False, stoplist=stoplist)
+            model.fit(X_train, Y_train, train_weights=w_train, col_names=col_names, X_dev=X_dev, Y_dev=Y_dev, dev_weights=w_dev, interactive=False, stoplist=stoplist, objective=objective, penalty=penalty, pos_label=pos_label, do_ensemble=do_ensemble)
+
+            X_train, Y_train, w_train = prepare_data(X_train, Y_train, w_train, loss=loss)
+            X_dev, Y_dev, w_dev = prepare_data(X_dev, Y_dev, w_dev, loss=loss)
 
             train_predictions = model.predict(X_train)
             dev_predictions = model.predict(X_dev)
@@ -541,9 +544,8 @@ def train_model_with_labels(project_dir, model_type, loss, model_name, subset, l
     return full_model, best_dev_f1, best_dev_acc, best_dev_cal_mae, best_dev_cal_est
 
 
-
-def train_lr_model_with_cv(X, Y, weights, col_names, name, output_dir=None, n_classes=2, objective='f1', loss='log', penalty='l2', intercept=True, n_dev_folds=5, alpha_min=0.01, alpha_max=1000.0, n_alphas=8, pos_label=1, do_ensemble=False, prep_data=True, save_model=True):
-
+def train_lr_model_with_cv(X, Y, weights, col_names, basename, output_dir=None, n_classes=2, objective='f1', penalty='l2', intercept=True, n_dev_folds=5, alpha_min=0.01, alpha_max=1000.0, n_alphas=8, pos_label=1, do_ensemble=False, prep_data=True, save_model=True):
+    loss = 'log'
     kfold = KFold(n_splits=n_dev_folds, shuffle=True)
     if n_alphas > 1:
         alpha_factor = np.power(alpha_max / alpha_min, 1.0/(n_alphas-1))
@@ -561,14 +563,14 @@ def train_lr_model_with_cv(X, Y, weights, col_names, name, output_dir=None, n_cl
     alpha_models = {}
     model_ensemble = None
     if do_ensemble:
-        model_ensemble = ensemble.Ensemble(output_dir, name)
+        model_ensemble = ensemble.Ensemble(output_dir, basename)
 
     for alpha_i, alpha in enumerate(alphas):
         alpha_models[alpha] = []
 
         fold = 1
         for train_indices, dev_indices in kfold.split(X):
-            name = 'temp' + str(fold)
+            name = basename + '_temp_' + str(fold)
             model = linear.LinearClassifier(alpha, loss_function=loss, penalty=penalty, fit_intercept=intercept, output_dir=output_dir, name=name, pos_label=pos_label)
 
             X_train = X[train_indices, :]
@@ -631,10 +633,15 @@ def train_lr_model_with_cv(X, Y, weights, col_names, name, output_dir=None, n_cl
     if do_ensemble:
         fold = 1
         for model_i, model in enumerate(best_models):
-            name = 'temp' + '_' + str(fold)
+            name = basename + '_temp_' + str(fold)
             model_ensemble.add_model(model, name)
             fold += 1
         full_model = model_ensemble
+
+        if save_model:
+            for model in best_models:
+                model.save()
+            full_model.save()
 
     else:
         print("Training full model")
@@ -642,10 +649,10 @@ def train_lr_model_with_cv(X, Y, weights, col_names, name, output_dir=None, n_cl
         if prep_data:
             X, Y, weights = prepare_data(X, Y, weights, loss=loss)
         full_model.fit(X, Y, train_weights=weights, col_names=col_names)
-
-    if save_model:
-        full_model.save()
+        if save_model:
+            full_model.save()
     return full_model
+
 
 
 def train_brier_grouped(project_dir, model_name, subset, labels_df, feature_defs, weights_df=None,

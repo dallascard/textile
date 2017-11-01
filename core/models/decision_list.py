@@ -17,9 +17,10 @@ from ..main import train
 
 class DecisionList:
 
-    def __init__(self, alpha=1.0, penalty='l2', max_depth=50):
+    def __init__(self, alpha=1.0, penalty='l2', fit_intercept=True, max_depth=50):
         self._alpha = alpha
         self._penalty = penalty
+        self._fit_intercept = fit_intercept
         self._max_depth = max_depth
         self._feature_indices = None
         self._feature_names = None
@@ -55,12 +56,20 @@ class DecisionList:
                 self._feature_indices.append(orig_index)
 
                 # get the label counts for each feature
-                counts = np.zeros((2, n_features), dtype=float)
-                for j in range(2):
-                    indices = Y[:, j] == 1
-                    counts[j, :] = X[indices, :].T.dot(w[indices]) + self._alpha
+                # subset the rows without that feature
+                if sparse.issparse(X):
+                    present_indices = np.array(X[:, feature_index].todense()) > 0
+                    present_indices = np.reshape(present_indices, (n_items, ))
+                else:
+                    present_indices = X[:, feature_index] > 0
 
-                self._present_obs[depth, :] = np.array([counts[0, feature_index], counts[1, feature_index]])
+                n_classes = 2
+                #counts = np.zeros(n_classes, dtype=float)
+                for j in range(n_classes):
+                    #indices = Y[:, j] == 1
+                    #counts[j, :] = X[indices, :].T.dot(w[indices]) + 1.0
+                    # not adding smoothing...
+                    self._present_obs[depth, j] = np.sum(Y[present_indices, j] * w[present_indices]) + 0.1
 
                 # subset the rows without that feature
                 if sparse.issparse(X):
@@ -189,7 +198,6 @@ class DecisionList:
 
         # apply the residual prediction to all items
         probs = self._resid_model.predict_probs(X_copy)
-        print(np.mean(probs, axis=0))
 
         # then go through the decision list in reverse order, assigning observed proportions to those items
         for depth in range(self._max_depth-1, -1, -1):
@@ -200,7 +208,6 @@ class DecisionList:
             else:
                 selector = np.array(X[:, feature_index] > 0, dtype=bool)
             probs[selector, :] = self._present_obs[depth, :] / np.sum(self._present_obs[depth, :])
-        print(np.mean(probs, axis=0))
         return probs
 
     def get_betas(self, X):
@@ -235,15 +242,11 @@ class DecisionList:
         return samples
 
     def train_resid(self, X_all, Y_all, w_all, col_names, name, output_dir=None, n_classes=2, objective='f1', penalty='l1', pos_label=1, do_ensemble=True, save_model=True):
-        self._resid_model = train.train_lr_model_with_cv(X_all, Y_all, w_all, col_names, name, output_dir=output_dir, n_classes=n_classes, objective=objective, loss='log', penalty=penalty, intercept=True, n_dev_folds=5, alpha_min=0.01, alpha_max=1000.0, n_alphas=8, pos_label=pos_label, do_ensemble=do_ensemble, prep_data=False, save_model=save_model)
+        self._resid_model = train.train_lr_model_with_cv(X_all, Y_all, w_all, col_names, name, output_dir=output_dir, n_classes=n_classes, objective=objective, penalty=penalty, intercept=self._fit_intercept, n_dev_folds=5, alpha_min=0.01, alpha_max=1000.0, n_alphas=8, pos_label=pos_label, do_ensemble=do_ensemble, prep_data=True, save_model=save_model)
 
     def test(self, X, Y, w):
-        dev_prop = float(np.sum(Y[:, 1] * w) / np.sum(w))
-        print("Observed proportions % 0.4f" % dev_prop)
-
-        running_error=0.0
-        running_count=0.0
-
+        running_error = 0.0
+        running_count = 0.0
         for depth in range(self._max_depth):
             n_items, n_features = X.shape
             if sparse.issparse(X):
@@ -260,16 +263,11 @@ class DecisionList:
                 mean = a / (a + b)
                 var = a * b / ((a + b) ** 2 * (a + b + 1))
                 running_count += np.sum(present_indices)
-                present_error = np.abs(dev_prop_present - mean) * np.sum(present_indices)
-                running_error += present_error
-                present_var = var
-                a = self._absent_props[depth, 1]
-                b = self._absent_props[depth, 0]
-                mean = (a / (a + b))
-                var = a * b / ((a + b) ** 2 * (a + b + 1))
-                default_error = np.abs(dev_prop_present - mean) * np.sum(present_indices)
-                default_var = var
-                print(self._feature_names[depth], self._present_obs[depth, :], self._present_obs[depth, 1] / np.sum(self._present_obs[depth, :]), Y[present_indices, :].sum(axis=0), dev_prop_present, present_error / float(np.sum(present_indices)), running_error / float(running_count))
+                present_error = (dev_prop_present - mean) * np.sum(present_indices)
+                running_error += np.abs(present_error)
+                print(self._feature_names[depth], self._present_obs[depth, :], self._present_obs[depth, 1] / np.sum(self._present_obs[depth, :]), np.dot(w[present_indices], Y[present_indices, :]), dev_prop_present, present_error / float(np.sum(present_indices)), running_error / float(running_count))
+            else:
+                print(self._feature_names[depth] + "not present in test data")
 
             if sparse.issparse(X):
                 absent_indices = np.array(X[:, self._feature_indices[depth]].todense()) == 0
@@ -287,12 +285,12 @@ class DL:
     """
     Wrapper class for logistic regression from sklearn
     """
-    def __init__(self, alpha=1.0, penalty='l2', output_dir=None, name='model', pos_label=1, max_depth=10, save_data=False):
+    def __init__(self, alpha=1.0, penalty='l2', output_dir=None, name='model', pos_label=1, max_depth=10, fit_intercept=True, save_data=False):
         self._model_type = 'DL'
         self._alpha = alpha
         self._penalty = penalty
         self._n_classes = None
-        self._loss_function = None
+        self._loss_function = 'log'
         if output_dir is None:
             self._output_dir = tempfile.gettempdir()
         else:
@@ -304,6 +302,7 @@ class DL:
         self._dev_f1 = None
         self._dev_acc = None
         self._max_depth = max_depth
+        self._fit_intercept = fit_intercept
         self._save_data = save_data
 
         # create a variable to store the label proportions in the training data
@@ -377,7 +376,7 @@ class DL:
 
         return features
 
-    def fit(self, X_train, Y_train, train_weights=None, col_names=None, feature_list=None, X_dev=None, Y_dev=None, dev_weights=None, interactive=False, stoplist=None, objective='f1', penalty='l1'):
+    def fit(self, X_train, Y_train, train_weights=None, col_names=None, feature_list=None, X_dev=None, Y_dev=None, dev_weights=None, interactive=False, stoplist=None, objective='f1', penalty='l1', pos_label=1, do_ensemble=True):
         """
         Fit a classifier to data
         :param X: feature matrix: np.array(size=(n_items, n_features))
@@ -386,13 +385,22 @@ class DL:
         :param col_names: names of the features (optional)
         :return: None
         """
+
+        X_train_orig = X_train.copy()
+        Y_train_orig = Y_train.copy()
+        w_train_orig = train_weights.copy()
+
+        X_dev_orig = X_dev.copy()
+        Y_dev_orig = Y_dev.copy()
+        w_dev_orig = dev_weights.copy()
+
+        X_train, Y_train, train_weights = train.prepare_data(X_train, Y_train, train_weights, loss='log')
+        X_dev, Y_dev, dev_weights = train.prepare_data(X_dev, Y_dev, dev_weights, loss='log')
+
         n_train_items, n_features = X_train.shape
         _, n_classes = Y_train.shape
         self._n_classes = n_classes
         assert n_classes == 2
-
-        print("X_train.shape", X_train.shape)
-        print("X_dev.shape", X_dev.shape)
 
         # store the proportion of class labels in the training data
         if train_weights is None:
@@ -426,28 +434,23 @@ class DL:
             self._model = DecisionList(alpha=self._alpha, penalty=self._penalty, max_depth=self._max_depth)
             self._model.fit(X_train, Y_train, train_weights, feature_list, col_names)
 
-            print("X_train.shape", X_train.shape)
-            print("X_dev.shape", X_dev.shape)
-
             # Now fit a basic LR model to the remaining features
-            if X_dev is not None:
-                if sparse.issparse(X_train):
-                    X_all = sparse.vstack([X_train, X_dev])
+            if X_dev_orig is not None:
+                if sparse.issparse(X_train_orig):
+                    X_all = sparse.vstack([X_train_orig, X_dev_orig])
                 else:
-                    X_all = np.vstack([X_train, X_dev])
-                Y_all = np.vstack([Y_train, Y_dev])
-                w_all = np.r_[train_weights, dev_weights]
+                    X_all = np.vstack([X_train_orig, X_dev_orig])
+                Y_all = np.vstack([Y_train_orig, Y_dev_orig])
+                w_all = np.r_[w_train_orig, w_dev_orig]
             else:
-                X_all = X_train
-                Y_all = Y_train
-                w_all = train_weights
-
-            print("X_all.shape", X_all.shape)
+                X_all = X_train_orig
+                Y_all = Y_train_orig
+                w_all = w_train_orig
 
             # remove items that have features in our feature list
             for feature in self._model._feature_names:
                 n_items, n_features = X_all.shape
-                feature_index = self._model._col_names.index(feature)
+                feature_index = col_names.index(feature)
                 if sparse.issparse(X_all):
                     selector = np.array(np.array(X_all[:, feature_index].todense()) == 0, dtype=bool).reshape((n_items, ))
                 else:
@@ -456,9 +459,7 @@ class DL:
                 Y_all = Y_all[selector, :]
                 w_all = w_all[selector]
 
-            print("X_all.shape", X_all.shape)
-
-            self._model.train_resid(X_all, Y_all, w_all, col_names, self._name + '_resid', output_dir=self._output_dir, n_classes=2, objective='calibration', penalty='l1', pos_label=1, do_ensemble=True, save_model=True)
+            self._model.train_resid(X_all, Y_all, w_all, col_names, self._name + '_resid', output_dir=self._output_dir, n_classes=2, objective=objective, penalty=penalty, pos_label=pos_label, do_ensemble=do_ensemble, save_model=True)
 
     def predict(self, X):
         # if we've stored a default value, then that is our prediction
@@ -542,6 +543,9 @@ class DL:
                   'alpha': self.get_alpha(),
                   'penalty': self.get_penalty(),
                   'n_classes': self.get_n_classes(),
+                  'max_depth': self._max_depth,
+                  'fit_intercept': self._fit_intercept,
+                  'pos_label': self._pos_label,
                   'train_proportions': self.get_train_proportions(),
                   'train_f1': self._train_f1,
                   'train_acc': self._train_acc,
@@ -551,7 +555,7 @@ class DL:
                   }
         fh.write_to_json(output, os.path.join(self._output_dir, self._name + '_metadata.json'), sort_keys=False)
         fh.write_to_json(self.get_col_names(), os.path.join(self._output_dir, self._name + '_col_names.json'), sort_keys=False)
-        np.savez(os.path.join(self._output_dir, self._name + '_dev_info.npz'))
+        #np.savez(os.path.join(self._output_dir, self._name + '_dev_info.npz'))
 
 
 def load_from_file(model_dir, name):
@@ -562,13 +566,14 @@ def load_from_file(model_dir, name):
     train_proportions = input['train_proportions']
     penalty = input['penalty']
     fit_intercept = input['fit_intercept']
-    loss = input['loss']
+    pos_label = input['pos_label']
+    max_depth = input['max_depth']
 
-    classifier = DL(alpha, output_dir=model_dir, name=name)
+    classifier = DL(alpha, output_dir=model_dir, name=name, penalty=penalty, pos_label=pos_label, max_depth=max_depth, fit_intercept=fit_intercept)
     model = joblib.load(os.path.join(model_dir, name + '.pkl'))
     classifier.set_model(model, train_proportions, col_names, n_classes)
-    dev_info = np.load(os.path.join(model_dir, name + '_dev_info.npz'))
-    classifier._dev_acc_cfm = dev_info['acc_cfm']
-    classifier._dev_pvc_cfm = dev_info['pvc_cfm']
-    classifier._venn_info = dev_info['venn_info']
+    #dev_info = np.load(os.path.join(model_dir, name + '_dev_info.npz'))
+    #classifier._dev_acc_cfm = dev_info['acc_cfm']
+    #classifier._dev_pvc_cfm = dev_info['pvc_cfm']
+    #classifier._venn_info = dev_info['venn_info']
     return classifier

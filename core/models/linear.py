@@ -172,9 +172,7 @@ class LinearClassifier:
         if self._dev_acc_cfm is not None:
             if self._n_classes == 2:
                 acc = calibration.apply_acc_binary(predictions, self._dev_acc_cfm, weights)
-                print("applying median sweep calibration")
                 acc_ms = calibration.apply_acc_binary_median_sweep(pred_probs, self._dev_acc_cfms_ms, weights)
-                print("done")
             else:
                 acc = calibration.apply_acc_bounded_lstsq(predictions, self._dev_acc_cfm)
                 acc_ms = [0, 0]
@@ -277,6 +275,7 @@ class LinearClassifier:
                   'n_classes': self.get_n_classes(),
                   'train_proportions': self.get_train_proportions(),
                   'fit_intercept': self._fit_intercept,
+                  'pos_label': self._pos_label,
                   'train_f1': self._train_f1,
                   'train_acc': self._train_acc,
                   'dev_f1': self._dev_f1,
@@ -298,6 +297,7 @@ def load_from_file(model_dir, name):
     train_proportions = input['train_proportions']
     penalty = input['penalty']
     fit_intercept = input['fit_intercept']
+    pos_label = input['pos_label']
     loss = input['loss']
 
     save_data = False
@@ -313,7 +313,7 @@ def load_from_file(model_dir, name):
         Y_train = training_data['Y_train']
         train_weights = training_data['training_weights']
 
-    classifier = LinearClassifier(alpha, loss, penalty, fit_intercept, output_dir=model_dir, name=name, save_data=save_data)
+    classifier = LinearClassifier(alpha, loss, penalty, fit_intercept, output_dir=model_dir, name=name, pos_label=pos_label, save_data=save_data)
     model = joblib.load(os.path.join(model_dir, name + '.pkl'))
     classifier.set_model(model, train_proportions, col_names, n_classes, X_train, Y_train, train_weights)
     dev_info = np.load(os.path.join(model_dir, name + '_dev_info.npz'))

@@ -40,7 +40,7 @@ def main():
                       help='Nonlinearity for an MLP [tanh|sigmoid|relu]: default=%default')
     parser.add_option('--ls', dest='ls', default=10,
                       help='List size (for DL): default=%default')
-    parser.add_option('--alpha_min', dest='alpha_min', default=0.01,
+    parser.add_option('--alpha_min', dest='alpha_min', default=0.001,
                       help='Minimum value of training hyperparameter: default=%default')
     parser.add_option('--alpha_max', dest='alpha_max', default=1000,
                       help='Maximum value of training hyperparameter: default=%default')

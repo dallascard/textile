@@ -217,7 +217,9 @@ def predict(project_dir, model, model_name, test_subset, label_name, items_to_us
         weights = np.ones(n_items)
         X_norm, Y_norm, w_norm = train.prepare_data(X, Y, weights=weights, loss='log', normalize=True)
 
+        print("Testing models")
         for name, m in models.items():
+            print(name)
             if m.get_model_type() == 'DL':
                 m.test(X_norm, Y_norm, w_norm)
                 samples_m = m.sample(X)
