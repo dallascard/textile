@@ -33,7 +33,7 @@ class LinearClassifier:
         self._dev_f1 = None
         self._dev_acc = None
         self._dev_acc_cfm = None
-        self._dev_pvc_cfm = None
+        self._dev_acc_cfms_ms = None
         self._venn_info = None
         self._save_data = save_data
         self._X_train = None
@@ -118,10 +118,10 @@ class LinearClassifier:
             self._dev_acc = evaluation.acc_score(dev_labels, dev_pred, n_classes=n_classes, weights=dev_weights)
             self._dev_f1 = evaluation.f1_score(dev_labels, dev_pred, n_classes=n_classes, pos_label=self._pos_label, weights=dev_weights)
             self._dev_acc_cfm = calibration.compute_acc(dev_labels, dev_pred, n_classes, weights=dev_weights)
-            self._dev_pvc_cfm = calibration.compute_pvc(dev_labels, dev_pred, n_classes, weights=dev_weights)
-            if self._n_classes == 2:
-                self._venn_info = np.vstack([Y_dev[:, 1], dev_pred_probs[:, 1], dev_weights]).T
-                assert self._venn_info.shape == (len(dev_labels), 3)
+            self._dev_acc_cfms_ms = calibration.compute_acc_median_sweep(dev_labels, dev_pred_probs, n_classes, weights=dev_weights)
+            #if self._n_classes == 2:
+            #    self._venn_info = np.vstack([Y_dev[:, 1], dev_pred_probs[:, 1], dev_weights]).T
+            #    assert self._venn_info.shape == (len(dev_labels), 3)
 
         if self._save_data:
             self._X_train = X_train.copy()
@@ -172,13 +172,16 @@ class LinearClassifier:
         if self._dev_acc_cfm is not None:
             if self._n_classes == 2:
                 acc = calibration.apply_acc_binary(predictions, self._dev_acc_cfm, weights)
+                print("applying median sweep calibration")
+                acc_ms = calibration.apply_acc_binary_median_sweep(pred_probs, self._dev_acc_cfms_ms, weights)
+                print("done")
             else:
                 acc = calibration.apply_acc_bounded_lstsq(predictions, self._dev_acc_cfm)
-            pvc = calibration.apply_pvc(predictions, self._dev_pvc_cfm, weights)
+                acc_ms = [0, 0]
         else:
             acc = [0, 0]
-            pvc = [0, 0]
-        return cc, pcc, acc, pvc
+            acc_ms = [0, 0]
+        return cc, pcc, acc, acc_ms
 
     def get_penalty(self):
         return self._penalty
@@ -282,7 +285,7 @@ class LinearClassifier:
                   }
         fh.write_to_json(output, os.path.join(self._output_dir, self._name + '_metadata.json'), sort_keys=False)
         fh.write_to_json(self.get_col_names(), os.path.join(self._output_dir, self._name + '_col_names.json'), sort_keys=False)
-        np.savez(os.path.join(self._output_dir, self._name + '_dev_info.npz'), acc_cfm=self._dev_acc_cfm, pvc_cfm=self._dev_pvc_cfm, venn_info=self._venn_info)
+        np.savez(os.path.join(self._output_dir, self._name + '_dev_info.npz'), acc_cfm=self._dev_acc_cfm, acc_cfms_ms= self._dev_acc_cfms_ms)
         if self._save_data:
             np.savez(os.path.join(self._output_dir, self._name + '_training_data.npz'), X_train=self._X_train, Y_train=self._Y_train, train_weights=self._w_train)
 
@@ -315,6 +318,6 @@ def load_from_file(model_dir, name):
     classifier.set_model(model, train_proportions, col_names, n_classes, X_train, Y_train, train_weights)
     dev_info = np.load(os.path.join(model_dir, name + '_dev_info.npz'))
     classifier._dev_acc_cfm = dev_info['acc_cfm']
-    classifier._dev_pvc_cfm = dev_info['pvc_cfm']
-    classifier._venn_info = dev_info['venn_info']
+    classifier._dev_acc_cfms_ms = dev_info['acc_cfms_ms']
+    #classifier._venn_info = dev_info['venn_info']
     return classifier

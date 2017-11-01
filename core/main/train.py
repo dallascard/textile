@@ -32,7 +32,7 @@ def main():
                       help='Label name: default=%default')
     parser.add_option('--weights', dest='weights_file', default=None,
                       help='Weights file: default=%default')
-    parser.add_option('--penalty', dest='penalty', default='l1',
+    parser.add_option('--penalty', dest='penalty', default='l2',
                       help='Regularization type: default=%default')
     parser.add_option('--no_intercept', action="store_true", dest="no_intercept", default=False,
                       help='Use to fit a model with no intercept: default=%default')
@@ -267,10 +267,6 @@ def train_model_with_labels(project_dir, model_type, loss, model_name, subset, l
 
                 y_train_vector = np.argmax(Y_train, axis=1)
                 y_dev_vector = np.argmax(Y_dev, axis=1)
-
-                # internally compute the correction matrices
-                #alpha_acc_cfms.append(calibration.compute_acc(y_dev_vector, dev_predictions, n_classes, weights=w_dev))
-                #alpha_pvc_cfms.append(calibration.compute_pvc(y_dev_vector, dev_predictions, n_classes, weights=w_dev))
 
                 train_f1 = evaluation.f1_score(y_train_vector, train_predictions, n_classes, pos_label=pos_label, weights=w_train)
                 dev_f1 = evaluation.f1_score(y_dev_vector, dev_predictions, n_classes, pos_label=pos_label, weights=w_dev)

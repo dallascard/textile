@@ -86,15 +86,16 @@ def compute_acc(labels, predictions, n_classes, weights=None, do_normalization=T
     return p_pred_given_true
 
 
-# TODO: fix this function or delete it
-def compute_acc_ms_binary(labels, pred_probs, n_classes, do_normalization=True):
-    list_of_p_pred_given_true = []
-    prob_set = list(set(pred_probs[:, 1]))
-    for p in prob_set[:-1]:
-        predictions = np.array(pred_probs[:, 1] > p, dtype=int)
-        p_pred_given_true = compute_acc(labels, predictions, n_classes, do_normalization=do_normalization)
-        list_of_p_pred_given_true.append(p_pred_given_true)
-    return list_of_p_pred_given_true
+def compute_acc_median_sweep(labels, pred_probs, n_classes, weights=None, do_normalization=True):
+    assert n_classes == 2
+    cfms = {}
+    thresholds = np.unique(pred_probs[:, 1])
+    thresholds.sort()
+    for t in thresholds[:-1]:
+        predictions = np.array(pred_probs[:, 1] > t, dtype=int)
+        cfm = compute_acc(labels, predictions, n_classes, weights, do_normalization)
+        cfms[t] = cfm
+    return cfms
 
 
 def cc(predictions, n_classes, weights=None):
@@ -173,20 +174,17 @@ def apply_acc_binary(predictions, p_pred_given_true, weights=None):
     return np.array([1-p_d1_binary, p_d1_binary])
 
 
-# TODO: fix this function or delete it
-def apply_acc_ms_binary(predictions, list_of_p_pred_given_true, weights=None):
-    list_of_p1s = []
-    for p_pred_given_true in list_of_p_pred_given_true:
-        tpr = p_pred_given_true[1, 1]
-        fpr = 1.0 - p_pred_given_true[0, 0]
-        if tpr - fpr > 0.25:
-            pred_proportions = apply_acc_binary(predictions, p_pred_given_true, weights)
-            list_of_p1s.append(pred_proportions[1])
-    if len(list_of_p1s) == 0:
-        print("*ERROR* : No predicted p1s found! Skipping correction")
-        return np.mean(predictions)
-    else:
-        return np.median(list_of_p1s)
+def apply_acc_binary_median_sweep(pred_probs, cfms_ms, weights=None):
+
+    thresholds = list(cfms_ms.keys())
+    n_thresh = len(thresholds)
+    pred_proportions = np.zeros([n_thresh-1, 2])
+    for i, t in enumerate(thresholds[:-1]):
+        predictions = np.array(pred_probs[:, 1] > t, dtype=int)
+        cfm = cfms_ms[t]
+        pred_proportions[i, :] = apply_acc_binary(predictions, cfm, weights)
+    median_pos = np.median(pred_proportions[:, 1])
+    return np.array([1.0 - median_pos, median_pos])
 
 
 def apply_acc_solve(predictions, p_pred_given_true):

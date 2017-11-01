@@ -94,7 +94,7 @@ def main():
     alpha_min = float(options.alpha_min)
     alpha_max = float(options.alpha_max)
     n_alphas = int(options.n_alphas)
-    do_ensemble = False
+    do_ensemble = True
     #exclude_calib = options.exclude_calib
     #calib_pred = options.calib_pred
     label = options.label
@@ -305,12 +305,12 @@ def test_over_time(project_dir, subset, config_file, model_type, first_year, n_t
                 force_dense = False
                 if model_type == 'MLP':
                     force_dense = True
-                test_predictions_df, test_pred_probs_df, test_pred_proportions = predict.predict(project_dir, model, model_name, subset, label, items_to_use=test_items, verbose=verbose, force_dense=force_dense, group_identical=group_identical)
+                test_predictions_df, test_pred_probs_df, test_pred_proportions, _ = predict.predict(project_dir, model, model_name, subset, label, items_to_use=test_items, verbose=verbose, force_dense=force_dense, group_identical=group_identical)
                 f1_test, acc_test = evaluate_predictions.evaluate_predictions(test_labels_df, test_predictions_df, test_pred_probs_df, pos_label=pos_label, average=average)
                 true_test_vector = np.argmax(test_labels_df.as_matrix(), axis=1)
                 #test_cal_mae = evaluation.eval_proportions_mae(test_labels_df.as_matrix(), test_pred_probs_df.as_matrix())
                 test_cal_est = evaluation.evaluate_calibration_rmse(true_test_vector, test_pred_probs_df.as_matrix(), min_bins=1, max_bins=1)
-                test_cc_estimate, test_pcc_estimate, test_acc_estimate_internal, test_pvc_estimate_internal = test_pred_proportions
+                test_cc_estimate, test_pcc_estimate, test_acc_estimate_internal, test_acc_ms_estimate_internal = test_pred_proportions
 
                 test_cc_mae = np.mean(np.abs(test_cc_estimate[1] - target_estimate))
                 test_pcc_mae = np.mean(np.abs(test_pcc_estimate[1] - target_estimate))
@@ -320,11 +320,11 @@ def test_over_time(project_dir, subset, config_file, model_type, first_year, n_t
                 output_df.loc['CC'] = [n_train, 'train', 'test', 'n/a', test_cc_estimate[1], test_cc_mae, np.nan, np.nan, np.nan]
                 output_df.loc['PCC'] = [n_train, 'train', 'test', 'n/a', test_pcc_estimate[1], test_pcc_mae, np.nan, np.nan, np.nan]
 
-                test_acc_rmse_internal = np.sqrt((test_acc_estimate_internal[1] - target_estimate) ** 2)
-                test_pvc_rmse_internal = np.sqrt((test_pvc_estimate_internal[1] - target_estimate) ** 2)
+                test_acc_rmse_internal = np.abs(test_acc_estimate_internal[1] - target_estimate)
+                test_acc_ms_rmse_internal = np.abs(test_acc_ms_estimate_internal[1] - target_estimate)
 
                 output_df.loc['ACC_internal'] = [n_train, 'train', 'test', 'n/a', test_acc_estimate_internal[1], test_acc_rmse_internal, np.nan, np.nan, np.nan]
-                output_df.loc['PVC_internal'] = [n_train, 'train', 'nontrain', 'predicted', test_pvc_estimate_internal[1], test_pvc_rmse_internal, np.nan, np.nan, np.nan]
+                output_df.loc['MS_internal'] = [n_train, 'train', 'nontrain', 'predicted', test_acc_ms_estimate_internal[1], test_acc_ms_rmse_internal, np.nan, np.nan, np.nan]
 
                 if n_calib > 0:
                     cc_plus_cal_estimate = (test_cc_estimate[1] + calib_estimate) / 2.0
@@ -348,7 +348,7 @@ def test_over_time(project_dir, subset, config_file, model_type, first_year, n_t
                 # predict on test data
                 force_dense = False
 
-                test_predictions_df, test_pred_probs_df, test_pred_proportions, samples = predict.predict(project_dir, model, model_name, subset, label, items_to_use=test_items, verbose=verbose, force_dense=force_dense, group_identical=group_identical, n_samples=25)
+                test_predictions_df, test_pred_probs_df, test_pred_proportions, samples = predict.predict(project_dir, model, model_name, subset, label, items_to_use=test_items, verbose=verbose, force_dense=force_dense, group_identical=group_identical, n_samples=100)
                 f1_test, acc_test = evaluate_predictions.evaluate_predictions(test_labels_df, test_predictions_df, test_pred_probs_df, pos_label=pos_label, average=average)
                 true_test_vector = np.argmax(test_labels_df.as_matrix(), axis=1)
                 test_cal_est = evaluation.evaluate_calibration_rmse(true_test_vector, test_pred_probs_df.as_matrix(), min_bins=1, max_bins=1)
@@ -359,14 +359,8 @@ def test_over_time(project_dir, subset, config_file, model_type, first_year, n_t
 
                 results_df.loc['test'] = [f1_test, acc_test, test_pcc_mae, test_cal_est]
 
-                output_df.loc['CC_test'] = [n_train, 'train', 'test', 'n/a', test_cc_estimate[1], test_cc_mae, np.nan, np.nan, np.nan]
-                output_df.loc['PCC_test'] = [n_train, 'train', 'test', 'n/a', test_pcc_estimate[1], test_pcc_mae, np.nan, np.nan, np.nan]
-
-                test_acc_rmse_internal = np.sqrt((test_acc_estimate_internal[1] - target_estimate) ** 2)
-                test_pvc_rmse_internal = np.sqrt((test_pvc_estimate_internal[1] - target_estimate) ** 2)
-
-                output_df.loc['ACC_internal'] = [n_train, 'train', 'test', 'n/a', test_acc_estimate_internal[1], test_acc_rmse_internal, np.nan, np.nan, np.nan]
-                output_df.loc['PVC_internal'] = [n_train, 'train', 'nontrain', 'predicted', test_pvc_estimate_internal[1], test_pvc_rmse_internal, np.nan, np.nan, np.nan]
+                output_df.loc['CC_DL'] = [n_train, 'train', 'test', 'n/a', test_cc_estimate[1], test_cc_mae, np.nan, np.nan, np.nan]
+                output_df.loc['PCC_DL'] = [n_train, 'train', 'test', 'n/a', test_pcc_estimate[1], test_pcc_mae, np.nan, np.nan, np.nan]
 
                 pcc_samples = np.mean(samples, axis=0)
                 sample_pcc = np.mean(pcc_samples)
@@ -382,9 +376,9 @@ def test_over_time(project_dir, subset, config_file, model_type, first_year, n_t
                     pcc_plus_cal_mae = np.mean(np.abs(pcc_plus_cal_estimate - target_estimate))
                     pcc_plus_cal_std = np.sqrt(1.0 / (1.0 / sample_pcc_var + 1.0 / calib_std ** 2))
                     pcc_plus_cal_contains_test = target_estimate > pcc_plus_cal_estimate - 2 * pcc_plus_cal_std and target_estimate < pcc_plus_cal_estimate + 2 * pcc_plus_cal_std
-                    output_df.loc['PCC_plus_cal'] = [n_train, 'train', 'test', 'n/a', pcc_plus_cal_estimate, pcc_plus_cal_mae, pcc_plus_cal_estimate - 2 * pcc_plus_cal_std, pcc_plus_cal_estimate + 2 * pcc_plus_cal_std, pcc_plus_cal_contains_test]
+                    output_df.loc['PCC_samples_plus_cal'] = [n_train, 'train', 'test', 'n/a', pcc_plus_cal_estimate, pcc_plus_cal_mae, pcc_plus_cal_estimate - 2 * pcc_plus_cal_std, pcc_plus_cal_estimate + 2 * pcc_plus_cal_std, pcc_plus_cal_contains_test]
                 else:
-                    output_df.loc['PCC_plus_cal'] = [n_train, 'train', 'test', 'n/a', np.nan, np.nan, np.nan, np.nan, np.nan]
+                    output_df.loc['PCC_samples_plus_cal'] = [n_train, 'train', 'test', 'n/a', np.nan, np.nan, np.nan, np.nan, np.nan]
 
                 results_df.to_csv(os.path.join(dirs.dir_models(project_dir), model_name, 'accuracy.csv'))
                 output_df.to_csv(os.path.join(dirs.dir_models(project_dir), model_name, 'results.csv'))

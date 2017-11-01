@@ -192,6 +192,7 @@ def predict(project_dir, model, model_name, test_subset, label_name, items_to_us
     print("Done")
 
     pred_proportions = model.predict_proportions(X)
+    samples = None
 
     if model.get_model_type() == 'DL':
         print("Testing DL model")
@@ -204,7 +205,6 @@ def predict(project_dir, model, model_name, test_subset, label_name, items_to_us
         model.test(X, Y, w)
 
         samples = model.sample(X)
-        return predictions_df, pred_probs_df, pred_proportions, samples
 
     elif model.get_model_type() == 'ensemble':
         models = model._models
@@ -228,11 +228,7 @@ def predict(project_dir, model, model_name, test_subset, label_name, items_to_us
         else:
             samples = None
 
-        return predictions_df, pred_probs_df, pred_proportions, samples
-
-
-    else:
-        return predictions_df, pred_probs_df, pred_proportions
+    return predictions_df, pred_probs_df, pred_proportions, samples
 
 
 if __name__ == '__main__':

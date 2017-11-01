@@ -40,14 +40,14 @@ class Ensemble:
         ccs = []
         pccs = []
         accs = []
-        pvcs = []
+        accs_ms = []
         for model in self._models.values():
-            cc, pcc, acc, pvc = model.predict_proportions(X, weights)
+            cc, pcc, acc, acc_ms = model.predict_proportions(X, weights)
             ccs.append(cc)
             pccs.append(pcc)
             accs.append(acc)
-            pvcs.append(pvc)
-        return np.mean(ccs, axis=0), np.mean(pccs, axis=0), np.mean(accs, axis=0), np.mean(pvcs, axis=0)
+            accs_ms.append(acc_ms)
+        return np.mean(ccs, axis=0), np.mean(pccs, axis=0), np.mean(accs, axis=0), np.mean(accs_ms, axis=0)
 
     def get_model_type(self):
         return self._model_type
