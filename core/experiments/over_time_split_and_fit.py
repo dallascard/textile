@@ -270,7 +270,7 @@ def test_over_time(project_dir, subset, config_file, model_type, year, n_train=N
 
                 # get the same estimate from training data
                 train_props, train_estimate, train_std = get_estimate_and_std(train_labels_df, use_n_annotations=True)
-                # compute the error of this estimate
+                print("Train props:", train_props, train_estimate)
                 train_rmse = np.abs(train_estimate - target_estimate)
                 train_contains_test = target_estimate > train_estimate - 2 * train_std and target_estimate < train_estimate + 2 * train_std
                 output_df.loc['train'] = [n_train, 'train', 'test', 'n/a', train_estimate, train_rmse, train_estimate - 2 * train_std, train_estimate + 2 * train_std, train_contains_test]
