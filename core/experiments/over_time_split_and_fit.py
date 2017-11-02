@@ -40,7 +40,7 @@ def main():
                       help='Nonlinearity for an MLP [tanh|sigmoid|relu]: default=%default')
     parser.add_option('--ls', dest='ls', default=10,
                       help='List size (for DL): default=%default')
-    parser.add_option('--alpha_min', dest='alpha_min', default=0.001,
+    parser.add_option('--alpha_min', dest='alpha_min', default=0.01,
                       help='Minimum value of training hyperparameter: default=%default')
     parser.add_option('--alpha_max', dest='alpha_max', default=1000,
                       help='Maximum value of training hyperparameter: default=%default')
@@ -297,20 +297,32 @@ def test_over_time(project_dir, subset, config_file, model_type, year, n_train=N
 
                 # Now train a model on the training data, saving the calibration data for calibration
 
+
+                """
                 print("Training a LR model")
-                model, dev_f1, dev_acc, dev_cal_mae, dev_cal_est = train.train_model_with_labels(project_dir, model_type, 'log', model_name, subset, sampled_labels_df, feature_defs, weights_df=weights_df, items_to_use=train_items, penalty=penalty, alpha_min=alpha_min, alpha_max=alpha_max, n_alphas=n_alphas, intercept=intercept, objective=objective, n_dev_folds=n_dev_folds, do_ensemble=do_ensemble, dh=dh, seed=seed, pos_label=pos_label, vocab=None, group_identical=group_identical, nonlinearity=nonlinearity, init_lr=init_lr, min_epochs=min_epochs, max_epochs=max_epochs, patience=patience, tol=tol, early_stopping=early_stopping, verbose=verbose)
+                model, dev_f1, dev_acc, dev_cal_mae, dev_cal_est = train.train_model_with_labels(project_dir, model_type, 'log', model_name, subset, sampled_labels_df, feature_defs, weights_df=weights_df, items_to_use=train_items, penalty=penalty, alpha_min=alpha_min, alpha_max=alpha_max, n_alphas=n_alphas, intercept=intercept, objective=objective, n_dev_folds=n_dev_folds, do_ensemble=do_ensemble, dh=dh, seed=seed, pos_label=pos_label, vocab=None, group_identical=group_identical, nonlinearity=nonlinearity, init_lr=init_lr, min_epochs=min_epochs, max_epochs=max_epochs, patience=patience, tol=tol, early_stopping=early_stopping, do_cfm=True, do_platt=True, verbose=verbose)
                 results_df.loc['cross_val'] = [dev_f1, dev_acc, dev_cal_mae, dev_cal_est]
 
                 # predict on test data
                 force_dense = False
                 if model_type == 'MLP':
                     force_dense = True
-                test_predictions_df, test_pred_probs_df, test_pred_proportions, _ = predict.predict(project_dir, model, model_name, subset, label, items_to_use=test_items, verbose=verbose, force_dense=force_dense, group_identical=group_identical)
+
+                X_test, features_concat = predict.load_data(project_dir, model_name, subset, items_to_use=test_items, force_dense=force_dense)
+                test_predictions = model.predict(X_test)
+                test_predictions_df = pd.DataFrame(test_predictions, index=features_concat.get_items(), columns=[label])
+                test_pred_probs = model.predict_probs(X_test)
+                n_items, n_labels = test_pred_probs.shape
+                test_pred_probs_df = pd.DataFrame(test_pred_probs, index=features_concat.get_items(), columns=range(n_labels))
+
+                #test_predictions_df, test_pred_probs_df, test_pred_proportions, _ = predict.predict(project_dir, model, model_name, subset, label, items_to_use=test_items, verbose=verbose, force_dense=force_dense)
                 f1_test, acc_test = evaluate_predictions.evaluate_predictions(test_labels_df, test_predictions_df, test_pred_probs_df, pos_label=pos_label, average=average)
                 true_test_vector = np.argmax(test_labels_df.as_matrix(), axis=1)
                 #test_cal_mae = evaluation.eval_proportions_mae(test_labels_df.as_matrix(), test_pred_probs_df.as_matrix())
                 test_cal_est = evaluation.evaluate_calibration_rmse(true_test_vector, test_pred_probs_df.as_matrix(), min_bins=1, max_bins=1)
-                test_cc_estimate, test_pcc_estimate, test_acc_estimate_internal, test_acc_ms_estimate_internal = test_pred_proportions
+                #test_cc_estimate, test_pcc_estimate, test_acc_estimate_internal, test_acc_ms_estimate_internal = test_pred_proportions
+
+                test_cc_estimate, test_pcc_estimate = model.predict_proportions(X_test)
 
                 test_cc_mae = np.mean(np.abs(test_cc_estimate[1] - target_estimate))
                 test_pcc_mae = np.mean(np.abs(test_pcc_estimate[1] - target_estimate))
@@ -320,11 +332,21 @@ def test_over_time(project_dir, subset, config_file, model_type, year, n_train=N
                 output_df.loc['CC'] = [n_train, 'train', 'test', 'n/a', test_cc_estimate[1], test_cc_mae, np.nan, np.nan, np.nan]
                 output_df.loc['PCC'] = [n_train, 'train', 'test', 'n/a', test_pcc_estimate[1], test_pcc_mae, np.nan, np.nan, np.nan]
 
+                test_acc_estimate_internal, test_acc_ms_estimate_internal = model.predict_proportions(X_test, do_cfm=True)
+
                 test_acc_rmse_internal = np.abs(test_acc_estimate_internal[1] - target_estimate)
                 test_acc_ms_rmse_internal = np.abs(test_acc_ms_estimate_internal[1] - target_estimate)
 
                 output_df.loc['ACC_internal'] = [n_train, 'train', 'test', 'n/a', test_acc_estimate_internal[1], test_acc_rmse_internal, np.nan, np.nan, np.nan]
                 output_df.loc['MS_internal'] = [n_train, 'train', 'nontrain', 'predicted', test_acc_ms_estimate_internal[1], test_acc_ms_rmse_internal, np.nan, np.nan, np.nan]
+
+                test_platt1_estimate, test_platt2_estimate = model.predict_proportions(X_test, do_platt=True)
+
+                test_platt1_rmse = np.abs(test_platt1_estimate[1] - target_estimate)
+                test_platt2_rmse = np.abs(test_platt2_estimate[1] - target_estimate)
+
+                output_df.loc['PCC_platt1'] = [n_train, 'train', 'test', 'n/a', test_platt1_estimate[1], test_platt1_rmse, np.nan, np.nan, np.nan]
+                output_df.loc['PCC_platt2'] = [n_train, 'train', 'nontrain', 'predicted', test_platt2_estimate[1], test_platt2_rmse, np.nan, np.nan, np.nan]
 
                 if n_calib > 0:
                     cc_plus_cal_estimate = (test_cc_estimate[1] + calib_estimate) / 2.0
@@ -338,6 +360,8 @@ def test_over_time(project_dir, subset, config_file, model_type, year, n_train=N
                 results_df.to_csv(os.path.join(dirs.dir_models(project_dir), model_name, 'accuracy.csv'))
                 output_df.to_csv(os.path.join(dirs.dir_models(project_dir), model_name, 'results.csv'))
 
+                """
+
                 # Now train a model on the training data, saving the calibration data for calibration
                 print("Training a model")
                 #model_name = model_name[:-3] + "_DL"
@@ -348,11 +372,23 @@ def test_over_time(project_dir, subset, config_file, model_type, year, n_train=N
                 # predict on test data
                 force_dense = False
 
-                test_predictions_df, test_pred_probs_df, test_pred_proportions, samples = predict.predict(project_dir, model, model_name, subset, label, items_to_use=test_items, verbose=verbose, force_dense=force_dense, group_identical=group_identical, n_samples=100)
+                X_test, features_concat = predict.load_data(project_dir, model_name, subset, items_to_use=test_items, force_dense=force_dense)
+
+                predict.test_DL_model(project_dir, model, subset, label, X_test, items_to_use=test_items)
+
+                test_predictions = model.predict(X_test)
+                test_predictions_df = pd.DataFrame(test_predictions, index=features_concat.get_items(), columns=[label])
+                test_pred_probs = model.predict_probs(X_test)
+                n_items, n_labels = test_pred_probs.shape
+                test_pred_probs_df = pd.DataFrame(test_pred_probs, index=features_concat.get_items(), columns=range(n_labels))
+
+                #test_predictions_df, test_pred_probs_df, test_pred_proportions, samples = predict.predict(project_dir, model, model_name, subset, label, items_to_use=test_items, verbose=verbose, force_dense=force_dense, group_identical=group_identical, n_samples=100)
                 f1_test, acc_test = evaluate_predictions.evaluate_predictions(test_labels_df, test_predictions_df, test_pred_probs_df, pos_label=pos_label, average=average)
                 true_test_vector = np.argmax(test_labels_df.as_matrix(), axis=1)
                 test_cal_est = evaluation.evaluate_calibration_rmse(true_test_vector, test_pred_probs_df.as_matrix(), min_bins=1, max_bins=1)
-                test_cc_estimate, test_pcc_estimate, test_acc_estimate_internal, test_pvc_estimate_internal = test_pred_proportions
+                #test_cc_estimate, test_pcc_estimate, test_acc_estimate_internal, test_pvc_estimate_internal = test_pred_proportions
+
+                test_cc_estimate, test_pcc_estimate = model.predict_proportions(X_test)
 
                 test_cc_mae = np.mean(np.abs(test_cc_estimate[1] - target_estimate))
                 test_pcc_mae = np.mean(np.abs(test_pcc_estimate[1] - target_estimate))
@@ -362,6 +398,15 @@ def test_over_time(project_dir, subset, config_file, model_type, year, n_train=N
                 output_df.loc['CC_DL'] = [n_train, 'train', 'test', 'n/a', test_cc_estimate[1], test_cc_mae, np.nan, np.nan, np.nan]
                 output_df.loc['PCC_DL'] = [n_train, 'train', 'test', 'n/a', test_pcc_estimate[1], test_pcc_mae, np.nan, np.nan, np.nan]
 
+                if n_calib > 0:
+                    cc_plus_cal_estimate = (test_cc_estimate[1] + calib_estimate) / 2.0
+                    pcc_plus_cal_estimate = (test_pcc_estimate[1] + calib_estimate) / 2.0
+                    pcc_plus_cal_mae = np.mean(np.abs(pcc_plus_cal_estimate - target_estimate))
+
+                    #output_df.loc['CC_plus_cal'] = [n_train, 'train', 'test', 'n/a', cc_plus_cal_estimate, cc_plus_cal_mae, np.nan, np.nan, np.nan]
+                    output_df.loc['PCC_DL_plus_cal'] = [n_train, 'train', 'test', 'n/a', pcc_plus_cal_estimate, pcc_plus_cal_mae, np.nan, np.nan, np.nan]
+
+                samples = predict.sample_predictions(model, X_test, n_samples=100)
                 pcc_samples = np.mean(samples, axis=0)
                 sample_pcc = np.mean(pcc_samples)
                 sample_pcc_lower = np.percentile(pcc_samples, q=2.5)
@@ -407,15 +452,14 @@ def get_estimate_and_std(labels_df, use_n_annotations=False):
     if use_n_annotations:
         # treat each annotation as a separate sample
         n = np.sum(labels)
-        # take the mean of all annotations
-        props = np.sum(labels, axis=0) / float(n)
     else:
         # treat each document as a separate sample with a single label
         n = n_items
-        # normalize the labels across classes
-        labels = labels / np.reshape(labels.sum(axis=1), (len(labels), 1))
-        # take the mean across items
-        props = np.mean(labels, axis=0)
+
+    # normalize the labels across classes
+    labels = labels / np.reshape(labels.sum(axis=1), (len(labels), 1))
+    # take the mean across items
+    props = np.mean(labels, axis=0)
 
     # get the estimated probability of a positive label
     estimate = props[1]

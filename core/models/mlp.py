@@ -117,17 +117,21 @@ class MLP:
             model_probs = self._model.predict_probs(X, verbose=verbose)
             return model_probs
 
-    def predict_proportions(self, X=None, weights=None):
+    def predict_proportions(self, X=None, weights=None, do_cfm=False, do_platt=False):
+        # TODO: fix this to be the same as other models
         pred_probs = self.predict_probs(X)
         predictions = np.argmax(pred_probs, axis=1)
-        cc = calibration.cc(predictions, self._n_classes, weights)
-        pcc = calibration.pcc(pred_probs, weights)
-        if self._n_classes == 2:
-            acc = calibration.apply_acc_binary(predictions, self._dev_acc_cfm, weights)
+        if do_cfm:
+            if self._n_classes == 2:
+                acc = calibration.apply_acc_binary(predictions, self._dev_acc_cfm, weights)
+            else:
+                acc = calibration.apply_acc_bounded_lstsq(predictions, self._dev_acc_cfm)
+            pvc = calibration.apply_pvc(predictions, self._dev_pvc_cfm, weights)
+            return acc, pvc
         else:
-            acc = calibration.apply_acc_bounded_lstsq(predictions, self._dev_acc_cfm)
-        pvc = calibration.apply_pvc(predictions, self._dev_pvc_cfm, weights)
-        return cc, pcc, acc, pvc
+            cc = calibration.cc(predictions, self._n_classes, weights)
+            pcc = calibration.pcc(pred_probs, weights)
+            return cc, pcc
 
     def get_penalty(self):
         return self._penalty

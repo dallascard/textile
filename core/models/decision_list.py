@@ -242,7 +242,9 @@ class DecisionList:
         return samples
 
     def train_resid(self, X_all, Y_all, w_all, col_names, name, output_dir=None, n_classes=2, objective='f1', penalty='l1', pos_label=1, do_ensemble=True, save_model=True):
-        self._resid_model = train.train_lr_model_with_cv(X_all, Y_all, w_all, col_names, name, output_dir=output_dir, n_classes=n_classes, objective=objective, penalty=penalty, intercept=self._fit_intercept, n_dev_folds=5, alpha_min=0.01, alpha_max=1000.0, n_alphas=8, pos_label=pos_label, do_ensemble=do_ensemble, prep_data=True, save_model=save_model)
+        print("Training residual model")
+        #self._resid_model = train.train_lr_model_with_cv(X_all, Y_all, w_all, col_names, name, output_dir=output_dir, n_classes=n_classes, objective=objective, penalty=penalty, intercept=self._fit_intercept, n_dev_folds=5, alpha_min=0.01, alpha_max=1000.0, n_alphas=8, pos_label=pos_label, do_ensemble=do_ensemble, fit_cfms=False, fit_platt=False, save_model=save_model)
+        self._resid_model = train.train_blr_model_with_cv(X_all, Y_all, w_all, col_names, name, output_dir=output_dir, n_classes=n_classes, objective=objective, penalty=penalty, intercept=self._fit_intercept, n_dev_folds=5, alpha_min=0.01, alpha_max=1000.0, n_alphas=8, pos_label=pos_label, do_ensemble=do_ensemble, fit_cfms=False, fit_platt=False, save_model=save_model)
 
     def test(self, X, Y, w):
         running_error = 0.0
@@ -428,10 +430,7 @@ class DL:
                     print("Using training data to do feature selection (double-dipping?)")
                     feature_list = self.feature_selection(X_train, Y_train, train_weights, col_names, interactive, stoplist)
 
-            # DEBUG!
-            #feature_list = ['rule_of', 'the_lawsuits', 'justice_doris_ling', 'be_unconstitutional', 'was_unconstitutional', 'supreme_court_of', 'court_is_expected_to_rule']
-
-            self._model = DecisionList(alpha=self._alpha, penalty=self._penalty, max_depth=self._max_depth)
+            self._model = DecisionList(alpha=self._alpha, penalty=self._penalty, fit_intercept=self._fit_intercept, max_depth=self._max_depth)
             self._model.fit(X_train, Y_train, train_weights, feature_list, col_names)
 
             # Now fit a basic LR model to the remaining features
@@ -481,16 +480,14 @@ class DL:
         else:
             return self._model.predict_probs(X)
 
-    def predict_proportions(self, X=None, weights=None):
+    def predict_proportions(self, X=None, weights=None, do_cfm=False, do_platt=False):
         pred_probs = self.predict_probs(X)
         predictions = np.argmax(pred_probs, axis=1)
         cc = calibration.cc(predictions, self._n_classes, weights)
         pcc = calibration.pcc(pred_probs, weights)
-        acc = [0, 0]
-        pvc = [0, 0]
-        return cc, pcc, acc, pvc
+        return cc, pcc
 
-    def sample(self, X, n_samples=10):
+    def sample(self, X, n_samples=100):
         samples = self._model.sample(X, n_samples=n_samples)
         return samples
 

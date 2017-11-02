@@ -45,10 +45,51 @@ def load_and_predict(project_dir, model_type, model_name, test_subset, label_nam
     predict(project_dir, model, model_name, test_subset, label_name, items_to_use=items_to_use)
 
 
-def predict(project_dir, model, model_name, test_subset, label_name, items_to_use=None, verbose=False, force_dense=False, group_identical=False, n_samples=10):
+def predict(project_dir, model, model_name, test_subset, label_name, items_to_use=None, verbose=False, force_dense=False):
 
+    X, features_concat = load_data(project_dir, model_name, test_subset, items_to_use, force_dense, verbose)
+    print("Loaded test data: (%d, %d)" % X.shape)
+
+    predictions = model.predict(X)
+    pred_probs = model.predict_probs(X)
+    n_items, n_labels = pred_probs.shape
+
+    output_dir = dirs.dir_predictions(project_dir, test_subset, model_name)
+    if not os.path.exists(output_dir):
+        os.makedirs(output_dir)
+    predictions_df = pd.DataFrame(predictions, index=features_concat.get_items(), columns=[label_name])
+    predictions_df.to_csv(os.path.join(output_dir, label_name + '_predictions.csv'))
+
+    pred_probs_df = pd.DataFrame(pred_probs, index=features_concat.get_items(), columns=range(n_labels))
+    pred_probs_df.to_csv(os.path.join(output_dir, label_name + '_pred_probs.csv'))
+    print("Done")
+
+
+def sample_predictions(model, X, n_samples=100):
+
+    samples = None
+    if model.get_model_type() == 'DL':
+        samples = model.sample(X, n_samples=n_samples)
+
+    elif model.get_model_type() == 'ensemble':
+        models = model._models
+        samples = []
+        for name, m in models.items():
+            if m.get_model_type() == 'DL':
+                print(name)
+                samples_m = m.sample(X, n_samples=n_samples)
+                samples.append(samples_m)
+
+        if len(samples) > 0:
+            samples = np.hstack(samples)
+        else:
+            samples = None
+
+    return samples
+
+
+def load_data(project_dir, model_name, test_subset, items_to_use=None, force_dense=False, verbose=False):
     model_dir = os.path.join(dirs.dir_models(project_dir), model_name)
-
     feature_signatures = fh.read_json(os.path.join(model_dir, 'features.json'))
     test_features_dir = dirs.dir_features(project_dir, test_subset)
 
@@ -89,111 +130,11 @@ def predict(project_dir, model, model_name, test_subset, label_name, items_to_us
         assert X.size < 10000000
         X = np.array(X.todense())
 
-    n_items, n_labels = X.shape
-    print("Feature matrix shape: (%d, %d)" % X.shape)
+    return X, features_concat
 
-    """
-    if group_identical:
-        label_dir = dirs.dir_labels(project_dir, test_subset)
-        labels_df = fh.read_csv_to_df(os.path.join(label_dir, label_name + '.csv'), index_col=0, header=0)
-        Y = labels_df.loc[items_to_use].as_matrix()
 
-        X_counts = defaultdict(int)
-        X_n_pos = defaultdict(int)
 
-        for i in range(n_items):
-            if sparse.issparse(X):
-                vector = np.array(X[i, :].todense()).ravel()
-            else:
-                vector = np.array(X[i, :]).ravel()
-            key = ''.join([str(int(s)) for s in vector])
-            X_counts[key] += np.sum(Y[i, :])
-            X_n_pos[key] += Y[i, 1]
-
-        keys = list(X_counts.keys())
-        keys.sort()
-
-        train_patterns = fh.read_json(os.path.join(model_dir, 'training_patterns.json'))
-        X_counts_train = train_patterns['X_counts']
-        X_n_pos_train = train_patterns['X_n_pos']
-
-        patterns = list(X_counts.keys())
-        counts = [X_counts[key] for key in patterns]
-        order = list(np.argsort(counts))
-        order.reverse()
-        most_common_keys = [patterns[i] for i in order[:10]]
-        for key in most_common_keys:
-            print('key: %s' % key)
-            print('test: %f (%d / %d)' % (X_n_pos[key] / float(X_counts[key]),  X_n_pos[key], X_counts[key]))
-            if key in X_n_pos_train:
-                print('train: %f (%d / %d)' % (X_n_pos_train[key] / float(X_counts_train[key]),  X_n_pos_train[key], X_counts_train[key]))
-            else:
-                print('train: %f (%d / %d)' % (0.0, 0, 0))
-            prob = model.predict_probs(sparse.csr_matrix([int(i) for i in key]))
-            print('pred:', prob)
-
-        #for index, item in enumerate(items_to_use):
-        #    print(X[index], item, Y[index])
-    """
-
-    if group_identical:
-        print("One by one")
-        label_dir = dirs.dir_labels(project_dir, test_subset)
-        labels_df = fh.read_csv_to_df(os.path.join(label_dir, label_name + '.csv'), index_col=0, header=0)
-        Y = labels_df.loc[items_to_use].as_matrix()
-
-        X_counts = defaultdict(int)
-        X_n_pos = defaultdict(int)
-
-        for i in range(n_items):
-            if sparse.issparse(X):
-                vector = np.array(X[i, :].todense()).ravel()
-            else:
-                vector = np.array(X[i, :]).ravel()
-            key = ''.join([str(int(s)) for s in vector])
-            X_counts[key] += np.sum(Y[i, :])
-            X_n_pos[key] += Y[i, 1]
-
-        keys = list(X_counts.keys())
-        keys.sort()
-
-        train_patterns = fh.read_json(os.path.join(model_dir, 'training_patterns.json'))
-        X_counts_train = train_patterns['X_counts']
-        X_n_pos_train = train_patterns['X_n_pos']
-
-        patterns = list(X_counts.keys())
-        counts = [X_counts[key] for key in patterns]
-        order = list(np.argsort(counts))
-        order.reverse()
-        most_common_keys = [patterns[i] for i in order[:10]]
-        for key in most_common_keys:
-            print('key: %s' % key)
-            print('test: %f (%d / %d)' % (X_n_pos[key] / float(X_counts[key]),  X_n_pos[key], X_counts[key]))
-            if key in X_n_pos_train:
-                print('train: %f (%d / %d)' % (X_n_pos_train[key] / float(X_counts_train[key]),  X_n_pos_train[key], X_counts_train[key]))
-            else:
-                print('train: %f (%d / %d)' % (0.0, 0, 0))
-            prob = model.predict_probs(sparse.csr_matrix([int(i) for i in key]))
-            print('pred:', prob)
-
-    print("Doing prediction")
-    predictions = model.predict(X)
-    pred_probs = model.predict_probs(X)
-    n_items, n_labels = pred_probs.shape
-
-    output_dir = dirs.dir_predictions(project_dir, test_subset, model_name)
-    if not os.path.exists(output_dir):
-        os.makedirs(output_dir)
-    predictions_df = pd.DataFrame(predictions, index=features_concat.get_items(), columns=[label_name])
-    predictions_df.to_csv(os.path.join(output_dir, label_name + '_predictions.csv'))
-
-    pred_probs_df = pd.DataFrame(pred_probs, index=features_concat.get_items(), columns=range(n_labels))
-    pred_probs_df.to_csv(os.path.join(output_dir, label_name + '_pred_probs.csv'))
-    print("Done")
-
-    pred_proportions = model.predict_proportions(X)
-    samples = None
-
+def test_DL_model(project_dir, model, test_subset, label_name, X, items_to_use=None):
     if model.get_model_type() == 'DL':
         print("Testing DL model")
         label_dir = dirs.dir_labels(project_dir, test_subset)
@@ -204,12 +145,8 @@ def predict(project_dir, model, model_name, test_subset, label_name, items_to_us
         X, Y, w = train.prepare_data(X, Y, weights=weights, loss='log', normalize=True)
         model.test(X, Y, w)
 
-        samples = model.sample(X)
-
     elif model.get_model_type() == 'ensemble':
         models = model._models
-
-        samples = []
         label_dir = dirs.dir_labels(project_dir, test_subset)
         labels_df = fh.read_csv_to_df(os.path.join(label_dir, label_name + '.csv'), index_col=0, header=0)
         Y = labels_df.loc[items_to_use].as_matrix()
@@ -221,15 +158,6 @@ def predict(project_dir, model, model_name, test_subset, label_name, items_to_us
             if m.get_model_type() == 'DL':
                 print(name)
                 m.test(X_norm, Y_norm, w_norm)
-                samples_m = m.sample(X)
-                samples.append(samples_m)
-
-        if len(samples) > 0:
-            samples = np.hstack(samples)
-        else:
-            samples = None
-
-    return predictions_df, pred_probs_df, pred_proportions, samples
 
 
 if __name__ == '__main__':

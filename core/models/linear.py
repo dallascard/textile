@@ -4,18 +4,21 @@ import operator
 import tempfile
 
 import numpy as np
+from scipy.special import expit
 from sklearn.externals import joblib
 from sklearn.linear_model import LogisticRegression
 from sklearn.linear_model import LinearRegression, Lasso, Ridge
 
 from ..util import file_handling as fh
 from ..models import evaluation, calibration
+from ..main import train
+
 
 class LinearClassifier:
     """
     Wrapper class for logistic regression from sklearn
     """
-    def __init__(self, alpha, loss_function='log', penalty='l2', fit_intercept=True, output_dir=None, name='model', pos_label=1, save_data=False):
+    def __init__(self, alpha, loss_function='log', penalty='l2', fit_intercept=True, output_dir=None, name='model', pos_label=1, save_data=False, do_cfm=False, do_platt=False):
         self._model_type = 'LR'
         self._alpha = alpha
         self._loss_function = loss_function
@@ -39,6 +42,11 @@ class LinearClassifier:
         self._X_train = None
         self._Y_train = None
         self._w_train = None
+        self._do_cfm = do_cfm
+        self._do_platt = do_platt
+        self._platt_a = None
+        self._platt_b = None
+        self._platt_T = None
 
         # create a variable to store the label proportions in the training data
         self._train_proportions = None
@@ -65,7 +73,7 @@ class LinearClassifier:
         else:
             self._model = model
 
-    def fit(self, X_train, Y_train, train_weights=None, col_names=None, X_dev=None, Y_dev=None, dev_weights=None, *args, **kwargs):
+    def fit(self, X_train, Y_train, train_weights=None, col_names=None):
         """
         Fit a classifier to data
         :param X: feature matrix: np.array(size=(n_items, n_features))
@@ -74,6 +82,8 @@ class LinearClassifier:
         :param col_names: names of the features (optional)
         :return: None
         """
+        X_train, Y_train, train_weights = train.prepare_data(X_train, Y_train, train_weights, loss='log')
+
         n_train_items, n_features = X_train.shape
         _, n_classes = Y_train.shape
         self._n_classes = n_classes
@@ -111,22 +121,41 @@ class LinearClassifier:
         self._train_acc = evaluation.acc_score(train_labels, train_pred, n_classes=n_classes, weights=train_weights)
         self._train_f1 = evaluation.f1_score(train_labels, train_pred, n_classes=n_classes, pos_label=self._pos_label, weights=train_weights)
 
-        if X_dev is not None and Y_dev is not None:
-            dev_labels = np.argmax(Y_dev, axis=1)
-            dev_pred = self.predict(X_dev)
-            dev_pred_probs = self.predict_probs(X_dev)
-            self._dev_acc = evaluation.acc_score(dev_labels, dev_pred, n_classes=n_classes, weights=dev_weights)
-            self._dev_f1 = evaluation.f1_score(dev_labels, dev_pred, n_classes=n_classes, pos_label=self._pos_label, weights=dev_weights)
-            self._dev_acc_cfm = calibration.compute_acc(dev_labels, dev_pred, n_classes, weights=dev_weights)
-            self._dev_acc_cfms_ms = calibration.compute_acc_median_sweep(dev_labels, dev_pred_probs, n_classes, weights=dev_weights)
-            #if self._n_classes == 2:
-            #    self._venn_info = np.vstack([Y_dev[:, 1], dev_pred_probs[:, 1], dev_weights]).T
-            #    assert self._venn_info.shape == (len(dev_labels), 3)
-
         if self._save_data:
             self._X_train = X_train.copy()
             self._Y_train = Y_train.copy()
             self._w_train = train_weights.copy()
+
+    def fit_cfms(self, X_dev, Y_dev, dev_weights, prep_data=False):
+        _, n_classes = Y_dev.shape
+        if prep_data:
+            X_dev, Y_dev, dev_weights = train.prepare_data(X_dev, Y_dev, dev_weights, loss='log')
+
+        dev_labels = np.argmax(Y_dev, axis=1)
+        dev_pred = self.predict(X_dev)
+        dev_pred_probs = self.predict_probs(X_dev)
+        self._dev_acc = evaluation.acc_score(dev_labels, dev_pred, n_classes=n_classes, weights=dev_weights)
+        self._dev_f1 = evaluation.f1_score(dev_labels, dev_pred, n_classes=n_classes, pos_label=self._pos_label, weights=dev_weights)
+        self._dev_acc_cfm = calibration.compute_acc(dev_labels, dev_pred, n_classes, weights=dev_weights)
+        self._dev_acc_cfms_ms = calibration.compute_acc_median_sweep(dev_labels, dev_pred_probs, n_classes, weights=dev_weights)
+
+    def fit_platt(self, X_dev, Y_dev, dev_weights, prep_data=False):
+        if prep_data:
+            X_dev, Y_dev, dev_weights = train.prepare_data(X_dev, Y_dev, dev_weights, loss='log')
+        n_dev, n_classes = Y_dev.shape
+
+        if n_classes == 2:
+            # fit a platt model with an intercept
+            scores = np.reshape(self.score(X_dev), (n_dev, 1))
+
+            model = train.train_lr_model_with_cv(scores, Y_dev, dev_weights, col_names=['p'], basename='platt2', intercept=True, n_dev_folds=2, pos_label=self._pos_label, do_ensemble=False, fit_platt=False, fit_cfms=False, save_model=False, verbose=False)
+            coefs = dict(model.get_coefs())
+            self._platt_a = coefs['p']
+            self._platt_b = model.get_intercept()
+
+            # fit a platt model without an intercept
+            model = train.train_lr_model_with_cv(scores, Y_dev, dev_weights, col_names=['p'], basename='platt1', intercept=False, n_dev_folds=2, pos_label=self._pos_label, do_ensemble=False, fit_platt=False, fit_cfms=False, save_model=False, verbose=False)
+            self._platt_T = dict(model.get_coefs())['p']
 
     def predict(self, X):
         # if we've stored a default value, then that is our prediction
@@ -164,22 +193,39 @@ class LinearClassifier:
             full_probs = np.minimum(full_probs, np.ones_like(full_probs))
             return full_probs
 
-    def predict_proportions(self, X=None, weights=None):
+    def score(self, X):
+        return self._model.decision_function(X)
+
+    def predict_proportions(self, X=None, weights=None, do_cfm=False, do_platt=False):
         pred_probs = self.predict_probs(X)
         predictions = np.argmax(pred_probs, axis=1)
-        cc = calibration.cc(predictions, self._n_classes, weights)
-        pcc = calibration.pcc(pred_probs, weights)
-        if self._dev_acc_cfm is not None:
+        if do_cfm:
+            assert self._do_cfm
             if self._n_classes == 2:
                 acc = calibration.apply_acc_binary(predictions, self._dev_acc_cfm, weights)
                 acc_ms = calibration.apply_acc_binary_median_sweep(pred_probs, self._dev_acc_cfms_ms, weights)
             else:
                 acc = calibration.apply_acc_bounded_lstsq(predictions, self._dev_acc_cfm)
                 acc_ms = [0, 0]
+            return acc, acc_ms
+        elif do_platt:
+            assert self._do_platt
+            scores = self.score(X)
+            corrected_scores = expit(self._platt_T * scores)
+            corrected_probs = np.zeros_like(pred_probs)
+            corrected_probs[:, 0] = 1 - corrected_scores
+            corrected_probs[:, 1] = corrected_scores
+            platt1 = calibration.pcc(corrected_probs, weights)
+
+            corrected_scores = expit(self._platt_a * scores + self._platt_b)
+            corrected_probs[:, 0] = 1 - corrected_scores
+            corrected_probs[:, 1] = corrected_scores
+            platt2 = calibration.pcc(corrected_probs, weights)
+            return platt1, platt2
         else:
-            acc = [0, 0]
-            acc_ms = [0, 0]
-        return cc, pcc, acc, acc_ms
+            cc = calibration.cc(predictions, self._n_classes, weights)
+            pcc = calibration.pcc(pred_probs, weights)
+            return cc, pcc
 
     def get_penalty(self):
         return self._penalty

@@ -36,18 +36,14 @@ class Ensemble:
         tensor = np.array(pred_prob_list)
         return np.mean(tensor, axis=0)
 
-    def predict_proportions(self, X=None, weights=None):
-        ccs = []
-        pccs = []
-        accs = []
-        accs_ms = []
+    def predict_proportions(self, X=None, weights=None, do_cfm=False, do_platt=False):
+        first_values = []
+        second_values = []
         for model in self._models.values():
-            cc, pcc, acc, acc_ms = model.predict_proportions(X, weights)
-            ccs.append(cc)
-            pccs.append(pcc)
-            accs.append(acc)
-            accs_ms.append(acc_ms)
-        return np.mean(ccs, axis=0), np.mean(pccs, axis=0), np.mean(accs, axis=0), np.mean(accs_ms, axis=0)
+            first, second = model.predict_proportions(X, weights, do_cfm, do_platt)
+            first_values.append(first)
+            second_values.append(second)
+        return np.mean(first_values, axis=0), np.mean(second_values, axis=0)
 
     def get_model_type(self):
         return self._model_type
