@@ -5,6 +5,7 @@ import numpy as np
 
 from ..util import file_handling as fh
 from ..models import blr_fit
+from ..main import train
 
 
 class BLR:
@@ -42,12 +43,19 @@ class BLR:
         self._V = V
         self._inv_V = inv_V
 
-    def fit(self, X, y, col_names, sample_weights=None, batch=True, multilevel=True, ard=True, max_iter=500, tol=1e-6):
+    def fit(self, X, Y, col_names, sample_weights=None, batch=True, multilevel=True, ard=True, max_iter=500, tol=1e-6):
+
+        X, Y, sample_weights = train.prepare_data(X, Y, sample_weights, loss='log')
 
         # store the proportion of class labels in the training data
-        bincount = np.bincount(np.array(y, dtype=int), minlength=self._n_classes)
-        self._train_proportions = (bincount / float(bincount.sum())).tolist()
+        if sample_weights is None:
+            class_sums = np.sum(Y, axis=0)
+        else:
+            class_sums = np.dot(sample_weights, Y) / sample_weights.sum()
+        self._train_proportions = (class_sums / float(class_sums.sum())).tolist()
         self._col_names = col_names
+
+        y = np.argmax(Y, axis=1)
 
         if batch:
             if multilevel:

@@ -9,7 +9,7 @@ from scipy import sparse
 from sklearn.model_selection import KFold
 
 from ..util import file_handling as fh
-from ..models import blr, linear, mlp, evaluation, calibration, ensemble
+from ..models import linear, mlp, evaluation, calibration, ensemble
 from ..models import decision_list
 from ..models import get_top_features
 from ..preprocessing import features
@@ -1038,8 +1038,8 @@ def train_blr_model_with_cv(X, Y, weights, col_names, basename, output_dir=None,
             dev_indices = dev_splits[fold]
 
             name = basename + '_temp_' + str(fold)
-            model = blr.BLR(alpha=alpha, fit_intercept=True, n_classes=n_classes)
             #model = linear.LinearClassifier(alpha, loss_function=loss, penalty=penalty, fit_intercept=intercept, output_dir=output_dir, name=name, pos_label=pos_label, do_cfm=fit_cfms, do_platt=fit_platt)
+            model = ClassificationARD()
 
             X_train = X[train_indices, :]
             Y_train = Y[train_indices, :]
@@ -1051,7 +1051,7 @@ def train_blr_model_with_cv(X, Y, weights, col_names, basename, output_dir=None,
             #    X_train, Y_train, w_train = prepare_data(X_train, Y_train, w_train, loss=loss)
             #    X_dev, Y_dev, w_dev = prepare_data(X_dev, Y_dev, w_dev, loss=loss)
 
-            model.fit(X_train, Y_train, col_names=col_names, sample_weights=w_train)
+            model.fit(X_train, Y_train)
 
             X_train, Y_train, w_train = prepare_data(X_train, Y_train, w_train, loss=loss)
             X_dev, Y_dev, w_dev = prepare_data(X_dev, Y_dev, w_dev, loss=loss)

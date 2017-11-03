@@ -2,6 +2,7 @@ import random
 from optparse import OptionParser
 
 import numpy as np
+from scipy import sparse
 from scipy.special import expit, gammaln
 from sklearn.linear_model import LogisticRegression as lr
 
@@ -189,9 +190,14 @@ def batch_multilevel_ard(X, y, add_intercept=False, sample_weights=None, s_0=1e-
     temp = np.reshape(sample_weights * (y - 0.5), (n, 1))
     print(type(X))
     print(type(temp))
-    prod = temp * X
-    prod2 = X * temp
-    sum_yX_over_2 = np.sum(temp * X, axis=0)
+    #prod = temp * X
+    #prod2 = X * temp
+    #sum_yX_over_2 = np.sum(temp * X, axis=0)
+    # TODO: handle sparse X
+    if sparse.issparse(X):
+        sum_yX_over_2 = X.T.dot(temp)
+    else:
+        sum_yX_over_2 = np.sum(temp * X, axis=0)
     s_n = s_0 + 0.5
     bound_const = d * (-gammaln(s_0) + s_0 * np.log(r_0) + (gammaln(s_n) + s_n))
 
@@ -202,8 +208,14 @@ def batch_multilevel_ard(X, y, add_intercept=False, sample_weights=None, s_0=1e-
     E_alpha = np.ones(d) * s_0 / float(r_0)
 
     # compute initial V_n and w values
-    inv_V_n = np.diag(E_alpha) + 2 * np.dot(X.T, np.reshape(sample_weights * lambda_z, (n, 1)) * X)
-    V_n = np.linalg.inv(inv_V_n)
+    if sparse.issparse(X):
+        temp = X.multiply(np.reshape(sample_weights * lambda_z, (n, 1)))
+        inv_V_n = np.diag(E_alpha) + 2 * X.T.dot(temp)
+    else:
+        inv_V_n = np.diag(E_alpha) + 2 * np.dot(X.T, np.reshape(sample_weights * lambda_z, (n, 1)) * X)
+    V_n = np.array(np.linalg.inv(inv_V_n))
+    print(V_n)
+    print(type(V_n))
     w = np.dot(V_n, sum_yX_over_2)
 
     # compute an initial bound
@@ -467,7 +479,11 @@ def lambda_func(z):
 
 
 def add_ones_col(X):
-    return np.hstack((np.ones([X.shape[0], 1]), X))
+    n_items, _ = X.shape
+    if sparse.issparse(X):
+        return sparse.hstack([np.ones((n_items, 1)), X])
+    else:
+        return np.hstack([np.ones((n_items, 1)), X])
 
 
 if __name__ == '__main__':

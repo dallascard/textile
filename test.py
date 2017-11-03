@@ -1,14 +1,12 @@
-#from core.main.cross_train_and_eval_internal import cross_train_and_eval
-
-#cross_train_and_eval('projects/mfc/immigration', 'pro_tone', 'year_group', 'config/config.json', calib_prop=0.33, nontest_prop=1.0, prefix='test', max_folds=2, model_type='LR', label='label', penalty='l2', cshift=None, intercept=True, n_dev_folds=5, repeats=1, verbose=False, pos_label=1, average='micro')
-
-#from core.main import train
-
+import numpy as np
+from scipy import sparse
+from scipy.special import expit
 
 #from core.experiments import combo
 from core.discovery import fightin_words
 from core.experiments import over_time, over_time_split_and_fit
 from core.preprocessing import preprocess_words
+from core.models.blr import BLR
 
 
 project_dir = 'projects/mfc/samesex'
@@ -27,6 +25,30 @@ annotated_subset = 'Legality_annotations'
 
 #fightin_words.load_and_select_features('projects/mfc/samesex/data/subsets/framing/features/unigramsfast.json', 'projects/mfc/samesex/data/subsets/Legality_annotations/features/unigramsfast.json')
 
-over_time_split_and_fit.test_over_time(project_dir, subset, config_file, model_type, 2012, label=label, n_calib=50, do_ensemble=True)
+#over_time_split_and_fit.test_over_time(project_dir, subset, config_file, model_type, 2012, label=label, n_calib=50, do_ensemble=True)
 
 #preprocess_words.preprocess_words('projects/mfc/samesex', 'framing', lower=True, ngrams=2)
+
+np.random.seed(42)
+n = 200
+p = 10
+X = np.random.randint(low=0, high=2, size=(n, p))
+X = sparse.csr_matrix(X)
+beta = np.random.randn(p)
+
+if sparse.issparse(X):
+    ps = expit(X.dot(beta))
+else:
+    ps = expit(np.dot(X, beta))
+
+y = np.random.binomial(p=ps, n=1)
+Y = np.zeros([n, 2])
+Y[:, 0] = 1 - y
+Y[:, 1] = y
+print(beta)
+
+names = [str(i) for i in range(p)]
+model = BLR()
+model.fit(X, Y, col_names=names)
+names, coefs = zip(*model.get_coefs())
+print(coefs)
