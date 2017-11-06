@@ -131,7 +131,8 @@ def test_over_time(project_dir, subset, config_file, model_type, first_year, las
         'subset': subset,
         'config_file': config_file,
         'model_type': model_type,
-        'year': year,
+        'first_year': first_year,
+        'last_year': last_year,
         'n_train': n_train,
         'n_calib': n_calib,
         'penalty': penalty,
@@ -429,7 +430,8 @@ def test_over_time(project_dir, subset, config_file, model_type, first_year, las
 
 
 def make_model_basename(log):
-    model_basename = log['subset'] + '_' + log['label'] + '_' + 'year' + '_' + log['penalty'] + '_' + log['objective']
+    model_basename = log['subset'] + '_' + log['label'] + '_' + str(log['first_year']) + '_' + str(log['last_year'])
+    model_basename += '_' + log['penalty'] + '_' + log['objective']
     if log['n_train'] is None:
         model_basename += '_0'
     else:
