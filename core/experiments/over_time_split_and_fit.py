@@ -215,12 +215,13 @@ def test_over_time(project_dir, subset, config_file, model_type, first_year, las
 
     for r in range(repeats):
         model_name = model_basename + '_' + str(first_year) + '-' + str(last_year) + '_' + str(r)
-        if n_train is not None and n_train > 0 and len(train_items_labeled) >= n_train:
+        if n_train is not None and len(train_items_labeled) >= n_train:
             np.random.shuffle(train_items_labeled)
             train_items = np.random.choice(train_items_all, size=n_train, replace=False)
         else:
+            print("Using all train items")
             train_items = train_items_labeled
-        n_train = len(train_items)
+        n_train_r = len(train_items)
 
         # now, choose a calibration set
         if n_calib > 0 and n_test >= n_calib:
@@ -236,7 +237,7 @@ def test_over_time(project_dir, subset, config_file, model_type, first_year, las
         if weights_df is not None:
             weights_df = weights_df[labeled_item_selector]
 
-        print("Labeled train: %d, test: %d" % (n_train, n_test))
+        print("Labeled train: %d, test: %d" % (n_train_r, n_test))
 
         # create a data frame to hold a summary of the results
         output_df = pd.DataFrame([], columns=['N', 'training data', 'test data', 'cal', 'estimate', 'MAE', '95lcl', '95ucl', 'contains_test'])
@@ -271,7 +272,7 @@ def test_over_time(project_dir, subset, config_file, model_type, first_year, las
         print("Train props:", train_props, train_estimate)
         train_rmse = np.abs(train_estimate - target_estimate)
         train_contains_test = target_estimate > train_estimate - 2 * train_std and target_estimate < train_estimate + 2 * train_std
-        output_df.loc['train'] = [n_train, 'train', 'test', 'n/a', train_estimate, train_rmse, train_estimate - 2 * train_std, train_estimate + 2 * train_std, train_contains_test]
+        output_df.loc['train'] = [n_train_r, 'train', 'test', 'n/a', train_estimate, train_rmse, train_estimate - 2 * train_std, train_estimate + 2 * train_std, train_contains_test]
 
         # get the same estimate from training data
         if n_calib > 0:
@@ -326,24 +327,24 @@ def test_over_time(project_dir, subset, config_file, model_type, first_year, las
 
         results_df.loc['test'] = [f1_test, acc_test, test_pcc_mae, test_cal_est]
 
-        output_df.loc['CC'] = [n_train, 'train', 'test', 'n/a', test_cc_estimate[1], test_cc_mae, np.nan, np.nan, np.nan]
-        output_df.loc['PCC'] = [n_train, 'train', 'test', 'n/a', test_pcc_estimate[1], test_pcc_mae, np.nan, np.nan, np.nan]
+        output_df.loc['CC'] = [n_train_r, 'train', 'test', 'n/a', test_cc_estimate[1], test_cc_mae, np.nan, np.nan, np.nan]
+        output_df.loc['PCC'] = [n_train_r, 'train', 'test', 'n/a', test_pcc_estimate[1], test_pcc_mae, np.nan, np.nan, np.nan]
 
         test_acc_estimate_internal, test_acc_ms_estimate_internal = model.predict_proportions(X_test, do_cfm=True)
 
         test_acc_rmse_internal = np.abs(test_acc_estimate_internal[1] - target_estimate)
         test_acc_ms_rmse_internal = np.abs(test_acc_ms_estimate_internal[1] - target_estimate)
 
-        output_df.loc['ACC_internal'] = [n_train, 'train', 'test', 'n/a', test_acc_estimate_internal[1], test_acc_rmse_internal, np.nan, np.nan, np.nan]
-        output_df.loc['MS_internal'] = [n_train, 'train', 'nontrain', 'predicted', test_acc_ms_estimate_internal[1], test_acc_ms_rmse_internal, np.nan, np.nan, np.nan]
+        output_df.loc['ACC_internal'] = [n_train_r, 'train', 'test', 'n/a', test_acc_estimate_internal[1], test_acc_rmse_internal, np.nan, np.nan, np.nan]
+        output_df.loc['MS_internal'] = [n_train_r, 'train', 'nontrain', 'predicted', test_acc_ms_estimate_internal[1], test_acc_ms_rmse_internal, np.nan, np.nan, np.nan]
 
         test_platt1_estimate, test_platt2_estimate = model.predict_proportions(X_test, do_platt=True)
 
         test_platt1_rmse = np.abs(test_platt1_estimate[1] - target_estimate)
         test_platt2_rmse = np.abs(test_platt2_estimate[1] - target_estimate)
 
-        output_df.loc['PCC_platt1'] = [n_train, 'train', 'test', 'n/a', test_platt1_estimate[1], test_platt1_rmse, np.nan, np.nan, np.nan]
-        output_df.loc['PCC_platt2'] = [n_train, 'train', 'nontrain', 'predicted', test_platt2_estimate[1], test_platt2_rmse, np.nan, np.nan, np.nan]
+        output_df.loc['PCC_platt1'] = [n_train_r, 'train', 'test', 'n/a', test_platt1_estimate[1], test_platt1_rmse, np.nan, np.nan, np.nan]
+        output_df.loc['PCC_platt2'] = [n_train_r, 'train', 'nontrain', 'predicted', test_platt2_estimate[1], test_platt2_rmse, np.nan, np.nan, np.nan]
 
         if n_calib > 0:
             cc_plus_cal_estimate = (test_cc_estimate[1] + calib_estimate) / 2.0
@@ -352,7 +353,7 @@ def test_over_time(project_dir, subset, config_file, model_type, first_year, las
             pcc_plus_cal_mae = np.mean(np.abs(pcc_plus_cal_estimate - target_estimate))
 
             #output_df.loc['CC_plus_cal'] = [n_train, 'train', 'test', 'n/a', cc_plus_cal_estimate, cc_plus_cal_mae, np.nan, np.nan, np.nan]
-            output_df.loc['PCC_plus_cal'] = [n_train, 'train', 'test', 'n/a', pcc_plus_cal_estimate, pcc_plus_cal_mae, np.nan, np.nan, np.nan]
+            output_df.loc['PCC_plus_cal'] = [n_train_r, 'train', 'test', 'n/a', pcc_plus_cal_estimate, pcc_plus_cal_mae, np.nan, np.nan, np.nan]
 
         results_df.to_csv(os.path.join(dirs.dir_models(project_dir), model_name, 'accuracy.csv'))
         output_df.to_csv(os.path.join(dirs.dir_models(project_dir), model_name, 'results.csv'))
@@ -391,8 +392,8 @@ def test_over_time(project_dir, subset, config_file, model_type, first_year, las
 
         results_df.loc['test'] = [f1_test, acc_test, test_pcc_mae, test_cal_est]
 
-        output_df.loc['CC_DL'] = [n_train, 'train', 'test', 'n/a', test_cc_estimate[1], test_cc_mae, np.nan, np.nan, np.nan]
-        output_df.loc['PCC_DL'] = [n_train, 'train', 'test', 'n/a', test_pcc_estimate[1], test_pcc_mae, np.nan, np.nan, np.nan]
+        output_df.loc['CC_DL'] = [n_train_r, 'train', 'test', 'n/a', test_cc_estimate[1], test_cc_mae, np.nan, np.nan, np.nan]
+        output_df.loc['PCC_DL'] = [n_train_r, 'train', 'test', 'n/a', test_pcc_estimate[1], test_pcc_mae, np.nan, np.nan, np.nan]
 
         if n_calib > 0:
             cc_plus_cal_estimate = (test_cc_estimate[1] + calib_estimate) / 2.0
@@ -400,7 +401,7 @@ def test_over_time(project_dir, subset, config_file, model_type, first_year, las
             pcc_plus_cal_mae = np.mean(np.abs(pcc_plus_cal_estimate - target_estimate))
 
             #output_df.loc['CC_plus_cal'] = [n_train, 'train', 'test', 'n/a', cc_plus_cal_estimate, cc_plus_cal_mae, np.nan, np.nan, np.nan]
-            output_df.loc['PCC_DL_plus_cal'] = [n_train, 'train', 'test', 'n/a', pcc_plus_cal_estimate, pcc_plus_cal_mae, np.nan, np.nan, np.nan]
+            output_df.loc['PCC_DL_plus_cal'] = [n_train_r, 'train', 'test', 'n/a', pcc_plus_cal_estimate, pcc_plus_cal_mae, np.nan, np.nan, np.nan]
 
         samples = predict.sample_predictions(model, X_test, n_samples=100)
         pcc_samples = np.mean(samples, axis=0)
@@ -410,16 +411,16 @@ def test_over_time(project_dir, subset, config_file, model_type, first_year, las
         sample_pcc_var = np.var(pcc_samples)
         sample_pcc_mae = np.mean(np.abs(sample_pcc - target_estimate))
         sample_pcc_contains_test = target_estimate > sample_pcc_lower and target_estimate < sample_pcc_upper
-        output_df.loc['PCC_samples'] = [n_train, 'train', 'test', 'n/a', sample_pcc, sample_pcc_mae, sample_pcc_lower, sample_pcc_upper, sample_pcc_contains_test]
+        output_df.loc['PCC_samples'] = [n_train_r, 'train', 'test', 'n/a', sample_pcc, sample_pcc_mae, sample_pcc_lower, sample_pcc_upper, sample_pcc_contains_test]
 
         if n_calib > 0:
             pcc_plus_cal_estimate = (sample_pcc / sample_pcc_var + calib_estimate / calib_std ** 2) / (1.0 / sample_pcc_var + 1.0 / calib_std ** 2)
             pcc_plus_cal_mae = np.mean(np.abs(pcc_plus_cal_estimate - target_estimate))
             pcc_plus_cal_std = np.sqrt(1.0 / (1.0 / sample_pcc_var + 1.0 / calib_std ** 2))
             pcc_plus_cal_contains_test = target_estimate > pcc_plus_cal_estimate - 2 * pcc_plus_cal_std and target_estimate < pcc_plus_cal_estimate + 2 * pcc_plus_cal_std
-            output_df.loc['PCC_samples_plus_cal'] = [n_train, 'train', 'test', 'n/a', pcc_plus_cal_estimate, pcc_plus_cal_mae, pcc_plus_cal_estimate - 2 * pcc_plus_cal_std, pcc_plus_cal_estimate + 2 * pcc_plus_cal_std, pcc_plus_cal_contains_test]
+            output_df.loc['PCC_samples_plus_cal'] = [n_train_r, 'train', 'test', 'n/a', pcc_plus_cal_estimate, pcc_plus_cal_mae, pcc_plus_cal_estimate - 2 * pcc_plus_cal_std, pcc_plus_cal_estimate + 2 * pcc_plus_cal_std, pcc_plus_cal_contains_test]
         else:
-            output_df.loc['PCC_samples_plus_cal'] = [n_train, 'train', 'test', 'n/a', np.nan, np.nan, np.nan, np.nan, np.nan]
+            output_df.loc['PCC_samples_plus_cal'] = [n_train_r, 'train', 'test', 'n/a', np.nan, np.nan, np.nan, np.nan, np.nan]
 
         results_df.to_csv(os.path.join(dirs.dir_models(project_dir), model_name, 'accuracy.csv'))
         output_df.to_csv(os.path.join(dirs.dir_models(project_dir), model_name, 'results.csv'))
