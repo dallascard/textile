@@ -213,6 +213,7 @@ def test_over_time(project_dir, subset, config_file, model_type, first_year, las
     n_test = len(test_items)
 
     for r in range(repeats):
+        print("* Starting repetition %d *" % r)
         model_name = model_basename + '_' + str(first_year) + '-' + str(last_year) + '_' + str(r)
         if n_train is not None and len(train_items_labeled) >= n_train:
             np.random.shuffle(train_items_labeled)
