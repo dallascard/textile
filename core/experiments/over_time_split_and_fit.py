@@ -184,7 +184,7 @@ def test_over_time(project_dir, subset, config_file, model_type, first_year, las
     field_vals.sort()
     print("Splitting data according to :", field_vals)
 
-    print("\nTesting on %s to %s" % first_year, last_year)
+    print("\nTesting on %s to %s" % (first_year, last_year))
     # first, split into training and non-train data based on the field of interest
 
     test_selector_all = (metadata['year'] >= int(first_year)) & (metadata['year'] <= int(last_year))
