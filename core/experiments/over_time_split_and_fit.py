@@ -217,7 +217,7 @@ def test_over_time(project_dir, subset, config_file, model_type, first_year, las
         model_name = model_basename + '_' + str(first_year) + '-' + str(last_year) + '_' + str(r)
         if n_train is not None and len(train_items_labeled) >= n_train:
             np.random.shuffle(train_items_labeled)
-            train_items = np.random.choice(train_items_all, size=n_train, replace=False)
+            train_items = np.random.choice(train_items_labeled, size=n_train, replace=False)
         else:
             print("Using all train items")
             train_items = train_items_labeled
