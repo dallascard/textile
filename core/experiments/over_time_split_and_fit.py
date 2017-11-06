@@ -68,8 +68,6 @@ def main():
                       help='Random seed (None=random): default=%default')
     #parser.add_option('--run_all', action="store_true", dest="run_all", default=False,
     #                  help='Run models using combined train and calibration data: default=%default')
-    parser.add_option('--n_terms', dest='n_terms', default=100,
-                      help='Number of terms to select before intersection: default=%default')
     parser.add_option('--annotated', dest='annotated', default=None,
                       help='Annotated subset to load the corresponding features from just annotated text: default=%default')
     parser.add_option('--verbose', action="store_true", dest="verbose", default=False,
@@ -115,15 +113,14 @@ def main():
         np.random.seed(seed)
     #run_all = options.run_all
     annotated = options.annotated
-    n_terms = int(options.n_terms)
     verbose = options.verbose
 
     average = 'micro'
 
-    test_over_time(project_dir, subset, config_file, model_type, first_year, last_year, n_train, n_calib, penalty, suffix, loss, objective, do_ensemble, dh, label, intercept, n_dev_folds, verbose, average, seed, alpha_min, alpha_max, n_alphas, sample_labels, group_identical, annotated, n_terms, nonlinearity, early_stopping=early_stopping, list_size=ls, repeats=repeats)
+    test_over_time(project_dir, subset, config_file, model_type, first_year, last_year, n_train, n_calib, penalty, suffix, loss, objective, do_ensemble, dh, label, intercept, n_dev_folds, verbose, average, seed, alpha_min, alpha_max, n_alphas, sample_labels, group_identical, annotated, nonlinearity, early_stopping=early_stopping, list_size=ls, repeats=repeats)
 
 
-def test_over_time(project_dir, subset, config_file, model_type, first_year, last_year, n_train=None, n_calib=0, penalty='l2', suffix='', loss='log', objective='f1', do_ensemble=True, dh=100, label='label', intercept=True, n_dev_folds=5, verbose=False, average='micro', seed=None, alpha_min=0.01, alpha_max=1000.0, n_alphas=8, sample_labels=False, group_identical=False, annotated_subset=None, n_terms=0, nonlinearity='tanh', init_lr=1e-4, min_epochs=2, max_epochs=100, patience=8, tol=1e-4, early_stopping=False, list_size=1, repeats=1):
+def test_over_time(project_dir, subset, config_file, model_type, first_year, last_year, n_train=None, n_calib=0, penalty='l2', suffix='', loss='log', objective='f1', do_ensemble=True, dh=100, label='label', intercept=True, n_dev_folds=5, verbose=False, average='micro', seed=None, alpha_min=0.01, alpha_max=1000.0, n_alphas=8, sample_labels=False, group_identical=False, annotated_subset=None, nonlinearity='tanh', init_lr=1e-4, min_epochs=2, max_epochs=100, patience=8, tol=1e-4, early_stopping=False, list_size=1, repeats=1):
     # Just run a regular model, one per year, training on the past, and save the reults
 
     log = {
@@ -152,7 +149,6 @@ def test_over_time(project_dir, subset, config_file, model_type, first_year, las
         'sample_labels': sample_labels,
         'group_identical': group_identical,
         'annotated_subset': annotated_subset,
-        'n_terms': n_terms,
         'nonlinearity': nonlinearity,
         'init_lr': init_lr,
         'min_epochs': min_epochs,
