@@ -38,7 +38,7 @@ def main():
     project = args[0]
 
     config_file = os.path.join('config', options.config)
-    n_train = int(options.n_train)
+    n_train = options.n_train
     n_calib = int(options.n_calib)
     first_year = int(options.first_year)
     last_year = int(options.last_year)
