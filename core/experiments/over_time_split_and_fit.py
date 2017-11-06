@@ -198,14 +198,13 @@ def test_over_time(project_dir, subset, config_file, model_type, first_year, las
     # load all labels
     label_dir = dirs.dir_labels(project_dir, subset)
     labels_df = fh.read_csv_to_df(os.path.join(label_dir, label + '.csv'), index_col=0, header=0)
-    n_items, n_classes = labels_df.shape
 
     # add in a stage to eliminate items with no labels
     print("Subsetting items with labels")
     label_sums_df = labels_df.sum(axis=1)
     labeled_item_selector = label_sums_df > 0
     labels_df = labels_df[labeled_item_selector]
-    n_items, n_classes = labels_df.shape
+    n_labeled_items, n_classes = labels_df.shape
     labeled_items = set(labels_df.index)
 
     train_items_labeled = [i for i in train_items_all if i in labeled_items]
@@ -248,9 +247,9 @@ def test_over_time(project_dir, subset, config_file, model_type, first_year, las
         if sample_labels:
             print("Sampling labels")
             # normalize the labels
-            temp = labels_df.values / np.array(labels_df.values.sum(axis=1).reshape((n_items, 1)), dtype=float)
-            samples = np.zeros([n_items, n_classes], dtype=int)
-            for i in range(n_items):
+            temp = labels_df.values / np.array(labels_df.values.sum(axis=1).reshape((n_labeled_items, 1)), dtype=float)
+            samples = np.zeros([n_labeled_items, n_classes], dtype=int)
+            for i in range(n_labeled_items):
                 index = np.random.choice(np.arange(n_classes), size=1, p=temp[i, :])
                 samples[i, index] = 1
             sampled_labels_df = pd.DataFrame(samples, index=labels_df.index, columns=labels_df.columns)
@@ -310,7 +309,7 @@ def test_over_time(project_dir, subset, config_file, model_type, first_year, las
         test_predictions = model.predict(X_test)
         test_predictions_df = pd.DataFrame(test_predictions, index=features_concat.get_items(), columns=[label])
         test_pred_probs = model.predict_probs(X_test)
-        n_items, n_labels = test_pred_probs.shape
+        _, n_labels = test_pred_probs.shape
         test_pred_probs_df = pd.DataFrame(test_pred_probs, index=features_concat.get_items(), columns=range(n_labels))
 
         #test_predictions_df, test_pred_probs_df, test_pred_proportions, _ = predict.predict(project_dir, model, model_name, subset, label, items_to_use=test_items, verbose=verbose, force_dense=force_dense)
@@ -376,7 +375,7 @@ def test_over_time(project_dir, subset, config_file, model_type, first_year, las
         test_predictions = model.predict(X_test)
         test_predictions_df = pd.DataFrame(test_predictions, index=features_concat.get_items(), columns=[label])
         test_pred_probs = model.predict_probs(X_test)
-        n_items, n_labels = test_pred_probs.shape
+        _, n_labels = test_pred_probs.shape
         test_pred_probs_df = pd.DataFrame(test_pred_probs, index=features_concat.get_items(), columns=range(n_labels))
 
         #test_predictions_df, test_pred_probs_df, test_pred_proportions, samples = predict.predict(project_dir, model, model_name, subset, label, items_to_use=test_items, verbose=verbose, force_dense=force_dense, group_identical=group_identical, n_samples=100)
