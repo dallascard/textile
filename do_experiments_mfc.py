@@ -6,10 +6,8 @@ from core.experiments import over_time_split_and_fit
 
 
 def main():
-    usage = "%prog project"
+    usage = "%prog project config.json"
     parser = OptionParser(usage=usage)
-    parser.add_option('--config', dest='config', default='default.json',
-                      help='Field to split on: default=%default')
     parser.add_option('--n_train', dest='n_train', default=None,
                       help='Number of training instances to use (0 for all): default=%default')
     parser.add_option('--n_calib', dest='n_calib', default=0,
@@ -36,8 +34,8 @@ def main():
 
     (options, args) = parser.parse_args()
     project = args[0]
+    config = args[1]
 
-    config_file = os.path.join('config', options.config)
     n_train = options.n_train
     n_calib = int(options.n_calib)
     first_year = int(options.first_year)
