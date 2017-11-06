@@ -243,8 +243,7 @@ class DecisionList:
 
     def train_resid(self, X_all, Y_all, w_all, col_names, name, output_dir=None, n_classes=2, objective='f1', penalty='l1', pos_label=1, do_ensemble=True, save_model=True):
         print("Training residual model")
-        #self._resid_model = train.train_lr_model_with_cv(X_all, Y_all, w_all, col_names, name, output_dir=output_dir, n_classes=n_classes, objective=objective, penalty=penalty, intercept=self._fit_intercept, n_dev_folds=5, alpha_min=0.01, alpha_max=1000.0, n_alphas=8, pos_label=pos_label, do_ensemble=do_ensemble, fit_cfms=False, fit_platt=False, save_model=save_model)
-        self._resid_model = train.train_blr_model_with_cv(X_all, Y_all, w_all, col_names, name, output_dir=output_dir, n_classes=n_classes, objective=objective, penalty=penalty, intercept=self._fit_intercept, n_dev_folds=5, alpha_min=0.01, alpha_max=1000.0, n_alphas=8, pos_label=pos_label, do_ensemble=do_ensemble, fit_cfms=False, fit_platt=False, save_model=save_model)
+        self._resid_model = train.train_lr_model_with_cv(X_all, Y_all, w_all, col_names, name, output_dir=output_dir, n_classes=n_classes, objective=objective, penalty=penalty, intercept=self._fit_intercept, n_dev_folds=5, alpha_min=0.01, alpha_max=1000.0, n_alphas=8, pos_label=pos_label, do_ensemble=do_ensemble, fit_cfms=False, fit_platt=False, save_model=save_model)
 
     def test(self, X, Y, w):
         running_error = 0.0

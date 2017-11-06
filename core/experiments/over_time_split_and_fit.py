@@ -298,7 +298,6 @@ def test_over_time(project_dir, subset, config_file, model_type, year, n_train=N
                 # Now train a model on the training data, saving the calibration data for calibration
 
 
-                """
                 print("Training a LR model")
                 model, dev_f1, dev_acc, dev_cal_mae, dev_cal_est = train.train_model_with_labels(project_dir, model_type, 'log', model_name, subset, sampled_labels_df, feature_defs, weights_df=weights_df, items_to_use=train_items, penalty=penalty, alpha_min=alpha_min, alpha_max=alpha_max, n_alphas=n_alphas, intercept=intercept, objective=objective, n_dev_folds=n_dev_folds, do_ensemble=do_ensemble, dh=dh, seed=seed, pos_label=pos_label, vocab=None, group_identical=group_identical, nonlinearity=nonlinearity, init_lr=init_lr, min_epochs=min_epochs, max_epochs=max_epochs, patience=patience, tol=tol, early_stopping=early_stopping, do_cfm=True, do_platt=True, verbose=verbose)
                 results_df.loc['cross_val'] = [dev_f1, dev_acc, dev_cal_mae, dev_cal_est]
@@ -360,7 +359,6 @@ def test_over_time(project_dir, subset, config_file, model_type, year, n_train=N
                 results_df.to_csv(os.path.join(dirs.dir_models(project_dir), model_name, 'accuracy.csv'))
                 output_df.to_csv(os.path.join(dirs.dir_models(project_dir), model_name, 'results.csv'))
 
-                """
 
                 # Now train a model on the training data, saving the calibration data for calibration
                 print("Training a model")
