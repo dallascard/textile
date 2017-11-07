@@ -529,6 +529,9 @@ class DL:
     def get_model_size(self):
         return 0
 
+    def get_feature_list(self):
+        return self._model._feature_names
+
     def save(self):
         #print("Saving model")
         joblib.dump(self._model, os.path.join(self._output_dir, self._name + '.pkl'))
@@ -551,6 +554,7 @@ class DL:
                   }
         fh.write_to_json(output, os.path.join(self._output_dir, self._name + '_metadata.json'), sort_keys=False)
         fh.write_to_json(self.get_col_names(), os.path.join(self._output_dir, self._name + '_col_names.json'), sort_keys=False)
+        fh.write_to_json(self.get_feature_list(), os.path.join(self._output_dir, self._name + '_feature_list.json'), sort_keys=False)
         #np.savez(os.path.join(self._output_dir, self._name + '_dev_info.npz'))
 
 
