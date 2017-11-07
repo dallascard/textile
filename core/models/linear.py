@@ -168,7 +168,7 @@ class LinearClassifier:
         elif self._loss_function == 'brier':
             return np.array(self._model.predict(X) > 0.5, dtype=int)
 
-    def predict_probs(self, X):
+    def predict_probs(self, X, do_platt=False):
         n_items, _ = X.shape
         full_probs = np.zeros([n_items, self._n_classes])
         # if we've saved a default label, predict that with 100% confidence
@@ -176,22 +176,20 @@ class LinearClassifier:
             default = np.argmax(self._train_proportions)
             full_probs[:, default] = 1.0
             return full_probs
-        elif self._loss_function == 'log':
-            # otherwise, get probabilities from the model
-            model_probs = self._model.predict_proba(X)
-            # map these probabilities back to the full set of classes
-            for i, cl in enumerate(self._model.classes_):
-                full_probs[:, cl] = model_probs[:, i]
+        else:
+            if do_platt and self._n_classes == 2:
+                scores = self.score(X)
+                corrected_scores = expit(self._platt_a * scores + self._platt_b)
+                full_probs[:, 0] = 1 - corrected_scores
+                full_probs[:, 1] = corrected_scores
+            else:
+                # otherwise, get probabilities from the model
+                model_probs = self._model.predict_proba(X)
+                # map these probabilities back to the full set of classes
+                for i, cl in enumerate(self._model.classes_):
+                    full_probs[:, cl] = model_probs[:, i]
             return full_probs
-        elif self._loss_function == 'brier':
-            # otherwise, get probabilities from the model
-            model_probs = self._model.predict(X)
-            # map these probabilities back to the full set of classes
-            full_probs[:, 0] = 1 - model_probs
-            full_probs[:, 1] = model_probs
-            full_probs = np.maximum(full_probs, np.zeros_like(full_probs))
-            full_probs = np.minimum(full_probs, np.ones_like(full_probs))
-            return full_probs
+
 
     def score(self, X):
         return self._model.decision_function(X)

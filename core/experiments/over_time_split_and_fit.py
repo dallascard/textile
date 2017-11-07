@@ -395,6 +395,10 @@ def test_over_time(project_dir, subset, config_file, model_type, first_year, las
         output_df.loc['CC_DL'] = [n_train_r, 'train', 'test', 'n/a', test_cc_estimate[1], test_cc_mae, np.nan, np.nan, np.nan]
         output_df.loc['PCC_DL'] = [n_train_r, 'train', 'test', 'n/a', test_pcc_estimate[1], test_pcc_mae, np.nan, np.nan, np.nan]
 
+        _, test_pcc_estimate_platt = model.predict_proportions(X_test, do_platt=True)
+        test_pcc_platt_mae = np.mean(np.abs(test_pcc_estimate_platt [1] - target_estimate))
+        output_df.loc['PCC_DL_platt2'] = [n_train_r, 'train', 'test', 'n/a', test_pcc_estimate_platt[1], test_pcc_platt_mae, np.nan, np.nan, np.nan]
+
         if n_calib > 0:
             cc_plus_cal_estimate = (test_cc_estimate[1] + calib_estimate) / 2.0
             pcc_plus_cal_estimate = (test_pcc_estimate[1] + calib_estimate) / 2.0

@@ -28,10 +28,10 @@ class Ensemble:
         pred_probs = self.predict_probs(X)
         return np.argmax(pred_probs, axis=1)
 
-    def predict_probs(self, X):
+    def predict_probs(self, X, do_platt=False):
         pred_prob_list = []
         for model in self._models.values():
-            probs = model.predict_probs(X)
+            probs = model.predict_probs(X, do_platt=do_platt)
             pred_prob_list.append(probs)
         tensor = np.array(pred_prob_list)
         return np.mean(tensor, axis=0)

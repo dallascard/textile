@@ -6,6 +6,7 @@ import tempfile
 import numpy as np
 from scipy import sparse
 from scipy.stats import beta
+from scipy.special import expit
 from sklearn.externals import joblib
 from sklearn.linear_model import LogisticRegression
 from sklearn.linear_model import LinearRegression, Lasso, Ridge
@@ -187,7 +188,7 @@ class DecisionList:
         predictions = np.argmax(probs, axis=1)
         return predictions
 
-    def predict_probs(self, X):
+    def predict_probs(self, X, do_platt=False):
         n_items, n_features = X.shape
 
         # make a copy of the data and zero the columns that don't factor into the linear model
@@ -196,8 +197,7 @@ class DecisionList:
             feature_index = self._col_names.index(feature)
             X_copy[:, feature_index] = 0
 
-        # apply the residual prediction to all items
-        probs = self._resid_model.predict_probs(X_copy)
+        probs = self._resid_model.predict_probs(X_copy, do_platt=do_platt)
 
         # then go through the decision list in reverse order, assigning observed proportions to those items
         for depth in range(self._max_depth-1, -1, -1):
@@ -243,7 +243,7 @@ class DecisionList:
 
     def train_resid(self, X_all, Y_all, w_all, col_names, name, output_dir=None, n_classes=2, objective='f1', penalty='l1', pos_label=1, do_ensemble=True, save_model=True):
         print("Training residual model")
-        self._resid_model = train.train_lr_model_with_cv(X_all, Y_all, w_all, col_names, name, output_dir=output_dir, n_classes=n_classes, objective=objective, penalty=penalty, intercept=self._fit_intercept, n_dev_folds=5, alpha_min=0.01, alpha_max=1000.0, n_alphas=8, pos_label=pos_label, do_ensemble=do_ensemble, fit_cfms=False, fit_platt=False, save_model=save_model)
+        self._resid_model = train.train_lr_model_with_cv(X_all, Y_all, w_all, col_names, name, output_dir=output_dir, n_classes=n_classes, objective=objective, penalty=penalty, intercept=self._fit_intercept, n_dev_folds=5, alpha_min=0.01, alpha_max=1000.0, n_alphas=8, pos_label=pos_label, do_ensemble=do_ensemble, fit_cfms=False, fit_platt=True, save_model=save_model)
 
     def test(self, X, Y, w):
         running_error = 0.0
@@ -468,7 +468,7 @@ class DL:
         else:
             return self._model.predict(X)
 
-    def predict_probs(self, X):
+    def predict_probs(self, X, do_platt=False):
         n_items, _ = X.shape
         full_probs = np.zeros([n_items, self._n_classes])
         # if we've saved a default label, predict that with 100% confidence
@@ -477,10 +477,10 @@ class DL:
             full_probs[:, default] = 1.0
             return full_probs
         else:
-            return self._model.predict_probs(X)
+            return self._model.predict_probs(X, do_platt=do_platt)
 
     def predict_proportions(self, X=None, weights=None, do_cfm=False, do_platt=False):
-        pred_probs = self.predict_probs(X)
+        pred_probs = self.predict_probs(X, do_platt=do_platt)
         predictions = np.argmax(pred_probs, axis=1)
         cc = calibration.cc(predictions, self._n_classes, weights)
         pcc = calibration.pcc(pred_probs, weights)
