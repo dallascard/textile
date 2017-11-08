@@ -45,7 +45,10 @@ def preprocess_labels(project_dir, subset, label_name, metadata_fields):
         if k_i % 10000 == 0 and k_i > 0:
             print(k_i)
         item = data[key]
-        labels = item[label_name]
+        if label_name in item:
+            labels = item[label_name]
+        else:
+            labels = 0
         if type(labels) == dict:
             label_set.update(list(labels.keys()))
         else:
@@ -90,7 +93,12 @@ def preprocess_labels(project_dir, subset, label_name, metadata_fields):
         item = data[key]
 
         # TODO: make this faster; avoid inserting into dataframe
-        labels = item[label_name]
+        #labels = item[label_name]
+        if label_name in item:
+            labels = item[label_name]
+        else:
+            labels = 0
+
         if type(labels) == dict:
             for k, v in labels.items():
                 labels_matrix[k_i, label_index[k]] = v
