@@ -78,7 +78,7 @@ def main():
                 text += '\n\n' + line.strip()
 
     print("Total training articles = %d" % len(data))
-    most_common = category_counts.most_common(n=50)
+    most_common = category_counts.most_common(n=100)
     for t, c in most_common:
         print(t, c)
 
@@ -99,7 +99,7 @@ def main():
             # save the current article
             if key is not None and terms is not None:
                 data[key] = {'text': title + '\n\n' + text, 'type': type, 'year': 1988}
-                for term in categories:
+                for term, count in most_common:
                     if term in terms:
                         data[key][term] = {0: 0, 1: 1}
                     else:
