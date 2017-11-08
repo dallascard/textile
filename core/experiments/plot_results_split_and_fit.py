@@ -32,7 +32,7 @@ def main():
     print(values)
     print(n_files)
     values = values / float(n_files)
-    df = pd.DataFrame(values, columns=df.columns, index=df.index)
+    df = pd.DataFrame(values, columns=['MAE'], index=df.index)
     print(df)
 
 
