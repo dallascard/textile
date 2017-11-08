@@ -1,5 +1,7 @@
 from optparse import OptionParser
 
+import pandas as pd
+
 from ..util import file_handling as fh
 
 
@@ -16,15 +18,18 @@ def main():
     files = args
 
     df = None
+    values = None
     n_files = 0
     for f in files:
         n_files += 1
         df_f = fh.read_csv_to_df(f)
-        if df is None:
+        if values is None:
             df = df_f
+            values = df.values.copy()
         else:
-            df.values += df_f.values
-    df.values = df.values / float(n_files)
+            values += df_f.values
+    values /= float(n_files)
+    df = pd.DataFrame(values, columns=df.columns, index=df.index)
     print(df)
 
 
