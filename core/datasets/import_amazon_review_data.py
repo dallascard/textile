@@ -66,7 +66,7 @@ def import_review_data(reviews_file, project_dir, prop):
                 data[k]['asin'] = review['asin']
                 asins.add(review['asin'])
                 reviewers.add(review['reviewerID'])
-                data[k]['text'] = review['reviewText']
+                data[k]['text'] = review['summary'] + '\n\n' + review['reviewText']
                 data[k]['rating'] = review['overall']
                 data[k]['summary'] = review['summary']
                 data[k]['label'] = {0: n_votes - n_helpful_votes,  1: n_helpful_votes}
