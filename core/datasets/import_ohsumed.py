@@ -77,16 +77,6 @@ def main():
             else:
                 text += '\n\n' + line.strip()
 
-    print("Total training articles = %d" % len(data))
-    most_common = category_counts.most_common(n=100)
-    for t, c in most_common:
-        print(t, c)
-
-    for key in data:
-        for category in categories:
-            if category not in data[key]:
-                data[key][category] = {0: 1, 1: 0}
-
     key = None
     field = None
     text = ''
@@ -96,14 +86,10 @@ def main():
     count = 0
     for line in test_lines:
         if line.startswith('.I'):
-            # save the current article
             if key is not None and terms is not None:
-                data[key] = {'text': title + '\n\n' + text, 'type': type, 'year': 1988}
-                for term, count in most_common:
-                    if term in terms:
-                        data[key][term] = {0: 0, 1: 1}
-                    else:
-                        data[key][term] = {0: 1, 1: 0}
+                data[key] = {'text': title + '\n\n' + text, 'type': type, 'year': 1987}
+                for term in terms:
+                    data[key][term] = {0: 0, 1: 1}
             # go on to the next article
             key = line.split()[1].strip()
             text = ''
@@ -127,7 +113,9 @@ def main():
         elif field == 'terms':
             terms = line.strip().split(';')
             terms = [term.strip() for term in terms]
-            #category_counts.update(terms)
+            for term in terms:
+                if term not in categories:
+                    categories[term] = len(categories)
         elif field == 'title':
             title = line.strip()
         elif field == 'type':
@@ -139,6 +127,18 @@ def main():
                 text += '\n\n' + line.strip()
 
     print("Total articles = %d" % len(data))
+
+    most_common = category_counts.most_common(n=100)
+    for t, c in most_common:
+        print(t, c)
+
+    for k_i, key in enumerate(data):
+        for category in categories:
+            if category not in data[key]:
+                data[key][category] = {0: 1, 1: 0}
+        if k_i % 10000 == 0:
+            print(k_i)
+
 
     fh.makedirs(dirs.dir_data_raw(project))
     fh.write_to_json(data, os.path.join(dirs.dir_data_raw(project), 'all.json'))
