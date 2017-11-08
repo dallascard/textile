@@ -23,8 +23,8 @@ def main():
         if df is None:
             df = df_f
         else:
-            df += df_f
-    df = df / float(n_files)
+            df.values += df_f.values
+    df.values = df.values / float(n_files)
     print(df)
 
 
