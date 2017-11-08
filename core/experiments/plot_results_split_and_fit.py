@@ -34,7 +34,7 @@ def main():
     df = pd.DataFrame(values, index=df.index)
     print(df.mean(axis=1))
     print(df.var(axis=1))
-    print(df)
+    #print(df)
 
 
 if __name__ == '__main__':
