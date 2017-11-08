@@ -428,6 +428,8 @@ class DL:
                 else:
                     print("Using training data to do feature selection (double-dipping?)")
                     feature_list = self.feature_selection(X_train, Y_train, train_weights, col_names, interactive, stoplist)
+            else:
+                print("Using feature list:", feature_list)
 
             self._model = DecisionList(alpha=self._alpha, penalty=self._penalty, fit_intercept=self._fit_intercept, max_depth=self._max_depth)
             self._model.fit(X_train, Y_train, train_weights, feature_list, col_names)

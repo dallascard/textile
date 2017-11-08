@@ -30,7 +30,7 @@ def main():
         n_rows, n_cols = df_f.shape
         if values is None:
             df = df_f
-            values = np.zeros([n_rows, n_files])
+            values = np.zeros([n_rows, n_files-1])
         values[:, f_i] = df_f['MAE'].values
 
     df = pd.DataFrame(values, index=df.index)

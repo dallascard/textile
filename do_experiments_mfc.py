@@ -52,7 +52,7 @@ def main():
 
     for subset, label in pairs:
         print("\n\nStarting", subset, label)
-        over_time_split_and_fit.test_over_time(project, subset, config, model_type, first_year, last_year, n_train, n_calib, penalty, suffix, loss='log', objective=objective, do_ensemble=True, label=label, intercept=True, sample_labels=sample_labels, n_dev_folds=5, list_size=ls, repeats=repeats)
+        over_time_split_and_fit.test_over_time(project, subset, config, model_type, 'year', first_year, last_year, n_train, n_calib, penalty, suffix, loss='log', objective=objective, do_ensemble=True, label=label, intercept=True, sample_labels=sample_labels, n_dev_folds=5, list_size=ls, repeats=repeats)
 
 if __name__ == '__main__':
     main()
