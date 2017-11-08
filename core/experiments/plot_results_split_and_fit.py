@@ -9,8 +9,8 @@ from ..util import file_handling as fh
 def main():
     usage = "%prog csv_results_files"
     parser = OptionParser(usage=usage)
-    #parser.add_option('--keyword', dest='key', default=None,
-    #                  help='Keyword argument: default=%default')
+    parser.add_option('--output', dest='output', default=None,
+                      help='Output filename (optional): default=%default')
     #parser.add_option('--boolarg', action="store_true", dest="boolarg", default=False,
     #                  help='Keyword argument: default=%default')
 
@@ -18,6 +18,8 @@ def main():
     (options, args) = parser.parse_args()
     files = args
     n_files = len(files)
+
+    output = options.output
 
     df = None
     values = None
@@ -34,7 +36,9 @@ def main():
     df = pd.DataFrame(values, index=df.index)
     print(df.mean(axis=1))
     print(df.var(axis=1))
-    #print(df)
+
+    if output is not None:
+        df.to_csv(output)
 
 
 if __name__ == '__main__':
