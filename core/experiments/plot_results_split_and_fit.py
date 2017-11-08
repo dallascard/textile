@@ -26,9 +26,9 @@ def main():
         df_f = fh.read_csv_to_df(f)
         if values is None:
             df = df_f
-            values = df.as_matrix().copy()
+            values = df['MAE'].values.copy()
         else:
-            values += df_f.as_matrix()
+            values += df_f['MAE'].values
     print(values)
     print(n_files)
     values = values / float(n_files)
