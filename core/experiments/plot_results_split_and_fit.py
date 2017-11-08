@@ -21,14 +21,15 @@ def main():
     values = None
     n_files = 0
     for f in files:
+        print(f)
         n_files += 1
         df_f = fh.read_csv_to_df(f)
         if values is None:
             df = df_f
-            values = df.values.copy()
+            values = df.as_matrix.copy()
         else:
-            values += df_f.values
-    values /= float(n_files)
+            values += df_f.as_matrix()
+    values = values / float(n_files)
     df = pd.DataFrame(values, columns=df.columns, index=df.index)
     print(df)
 
