@@ -26,6 +26,7 @@ def main():
         n_files += 1
         df_f = fh.read_csv_to_df(f)
         if values is None:
+            df = df_f
             n_rows, n_cols = df_f.shape
             values = np.zeros([n_rows, n_files])
         values[:, f_i] = df_f['MAE'].values
