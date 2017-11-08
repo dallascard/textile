@@ -22,16 +22,15 @@ def main():
     df = None
     values = None
     for f_i, f in enumerate(files):
-        print(f)
         n_files += 1
         df_f = fh.read_csv_to_df(f)
+        n_rows, n_cols = df_f.shape
+        print(n_rows, n_cols)
         if values is None:
             df = df_f
-            n_rows, n_cols = df_f.shape
             values = np.zeros([n_rows, n_files])
         values[:, f_i] = df_f['MAE'].values
 
-    values = values / float(n_files)
     df = pd.DataFrame(values, index=df.index)
     print(df.mean(axis=1))
     print(df.var(axis=1))
