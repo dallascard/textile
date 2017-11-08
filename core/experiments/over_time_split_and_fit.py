@@ -20,10 +20,12 @@ def main():
                       help='Number of training instances to use (0 for all): default=%default')
     parser.add_option('--n_calib', dest='n_calib', default=0,
                       help='Number of test instances to use for calibration: default=%default')
-    parser.add_option('--first_test_year', dest='first_year', default=2011,
-                      help='Use training data from before this year: default=%default')
-    parser.add_option('--last_test_year', dest='last_year', default=2012,
-                      help='Last year of test data to use: default=%default')
+    parser.add_option('--field', dest='field', default='year',
+                      help='Field on which to split for train and test: default=%default')
+    parser.add_option('--test_start', dest='test_start', default=2011,
+                      help='Use training data from before this field value: default=%default')
+    parser.add_option('--test_end', dest='test_end', default=2012,
+                      help='Last field value of test data to use: default=%default')
     parser.add_option('--sample', action="store_true", dest="sample", default=False,
                       help='Sample labels instead of averaging: default=%default')
     parser.add_option('--suffix', dest='suffix', default='',
@@ -83,8 +85,9 @@ def main():
     if n_train is not None:
         n_train = int(n_train)
     n_calib = int(options.n_calib)
-    first_year = int(options.first_year)
-    last_year = int(options.last_year)
+    field = options.field
+    test_start = int(options.test_start)
+    test_end = int(options.test_end)
     sample_labels = options.sample
     suffix = options.suffix
     model_type = options.model
@@ -117,10 +120,10 @@ def main():
 
     average = 'micro'
 
-    test_over_time(project_dir, subset, config_file, model_type, first_year, last_year, n_train, n_calib, penalty, suffix, loss, objective, do_ensemble, dh, label, intercept, n_dev_folds, verbose, average, seed, alpha_min, alpha_max, n_alphas, sample_labels, group_identical, annotated, nonlinearity, early_stopping=early_stopping, list_size=ls, repeats=repeats)
+    test_over_time(project_dir, subset, config_file, model_type, field, test_start, test_end, n_train, n_calib, penalty, suffix, loss, objective, do_ensemble, dh, label, intercept, n_dev_folds, verbose, average, seed, alpha_min, alpha_max, n_alphas, sample_labels, group_identical, annotated, nonlinearity, early_stopping=early_stopping, list_size=ls, repeats=repeats)
 
 
-def test_over_time(project_dir, subset, config_file, model_type, first_year, last_year, n_train=None, n_calib=0, penalty='l2', suffix='', loss='log', objective='f1', do_ensemble=True, dh=100, label='label', intercept=True, n_dev_folds=5, verbose=False, average='micro', seed=None, alpha_min=0.01, alpha_max=1000.0, n_alphas=8, sample_labels=False, group_identical=False, annotated_subset=None, nonlinearity='tanh', init_lr=1e-4, min_epochs=2, max_epochs=100, patience=8, tol=1e-4, early_stopping=False, list_size=1, repeats=1):
+def test_over_time(project_dir, subset, config_file, model_type, field, test_start, test_end, n_train=None, n_calib=0, penalty='l2', suffix='', loss='log', objective='f1', do_ensemble=True, dh=100, label='label', intercept=True, n_dev_folds=5, verbose=False, average='micro', seed=None, alpha_min=0.01, alpha_max=1000.0, n_alphas=8, sample_labels=False, group_identical=False, annotated_subset=None, nonlinearity='tanh', init_lr=1e-4, min_epochs=2, max_epochs=100, patience=8, tol=1e-4, early_stopping=False, list_size=1, repeats=1):
     # Just run a regular model, one per year, training on the past, and save the reults
 
     log = {
@@ -128,8 +131,9 @@ def test_over_time(project_dir, subset, config_file, model_type, first_year, las
         'subset': subset,
         'config_file': config_file,
         'model_type': model_type,
-        'first_year': first_year,
-        'last_year': last_year,
+        'field': field,
+        'test_start': test_start,
+        'test_end': test_end,
         'n_train': n_train,
         'n_calib': n_calib,
         'penalty': penalty,
@@ -176,19 +180,20 @@ def test_over_time(project_dir, subset, config_file, model_type, first_year, las
     # load the file that contains metadata about each item
     metadata_file = os.path.join(dirs.dir_subset(project_dir, subset), 'metadata.csv')
     metadata = fh.read_csv_to_df(metadata_file)
-    field_vals = list(set(metadata['year'].values))
+    field_vals = list(set(metadata[field].values))
     field_vals.sort()
-    print("Splitting data according to :", field_vals)
+    print("Splitting data according to %s", field)
+    print("Values:", field_vals)
 
-    print("\nTesting on %s to %s" % (first_year, last_year))
+    print("\nTesting on %s to %s" % (test_start, test_end))
     # first, split into training and non-train data based on the field of interest
 
-    test_selector_all = (metadata['year'] >= int(first_year)) & (metadata['year'] <= int(last_year))
+    test_selector_all = (metadata[field] >= int(test_start)) & (metadata[field] <= int(test_end))
     test_subset_all = metadata[test_selector_all]
     test_items_all = test_subset_all.index.tolist()
     n_test_all = len(test_items_all)
 
-    train_selector_all = metadata['year'] < int(first_year)
+    train_selector_all = metadata[field] < int(test_start)
     train_subset_all = metadata[train_selector_all]
     train_items_all = list(train_subset_all.index)
     n_train_all = len(train_items_all)
@@ -214,7 +219,7 @@ def test_over_time(project_dir, subset, config_file, model_type, first_year, las
 
     for r in range(repeats):
         print("* Starting repetition %d *" % r)
-        model_name = model_basename + '_' + str(first_year) + '-' + str(last_year) + '_' + str(r)
+        model_name = model_basename + '_' + str(test_start) + '-' + str(test_end) + '_' + str(r)
         if n_train is not None and len(train_items_labeled) >= n_train:
             np.random.shuffle(train_items_labeled)
             train_items = np.random.choice(train_items_labeled, size=n_train, replace=False)
