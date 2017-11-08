@@ -29,7 +29,7 @@ def main():
     data, categories, category_counts = parse_data(train_lines, data, categories, category_counts, update_counts=True)
     print("Total training articles = %d" % len(data))
 
-    data, categories, category_counts = parse_data(train_lines, data, categories, category_counts, update_counts=False)
+    data, categories, category_counts = parse_data(test_lines, data, categories, category_counts, update_counts=False)
     print("Total articles = %d" % len(data))
 
     most_common = category_counts.most_common(n=100)
