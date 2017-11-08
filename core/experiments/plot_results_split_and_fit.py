@@ -29,6 +29,8 @@ def main():
             values = df.as_matrix().copy()
         else:
             values += df_f.as_matrix()
+    print(values)
+    print(n_files)
     values = values / float(n_files)
     df = pd.DataFrame(values, columns=df.columns, index=df.index)
     print(df)
