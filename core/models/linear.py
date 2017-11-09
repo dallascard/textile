@@ -12,16 +12,16 @@ from sklearn.linear_model import LinearRegression, Lasso, Ridge
 from ..util import file_handling as fh
 from ..models import evaluation, calibration
 from ..main import train
+from .core.models import lrb
 
 
 class LinearClassifier:
     """
     Wrapper class for logistic regression from sklearn
     """
-    def __init__(self, alpha, loss_function='log', penalty='l2', fit_intercept=True, output_dir=None, name='model', pos_label=1, save_data=False, do_cfm=False, do_platt=False):
+    def __init__(self, alpha, penalty='l2', fit_intercept=True, output_dir=None, name='model', pos_label=1, save_data=False, do_cfm=False, do_platt=False, lower=None):
         self._model_type = 'LR'
         self._alpha = alpha
-        self._loss_function = loss_function
         self._penalty = penalty
         self._fit_intercept = fit_intercept
         self._n_classes = None
@@ -47,6 +47,7 @@ class LinearClassifier:
         self._platt_a = None
         self._platt_b = None
         self._platt_T = None
+        self._lower = lower
 
         # create a variable to store the label proportions in the training data
         self._train_proportions = None
@@ -57,9 +58,6 @@ class LinearClassifier:
 
     def get_model_type(self):
         return self._model_type
-
-    def get_loss_function(self):
-        return self._loss_function
 
     def set_model(self, model, train_proportions, col_names, n_classes, X_train=None, Y_train=None, train_weights=None):
         self._col_names = col_names
@@ -87,8 +85,6 @@ class LinearClassifier:
         n_train_items, n_features = X_train.shape
         _, n_classes = Y_train.shape
         self._n_classes = n_classes
-        if self._loss_function == 'brier' and self._n_classes != 2:
-            sys.exit("Only 2-class problems supported with brier score")
 
         # store the proportion of class labels in the training data
         if train_weights is None:
@@ -109,10 +105,12 @@ class LinearClassifier:
             self._model = None
 
         else:
-            if self._loss_function == 'log':
+            if self._lower is None:
                 self._model = LogisticRegression(penalty=self._penalty, C=self._alpha, fit_intercept=self._fit_intercept)
             else:
-                sys.exit('Loss function %s not supported' % self._loss_function)
+                assert self._penalty == 'l1'
+                self._model = lrb.LogisticRegressionBounded(C=self._alpha, fit_intercept=self._fit_intercept, lower=self._lower)
+
             # train the model using a vector of labels
             self._model.fit(X_train, train_labels, sample_weight=train_weights)
 
@@ -163,10 +161,8 @@ class LinearClassifier:
             # else, get the model to make predictions
             n_items, _ = X.shape
             return np.ones(n_items, dtype=int) * np.argmax(self._train_proportions)
-        elif self._loss_function == 'log':
+        else:
             return self._model.predict(X)
-        elif self._loss_function == 'brier':
-            return np.array(self._model.predict(X) > 0.5, dtype=int)
 
     def predict_probs(self, X, do_platt=False):
         n_items, _ = X.shape
@@ -240,10 +236,8 @@ class LinearClassifier:
     def get_active_classes(self):
         if self._model is None:
             return []
-        elif self._loss_function == 'log':
+        else:
             return self._model.classes_
-        elif self._loss_function == 'brier':
-            return [0, 1]
 
     def get_default(self):
         return np.argmax(self._train_proportions)
@@ -254,41 +248,32 @@ class LinearClassifier:
     def get_coefs(self, target_class=0):
         coefs = zip(self._col_names, np.zeros(len(self._col_names)))
         if self._model is not None:
-            if self._loss_function == 'log':
-                for i, cl in enumerate(self._model.classes_):
-                    if cl == target_class:
-                        coefs = zip(self._col_names, self._model.coef_[i])
-                        break
-            elif self._loss_function == 'brier':
-                coefs = zip(self._col_names, self._model.coef_)
+            for i, cl in enumerate(self._model.classes_):
+                if cl == target_class:
+                    coefs = zip(self._col_names, self._model.coef_[i])
+                    break
         return coefs
 
     def get_intercept(self, target_class=0):
         # if we've saved a default value, there are no intercepts
         intercept = 0
         if self._model is not None:
-            # otherwise, see if the model an intercept for this class
-            if self._loss_function == 'log':
-                for i, cl in enumerate(self._model.classes_):
-                    if cl == target_class:
-                        intercept = self._model.intercept_[i]
-                        break
-            elif self._loss_function == 'brier':
-                intercept = self._model.intercept_
+            # otherwise, see if the model has an intercept for this class
+            for i, cl in enumerate(self._model.classes_):
+                if cl == target_class:
+                    intercept = self._model.intercept_[i]
+                    break
         return intercept
 
     def get_model_size(self):
         n_nonzeros_coefs = 0
         if self._model is None:
             return 0
-        elif self._loss_function == 'log':
+        else:
             coefs = self._model.coef_
             for coef_list in coefs:
                 n_nonzeros_coefs += np.sum([1.0 for c in coef_list if c != 0])
             return n_nonzeros_coefs
-        elif self._loss_function == 'brier':
-            # TODO implement this
-            return 0
 
     def save(self):
         #print("Saving model")
@@ -311,7 +296,6 @@ class LinearClassifier:
                     all_coefs[str(cl)] = coefs_sorted
                     all_intercepts[str(cl)] = self.get_intercept(cl)
         output = {'model_type': 'LR',
-                  'loss': self._loss_function,
                   'alpha': self.get_alpha(),
                   'penalty': self.get_penalty(),
                   'intercepts': all_intercepts,
@@ -342,7 +326,6 @@ def load_from_file(model_dir, name):
     penalty = input['penalty']
     fit_intercept = input['fit_intercept']
     pos_label = input['pos_label']
-    loss = input['loss']
 
     save_data = False
     if 'save_data' in input:
@@ -357,7 +340,7 @@ def load_from_file(model_dir, name):
         Y_train = training_data['Y_train']
         train_weights = training_data['training_weights']
 
-    classifier = LinearClassifier(alpha, loss, penalty, fit_intercept, output_dir=model_dir, name=name, pos_label=pos_label, save_data=save_data)
+    classifier = LinearClassifier(alpha, penalty, fit_intercept, output_dir=model_dir, name=name, pos_label=pos_label, save_data=save_data)
     model = joblib.load(os.path.join(model_dir, name + '.pkl'))
     classifier.set_model(model, train_proportions, col_names, n_classes, X_train, Y_train, train_weights)
     dev_info = np.load(os.path.join(model_dir, name + '_dev_info.npz'))

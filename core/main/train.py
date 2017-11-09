@@ -98,7 +98,8 @@ def train_model_with_labels(project_dir, model_type, loss, model_name, subset, l
                             objective='f1', n_dev_folds=5, save_model=True, do_ensemble=True, dh=0, seed=None,
                             pos_label=1, vocab=None, group_identical=False, nonlinearity='tanh',
                             init_lr=1e-4, min_epochs=2, max_epochs=100, patience=8, tol=1e-4, early_stopping=True,
-                            list_size=10, do_cfm=False, do_platt=False, dl_feature_list=None, verbose=True):
+                            list_size=10, do_cfm=False, do_platt=False, dl_feature_list=None,
+                            lower=None, verbose=True):
 
     features_dir = dirs.dir_features(project_dir, subset)
     n_items, n_classes = labels_df.shape
@@ -255,7 +256,7 @@ def train_model_with_labels(project_dir, model_type, loss, model_name, subset, l
                 train_indices = train_splits[fold]
                 dev_indices = dev_splits[fold]
                 name = model_name + '_' + str(fold)
-                model = linear.LinearClassifier(alpha, loss_function=loss, penalty=penalty, fit_intercept=intercept, output_dir=output_dir, name=name, pos_label=pos_label, do_cfm=do_cfm, do_platt=do_platt)
+                model = linear.LinearClassifier(alpha, penalty=penalty, fit_intercept=intercept, output_dir=output_dir, name=name, pos_label=pos_label, do_cfm=do_cfm, do_platt=do_platt, lower=lower)
 
                 X_train = X[train_indices, :]
                 Y_train = Y[train_indices, :]
@@ -348,7 +349,7 @@ def train_model_with_labels(project_dir, model_type, loss, model_name, subset, l
 
         else:
             printv("Training full model", verbose)
-            full_model = linear.LinearClassifier(best_alpha, loss_function=loss, penalty=penalty, fit_intercept=intercept, output_dir=output_dir, name=model_name, pos_label=pos_label)
+            full_model = linear.LinearClassifier(best_alpha, penalty=penalty, fit_intercept=intercept, output_dir=output_dir, name=model_name, pos_label=pos_label, lower=lower)
             X, Y, w = prepare_data(X, Y, weights, loss=loss)
             full_model.fit(X, Y, train_weights=w, col_names=col_names)
             if save_model:
@@ -569,7 +570,7 @@ def train_model_with_labels(project_dir, model_type, loss, model_name, subset, l
     return full_model, best_dev_f1, best_dev_acc, best_dev_cal_mae, best_dev_cal_est
 
 
-def train_lr_model_with_cv(X, Y, weights, col_names, basename, output_dir=None, n_classes=2, objective='f1', penalty='l2', intercept=True, n_dev_folds=5, alpha_min=0.01, alpha_max=1000.0, n_alphas=8, pos_label=1, do_ensemble=False, fit_platt=False, fit_cfms=False, save_model=True, verbose=True):
+def train_lr_model_with_cv(X, Y, weights, col_names, basename, output_dir=None, n_classes=2, objective='f1', penalty='l2', intercept=True, n_dev_folds=5, alpha_min=0.01, alpha_max=1000.0, n_alphas=8, pos_label=1, do_ensemble=False, fit_platt=False, fit_cfms=False, save_model=True, lower=None, verbose=True):
     loss = 'log'
     kfold = KFold(n_splits=n_dev_folds, shuffle=True)
     if n_alphas > 1:
@@ -605,7 +606,7 @@ def train_lr_model_with_cv(X, Y, weights, col_names, basename, output_dir=None, 
             dev_indices = dev_splits[fold]
 
             name = basename + '_temp_' + str(fold)
-            model = linear.LinearClassifier(alpha, loss_function=loss, penalty=penalty, fit_intercept=intercept, output_dir=output_dir, name=name, pos_label=pos_label, do_cfm=fit_cfms, do_platt=fit_platt)
+            model = linear.LinearClassifier(alpha, penalty=penalty, fit_intercept=intercept, output_dir=output_dir, name=name, pos_label=pos_label, do_cfm=fit_cfms, do_platt=fit_platt, lower=lower)
 
             X_train = X[train_indices, :]
             Y_train = Y[train_indices, :]
@@ -698,7 +699,7 @@ def train_lr_model_with_cv(X, Y, weights, col_names, basename, output_dir=None, 
         if verbose:
             print("Training full model")
         name = basename + '_full'
-        full_model = linear.LinearClassifier(best_alpha, loss_function=loss, penalty=penalty, fit_intercept=intercept, output_dir=output_dir, name=name, pos_label=pos_label)
+        full_model = linear.LinearClassifier(best_alpha, penalty=penalty, fit_intercept=intercept, output_dir=output_dir, name=name, pos_label=pos_label, lower=lower)
         full_model.fit(X, Y, train_weights=weights, col_names=col_names)
         if save_model:
             full_model.save()
