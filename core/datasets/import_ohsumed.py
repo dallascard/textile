@@ -26,10 +26,10 @@ def main():
     category_counts = Counter()
     data = {}
 
-    data, categories, category_counts = parse_data(train_lines, data, categories, category_counts, update_counts=True)
+    data, categories, category_counts = parse_data(1987, train_lines, data, categories, category_counts, update_counts=True)
     print("Total training articles = %d" % len(data))
 
-    data, categories, category_counts = parse_data(test_lines, data, categories, category_counts, update_counts=False)
+    data, categories, category_counts = parse_data(1988, test_lines, data, categories, category_counts, update_counts=False)
     print("Total articles = %d" % len(data))
 
     most_common = category_counts.most_common(n=100)
@@ -50,7 +50,7 @@ def main():
     fh.write_to_json(most_common, os.path.join(dirs.dir_data_raw(project), 'most_common_categories.json'), sort_keys=False)
 
 
-def parse_data(lines, data, categories, category_counts, update_counts=False):
+def parse_data(year, lines, data, categories, category_counts, update_counts=False):
     key = None
     field = None
     text = ''
@@ -62,7 +62,7 @@ def parse_data(lines, data, categories, category_counts, update_counts=False):
         if line.startswith('.I'):
             # save the current article
             if key is not None and terms is not None:
-                data[key] = {'text': title + '\n\n' + text, 'type': type, 'year': 1987}
+                data[key] = {'text': title + '\n\n' + text, 'type': type, 'year': year}
                 for term in terms:
                     data[key][term] = 1
             # go on to the next article
