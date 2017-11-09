@@ -71,7 +71,7 @@ class DecisionList:
                     #indices = Y[:, j] == 1
                     #counts[j, :] = X[indices, :].T.dot(w[indices]) + 1.0
                     # not adding smoothing...
-                    self._present_obs[depth, j] = np.sum(Y[present_indices, j] * w[present_indices]) + 0.1
+                    self._present_obs[depth, j] = np.sum(Y[present_indices, j] * w[present_indices])
 
                 # subset the rows without that feature
                 if sparse.issparse(X):
