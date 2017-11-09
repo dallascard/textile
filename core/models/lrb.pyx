@@ -137,6 +137,9 @@ class LogisticRegressionBounded:
             self.intercept_ = [0]
             self.coef_ = self._w.reshape((1, n_features))
 
+        # TODO: make this adaptive
+        self.classes_ = np.array([0, 1])
+
 
     def predict(self, X):
         return np.array(X.dot(self.coef_[0]) + self.intercept_ > 0, dtype=int)
