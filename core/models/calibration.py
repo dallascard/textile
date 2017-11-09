@@ -89,7 +89,7 @@ def compute_acc(labels, predictions, n_classes, weights=None, do_normalization=T
 def compute_acc_median_sweep(labels, pred_probs, n_classes, weights=None, do_normalization=True):
     assert n_classes == 2
     cfms = {}
-    thresholds = np.unique(pred_probs[:, 1])
+    thresholds = [-1] + np.unique(pred_probs[:, 1]).tolist()
     thresholds.sort()
     for t in thresholds[:-1]:
         predictions = np.array(pred_probs[:, 1] > t, dtype=int)

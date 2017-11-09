@@ -131,7 +131,7 @@ class LinearClassifier:
 
         dev_labels = np.argmax(Y_dev, axis=1)
         dev_pred = self.predict(X_dev)
-        dev_pred_probs = self.predict_probs(X_dev)
+        dev_pred_probs = self.predict_probs(X_dev, do_platt=False)
         self._dev_acc = evaluation.acc_score(dev_labels, dev_pred, n_classes=n_classes, weights=dev_weights)
         self._dev_f1 = evaluation.f1_score(dev_labels, dev_pred, n_classes=n_classes, pos_label=self._pos_label, weights=dev_weights)
         self._dev_acc_cfm = calibration.compute_acc(dev_labels, dev_pred, n_classes, weights=dev_weights)
