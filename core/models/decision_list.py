@@ -333,6 +333,56 @@ class DL:
 
     def feature_selection(self, X, Y, w, orig_col_names, interactive=False, stoplist=None):
 
+        if interactive:
+            return self.feature_selection_interactive(X, Y, w, orig_col_names)
+        else:
+            _, n_classes = Y.shape
+            self._n_classes = n_classes
+            assert n_classes == 2
+
+            col_names = orig_col_names[:]
+
+            features = []
+
+            while len(features) < self._max_depth:
+                n_items, n_features = X.shape
+                # get the label counts for each feature
+                counts = np.zeros((2, n_features), dtype=float)
+                for j in range(2):
+                    indices = Y[:, j] == 1
+                    counts[j, :] = X[indices, :].T.dot(w[indices]) + self._alpha
+
+                ratio = counts[1, :] / counts.sum(axis=0)
+                index = int(np.argmax(ratio))
+                feature = col_names[index]
+
+                if feature in stoplist:
+                    print("Skipping", feature)
+                else:
+                    print("Selecting", feature, counts[:, index])
+                    features.append(feature)
+
+                    # subset the rows without that feature
+                    if sparse.issparse(X):
+                        absent_indices = np.array(X[:, index].todense()) == 0
+                        absent_indices = np.reshape(absent_indices, (n_items, ))
+                    else:
+                        absent_indices = X[:, index] == 0
+
+                    X = X[absent_indices, :]
+                    Y = Y[absent_indices, :]
+                    w = w[absent_indices]
+
+                # remove the feature
+                col_index = np.ones(n_features, dtype=bool)
+                col_index[index] = False
+                X = X[:, col_index]
+                col_names = [col_names[i] for i in range(len(col_index)) if col_index[i] > 0]
+
+            return features
+
+    def feature_selection_interactive(self, X, Y, w, orig_col_names):
+
         _, n_classes = Y.shape
         self._n_classes = n_classes
         assert n_classes == 2
@@ -341,7 +391,9 @@ class DL:
 
         features = []
 
-        while len(features) < self._max_depth:
+        command = 'y'
+        while command != 'stop':
+
             n_items, n_features = X.shape
             # get the label counts for each feature
             counts = np.zeros((2, n_features), dtype=float)
@@ -353,9 +405,10 @@ class DL:
             index = int(np.argmax(ratio))
             feature = col_names[index]
 
-            if feature in stoplist:
-                print("Skipping", feature)
-            else:
+            print(feature, counts[:, index])
+            command = input("Inculde %s [y]/n/stop: " % feature)
+
+            if command != 'n' and command != 'stop':
                 print("Selecting", feature, counts[:, index])
                 features.append(feature)
 
@@ -370,11 +423,8 @@ class DL:
                 Y = Y[absent_indices, :]
                 w = w[absent_indices]
 
-            # remove the feature
-            col_index = np.ones(n_features, dtype=bool)
-            col_index[index] = False
-            X = X[:, col_index]
-            col_names = [col_names[i] for i in range(len(col_index)) if col_index[i] > 0]
+            elif command != 'stop':
+                X[:, index] = 0
 
         return features
 
@@ -425,12 +475,15 @@ class DL:
             if feature_list is None:
                 if X_dev is not None and Y_dev is not None:
                     print("Using dev data to do feature selection")
-                    feature_list = self.feature_selection(X_dev, Y_dev, dev_weights, col_names, interactive, stoplist)
+                    feature_list = self.feature_selection(X_dev.copy(), Y_dev.copy(), dev_weights.copy(), col_names, interactive, stoplist)
                 else:
                     print("Using training data to do feature selection (double-dipping?)")
-                    feature_list = self.feature_selection(X_train, Y_train, train_weights, col_names, interactive, stoplist)
+                    feature_list = self.feature_selection(X_train.copy(), Y_train.copy(), train_weights.copy(), col_names, interactive, stoplist)
             else:
                 print("Using feature list:", feature_list)
+
+            if feature_list is not None:
+                self._max_depth = len(feature_list)
 
             self._model = DecisionList(alpha=self._alpha, penalty=self._penalty, fit_intercept=self._fit_intercept, max_depth=self._max_depth)
             self._model.fit(X_train, Y_train, train_weights, feature_list, col_names)

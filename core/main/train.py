@@ -99,7 +99,7 @@ def train_model_with_labels(project_dir, model_type, loss, model_name, subset, l
                             pos_label=1, vocab=None, group_identical=False, nonlinearity='tanh',
                             init_lr=1e-4, min_epochs=2, max_epochs=100, patience=8, tol=1e-4, early_stopping=True,
                             list_size=10, do_cfm=False, do_platt=False, dl_feature_list=None,
-                            lower=None, verbose=True):
+                            lower=None, interactive=False, verbose=True):
 
     features_dir = dirs.dir_features(project_dir, subset)
     n_items, n_classes = labels_df.shape
@@ -494,7 +494,7 @@ def train_model_with_labels(project_dir, model_type, loss, model_name, subset, l
             stoplist = {}
             #feature_list = model.feature_selection(X_train, Y_train, w_train, col_names, max_features=25, stoplist=stoplist)
 
-            model.fit(X_train, Y_train, train_weights=w_train, col_names=col_names, feature_list=dl_feature_list, X_dev=X_dev, Y_dev=Y_dev, dev_weights=w_dev, interactive=False, stoplist=stoplist, objective=objective, penalty=penalty, pos_label=pos_label, do_ensemble=do_ensemble)
+            model.fit(X_train, Y_train, train_weights=w_train, col_names=col_names, feature_list=dl_feature_list, X_dev=X_dev, Y_dev=Y_dev, dev_weights=w_dev, interactive=interactive, stoplist=stoplist, objective=objective, penalty=penalty, pos_label=pos_label, do_ensemble=do_ensemble)
 
             X_train, Y_train, w_train = prepare_data(X_train, Y_train, w_train, loss=loss)
             X_dev, Y_dev, w_dev = prepare_data(X_dev, Y_dev, w_dev, loss=loss)

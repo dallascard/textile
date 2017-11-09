@@ -76,6 +76,8 @@ def main():
                       help='Try oracle selection for decision list: default=%default')
     parser.add_option('--lower', dest='lower', default=None,
                       help='Lower bound on LR weights: default=%default')
+    parser.add_option('--interactive', action="store_true", dest="interactive", default=False,
+                      help='Do interactive feature selection: default=%default')
     parser.add_option('--verbose', action="store_true", dest="verbose", default=False,
                       help='Print more output: default=%default')
 
@@ -124,14 +126,15 @@ def main():
     lower = options.lower
     if lower is not None:
         lower = float(lower)
+    interactive = options.interactive
     verbose = options.verbose
 
     average = 'micro'
 
-    test_over_time(project_dir, subset, config_file, model_type, field, test_start, test_end, n_train, n_calib, penalty, suffix, loss, objective, do_ensemble, dh, label, intercept, n_dev_folds, average, seed, alpha_min, alpha_max, n_alphas, sample_labels, group_identical, annotated, nonlinearity, early_stopping=early_stopping, list_size=ls, repeats=repeats, oracle=oracle, lower=lower, verbose=verbose)
+    test_over_time(project_dir, subset, config_file, model_type, field, test_start, test_end, n_train, n_calib, penalty, suffix, loss, objective, do_ensemble, dh, label, intercept, n_dev_folds, average, seed, alpha_min, alpha_max, n_alphas, sample_labels, group_identical, annotated, nonlinearity, early_stopping=early_stopping, list_size=ls, repeats=repeats, oracle=oracle, lower=lower, interactive=interactive, verbose=verbose)
 
 
-def test_over_time(project_dir, subset, config_file, model_type, field, test_start, test_end, n_train=None, n_calib=0, penalty='l2', suffix='', loss='log', objective='f1', do_ensemble=True, dh=100, label='label', intercept=True, n_dev_folds=5, average='micro', seed=None, alpha_min=0.01, alpha_max=1000.0, n_alphas=8, sample_labels=False, group_identical=False, annotated_subset=None, nonlinearity='tanh', init_lr=1e-4, min_epochs=2, max_epochs=100, patience=8, tol=1e-4, early_stopping=False, list_size=1, repeats=1, oracle=False, lower=None, verbose=False):
+def test_over_time(project_dir, subset, config_file, model_type, field, test_start, test_end, n_train=None, n_calib=0, penalty='l2', suffix='', loss='log', objective='f1', do_ensemble=True, dh=100, label='label', intercept=True, n_dev_folds=5, average='micro', seed=None, alpha_min=0.01, alpha_max=1000.0, n_alphas=8, sample_labels=False, group_identical=False, annotated_subset=None, nonlinearity='tanh', init_lr=1e-4, min_epochs=2, max_epochs=100, patience=8, tol=1e-4, early_stopping=False, list_size=1, repeats=1, oracle=False, lower=None, interactive=False, verbose=False):
     # Just run a regular model, one per year, training on the past, and save the reults
 
     log = {
@@ -371,7 +374,7 @@ def test_over_time(project_dir, subset, config_file, model_type, field, test_sta
 
 
         # Now train a model on the training data, saving the calibration data for calibration
-        print("Training a model")
+        print("Training a DL model")
         #model_name = model_name[:-3] + "_DL"
 
         feature_list = None
@@ -383,7 +386,7 @@ def test_over_time(project_dir, subset, config_file, model_type, field, test_sta
                 feature_list.extend(model.get_feature_list())
 
         model_name = model_name + "_DL_" + str(list_size)
-        model, dev_f1, dev_acc, dev_cal_mae, dev_cal_est = train.train_model_with_labels(project_dir, 'DL', 'log', model_name, subset, sampled_labels_df, feature_defs, weights_df=weights_df, items_to_use=train_items, penalty=penalty, alpha_min=alpha_min, alpha_max=alpha_max, n_alphas=n_alphas, intercept=intercept, objective=objective, n_dev_folds=2, do_ensemble=True, dh=dh, seed=seed, pos_label=pos_label, vocab=None, group_identical=group_identical, nonlinearity=nonlinearity, init_lr=init_lr, min_epochs=min_epochs, max_epochs=max_epochs, patience=patience, tol=tol, early_stopping=early_stopping, list_size=list_size, dl_feature_list=feature_list, verbose=verbose)
+        model, dev_f1, dev_acc, dev_cal_mae, dev_cal_est = train.train_model_with_labels(project_dir, 'DL', 'log', model_name, subset, sampled_labels_df, feature_defs, weights_df=weights_df, items_to_use=train_items, penalty=penalty, alpha_min=alpha_min, alpha_max=alpha_max, n_alphas=n_alphas, intercept=intercept, objective=objective, n_dev_folds=2, do_ensemble=True, dh=dh, seed=seed, pos_label=pos_label, vocab=None, group_identical=group_identical, nonlinearity=nonlinearity, init_lr=init_lr, min_epochs=min_epochs, max_epochs=max_epochs, patience=patience, tol=tol, early_stopping=early_stopping, list_size=list_size, dl_feature_list=feature_list, interactive=interactive, verbose=verbose)
         results_df.loc['cross_val'] = [dev_f1, dev_acc, dev_cal_mae, dev_cal_est]
 
         # predict on test data
@@ -427,22 +430,24 @@ def test_over_time(project_dir, subset, config_file, model_type, field, test_sta
             #output_df.loc['CC_plus_cal'] = [n_train, 'train', 'test', 'n/a', cc_plus_cal_estimate, cc_plus_cal_mae, np.nan, np.nan, np.nan]
             output_df.loc['PCC_DL_plus_cal'] = [n_train_r, 'train', 'test', 'n/a', pcc_plus_cal_estimate, pcc_plus_cal_mae, np.nan, np.nan, np.nan]
 
-        samples = predict.sample_predictions(model, X_test, n_samples=100)
-        pcc_samples = np.mean(samples, axis=0)
-        sample_pcc = np.mean(pcc_samples)
-        sample_pcc_lower = np.percentile(pcc_samples, q=2.5)
-        sample_pcc_upper = np.percentile(pcc_samples, q=97.5)
-        sample_pcc_var = np.var(pcc_samples)
-        sample_pcc_mae = np.mean(np.abs(sample_pcc - target_estimate))
-        sample_pcc_contains_test = target_estimate > sample_pcc_lower and target_estimate < sample_pcc_upper
-        output_df.loc['PCC_samples'] = [n_train_r, 'train', 'test', 'n/a', sample_pcc, sample_pcc_mae, sample_pcc_lower, sample_pcc_upper, sample_pcc_contains_test]
+        #samples = predict.sample_predictions(model, X_test, n_samples=100)
+        #pcc_samples = np.mean(samples, axis=0)
+        #sample_pcc = np.mean(pcc_samples)
+        #sample_pcc_lower = np.percentile(pcc_samples, q=2.5)
+        #sample_pcc_upper = np.percentile(pcc_samples, q=97.5)
+        #sample_pcc_var = np.var(pcc_samples)
+        #sample_pcc_mae = np.mean(np.abs(sample_pcc - target_estimate))
+        #sample_pcc_contains_test = target_estimate > sample_pcc_lower and target_estimate < sample_pcc_upper
+        #output_df.loc['PCC_samples'] = [n_train_r, 'train', 'test', 'n/a', sample_pcc, sample_pcc_mae, sample_pcc_lower, sample_pcc_upper, sample_pcc_contains_test]
+        output_df.loc['PCC_samples'] = [n_train_r, 'train', 'test', 'n/a', np.nan, np.nan, np.nan, np.nan, np.nan]
 
         if n_calib > 0:
-            pcc_plus_cal_estimate = (sample_pcc / sample_pcc_var + calib_estimate / calib_std ** 2) / (1.0 / sample_pcc_var + 1.0 / calib_std ** 2)
-            pcc_plus_cal_mae = np.mean(np.abs(pcc_plus_cal_estimate - target_estimate))
-            pcc_plus_cal_std = np.sqrt(1.0 / (1.0 / sample_pcc_var + 1.0 / calib_std ** 2))
-            pcc_plus_cal_contains_test = target_estimate > pcc_plus_cal_estimate - 2 * pcc_plus_cal_std and target_estimate < pcc_plus_cal_estimate + 2 * pcc_plus_cal_std
-            output_df.loc['PCC_samples_plus_cal'] = [n_train_r, 'train', 'test', 'n/a', pcc_plus_cal_estimate, pcc_plus_cal_mae, pcc_plus_cal_estimate - 2 * pcc_plus_cal_std, pcc_plus_cal_estimate + 2 * pcc_plus_cal_std, pcc_plus_cal_contains_test]
+            #pcc_plus_cal_estimate = (sample_pcc / sample_pcc_var + calib_estimate / calib_std ** 2) / (1.0 / sample_pcc_var + 1.0 / calib_std ** 2)
+            #pcc_plus_cal_mae = np.mean(np.abs(pcc_plus_cal_estimate - target_estimate))
+            #pcc_plus_cal_std = np.sqrt(1.0 / (1.0 / sample_pcc_var + 1.0 / calib_std ** 2))
+            #pcc_plus_cal_contains_test = target_estimate > pcc_plus_cal_estimate - 2 * pcc_plus_cal_std and target_estimate < pcc_plus_cal_estimate + 2 * pcc_plus_cal_std
+            #output_df.loc['PCC_samples_plus_cal'] = [n_train_r, 'train', 'test', 'n/a', pcc_plus_cal_estimate, pcc_plus_cal_mae, pcc_plus_cal_estimate - 2 * pcc_plus_cal_std, pcc_plus_cal_estimate + 2 * pcc_plus_cal_std, pcc_plus_cal_contains_test]
+            output_df.loc['PCC_samples_plus_cal'] = [n_train_r, 'train', 'test', 'n/a', np.nan, np.nan, np.nan, np.nan, np.nan]
         else:
             output_df.loc['PCC_samples_plus_cal'] = [n_train_r, 'train', 'test', 'n/a', np.nan, np.nan, np.nan, np.nan, np.nan]
 
