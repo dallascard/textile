@@ -48,7 +48,8 @@ def main():
     model_type = options.model
     suffix = options.suffix
 
-    pairs = [('pro_tone', 'label'), ('framing', 'Economic'), ('framing', 'Legality'), ('framing', 'Health'), ('framing', 'Political')]
+    #pairs = [('pro_tone', 'label'), ('framing', 'Economic'), ('framing', 'Legality'), ('framing', 'Health'), ('framing', 'Political')]
+    pairs = [('framing', 'Economic'), ('framing', 'Legality')]
 
     for subset, label in pairs:
         print("\n\nStarting", subset, label)
