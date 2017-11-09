@@ -28,6 +28,8 @@ def main():
                       help='Repeats: default=%default')
     parser.add_option('--model', dest='model', default='LR',
                       help='Model type [LR|MLP]: default=%default')
+    parser.add_option('--lower', dest='lower', default=None,
+                      help='Lower bound to enforce positive weights: default=%default')
     parser.add_option('--suffix', dest='suffix', default='',
                       help='Suffix to mdoel name: default=%default')
 
@@ -46,6 +48,9 @@ def main():
     penalty = options.penalty
     repeats = int(options.repeats)
     model_type = options.model
+    lower = options.lower
+    if lower is not None:
+        lower = float(lower)
     suffix = options.suffix
 
     #pairs = [('pro_tone', 'label'), ('framing', 'Economic'), ('framing', 'Legality'), ('framing', 'Health'), ('framing', 'Political')]
@@ -53,7 +58,7 @@ def main():
 
     for subset, label in pairs:
         print("\n\nStarting", subset, label)
-        over_time_split_and_fit.test_over_time(project, subset, config, model_type, 'year', first_year, last_year, n_train, n_calib, penalty, suffix, loss='log', objective=objective, do_ensemble=True, label=label, intercept=True, sample_labels=sample_labels, n_dev_folds=5, list_size=ls, repeats=repeats)
+        over_time_split_and_fit.test_over_time(project, subset, config, model_type, 'year', first_year, last_year, n_train, n_calib, penalty, suffix, loss='log', objective=objective, do_ensemble=True, label=label, intercept=True, sample_labels=sample_labels, n_dev_folds=5, list_size=ls, repeats=repeats, lower=lower)
 
 if __name__ == '__main__':
     main()
