@@ -39,6 +39,8 @@ def main():
     config = args[1]
 
     n_train = options.n_train
+    if n_train is not None:
+        n_train = int(n_train)
     n_calib = int(options.n_calib)
     first_year = int(options.first_year)
     last_year = int(options.last_year)
