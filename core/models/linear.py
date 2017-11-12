@@ -221,6 +221,15 @@ class LinearClassifier:
             pcc = calibration.pcc(pred_probs, weights)
             return cc, pcc
 
+    def get_coef_array(self):
+        return self._model.coef_
+
+    def set_coefs(self, terms, coefs):
+        """ Experimental """
+        n_features, n_classes = coefs.shape
+        self._col_names = terms[:]
+        self._model.coef_ = coefs
+
     def get_penalty(self):
         return self._penalty
 

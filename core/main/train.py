@@ -99,7 +99,7 @@ def train_model_with_labels(project_dir, model_type, loss, model_name, subset, l
                             pos_label=1, vocab=None, group_identical=False, nonlinearity='tanh',
                             init_lr=1e-4, min_epochs=2, max_epochs=100, patience=8, tol=1e-4, early_stopping=True,
                             list_size=10, do_cfm=False, do_platt=False, dl_feature_list=None,
-                            lower=None, interactive=False, verbose=True):
+                            lower=None, interactive=False, stoplist=None, verbose=True):
 
     features_dir = dirs.dir_features(project_dir, subset)
     n_items, n_classes = labels_df.shape
@@ -141,6 +141,12 @@ def train_model_with_labels(project_dir, model_type, loss, model_name, subset, l
         if vocab is not None:
             feature_vocab = [term for term in feature.get_terms() if term in vocab_index]
             feature.set_terms(feature_vocab)
+        if stoplist is not None:
+            print("Applying stoplist")
+            print(len(feature.get_terms()))
+            feature_vocab = [term for term in feature.get_terms() if term not in stoplist]
+            feature.set_terms(feature_vocab)
+            print(len(feature.get_terms()))
         if feature_def.transform == 'doc2vec':
             word_vectors_prefix = os.path.join(features_dir, name + '_vecs')
         else:

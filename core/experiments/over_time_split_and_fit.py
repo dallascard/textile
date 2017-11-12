@@ -3,6 +3,7 @@ from optparse import OptionParser
 
 import numpy as np
 import pandas as pd
+from scipy import sparse
 
 from core.util import file_handling as fh
 from core.preprocessing import features
@@ -78,6 +79,8 @@ def main():
                       help='Lower bound on LR weights: default=%default')
     parser.add_option('--interactive', action="store_true", dest="interactive", default=False,
                       help='Do interactive feature selection: default=%default')
+    parser.add_option('--stoplist', dest='stoplist_file', default=None,
+                      help='Stoplist file: default=%default')
     parser.add_option('--verbose', action="store_true", dest="verbose", default=False,
                       help='Print more output: default=%default')
 
@@ -104,7 +107,11 @@ def main():
     alpha_min = float(options.alpha_min)
     alpha_max = float(options.alpha_max)
     n_alphas = int(options.n_alphas)
-    do_ensemble = True
+
+    # DEBUG
+    do_ensemble = False
+
+
     #exclude_calib = options.exclude_calib
     #calib_pred = options.calib_pred
     label = options.label
@@ -127,14 +134,15 @@ def main():
     if lower is not None:
         lower = float(lower)
     interactive = options.interactive
+    stoplist_file = options.stoplist_file
     verbose = options.verbose
 
     average = 'micro'
 
-    test_over_time(project_dir, subset, config_file, model_type, field, test_start, test_end, n_train, n_calib, penalty, suffix, loss, objective, do_ensemble, dh, label, intercept, n_dev_folds, average, seed, alpha_min, alpha_max, n_alphas, sample_labels, group_identical, annotated, nonlinearity, early_stopping=early_stopping, list_size=ls, repeats=repeats, oracle=oracle, lower=lower, interactive=interactive, verbose=verbose)
+    test_over_time(project_dir, subset, config_file, model_type, field, test_start, test_end, n_train, n_calib, penalty, suffix, loss, objective, do_ensemble, dh, label, intercept, n_dev_folds, average, seed, alpha_min, alpha_max, n_alphas, sample_labels, group_identical, annotated, nonlinearity, early_stopping=early_stopping, list_size=ls, repeats=repeats, oracle=oracle, lower=lower, interactive=interactive, stoplist_file=stoplist_file, verbose=verbose)
 
 
-def test_over_time(project_dir, subset, config_file, model_type, field, test_start, test_end, n_train=None, n_calib=0, penalty='l2', suffix='', loss='log', objective='f1', do_ensemble=True, dh=100, label='label', intercept=True, n_dev_folds=5, average='micro', seed=None, alpha_min=0.01, alpha_max=1000.0, n_alphas=8, sample_labels=False, group_identical=False, annotated_subset=None, nonlinearity='tanh', init_lr=1e-4, min_epochs=2, max_epochs=100, patience=8, tol=1e-4, early_stopping=False, list_size=1, repeats=1, oracle=False, lower=None, interactive=False, verbose=False):
+def test_over_time(project_dir, subset, config_file, model_type, field, test_start, test_end, n_train=None, n_calib=0, penalty='l2', suffix='', loss='log', objective='f1', do_ensemble=True, dh=100, label='label', intercept=True, n_dev_folds=5, average='micro', seed=None, alpha_min=0.01, alpha_max=1000.0, n_alphas=8, sample_labels=False, group_identical=False, annotated_subset=None, nonlinearity='tanh', init_lr=1e-4, min_epochs=2, max_epochs=100, patience=8, tol=1e-4, early_stopping=False, list_size=1, repeats=1, oracle=False, lower=None, interactive=False, stoplist_file=None, verbose=False):
     # Just run a regular model, one per year, training on the past, and save the reults
 
     log = {
@@ -171,6 +179,8 @@ def test_over_time(project_dir, subset, config_file, model_type, field, test_sta
         'patience': patience,
         'tol': tol,
         'early_stopping': early_stopping,
+        'interactive': interactive,
+        'stoplist_file': stoplist_file,
         'list_size': list_size
     }
 
@@ -311,8 +321,16 @@ def test_over_time(project_dir, subset, config_file, model_type, field, test_sta
         results_df = pd.DataFrame([], columns=['f1', 'acc', 'mae', 'estimated calibration'])
 
         # Now train a model on the training data, saving the calibration data for calibration
+
+        if stoplist_file is not None:
+            stoplist = fh.read_text(stoplist_file)
+            stoplist = {s.strip() for s in stoplist}
+            print(stoplist)
+        else:
+            stoplist = None
+
         print("Training a LR model")
-        model, dev_f1, dev_acc, dev_cal_mae, dev_cal_est = train.train_model_with_labels(project_dir, model_type, 'log', model_name, subset, sampled_labels_df, feature_defs, weights_df=weights_df, items_to_use=train_items, penalty=penalty, alpha_min=alpha_min, alpha_max=alpha_max, n_alphas=n_alphas, intercept=intercept, objective=objective, n_dev_folds=n_dev_folds, do_ensemble=do_ensemble, dh=dh, seed=seed, pos_label=pos_label, vocab=None, group_identical=group_identical, nonlinearity=nonlinearity, init_lr=init_lr, min_epochs=min_epochs, max_epochs=max_epochs, patience=patience, tol=tol, early_stopping=early_stopping, do_cfm=True, do_platt=True, lower=lower, verbose=verbose)
+        model, dev_f1, dev_acc, dev_cal_mae, dev_cal_est = train.train_model_with_labels(project_dir, model_type, 'log', model_name, subset, sampled_labels_df, feature_defs, weights_df=weights_df, items_to_use=train_items, penalty=penalty, alpha_min=alpha_min, alpha_max=alpha_max, n_alphas=n_alphas, intercept=intercept, objective=objective, n_dev_folds=n_dev_folds, do_ensemble=do_ensemble, dh=dh, seed=seed, pos_label=pos_label, vocab=None, group_identical=group_identical, nonlinearity=nonlinearity, init_lr=init_lr, min_epochs=min_epochs, max_epochs=max_epochs, patience=patience, tol=tol, early_stopping=early_stopping, do_cfm=True, do_platt=True, lower=lower, stoplist=stoplist, verbose=verbose)
         results_df.loc['cross_val'] = [dev_f1, dev_acc, dev_cal_mae, dev_cal_est]
 
         # predict on test data
@@ -327,13 +345,9 @@ def test_over_time(project_dir, subset, config_file, model_type, field, test_sta
         _, n_labels = test_pred_probs.shape
         test_pred_probs_df = pd.DataFrame(test_pred_probs, index=features_concat.get_items(), columns=range(n_labels))
 
-        #test_predictions_df, test_pred_probs_df, test_pred_proportions, _ = predict.predict(project_dir, model, model_name, subset, label, items_to_use=test_items, verbose=verbose, force_dense=force_dense)
         f1_test, acc_test = evaluate_predictions.evaluate_predictions(test_labels_df, test_predictions_df, test_pred_probs_df, pos_label=pos_label, average=average)
         true_test_vector = np.argmax(test_labels_df.as_matrix(), axis=1)
-        #test_cal_mae = evaluation.eval_proportions_mae(test_labels_df.as_matrix(), test_pred_probs_df.as_matrix())
         test_cal_est = evaluation.evaluate_calibration_rmse(true_test_vector, test_pred_probs_df.as_matrix(), min_bins=1, max_bins=1)
-        #test_cc_estimate, test_pcc_estimate, test_acc_estimate_internal, test_acc_ms_estimate_internal = test_pred_proportions
-
         test_cc_estimate, test_pcc_estimate = model.predict_proportions(X_test)
 
         test_cc_mae = np.mean(np.abs(test_cc_estimate[1] - target_estimate))
@@ -368,9 +382,6 @@ def test_over_time(project_dir, subset, config_file, model_type, field, test_sta
 
             #output_df.loc['CC_plus_cal'] = [n_train, 'train', 'test', 'n/a', cc_plus_cal_estimate, cc_plus_cal_mae, np.nan, np.nan, np.nan]
             output_df.loc['PCC_plus_cal'] = [n_train_r, 'train', 'test', 'n/a', pcc_plus_cal_estimate, pcc_plus_cal_mae, np.nan, np.nan, np.nan]
-
-        results_df.to_csv(os.path.join(dirs.dir_models(project_dir), model_name, 'accuracy.csv'))
-        output_df.to_csv(os.path.join(dirs.dir_models(project_dir), model_name, 'results.csv'))
 
 
         # Now train a model on the training data, saving the calibration data for calibration
@@ -494,7 +505,118 @@ def get_estimate_and_std(labels_df, use_n_annotations=False):
     return props, estimate, std
 
 
-
-
 if __name__ == '__main__':
     main()
+
+
+
+"""
+# An negative exploration of adding random weights for previously-unseen features
+
+# Try predicting with expanded model
+X_test, features_concat, new_indices = predict.load_data_expanded_model(project_dir, model_name, subset, items_to_use=test_items, force_dense=force_dense, verbose=True)
+print("Loaded test data: (%d, %d)" % X_test.shape)
+
+# update model with expanded coefs
+print("Updating model")
+assert model.get_model_type() == 'LR'
+old_coefs = model.get_coef_array()
+print(old_coefs.shape)
+old_terms = model._col_names
+n_classes, n_terms_old = old_coefs.shape
+
+new_terms = features_concat.terms
+n_terms_new = len(new_terms)
+new_index = dict(zip(new_terms, np.arange(n_terms_new)))
+print("Creating new coefficient matrix")
+print(n_terms_new, n_classes)
+
+# Creating a copy of self.counts with an extra column of zeros
+zeros_col = np.zeros([n_classes, 1])
+temp = np.hstack([old_coefs, zeros_col])
+
+index = np.ones(n_terms_new, dtype=int) * n_terms_old
+for t_i, term in enumerate(old_terms):
+    index[new_index[term]] = t_i
+new_coefs = temp[:, index]
+print(new_coefs.shape)
+model.set_coefs(new_terms, new_coefs)
+
+test_predictions = model.predict(X_test)
+test_predictions_df = pd.DataFrame(test_predictions, index=features_concat.get_items(), columns=[label])
+test_pred_probs = model.predict_probs(X_test)
+_, n_labels = test_pred_probs.shape
+test_pred_probs_df = pd.DataFrame(test_pred_probs, index=features_concat.get_items(), columns=range(n_labels))
+
+#test_predictions_df, test_pred_probs_df, test_pred_proportions, _ = predict.predict(project_dir, model, model_name, subset, label, items_to_use=test_items, verbose=verbose, force_dense=force_dense)
+f1_test, acc_test = evaluate_predictions.evaluate_predictions(test_labels_df, test_predictions_df, test_pred_probs_df, pos_label=pos_label, average=average)
+true_test_vector = np.argmax(test_labels_df.as_matrix(), axis=1)
+#test_cal_mae = evaluation.eval_proportions_mae(test_labels_df.as_matrix(), test_pred_probs_df.as_matrix())
+test_cal_est = evaluation.evaluate_calibration_rmse(true_test_vector, test_pred_probs_df.as_matrix(), min_bins=1, max_bins=1)
+#test_cc_estimate, test_pcc_estimate, test_acc_estimate_internal, test_acc_ms_estimate_internal = test_pred_proportions
+
+test_cc_estimate, test_pcc_estimate = model.predict_proportions(X_test)
+
+test_cc_mae = np.mean(np.abs(test_cc_estimate[1] - target_estimate))
+test_pcc_mae = np.mean(np.abs(test_pcc_estimate[1] - target_estimate))
+
+results_df.loc['test_expanded'] = [f1_test, acc_test, test_pcc_mae, test_cal_est]
+
+output_df.loc['CC_expanded'] = [n_train_r, 'train', 'test', 'n/a', test_cc_estimate[1], test_cc_mae, np.nan, np.nan, np.nan]
+output_df.loc['PCC_expanded'] = [n_train_r, 'train', 'test', 'n/a', test_pcc_estimate[1], test_pcc_mae, np.nan, np.nan, np.nan]
+
+n_new_features_per_item = X_test[:, new_indices].sum(axis=1)
+familiar_subset = n_new_features_per_item == 0
+print("Num familiar documents = %d" % np.sum(familiar_subset))
+
+# try sampling random weights and looking at the variation.
+print("Trying sampling")
+cc_estimates = []
+pcc_estimates = []
+for s in range(500):
+    # start by sampling coefficients from the empirical distribution of the original model
+    new_coefs = np.random.choice(old_coefs.reshape((n_classes * n_terms_old, )), size=(n_classes, n_terms_new), replace=True)
+    # then copy over the coefficients from the old model
+    for t_i, term in enumerate(old_terms):
+        new_coefs[:, new_index[term]] = old_coefs[:, t_i]
+    # assign the new coefficients to the model
+    model.set_coefs(new_terms, new_coefs)
+
+    # repeat the prediction process
+    test_predictions = model.predict(X_test)
+    test_predictions_df = pd.DataFrame(test_predictions, index=features_concat.get_items(), columns=[label])
+    test_pred_probs = model.predict_probs(X_test)
+    _, n_labels = test_pred_probs.shape
+    test_pred_probs_df = pd.DataFrame(test_pred_probs, index=features_concat.get_items(), columns=range(n_labels))
+
+    #test_predictions_df, test_pred_probs_df, test_pred_proportions, _ = predict.predict(project_dir, model, model_name, subset, label, items_to_use=test_items, verbose=verbose, force_dense=force_dense)
+    f1_test, acc_test = evaluate_predictions.evaluate_predictions(test_labels_df, test_predictions_df, test_pred_probs_df, pos_label=pos_label, average=average, verbose=False)
+    true_test_vector = np.argmax(test_labels_df.as_matrix(), axis=1)
+    #test_cal_mae = evaluation.eval_proportions_mae(test_labels_df.as_matrix(), test_pred_probs_df.as_matrix())
+    test_cal_est = evaluation.evaluate_calibration_rmse(true_test_vector, test_pred_probs_df.as_matrix(), min_bins=1, max_bins=1)
+    #test_cc_estimate, test_pcc_estimate, test_acc_estimate_internal, test_acc_ms_estimate_internal = test_pred_proportions
+
+    test_cc_estimate, test_pcc_estimate = model.predict_proportions(X_test)
+    cc_estimates.append(test_cc_estimate[1])
+    pcc_estimates.append(test_pcc_estimate[1])
+
+cc_mean = np.mean(cc_estimates)
+pcc_mean = np.mean(pcc_estimates)
+
+test_cc_mae = np.mean(np.abs(cc_mean - target_estimate))
+test_pcc_mae = np.mean(np.abs(pcc_mean - target_estimate))
+
+cc_lower = np.percentile(cc_estimates, q=2.5)
+cc_upper = np.percentile(cc_estimates, q=97.5)
+cc_contains_test = target_estimate > cc_lower and target_estimate < cc_upper
+output_df.loc['CC_expanded_sample'] = [n_train_r, 'train', 'test', 'n/a', cc_mean, test_cc_mae, cc_lower, cc_upper, cc_contains_test]
+
+pcc_lower = np.percentile(pcc_estimates, q=2.5)
+pcc_upper = np.percentile(pcc_estimates, q=97.5)
+pcc_contains_test = target_estimate > pcc_lower and target_estimate < pcc_upper
+output_df.loc['PCC_expanded_sample'] = [n_train_r, 'train', 'test', 'n/a', pcc_mean, test_pcc_mae, pcc_lower, pcc_upper, pcc_contains_test]
+
+results_df.to_csv(os.path.join(dirs.dir_models(project_dir), model_name, 'accuracy.csv'))
+output_df.to_csv(os.path.join(dirs.dir_models(project_dir), model_name, 'results.csv'))
+
+"""

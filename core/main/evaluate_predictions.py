@@ -73,10 +73,10 @@ def evaluate_predictions(labels_df, predictions_df, pred_probs_df=None, pos_labe
     true = np.argmax(labels, axis=1)
 
     f1 = evaluation.f1_score(true, predictions, n_classes, pos_label=pos_label, average=average, weights=weights)
-    print("F1 = %0.3f" % f1)
-
     acc = evaluation.acc_score(true, predictions, n_classes, weights=weights)
-    print("Accuracy = %0.3f" % acc)
+    if verbose:
+        print("F1 = %0.3f" % f1)
+        print("Accuracy = %0.3f" % acc)
 
     true_props = evaluation.compute_proportions(labels, weights)
     predicted_label_props = evaluation.compute_proportions_from_label_vector(predictions, n_classes, weights)

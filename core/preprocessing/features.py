@@ -199,6 +199,48 @@ class Feature:
         self.terms = terms
 
 
+    def expand_terms(self, terms):
+        """
+        Expand self.counts to incorporate everything in the terms list
+        """
+        n_items = len(self.items)
+        n_terms_old = len(self.terms)
+
+        old_terms = self.terms[:]
+
+        random_indices = np.random.randint(low=0, high=n_terms_old, size=5)
+        random_terms = [self.terms[i] for i in random_indices]
+        for i in range(5):
+            print(random_terms[i], self.counts[:, random_indices[i]].sum())
+
+        # Creating a copy of self.counts with an extra column of zeros
+        zeros_col = sparse.csc_matrix(np.zeros([n_items, 1]))
+        temp = sparse.hstack([self.counts, zeros_col])
+
+        full_list = list(set(self.terms + terms))
+        full_list.sort()
+        n_terms = len(full_list)
+
+        new_terms_index = dict(zip(full_list, range(n_terms)))
+
+        # copy over all previously existing columns to their new locations
+        print("Copying feature values")
+        # point all columns to the zeros column by default
+        index = np.ones(n_terms, dtype=int) * n_terms_old
+        for t_i, term in enumerate(old_terms):
+            new_index = new_terms_index[term]
+            index[new_index] = t_i
+        new_counts_matrix = temp[:, index]
+
+        for i in range(5):
+            term = random_terms[i]
+            index = new_terms_index[term]
+            print(random_terms[i], full_list[index], new_counts_matrix[:, index].sum())
+
+        self.counts = new_counts_matrix
+        self.terms = full_list
+
+
 def create_from_counts(name, items, terms, counts):
     assert sparse.isspmatrix(counts)
     n_items, n_terms = counts.shape

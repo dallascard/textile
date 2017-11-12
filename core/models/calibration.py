@@ -178,7 +178,6 @@ def apply_acc_binary_median_sweep(pred_probs, cfms_ms, weights=None):
 
     thresholds = list(cfms_ms.keys())
     n_thresh = len(thresholds)
-    print("n_thresh = ", n_thresh)
     pred_proportions = np.zeros([n_thresh-1, 2])
     for i, t in enumerate(thresholds[:-1]):
         predictions = np.array(pred_probs[:, 1] > t, dtype=int)
