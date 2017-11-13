@@ -65,8 +65,6 @@ def main():
             values[row][n_train].append(df_f.loc[row, 'MAE'])
 
     df = pd.DataFrame(mae_values, index=df.index)
-    print(df.mean(axis=1))
-    print(df.var(axis=1))
 
     most_similar = train_maes < np.mean(train_estimates)
     least_similar = train_maes > np.mean(train_estimates)
@@ -85,6 +83,8 @@ def main():
         selector *= least_balanced
 
     df = pd.DataFrame(df.values[:, selector], index=df.index)
+    print(df.mean(axis=1))
+    print(df.var(axis=1))
 
     if output is not None:
         df.to_csv(output)
