@@ -71,6 +71,7 @@ def main():
             ax.scatter(np.ones(n_points)*group, points, color=colors[r_i])
             means.append(np.mean(points))
         ax.plot(groups, means, color=colors[r_i], label=row)
+    ax.legend()
     plt.savefig('test.pdf', bbox_inches='tight')
 
 
