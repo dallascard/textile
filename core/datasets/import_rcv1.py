@@ -22,7 +22,9 @@ def main():
     project = args[0]
     input_dir = args[1]
     data = process_articles(input_dir)
-    output_filename = os.path.join(dirs.dir_data_raw(project), 'all.json')
+    output_dir = dirs.dir_data_raw(project)
+    os.makedirs(output_dir)
+    output_filename = os.path.join(output_dir, 'all.json')
     fh.write_to_json(data, output_filename)
 
 
