@@ -24,7 +24,7 @@ def main():
 
     output = options.output
 
-    rows = ['CC', 'PCC', 'ACC', 'MS', 'PCC_platt2', 'PCC_DL']
+    rows = ['CC', 'PCC', 'ACC_internal', 'MS_internal', 'PCC_platt2', 'PCC_DL']
     values = {}
     for row in rows:
         values[row] = {}
