@@ -50,14 +50,17 @@ def process_articles(input_dir):
                 year = int(date.split('-')[0])
                 for child in root:
                     if child.tag == 'title':
-                        title = child.text
+                        if child.text is not None:
+                            title = child.text
                     elif child.tag == 'headline':
-                        headline = child.text
+                        if child.text is not None:
+                            headline = child.text
                     elif child.tag == 'text':
                         for paragraph in child:
-                            if text != '':
-                                text += '\n\n'
-                            text = paragraph.text
+                            if child.text is not None:
+                                if text != '':
+                                    text += '\n\n'
+                                text = paragraph.text
                     elif child.tag == 'metadata':
                         for subchild in child:
                             if subchild.tag == 'codes' and subchild.attrib['class'] == 'bip:topics:1.0':
