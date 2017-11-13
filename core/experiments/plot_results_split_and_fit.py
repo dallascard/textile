@@ -54,7 +54,7 @@ def main():
 
     train_mean = df.loc['train'].mean()
     most_similar = df.loc['train'].values < train_mean
-    most_different = df.loc['trian'].values > train_mean
+    most_different = df.loc['train'].values > train_mean
 
     print("Most similar")
     print(df.values[:, most_similar].mean(axis=1))
