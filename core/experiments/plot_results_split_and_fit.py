@@ -41,7 +41,7 @@ def main():
             mae_values = np.zeros([n_rows, n_files-1])
         mae_values[:, f_i] = df_f['MAE'].values
 
-        n_train = df_f.loc['train', 'N']
+        n_train = int(df_f.loc['train', 'N'])
         if n_train not in values['CC']:
             for row in rows:
                 values[row][n_train] = []
@@ -58,6 +58,8 @@ def main():
     cmap = plt.get_cmap('jet')
     colors = cmap(np.linspace(0, 1.0, len(rows)))
 
+    print(values)
+
     fig, ax = plt.subplots()
     for r_i, row in enumerate(rows):
         means = []
@@ -67,8 +69,8 @@ def main():
             points = values[row][group]
             n_points = len(points)
             ax.scatter(np.ones(n_points)*group, points, color=colors[r_i])
-            means.append(points)
-        ax.plot(groups, means, color=colors[r_i])
+            means.append(np.mean(points))
+        ax.plot(groups, means, color=colors[r_i], label=row)
     plt.savefig('test.pdf', bbox_inches='tight')
 
 
