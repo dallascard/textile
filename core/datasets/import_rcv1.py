@@ -33,6 +33,7 @@ def process_articles(input_dir):
     files = glob.glob(os.path.join(input_dir, '199*.zip'))
     files.sort()
     for file in files:
+        print(file)
         with zipfile.ZipFile(file, 'r') as f:
             names = f.namelist()
             for name in names:
