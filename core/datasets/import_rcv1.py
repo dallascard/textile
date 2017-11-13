@@ -33,10 +33,9 @@ def process_articles(input_dir):
     files = glob.glob(os.path.join(input_dir, '199*.zip'))
     files.sort()
     for file in files:
-        print()
-        print(file)
         with zipfile.ZipFile(file, 'r') as f:
             names = f.namelist()
+            print('%s (%d)' % (file, len(names)))
             for name in names:
                 title = ''
                 headline = ''
@@ -70,9 +69,7 @@ def process_articles(input_dir):
                 if headline == '':
                     print("Headline is empty")
                 if len(codes) == 0:
-                    print("C"),
-                else:
-                    print('.'),
+                    print("Codes is empty"),
                 data[id] = {'text': title + '\n\n' + headline + '\n\n' + text, 'date': date, 'year': year, 'codes': codes}
 
     return data
