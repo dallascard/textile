@@ -86,12 +86,6 @@ def main():
 
     df = pd.DataFrame(df.values[:, selector], index=df.index)
 
-    print("Most similar")
-    print(df.values[:, most_similar].mean(axis=1))
-
-    print("Most different")
-    print(df.values[:, most_different].mean(axis=1))
-
     if output is not None:
         df.to_csv(output)
 
