@@ -42,39 +42,42 @@ def process_articles(input_dir):
                 headline = ''
                 text = ''
                 codes = []
-                xml = f.read(name)
-                root = ET.fromstring(xml)
-                attributes = root.attrib
-                id = attributes['itemid']
-                date = attributes['date']
-                year = int(date.split('-')[0])
-                for child in root:
-                    if child.tag == 'title':
-                        if child.text is not None:
-                            title = child.text
-                    elif child.tag == 'headline':
-                        if child.text is not None:
-                            headline = child.text
-                    elif child.tag == 'text':
-                        for paragraph in child:
+                try:
+                    xml = f.read(name)
+                    root = ET.fromstring(xml)
+                    attributes = root.attrib
+                    id = attributes['itemid']
+                    date = attributes['date']
+                    year = int(date.split('-')[0])
+                    for child in root:
+                        if child.tag == 'title':
                             if child.text is not None:
-                                if text != '':
-                                    text += '\n\n'
-                                text = paragraph.text
-                    elif child.tag == 'metadata':
-                        for subchild in child:
-                            if subchild.tag == 'codes' and subchild.attrib['class'] == 'bip:topics:1.0':
-                                for code in subchild:
-                                    codes.append(code.attrib['code'])
-                if text == '':
-                    print("Text is empty")
-                if title == '':
-                    print("Title is empty")
-                if headline == '':
-                    print("Headline is empty")
-                if len(codes) == 0:
-                    n_missing_codes += 1
-                data[id] = {'text': title + '\n\n' + headline + '\n\n' + text, 'date': date, 'year': year, 'codes': codes}
+                                title = child.text
+                        elif child.tag == 'headline':
+                            if child.text is not None:
+                                headline = child.text
+                        elif child.tag == 'text':
+                            for paragraph in child:
+                                if child.text is not None:
+                                    if text != '':
+                                        text += '\n\n'
+                                    text = paragraph.text
+                        elif child.tag == 'metadata':
+                            for subchild in child:
+                                if subchild.tag == 'codes' and subchild.attrib['class'] == 'bip:topics:1.0':
+                                    for code in subchild:
+                                        codes.append(code.attrib['code'])
+                    if text == '':
+                        print("Text is empty")
+                    if title == '':
+                        print("Title is empty")
+                    if headline == '':
+                        print("Headline is empty")
+                    if len(codes) == 0:
+                        n_missing_codes += 1
+                    data[id] = {'text': title + '\n\n' + headline + '\n\n' + text, 'date': date, 'year': year, 'codes': codes}
+                except Exception as e:
+                    print(name, e)
             print("missing codes: %d" % n_missing_codes)
 
     return data
