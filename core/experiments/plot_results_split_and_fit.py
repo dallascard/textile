@@ -30,16 +30,16 @@ def main():
         values[row] = {}
 
     df = None
-    values = None
+    mae_values = None
     for f_i, f in enumerate(files):
         print(f)
         n_files += 1
         df_f = fh.read_csv_to_df(f)
         n_rows, n_cols = df_f.shape
-        if values is None:
+        if mae_values is None:
             df = df_f
-            values = np.zeros([n_rows, n_files-1])
-        values[:, f_i] = df_f['MAE'].values
+            mae_values = np.zeros([n_rows, n_files-1])
+        mae_values[:, f_i] = df_f['MAE'].values
 
         n_train = df_f.loc['train', 'N']
         if n_train not in values['CC']:
@@ -48,7 +48,7 @@ def main():
         for row in rows:
             values[row][n_train].append(df_f.loc[row, 'MAE'])
 
-    df = pd.DataFrame(values, index=df.index)
+    df = pd.DataFrame(mae_values, index=df.index)
     print(df.mean(axis=1))
     print(df.var(axis=1))
 
