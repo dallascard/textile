@@ -14,13 +14,24 @@ def main():
     parser = OptionParser(usage=usage)
     parser.add_option('--output', dest='output', default=None,
                       help='Output filename (optional): default=%default')
-    #parser.add_option('--boolarg', action="store_true", dest="boolarg", default=False,
-    #                  help='Keyword argument: default=%default')
+    parser.add_option('--similar', action="store_true", dest="similar", default=False,
+                      help='Only use the most similar examples: default=%default')
+    parser.add_option('--different', action="store_true", dest="different", default=False,
+                      help='Only use the most different examples: default=%default')
+    parser.add_option('--balanced', action="store_true", dest="balanced", default=False,
+                      help='Only use the most balanced examples: default=%default')
+    parser.add_option('--unbalanced', action="store_true", dest="unbalanced", default=False,
+                      help='Only use the most unbalanced examples: default=%default')
 
 
     (options, args) = parser.parse_args()
     files = args
     n_files = len(files)
+
+    use_most_similar = options.similar
+    use_least_similar = options.different
+    use_balanced = options.balanced
+    use_unbalanced = options.unbalanced
 
     output = options.output
 
@@ -31,6 +42,8 @@ def main():
 
     df = None
     mae_values = None
+    train_estimates = []
+    train_maes = []
     for f_i, f in enumerate(files):
         print(f)
         n_files += 1
@@ -40,6 +53,9 @@ def main():
             df = df_f
             mae_values = np.zeros([n_rows, n_files-1])
         mae_values[:, f_i] = df_f['MAE'].values
+
+        train_estimates.append(df_f.loc['train', 'estimate'])
+        train_maes.append(df_f.loc['train', 'MAE'])
 
         n_train = int(df_f.loc['train', 'N'])
         if n_train not in values['CC']:
@@ -52,16 +68,29 @@ def main():
     print(df.mean(axis=1))
     print(df.var(axis=1))
 
-    train_mean = df.loc['train'].mean()
-    most_similar = df.loc['train'].values < train_mean
-    most_different = df.loc['train'].values > train_mean
+    most_similar = train_maes < np.mean(train_estimates)
+    least_similar = train_maes > np.mean(train_estimates)
+    train_unalancedness = np.abs(np.array(train_estimates) - 0.5)
+    most_balanced = train_unalancedness < np.mean(train_unalancedness)
+    least_balanced = train_unalancedness > np.mean(train_unalancedness)
+
+    selector = np.ones(len(most_similar))
+    if use_most_similar:
+        selector *= most_similar
+    if use_least_similar:
+        selector *= least_similar
+    if use_balanced:
+        selector *= most_balanced
+    if use_most_similar:
+        selector *= least_balanced
+
+    df = pd.DataFrame(df.values[:, selector], index=df.index)
 
     print("Most similar")
     print(df.values[:, most_similar].mean(axis=1))
 
     print("Most different")
     print(df.values[:, most_different].mean(axis=1))
-
 
     if output is not None:
         df.to_csv(output)
