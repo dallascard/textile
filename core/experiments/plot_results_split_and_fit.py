@@ -63,7 +63,7 @@ def main():
         means = []
         groups = list(values[row].keys())
         groups.sort()
-        for group in group:
+        for group in groups:
             points = values[row][group]
             n_points = len(points)
             ax.scatter(np.ones(n_points)*group, points, color=colors[r_i])
