@@ -63,7 +63,7 @@ def process_articles(input_dir):
                                 if child.text is not None:
                                     if text != '':
                                         text += '\n\n'
-                                    text = paragraph.text
+                                    text += paragraph.text
                         elif child.tag == 'metadata':
                             for subchild in child:
                                 if subchild.tag == 'codes' and subchild.attrib['class'] == 'bip:topics:1.0':
