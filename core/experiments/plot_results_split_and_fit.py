@@ -66,7 +66,7 @@ def main():
         for group in groups:
             points = values[row][group]
             n_points = len(points)
-            ax.scatter(np.ones(n_points)*group, points, color=colors[r_i], alpha=0.5)
+            ax.scatter(np.ones(n_points)*group, points, color=colors[r_i], s=5, alpha=0.5)
             means.append(np.mean(points))
         if row == 'train':
             ax.plot(groups, means, linestyle='dashed', color=colors[r_i], label=row, alpha=0.5)
