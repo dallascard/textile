@@ -58,8 +58,6 @@ def main():
     cmap = plt.get_cmap('jet')
     colors = cmap(np.linspace(0, 1.0, len(rows)))
 
-    print(values)
-
     fig, ax = plt.subplots()
     for r_i, row in enumerate(rows):
         means = []
