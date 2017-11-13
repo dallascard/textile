@@ -513,7 +513,7 @@ class DL:
                 Y_all = Y_all[selector, :]
                 w_all = w_all[selector]
 
-            #self._model.train_resid(X_all, Y_all, w_all, col_names, self._name + '_resid', output_dir=self._output_dir, n_classes=2, objective=objective, penalty=penalty, pos_label=pos_label, do_ensemble=do_ensemble, save_model=True)
+            self._model.train_resid(X_all, Y_all, w_all, col_names, self._name + '_resid', output_dir=self._output_dir, n_classes=2, objective=objective, penalty=penalty, pos_label=pos_label, do_ensemble=do_ensemble, save_model=True)
 
     def predict(self, X):
         # if we've stored a default value, then that is our prediction
