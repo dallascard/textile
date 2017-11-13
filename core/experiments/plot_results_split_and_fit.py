@@ -66,8 +66,8 @@ def main():
 
     df = pd.DataFrame(mae_values, index=df.index)
 
-    most_similar = train_maes < np.mean(train_estimates)
-    least_similar = train_maes > np.mean(train_estimates)
+    most_similar = train_maes < np.mean(train_maes)
+    least_similar = train_maes > np.mean(train_maes)
     train_unalancedness = np.abs(np.array(train_estimates) - 0.5)
     most_balanced = train_unalancedness < np.mean(train_unalancedness)
     least_balanced = train_unalancedness > np.mean(train_unalancedness)
@@ -79,7 +79,7 @@ def main():
         selector *= least_similar
     if use_balanced:
         selector *= most_balanced
-    if use_most_similar:
+    if use_unbalanced:
         selector *= least_balanced
 
     df = pd.DataFrame(df.values[:, selector], index=df.index)
