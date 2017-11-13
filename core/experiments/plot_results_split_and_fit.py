@@ -1,5 +1,8 @@
 from optparse import OptionParser
 
+import matplotlib as mpl
+mpl.use('Agg')
+import matplotlib.pyplot as plt
 import numpy as np
 import pandas as pd
 
@@ -21,6 +24,11 @@ def main():
 
     output = options.output
 
+    rows = ['CC', 'PCC', 'ACC', 'MS', 'PCC_platt2', 'PCC_DL']
+    values = {}
+    for row in rows:
+        values[row] = {}
+
     df = None
     values = None
     for f_i, f in enumerate(files):
@@ -33,12 +41,35 @@ def main():
             values = np.zeros([n_rows, n_files-1])
         values[:, f_i] = df_f['MAE'].values
 
+        n_train = df_f.loc['train', 'N']
+        if n_train not in values['CC']:
+            for row in rows:
+                values[row][n_train] = []
+        for row in rows:
+            values[row][n_train].append(df_f.loc[row, 'MAE'])
+
     df = pd.DataFrame(values, index=df.index)
     print(df.mean(axis=1))
     print(df.var(axis=1))
 
     if output is not None:
         df.to_csv(output)
+
+    cmap = plt.get_cmap('jet')
+    colors = cmap(np.linspace(0, 1.0, len(rows)))
+
+    fig, ax = plt.subplots()
+    for r_i, row in enumerate(rows):
+        means = []
+        groups = list(values[row].keys())
+        groups.sort()
+        for group in group:
+            points = values[row][group]
+            n_points = len(points)
+            ax.scatter(np.ones(n_points)*group, points, color=colors[r_i])
+            means.append(points)
+        ax.plot(groups, means, color=colors[r_i])
+    plt.savefig('test.pdf', bbox_inches='tight')
 
 
 if __name__ == '__main__':
