@@ -36,6 +36,7 @@ def process_articles(input_dir):
         with zipfile.ZipFile(file, 'r') as f:
             names = f.namelist()
             print('%s (%d)' % (file, len(names)))
+            n_missing_codes = 0
             for name in names:
                 title = ''
                 headline = ''
@@ -69,8 +70,9 @@ def process_articles(input_dir):
                 if headline == '':
                     print("Headline is empty")
                 if len(codes) == 0:
-                    print("Codes is empty"),
+                    n_missing_codes += 1
                 data[id] = {'text': title + '\n\n' + headline + '\n\n' + text, 'date': date, 'year': year, 'codes': codes}
+            print("missing codes: %d" % n_missing_codes)
 
     return data
 
