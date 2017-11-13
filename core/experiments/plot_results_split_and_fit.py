@@ -74,7 +74,7 @@ def main():
     most_balanced = train_unalancedness < np.mean(train_unalancedness)
     least_balanced = train_unalancedness > np.mean(train_unalancedness)
 
-    selector = np.ones(len(most_similar))
+    selector = np.array(np.ones(len(most_similar)), dtype=bool)
     if use_most_similar:
         selector *= most_similar
     if use_least_similar:
