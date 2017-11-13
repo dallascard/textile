@@ -24,7 +24,7 @@ def main():
 
     output = options.output
 
-    rows = ['CC', 'PCC', 'ACC_internal', 'MS_internal', 'PCC_platt2', 'PCC_DL']
+    rows = ['train', 'CC', 'PCC', 'ACC_internal', 'MS_internal', 'PCC_platt2', 'PCC_DL']
     values = {}
     for row in rows:
         values[row] = {}
@@ -70,7 +70,10 @@ def main():
             n_points = len(points)
             ax.scatter(np.ones(n_points)*group, points, color=colors[r_i])
             means.append(np.mean(points))
-        ax.plot(groups, means, color=colors[r_i], label=row)
+        if row == 'train':
+            ax.plot(groups, means, color=colors[r_i], label=row)
+        else:
+            ax.plot(groups, means, linestyle='dashed', color=colors[r_i], label=row)
     ax.legend()
     plt.savefig('test.pdf', bbox_inches='tight')
 
