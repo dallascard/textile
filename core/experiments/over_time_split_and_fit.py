@@ -438,24 +438,24 @@ def test_over_time(project_dir, subset, config_file, model_type, field, test_sta
             #output_df.loc['CC_plus_cal'] = [n_train, 'train', 'test', 'n/a', cc_plus_cal_estimate, cc_plus_cal_mae, np.nan, np.nan, np.nan]
             output_df.loc['PCC_DL_plus_cal'] = [n_train_r, 'train', 'test', 'n/a', pcc_plus_cal_estimate, pcc_plus_cal_mae, np.nan, np.nan, np.nan]
 
-        samples = predict.sample_predictions(model, X_test, n_samples=100)
-        pcc_samples = np.mean(samples, axis=0)
-        sample_pcc = np.mean(pcc_samples)
-        sample_pcc_lower = np.percentile(pcc_samples, q=2.5)
-        sample_pcc_upper = np.percentile(pcc_samples, q=97.5)
-        sample_pcc_var = np.var(pcc_samples)
-        sample_pcc_mae = np.mean(np.abs(sample_pcc - target_estimate))
-        sample_pcc_contains_test = target_estimate > sample_pcc_lower and target_estimate < sample_pcc_upper
-        output_df.loc['PCC_samples'] = [n_train_r, 'train', 'test', 'n/a', sample_pcc, sample_pcc_mae, sample_pcc_lower, sample_pcc_upper, sample_pcc_contains_test]
-        #output_df.loc['PCC_samples'] = [n_train_r, 'train', 'test', 'n/a', np.nan, np.nan, np.nan, np.nan, np.nan]
+        #samples = predict.sample_predictions(model, X_test, n_samples=100)
+        #pcc_samples = np.mean(samples, axis=0)
+        #sample_pcc = np.mean(pcc_samples)
+        #sample_pcc_lower = np.percentile(pcc_samples, q=2.5)
+        #sample_pcc_upper = np.percentile(pcc_samples, q=97.5)
+        #sample_pcc_var = np.var(pcc_samples)
+        #sample_pcc_mae = np.mean(np.abs(sample_pcc - target_estimate))
+        #sample_pcc_contains_test = target_estimate > sample_pcc_lower and target_estimate < sample_pcc_upper
+        #output_df.loc['PCC_samples'] = [n_train_r, 'train', 'test', 'n/a', sample_pcc, sample_pcc_mae, sample_pcc_lower, sample_pcc_upper, sample_pcc_contains_test]
+        output_df.loc['PCC_samples'] = [n_train_r, 'train', 'test', 'n/a', np.nan, np.nan, np.nan, np.nan, np.nan]
 
         if n_calib > 0:
-            pcc_plus_cal_estimate = (sample_pcc / sample_pcc_var + calib_estimate / calib_std ** 2) / (1.0 / sample_pcc_var + 1.0 / calib_std ** 2)
-            pcc_plus_cal_mae = np.mean(np.abs(pcc_plus_cal_estimate - target_estimate))
-            pcc_plus_cal_std = np.sqrt(1.0 / (1.0 / sample_pcc_var + 1.0 / calib_std ** 2))
-            pcc_plus_cal_contains_test = target_estimate > pcc_plus_cal_estimate - 2 * pcc_plus_cal_std and target_estimate < pcc_plus_cal_estimate + 2 * pcc_plus_cal_std
-            output_df.loc['PCC_samples_plus_cal'] = [n_train_r, 'train', 'test', 'n/a', pcc_plus_cal_estimate, pcc_plus_cal_mae, pcc_plus_cal_estimate - 2 * pcc_plus_cal_std, pcc_plus_cal_estimate + 2 * pcc_plus_cal_std, pcc_plus_cal_contains_test]
-            #output_df.loc['PCC_samples_plus_cal'] = [n_train_r, 'train', 'test', 'n/a', np.nan, np.nan, np.nan, np.nan, np.nan]
+            #pcc_plus_cal_estimate = (sample_pcc / sample_pcc_var + calib_estimate / calib_std ** 2) / (1.0 / sample_pcc_var + 1.0 / calib_std ** 2)
+            #pcc_plus_cal_mae = np.mean(np.abs(pcc_plus_cal_estimate - target_estimate))
+            #pcc_plus_cal_std = np.sqrt(1.0 / (1.0 / sample_pcc_var + 1.0 / calib_std ** 2))
+            #pcc_plus_cal_contains_test = target_estimate > pcc_plus_cal_estimate - 2 * pcc_plus_cal_std and target_estimate < pcc_plus_cal_estimate + 2 * pcc_plus_cal_std
+            #output_df.loc['PCC_samples_plus_cal'] = [n_train_r, 'train', 'test', 'n/a', pcc_plus_cal_estimate, pcc_plus_cal_mae, pcc_plus_cal_estimate - 2 * pcc_plus_cal_std, pcc_plus_cal_estimate + 2 * pcc_plus_cal_std, pcc_plus_cal_contains_test]
+            output_df.loc['PCC_samples_plus_cal'] = [n_train_r, 'train', 'test', 'n/a', np.nan, np.nan, np.nan, np.nan, np.nan]
         else:
             output_df.loc['PCC_samples_plus_cal'] = [n_train_r, 'train', 'test', 'n/a', np.nan, np.nan, np.nan, np.nan, np.nan]
 
