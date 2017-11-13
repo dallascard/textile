@@ -52,6 +52,17 @@ def main():
     print(df.mean(axis=1))
     print(df.var(axis=1))
 
+    train_mean = df.loc['train'].mean()
+    most_similar = df.loc['train'].values < train_mean
+    most_different = df.loc['trian'].values > train_mean
+
+    print("Most similar")
+    print(df.values[:, most_similar].mean(axis=1))
+
+    print("Most different")
+    print(df.values[:, most_different].mean(axis=1))
+
+
     if output is not None:
         df.to_csv(output)
 
