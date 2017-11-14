@@ -77,7 +77,9 @@ def process_articles(input_dir):
                         print("Headline is empty")
                     if len(codes) == 0:
                         n_missing_codes += 1
-                    data[id] = {'text': title + '\n\n' + headline + '\n\n' + text, 'date': date, 'year': year, 'codes': codes}
+                    data[id] = {'text': title + '\n\n' + headline + '\n\n' + text, 'date': date, 'year': year}
+                    for code in codes:
+                        data[id][code] = 1
                 except Exception as e:
                     print(name, e)
             print("missing codes: %d" % n_missing_codes)
