@@ -244,13 +244,12 @@ cdef sparse_update_one_coordinate(double C, double beta, double sigma, double L,
         d = -w_j
 
     # check upper and lower limits (except for bias), and set max step accordingly
-    if is_bias==0:
-        if w_j + d < lower:
-            diff = lower - w_j
-            a = diff / d
-        if w_j + d > upper:
-            diff = upper - w_j
-            a = diff / d
+    if w_j + d < lower:
+        diff = lower - w_j
+        a = diff / d
+    if w_j + d > upper:
+        diff = upper - w_j
+        a = diff / d
 
     # unless we've hit a bound, use line search to find how far to move in this direction
     if a > 0 and c_abs(d) > 0:
