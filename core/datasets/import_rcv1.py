@@ -48,7 +48,7 @@ def process_articles(input_dir):
                     xml = f.read(name)
                     root = ET.fromstring(xml)
                     attributes = root.attrib
-                    id = attributes['itemid']
+                    id = 'rcv' + str(attributes['itemid'])
                     date = attributes['date']
                     year = int(date.split('-')[0])
                     for child in root:
