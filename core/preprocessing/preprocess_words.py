@@ -107,8 +107,7 @@ def preprocess_words(project_dir, subset, ngrams=2, lower=False, lemmatize=False
             if ngrams > 1:
                 counter = Counter()
                 counter.update([percept(parse[i]) + '_' + percept(parse[i+1]) for i in range(len(parse)-1)])
-                bigrams[name] = dict(counter)
-
+                ngram_dicts[2][name] = dict(counter)
 
     #print("Creating word features")
     #word_feature = features.create_from_dict_of_counts('unigrams', unigrams)
