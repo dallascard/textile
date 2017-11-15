@@ -237,29 +237,36 @@ def test_over_time(project_dir, subset, config_file, model_type, field, test_sta
             cshift_pos_label = 1
         train_test_labels_df = pd.DataFrame(train_test_labels, index=labels_df.index, columns=[0, 1])
         # create a cshift model using the same specifiction as our model below (e.g. LR/MLP, etc.)
-        model_name = model_basename + '_' + str(v) + '_' + 'cshift'
-        model, dev_f1, dev_acc, dev_cal, dev_cal_overall = train.train_model_with_labels(project_dir, model_type, loss, model_name, subset, train_test_labels_df, feature_defs, penalty=penalty, alpha_min=alpha_min, alpha_max=alpha_max, intercept=intercept, n_dev_folds=n_dev_folds, save_model=True, do_ensemble=do_ensemble, dh=dh, seed=seed, pos_label=cshift_pos_label, verbose=False)
+        model_name = model_basename + '_' + 'cshift'
+        model, dev_f1, dev_acc, dev_cal, dev_cal_overall = train.train_model_with_labels(project_dir, model_type, loss, model_name, subset, train_test_labels_df, feature_defs, penalty=penalty, alpha_min=alpha_min, alpha_max=alpha_max, n_alphas=n_alphas, intercept=intercept, n_dev_folds=n_dev_folds, save_model=True, do_ensemble=do_ensemble, dh=dh, seed=seed, pos_label=cshift_pos_label, verbose=False)
         print("cshift results: %0.4f f1, %0.4f acc" % (dev_f1, dev_acc))
 
         # take predictions from model on the training data
         train_test_pred_df, train_test_probs_df, _ = predict.predict(project_dir, model, model_name, subset, label, verbose=verbose)
+
+        X_test, features_concat = predict.load_data(project_dir, model_name, subset)
+        test_predictions = model.predict(X_test)
+        #test_predictions_df = pd.DataFrame(test_predictions, index=features_concat.get_items(), columns=[label])
+        test_pred_probs = model.predict_probs(X_test)
+        #test_pred_probs_df = pd.DataFrame(test_pred_probs, index=features_concat.get_items(), columns=range(n_labels))
+
         # display the min and max probs
         print("Min: %0.4f" % train_test_probs_df[1].min())
         print("Max: %0.4f" % train_test_probs_df[1].max())
         # use the estimated probability of each item being a training item to compute item weights
-        weights = n_train_cshift / float(n_non_train_cshift) * (1.0/train_test_probs_df[0].values - 1)
+        weights = n_train_all / float(n_test_all) * (1.0/train_test_probs_df[0].values - 1)
         # print a summary of the weights from just the training items
-        print("Min weight: %0.4f" % weights[train_selector].min())
-        print("Ave weight: %0.4f" % weights[train_selector].mean())
-        print("Max weight: %0.4f" % weights[train_selector].max())
+        print("Min weight: %0.4f" % weights[train_selector_all].min())
+        print("Ave weight: %0.4f" % weights[train_selector_all].mean())
+        print("Max weight: %0.4f" % weights[train_selector_all].max())
         # print a summary of all weights
         print("Min weight: %0.4f" % weights.min())
         print("Ave weight: %0.4f" % weights.mean())
         print("Max weight: %0.4f" % weights.max())
         # create a data frame with this information
-        weights_df = pd.DataFrame(weights, index=labels_df.index)
+        weights_df_all = pd.DataFrame(weights, index=labels_df.index)
     else:
-        weights_df = None
+        weights_df_all = None
 
 
     # add in a stage to eliminate items with no labels
@@ -296,9 +303,10 @@ def test_over_time(project_dir, subset, config_file, model_type, field, test_sta
         else:
             calib_items = []
 
-        weights_df = None
-        if weights_df is not None:
-            weights_df = weights_df[labeled_item_selector]
+        if weights_df_all is not None:
+            weights_df = weights_df_all[labeled_item_selector]
+        else:
+            weights_df = None
 
         print("Labeled train: %d, test: %d" % (n_train_r, n_test))
 
