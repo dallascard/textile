@@ -428,6 +428,9 @@ def test_over_time(project_dir, subset, config_file, model_type, field, test_sta
             #output_df.loc['CC_plus_cal'] = [n_train, 'train', 'test', 'n/a', cc_plus_cal_estimate, cc_plus_cal_mae, np.nan, np.nan, np.nan]
             output_df.loc['PCC_plus_cal'] = [n_train_r, 'train', 'test', 'n/a', pcc_plus_cal_estimate, pcc_plus_cal_mae, np.nan, np.nan, np.nan]
 
+        results_df.to_csv(os.path.join(dirs.dir_models(project_dir), model_name, 'accuracy.csv'))
+        output_df.to_csv(os.path.join(dirs.dir_models(project_dir), model_name, 'results.csv'))
+
         """
         print("Training a DL model")        
         feature_list = None
