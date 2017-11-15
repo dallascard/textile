@@ -55,8 +55,8 @@ def main():
     #                  help='Make an ensemble from cross-validation, instead of training one model: default=%default')
     parser.add_option('--label', dest='label', default='label',
                       help='Label name: default=%default')
-    #parser.add_option('--cshift', dest='cshift', default=None,
-    #                  help='Covariate shift method [None|classify]: default=%default')
+    parser.add_option('--cshift', dest='cshift', default=None,
+                      help='Covariate shift method [None|classify]: default=%default')
     parser.add_option('--objective', dest='objective', default='f1',
                       help='Objective for choosing best alpha [calibration|f1]: default=%default')
     parser.add_option('--early', action="store_true", dest="early_stopping", default=False,
@@ -69,8 +69,6 @@ def main():
                       help='Number of repeats with random calibration/test splits: default=%default')
     parser.add_option('--seed', dest='seed', default=None,
                       help='Random seed (None=random): default=%default')
-    #parser.add_option('--run_all', action="store_true", dest="run_all", default=False,
-    #                  help='Run models using combined train and calibration data: default=%default')
     parser.add_option('--annotated', dest='annotated', default=None,
                       help='Annotated subset to load the corresponding features from just annotated text: default=%default')
     parser.add_option('--oracle', action="store_true", dest="oracle", default=False,
@@ -114,7 +112,7 @@ def main():
     #calib_pred = options.calib_pred
     label = options.label
     penalty = options.penalty
-    #cshift = options.cshift
+    cshift = options.cshift
     objective = options.objective
     early_stopping = options.early_stopping
     intercept = not options.no_intercept
@@ -137,10 +135,10 @@ def main():
 
     average = 'micro'
 
-    test_over_time(project_dir, subset, config_file, model_type, field, test_start, test_end, n_train, n_calib, penalty, suffix, loss, objective, do_ensemble, dh, label, intercept, n_dev_folds, average, seed, alpha_min, alpha_max, n_alphas, sample_labels, group_identical, annotated, nonlinearity, early_stopping=early_stopping, list_size=ls, repeats=repeats, oracle=oracle, lower=lower, interactive=interactive, stoplist_file=stoplist_file, verbose=verbose)
+    test_over_time(project_dir, subset, config_file, model_type, field, test_start, test_end, n_train, n_calib, penalty, suffix, loss, objective, do_ensemble, dh, label, intercept, n_dev_folds, average, seed, alpha_min, alpha_max, n_alphas, sample_labels, group_identical, annotated, nonlinearity, early_stopping=early_stopping, list_size=ls, repeats=repeats, oracle=oracle, lower=lower, interactive=interactive, stoplist_file=stoplist_file, cshift=cshift, verbose=verbose)
 
 
-def test_over_time(project_dir, subset, config_file, model_type, field, test_start, test_end, n_train=None, n_calib=0, penalty='l2', suffix='', loss='log', objective='f1', do_ensemble=True, dh=100, label='label', intercept=True, n_dev_folds=5, average='micro', seed=None, alpha_min=0.01, alpha_max=1000.0, n_alphas=8, sample_labels=False, group_identical=False, annotated_subset=None, nonlinearity='tanh', init_lr=1e-4, min_epochs=2, max_epochs=100, patience=8, tol=1e-4, early_stopping=False, list_size=1, repeats=1, oracle=False, lower=None, interactive=False, stoplist_file=None, verbose=False):
+def test_over_time(project_dir, subset, config_file, model_type, field, test_start, test_end, n_train=None, n_calib=0, penalty='l2', suffix='', loss='log', objective='f1', do_ensemble=True, dh=100, label='label', intercept=True, n_dev_folds=5, average='micro', seed=None, alpha_min=0.01, alpha_max=1000.0, n_alphas=8, sample_labels=False, group_identical=False, annotated_subset=None, nonlinearity='tanh', init_lr=1e-4, min_epochs=2, max_epochs=100, patience=8, tol=1e-4, early_stopping=False, list_size=1, repeats=1, oracle=False, lower=None, interactive=False, stoplist_file=None, cshift=False, verbose=False):
     # Just run a regular model, one per year, training on the past, and save the reults
 
     log = {
@@ -154,6 +152,7 @@ def test_over_time(project_dir, subset, config_file, model_type, field, test_sta
         'n_train': n_train,
         'n_calib': n_calib,
         'penalty': penalty,
+        'cshift': cshift,
         'suffix': suffix,
         'loss': loss,
         'objective': objective,
@@ -223,15 +222,15 @@ def test_over_time(project_dir, subset, config_file, model_type, field, test_sta
     label_dir = dirs.dir_labels(project_dir, subset)
     labels_df = fh.read_csv_to_df(os.path.join(label_dir, label + '.csv'), index_col=0, header=0)
 
-
     # if desired, attempt to learn weights for the training data using techniques for covariate shift
-    """
-    if cshift is not None:
+    if cshift:
         print("Training a classifier for covariate shift")
         # start by learning to discriminate train from non-train data
-        train_test_labels = np.zeros((n_items, 2), dtype=int)
-        train_test_labels[train_selector, 0] = 1
-        train_test_labels[non_train_selector, 1] = 1
+        all_items = test_items_all + train_items_all
+        # Label items based on whether they come from train or test
+        train_test_labels = np.zeros((len(all_items), 2), dtype=int)
+        train_test_labels[train_selector_all, 0] = 1
+        train_test_labels[test_selector_all, 1] = 1
         if np.sum(train_test_labels[:, 0]) < np.sum(train_test_labels[:, 1]):
             cshift_pos_label = 0
         else:
@@ -261,7 +260,6 @@ def test_over_time(project_dir, subset, config_file, model_type, field, test_sta
         weights_df = pd.DataFrame(weights, index=labels_df.index)
     else:
         weights_df = None
-    """
 
 
     # add in a stage to eliminate items with no labels

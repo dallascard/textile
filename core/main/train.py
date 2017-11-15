@@ -132,6 +132,9 @@ def train_model_with_labels(project_dir, model_type, loss, model_name, subset, l
         printv("Initial shape = (%d, %d)" % feature.get_shape(), verbose)
         feature_items = feature.get_items()
         feature_item_index = dict(zip(feature_items, range(len(feature_items))))
+        printv("len(feature_items)" + str(len(feature_items)), verbose)
+        printv("len(items_to_use)" + str(len(items_to_use)), verbose)
+        printv(np.sum(i for i in items_to_use if i in feature_item_index))
         indices_to_use = [feature_item_index[i] for i in items_to_use]
         if indices_to_use is not None:
             printv("Taking subset of items", verbose)
