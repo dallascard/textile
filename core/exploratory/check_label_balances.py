@@ -33,16 +33,12 @@ def main():
 
 
 def check_balances(project_dir, subset, field, test_start, test_end, label):
-
+    print(label)
     # load the file that contains metadata about each item
     metadata_file = os.path.join(dirs.dir_subset(project_dir, subset), 'metadata.csv')
     metadata = fh.read_csv_to_df(metadata_file)
     field_vals = list(set(metadata[field].values))
     field_vals.sort()
-    print("Splitting data according to %s", field)
-    print("Values:", field_vals)
-
-    print("\nTesting on %s to %s" % (test_start, test_end))
 
     # first, split into training and non-train data based on the field of interest
     all_items = list(metadata.index)
@@ -63,17 +59,16 @@ def check_balances(project_dir, subset, field, test_start, test_end, label):
     labels_df = fh.read_csv_to_df(os.path.join(label_dir, label + '.csv'), index_col=0, header=0)
 
     # add in a stage to eliminate items with no labels
-    print("Subsetting items with labels")
     label_sums_df = labels_df.sum(axis=1)
     labeled_item_selector = label_sums_df > 0
     labels_df = labels_df[labeled_item_selector]
-    n_labeled_items, n_classes = labels_df.shape
     labeled_items = set(labels_df.index)
 
     train_items_labeled = [i for i in train_items_all if i in labeled_items]
     test_items = [i for i in test_items_all if i in labeled_items]
 
-    print(label, labels_df.loc[train_items_labeled].mean(axis=0), labels_df.loc[test_items].mean(axis=0))
+    print(labels_df.loc[train_items_labeled].mean(axis=0).values)
+    print(labels_df.loc[test_items].mean(axis=0).values)
 
 
 if __name__ == '__main__':
