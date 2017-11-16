@@ -521,6 +521,8 @@ def make_model_basename(log):
         model_basename += '_' + str(log['dh'])
     if log['sample_labels']:
         model_basename += '_sampled'
+    if log['cshift']:
+        model_basename += '_cshift'
     model_basename += log['suffix']
     return model_basename
 
