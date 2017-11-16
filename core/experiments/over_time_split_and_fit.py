@@ -135,10 +135,18 @@ def main():
 
     average = 'micro'
 
-    test_over_time(project_dir, subset, config_file, model_type, field, test_start, test_end, n_train, n_calib, penalty, suffix, loss, objective, do_ensemble, dh, label, intercept, n_dev_folds, average, seed, alpha_min, alpha_max, n_alphas, sample_labels, group_identical, annotated, nonlinearity, early_stopping=early_stopping, list_size=ls, repeats=repeats, oracle=oracle, lower=lower, interactive=interactive, stoplist_file=stoplist_file, cshift=cshift, verbose=verbose)
+    if do_ensemble:
+        do_platt = True
+        do_cfm = True
+    else:
+        do_platt = False
+        do_cfm = False
 
 
-def test_over_time(project_dir, subset, config_file, model_type, field, test_start, test_end, n_train=None, n_calib=0, penalty='l2', suffix='', loss='log', objective='f1', do_ensemble=True, dh=100, label='label', intercept=True, n_dev_folds=5, average='micro', seed=None, alpha_min=0.01, alpha_max=1000.0, n_alphas=8, sample_labels=False, group_identical=False, annotated_subset=None, nonlinearity='tanh', init_lr=1e-4, min_epochs=2, max_epochs=100, patience=8, tol=1e-4, early_stopping=False, list_size=1, repeats=1, oracle=False, lower=None, interactive=False, stoplist_file=None, cshift=False, verbose=False):
+    test_over_time(project_dir, subset, config_file, model_type, field, test_start, test_end, n_train, n_calib, penalty, suffix, loss, objective, do_ensemble, dh, label, intercept, n_dev_folds, average, seed, alpha_min, alpha_max, n_alphas, sample_labels, group_identical, annotated, nonlinearity, early_stopping=early_stopping, list_size=ls, repeats=repeats, oracle=oracle, lower=lower, interactive=interactive, stoplist_file=stoplist_file, cshift=cshift, do_cfm=do_cfm, do_platt=do_platt, verbose=verbose)
+
+
+def test_over_time(project_dir, subset, config_file, model_type, field, test_start, test_end, n_train=None, n_calib=0, penalty='l2', suffix='', loss='log', objective='f1', do_ensemble=True, dh=100, label='label', intercept=True, n_dev_folds=5, average='micro', seed=None, alpha_min=0.01, alpha_max=1000.0, n_alphas=8, sample_labels=False, group_identical=False, annotated_subset=None, nonlinearity='tanh', init_lr=1e-4, min_epochs=2, max_epochs=100, patience=8, tol=1e-4, early_stopping=False, list_size=1, repeats=1, oracle=False, lower=None, interactive=False, stoplist_file=None, cshift=False, do_cfm=True, do_platt=True, verbose=False):
     # Just run a regular model, one per year, training on the past, and save the reults
 
     log = {
@@ -373,7 +381,7 @@ def test_over_time(project_dir, subset, config_file, model_type, field, test_sta
             stoplist = None
 
         print("Training a LR model")
-        model, dev_f1, dev_acc, dev_cal_mae, dev_cal_est = train.train_model_with_labels(project_dir, model_type, 'log', model_name, subset, sampled_labels_df, feature_defs, weights_df=weights_df, items_to_use=train_items, penalty=penalty, alpha_min=alpha_min, alpha_max=alpha_max, n_alphas=n_alphas, intercept=intercept, objective=objective, n_dev_folds=n_dev_folds, do_ensemble=do_ensemble, dh=dh, seed=seed, pos_label=pos_label, vocab=None, group_identical=group_identical, nonlinearity=nonlinearity, init_lr=init_lr, min_epochs=min_epochs, max_epochs=max_epochs, patience=patience, tol=tol, early_stopping=early_stopping, do_cfm=True, do_platt=True, lower=lower, stoplist=stoplist, verbose=verbose)
+        model, dev_f1, dev_acc, dev_cal_mae, dev_cal_est = train.train_model_with_labels(project_dir, model_type, 'log', model_name, subset, sampled_labels_df, feature_defs, weights_df=weights_df, items_to_use=train_items, penalty=penalty, alpha_min=alpha_min, alpha_max=alpha_max, n_alphas=n_alphas, intercept=intercept, objective=objective, n_dev_folds=n_dev_folds, do_ensemble=do_ensemble, dh=dh, seed=seed, pos_label=pos_label, vocab=None, group_identical=group_identical, nonlinearity=nonlinearity, init_lr=init_lr, min_epochs=min_epochs, max_epochs=max_epochs, patience=patience, tol=tol, early_stopping=early_stopping, do_cfm=do_cfm, do_platt=do_platt, lower=lower, stoplist=stoplist, verbose=verbose)
         results_df.loc['cross_val'] = [dev_f1, dev_acc, dev_cal_mae, dev_cal_est]
 
         # predict on test data
@@ -401,7 +409,7 @@ def test_over_time(project_dir, subset, config_file, model_type, field, test_sta
         output_df.loc['CC'] = [n_train_r, 'train', 'test', 'n/a', test_cc_estimate[1], test_cc_mae, np.nan, np.nan, np.nan]
         output_df.loc['PCC'] = [n_train_r, 'train', 'test', 'n/a', test_pcc_estimate[1], test_pcc_mae, np.nan, np.nan, np.nan]
 
-        test_acc_estimate_internal, test_acc_ms_estimate_internal = model.predict_proportions(X_test, do_cfm=True)
+        test_acc_estimate_internal, test_acc_ms_estimate_internal = model.predict_proportions(X_test, do_cfm=do_cfm)
 
         test_acc_rmse_internal = np.abs(test_acc_estimate_internal[1] - target_estimate)
         test_acc_ms_rmse_internal = np.abs(test_acc_ms_estimate_internal[1] - target_estimate)
@@ -409,7 +417,7 @@ def test_over_time(project_dir, subset, config_file, model_type, field, test_sta
         output_df.loc['ACC_internal'] = [n_train_r, 'train', 'test', 'n/a', test_acc_estimate_internal[1], test_acc_rmse_internal, np.nan, np.nan, np.nan]
         output_df.loc['MS_internal'] = [n_train_r, 'train', 'nontrain', 'predicted', test_acc_ms_estimate_internal[1], test_acc_ms_rmse_internal, np.nan, np.nan, np.nan]
 
-        test_platt1_estimate, test_platt2_estimate = model.predict_proportions(X_test, do_platt=True)
+        test_platt1_estimate, test_platt2_estimate = model.predict_proportions(X_test, do_platt=do_platt)
 
         test_platt1_rmse = np.abs(test_platt1_estimate[1] - target_estimate)
         test_platt2_rmse = np.abs(test_platt2_estimate[1] - target_estimate)
