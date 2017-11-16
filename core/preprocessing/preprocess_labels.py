@@ -13,8 +13,10 @@ def main():
 
     usage = "%prog project_dir subset [metadata1,metadata2,...]"
     parser = OptionParser(usage=usage)
+    parser.add_option('--all', action="store_true", dest="all", default=False,
+                      help='Preprocess all labels: default=%default')
     parser.add_option('--label', dest='label', default='label',
-                      help='Name of label (in data_file.json): default=%default')
+                      help='Name of [single] label (in data_file.json): default=%default')
 
     (options, args) = parser.parse_args()
 
@@ -24,29 +26,47 @@ def main():
         metadata_fields = args[2].split(',')
     else:
         metadata_fields = []
+    do_all = options.all
     label_name = options.label
 
-    preprocess_labels(project_dir, subset, label_name, metadata_fields)
-
-
-def preprocess_labels(project_dir, subset, label_name, metadata_fields):
+    if do_all:
 
     datafile = os.path.join(dirs.dir_data_raw(project_dir), subset + '.json')
 
     print("Reading data")
     data = fh.read_json(datafile)
-    keys = list(data.keys())
-    keys.sort()
+    keys = data.keys()
+
+    label_names = set()
+    if do_all:
+        print("Collecting label names")
+        for k_i, key in enumerate(keys):
+            item = data[key]
+            item_labels = item['labels'].keys()
+            label_names.update(item_labels)
+    else:
+        label_names = [label_name]
+    label_names = list(label_names)
+    label_names.sort()
+
+    for label_name in label_names:
+        print(label_name)
+        preprocess_labels(project_dir, subset, data, label_name, metadata_fields)
+
+
+def preprocess_labels(project_dir, subset, data, label_name, metadata_fields):
+
     items = []
 
     # first determine the number of classes
     label_set = set()
+    keys = list(data.keys())
+    keys.sort()
+
     for k_i, key in enumerate(keys):
-        if k_i % 10000 == 0 and k_i > 0:
-            print(k_i)
         item = data[key]
-        if label_name in item:
-            labels = item[label_name]
+        if label_name in item['labels']:
+            labels = item['labels'][label_name]
         else:
             labels = 0
         if type(labels) == dict:
@@ -87,15 +107,12 @@ def preprocess_labels(project_dir, subset, label_name, metadata_fields):
     labels_matrix = np.zeros((len(keys), n_classes), dtype=int)
 
     for k_i, key in enumerate(keys):
-        if k_i % 10000 == 0 and k_i > 0:
-            print(k_i)
-
         item = data[key]
 
         # TODO: make this faster; avoid inserting into dataframe
         #labels = item[label_name]
         if label_name in item:
-            labels = item[label_name]
+            labels = item['labels'][label_name]
         else:
             labels = 0
 
@@ -109,14 +126,6 @@ def preprocess_labels(project_dir, subset, label_name, metadata_fields):
             metadata_lists[m].append(item[m])
 
     labels_df = pd.DataFrame(labels_matrix, index=items, columns=np.arange(n_classes))
-
-    # nah, do this in training...
-    # normalize those rows that are unanimous
-    #print("Normalizing")
-    #not_unan = np.array(np.sum(labels_df.values > 0, axis=1) != 1)
-    #row_sum = np.reshape(np.sum(labels_df.values, axis=1), (len(not_unan), 1))
-    #row_sum[not_unan] = 1.0
-    #labels_df = pd.DataFrame(np.array(labels_df.values / row_sum, dtype=int), index=labels_df.index, columns=labels_df.columns)
 
     print("Saving labels")
     output_dir = dirs.dir_labels(project_dir, subset)
