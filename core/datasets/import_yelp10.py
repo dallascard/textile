@@ -20,20 +20,18 @@ def main():
     input_dir = args[0]
     project_dir = args[1]
 
-    fh.makedirs(project_dir)
-
     city_lookup = dict()
 
+    print("Reading in business data")
     lines = fh.read_json_lines(os.path.join(input_dir, 'business.json'))
     for key, line in lines.items():
-        if key % 10000 == 0:
-            print(key)
         city = line['city']
         business_id = line['business_id']
         city_lookup[business_id] = city
 
     data = {}
 
+    print("Reading in review data")
     lines = fh.read_json_lines(os.path.join(input_dir, 'review.json'))
     toronto_count = 0
     phoenix_count = 0
@@ -61,6 +59,8 @@ def main():
                 print("%s not found in city lookup" % business_id)
 
     print(toronto_count, phoenix_count)
+    fh.makedirs(dirs.dir_data_raw(project_dir))
+
     fh.write_to_json(data, os.path.join(dirs.dir_data_raw(project_dir), 'all.json'))
 
 
