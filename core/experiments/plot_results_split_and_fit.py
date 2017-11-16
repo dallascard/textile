@@ -35,7 +35,7 @@ def main():
 
     output = options.output
 
-    rows = ['train', 'CC', 'PCC', 'ACC_internal', 'MS_internal', 'PCC_platt2', 'PCC_DL']
+    rows = ['train', 'CC', 'PCC', 'ACC_internal', 'MS_internal', 'PCC_platt2']
     values = {}
     for row in rows:
         values[row] = {}
