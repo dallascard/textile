@@ -17,6 +17,8 @@ def main():
                       help='Use training data from before this field value: default=%default')
     parser.add_option('--test_end', dest='test_end', default=2012,
                       help='Last field value of test data to use: default=%default')
+    parser.add_option('-n', dest='n', default=10,
+                      help='Number to print: default=%default')
 
     (options, args) = parser.parse_args()
 
@@ -26,6 +28,7 @@ def main():
     field = options.field
     test_start = int(options.test_start)
     test_end = int(options.test_end)
+    n = int(options.n)
 
     label_files = glob.glob(os.path.join(dirs.dir_labels(project_dir, subset), '*.csv'))
 
@@ -39,11 +42,11 @@ def main():
 
     order = list(np.argsort(diffs).tolist())
 
-    for i in range(10):
+    for i in range(n):
         print(labels[order[i]], diffs[order[i]])
 
     order.reverse()
-    for i in range(10):
+    for i in range(n):
         print(labels[order[i]], diffs[order[i]])
 
 
