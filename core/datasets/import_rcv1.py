@@ -51,6 +51,8 @@ def process_articles(input_dir):
                     id = 'rcv' + str(attributes['itemid'])
                     date = attributes['date']
                     year = int(date.split('-')[0])
+                    month = int(date.split('-')[1])
+                    yearmonth = str(year) + str(month)
                     for child in root:
                         if child.tag == 'title':
                             if child.text is not None:
@@ -77,7 +79,7 @@ def process_articles(input_dir):
                         print("Headline is empty")
                     if len(codes) == 0:
                         n_missing_codes += 1
-                    data[id] = {'text': title + '\n\n' + headline + '\n\n' + text, 'date': date, 'year': year, 'labels': {}}
+                    data[id] = {'text': title + '\n\n' + headline + '\n\n' + text, 'date': date, 'year': year, 'labels': {}, 'yearmonth': int(yearmonth)}
                     for code in codes:
                         data[id]['labels'][code] = 1
                 except Exception as e:

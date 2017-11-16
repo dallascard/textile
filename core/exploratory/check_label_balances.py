@@ -52,8 +52,6 @@ def check_balances(project_dir, subset, field, test_start, test_end, label):
     train_items_all = list(train_subset_all.index)
     n_train_all = len(train_items_all)
 
-    print("Train: %d, Test: %d (labeled and unlabeled)" % (n_train_all, n_test_all))
-
     # load all labels
     label_dir = dirs.dir_labels(project_dir, subset)
     labels_df = fh.read_csv_to_df(os.path.join(label_dir, label + '.csv'), index_col=0, header=0)
