@@ -50,7 +50,7 @@ def main():
     objective = options.objective
     sample_labels = options.sample
     penalty = options.penalty
-    cshift = options.csfhit
+    cshift = options.cshift
     repeats = int(options.repeats)
     model_type = options.model
     lower = options.lower
