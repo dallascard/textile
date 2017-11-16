@@ -75,3 +75,7 @@ def check_balances(project_dir, subset, field, test_start, test_end, label):
     test_items = [i for i in test_items_all if i in labeled_items]
 
     print(label, labels_df.loc[train_items_labeled].mean(axis=0), labels_df.loc[test_items].mean(axis=0))
+
+
+if __name__ == '__main__':
+    main()
