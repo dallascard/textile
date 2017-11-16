@@ -57,6 +57,7 @@ def check_balances(project_dir, subset, field, test_start, test_end, label):
     metadata = fh.read_csv_to_df(metadata_file)
     field_vals = list(set(metadata[field].values))
     field_vals.sort()
+    print(field_vals)
 
     # first, split into training and non-train data based on the field of interest
     all_items = list(metadata.index)
