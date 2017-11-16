@@ -52,7 +52,10 @@ def process_articles(input_dir):
                     date = attributes['date']
                     year = int(date.split('-')[0])
                     month = int(date.split('-')[1])
-                    yearmonth = str(year) + str(month)
+                    if month < 10:
+                        yearmonth = str(year) + '0' + str(month)
+                    else:
+                        yearmonth = str(year) + str(month)
                     for child in root:
                         if child.tag == 'title':
                             if child.text is not None:
