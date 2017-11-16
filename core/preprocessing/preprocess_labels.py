@@ -47,9 +47,12 @@ def main():
     label_names = list(label_names)
     label_names.sort()
 
-    for label_name in label_names:
+    for i, label_name in enumerate(label_names):
         print(label_name)
-        preprocess_labels(project_dir, subset, data, label_name, metadata_fields)
+        if i > 0:
+            preprocess_labels(project_dir, subset, data, label_name, [])
+        else:
+            preprocess_labels(project_dir, subset, data, label_name, metadata_fields)
 
 
 def preprocess_labels(project_dir, subset, data, label_name, metadata_fields):
