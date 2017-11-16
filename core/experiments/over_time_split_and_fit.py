@@ -55,7 +55,7 @@ def main():
     #                  help='Make an ensemble from cross-validation, instead of training one model: default=%default')
     parser.add_option('--label', dest='label', default='label',
                       help='Label name: default=%default')
-    parser.add_option('--cshift', dest='cshift', default=None,
+    parser.add_option('--cshift', action="store_true", dest="cshift", default=False,
                       help='Covariate shift method [None|classify]: default=%default')
     parser.add_option('--objective', dest='objective', default='f1',
                       help='Objective for choosing best alpha [calibration|f1]: default=%default')
