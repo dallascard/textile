@@ -2,6 +2,8 @@ import os
 import glob
 from optparse import OptionParser
 
+import numpy as np
+
 from core.util import file_handling as fh
 from core.util import dirs
 
@@ -27,9 +29,22 @@ def main():
 
     label_files = glob.glob(os.path.join(dirs.dir_labels(project_dir, subset), '*.csv'))
 
+    diffs = []
+    labels = []
     for label_file in label_files:
         label = os.path.basename(label_file).split('.')[0]
-        check_balances(project_dir, subset, field, test_start, test_end, label)
+        diff = check_balances(project_dir, subset, field, test_start, test_end, label)
+        labels.append(label)
+        diffs.append(diff)
+
+    order = list(np.argsort(diffs).tolist())
+
+    for i in range(10):
+        print(labels[order[i]], diffs[order[i]])
+
+    order.reverse()
+    for i in range(10):
+        print(labels[order[i]], diffs[order[i]])
 
 
 def check_balances(project_dir, subset, field, test_start, test_end, label):
@@ -67,6 +82,7 @@ def check_balances(project_dir, subset, field, test_start, test_end, label):
 
     print(labels_df.loc[train_items_labeled].mean(axis=0).values)
     print(labels_df.loc[test_items].mean(axis=0).values)
+    return abs(labels_df.loc[train_items_labeled].mean(axis=0).values[1] - labels_df.loc[test_items].mean(axis=0).values[1])
 
 
 if __name__ == '__main__':
