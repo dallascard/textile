@@ -238,7 +238,7 @@ def test_over_time(project_dir, subset, config_file, model_type, field, test_sta
         train_test_labels_df = pd.DataFrame(train_test_labels, index=labels_df.index, columns=[0, 1])
         # create a cshift model using the same specifiction as our model below (e.g. LR/MLP, etc.)
         model_name = model_basename + '_' + 'cshift'
-        model, dev_f1, dev_acc, dev_cal, dev_cal_overall = train.train_model_with_labels(project_dir, model_type, loss, model_name, subset, train_test_labels_df, feature_defs, penalty=penalty, alpha_min=alpha_min, alpha_max=alpha_max, n_alphas=n_alphas, intercept=intercept, n_dev_folds=n_dev_folds, save_model=True, do_ensemble=do_ensemble, dh=dh, seed=seed, pos_label=cshift_pos_label, verbose=False)
+        model, dev_f1, dev_acc, dev_cal, dev_cal_overall = train.train_model_with_labels(project_dir, model_type, loss, model_name, subset, train_test_labels_df, feature_defs, penalty=penalty, alpha_min=alpha_min, alpha_max=alpha_max, n_alphas=n_alphas, intercept=intercept, n_dev_folds=n_dev_folds, save_model=True, do_ensemble=False, dh=dh, seed=seed, pos_label=cshift_pos_label, verbose=False)
         print("cshift results: %0.4f f1, %0.4f acc" % (dev_f1, dev_acc))
 
         X_cshift, features_concat = predict.load_data(project_dir, model_name, subset, items_to_use=all_items)
@@ -261,7 +261,7 @@ def test_over_time(project_dir, subset, config_file, model_type, field, test_sta
         print("Ave weight: %0.4f" % weights.mean())
         print("Max weight: %0.4f" % weights.max())
         # create a data frame with this information
-        weights_df_all = pd.DataFrame(weights, index=labels_df.index)
+        weights_df_all = pd.DataFrame(weights, index=all_items)
     else:
         weights_df_all = None
 
