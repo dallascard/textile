@@ -204,8 +204,9 @@ def test_over_time(project_dir, subset, config_file, model_type, field, test_sta
     print("Values:", field_vals)
 
     print("\nTesting on %s to %s" % (test_start, test_end))
-    # first, split into training and non-train data based on the field of interest
 
+    # first, split into training and non-train data based on the field of interest
+    all_items = list(metadata.index)
     test_selector_all = (metadata[field] >= int(test_start)) & (metadata[field] <= int(test_end))
     test_subset_all = metadata[test_selector_all]
     test_items_all = test_subset_all.index.tolist()
@@ -226,7 +227,6 @@ def test_over_time(project_dir, subset, config_file, model_type, field, test_sta
     if cshift:
         print("Training a classifier for covariate shift")
         # start by learning to discriminate train from non-train data
-        all_items = test_items_all + train_items_all
         # Label items based on whether they come from train or test
         train_test_labels = np.zeros((len(all_items), 2), dtype=int)
         train_test_labels[train_selector_all, 0] = 1
@@ -241,6 +241,7 @@ def test_over_time(project_dir, subset, config_file, model_type, field, test_sta
         model, dev_f1, dev_acc, dev_cal, dev_cal_overall = train.train_model_with_labels(project_dir, model_type, loss, model_name, subset, train_test_labels_df, feature_defs, penalty=penalty, alpha_min=alpha_min, alpha_max=alpha_max, n_alphas=n_alphas, intercept=intercept, n_dev_folds=n_dev_folds, save_model=True, do_ensemble=False, dh=dh, seed=seed, pos_label=cshift_pos_label, verbose=False)
         print("cshift results: %0.4f f1, %0.4f acc" % (dev_f1, dev_acc))
 
+        #X_cshift, features_concat = predict.load_data(project_dir, model_name, subset, items_to_use=all_items)
         X_cshift, features_concat = predict.load_data(project_dir, model_name, subset, items_to_use=all_items)
         cshift_predictions = model.predict(X_cshift)
         cshift_predictions_df = pd.DataFrame(cshift_predictions, index=features_concat.get_items(), columns=[label])
