@@ -25,10 +25,10 @@ def main():
     for key, line in lines.items():
         if key % 10000 == 0:
             print(key)
-        city = line['city']
+        city = line['state']
         cities.update([city])
 
-    n = 20
+    n = 50
     most_common = cities.most_common(n)
     for i in range(n):
         print(most_common[i])
