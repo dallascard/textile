@@ -62,9 +62,9 @@ def parse_data(year, lines, data, categories, category_counts, update_counts=Fal
         if line.startswith('.I'):
             # save the current article
             if key is not None and terms is not None:
-                data[key] = {'text': title + '\n\n' + text, 'type': type, 'year': year}
+                data[key] = {'text': title + '\n\n' + text, 'type': type, 'year': year, 'labels': {}}
                 for term in terms:
-                    data[key][term] = 1
+                    data[key]['labels'][term] = 1
             # go on to the next article
             key = line.split()[1].strip()
             text = ''

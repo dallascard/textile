@@ -69,7 +69,7 @@ def import_review_data(reviews_file, project_dir, prop):
                 data[k]['text'] = review['summary'] + '\n\n' + review['reviewText']
                 data[k]['rating'] = review['overall']
                 data[k]['summary'] = review['summary']
-                data[k]['label'] = {0: n_votes - n_helpful_votes,  1: n_helpful_votes}
+                data[k]['labels'] = {'helpfulness': {0: n_votes - n_helpful_votes,  1: n_helpful_votes}}
                 year_counts.update([year])
                 data[k]['year'] = year
                 data[k]['month'] = month

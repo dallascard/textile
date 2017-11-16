@@ -75,7 +75,7 @@ def convert_to_json(df, prop=1.0):
 
     for i in index:
         row = df.loc[i]
-        data[str(i)] = {'label': int(row.label),
+        data[str(i)] = {'labels': {'positive': int(row.label)},
                         'id': int(row.id),
                         'date': str(row.date),
                         'year': row.date.year,

@@ -120,7 +120,7 @@ def convert_mfc(project, data_file, output_prefix, threshold, raw_data_dir, meta
             #    output[k] = {'text': text, 'label': int(list(article_tones.keys())[0]), 'year': int(year), 'year_group': year_group, 'month': month, 'source': source, 'csi': csi}
 
             # keep all annotations
-            output[k] = {'text': text, 'label': article_tones, 'year': int(year), 'year_group': year_group, 'month': month, 'source': source}
+            output[k] = {'text': text, 'labels': {'pro_tone': article_tones}, 'year': int(year), 'year_group': year_group, 'month': month, 'source': source}
 
     print(year_group_sizes)
     print(len(output))
@@ -147,7 +147,7 @@ def convert_mfc(project, data_file, output_prefix, threshold, raw_data_dir, meta
             month = int(metadata[key]['month'])
             source = SOURCES[metadata[key]['source']]
 
-            output[key] = {'text': text, 'label': {}, 'year': int(year), 'year_group': year_group, 'month': month, 'source': source}
+            output[key] = {'text': text, 'labels': {}, 'year': int(year), 'year_group': year_group, 'month': month, 'source': source}
             year_group_sizes[year_group] += 1
 
     print(year_group_sizes)

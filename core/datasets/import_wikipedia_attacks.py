@@ -56,7 +56,7 @@ def import_data(input_dir, project, subset):
             data[item]['text'] = re.sub('NEWLINE_TOKEN', '\n', comments.loc[item, 'comment'])
             data[item]['year'] = int(comments.loc[item, 'year'])
             data[item]['split'] = comments.loc[item, 'split']
-            data[item]['label'] = {0: 0,  1: 0}
+            data[item]['labels'] = {'attack': {0: 0,  1: 0}}
 
     print("Processing annotations")
     items = list(annotations.index)
@@ -64,7 +64,7 @@ def import_data(input_dir, project, subset):
 
     for i, item in enumerate(items):
         if item in data:
-            data[item]['label'][ratings[i]] += 1
+            data[item]['labels']['attack'][ratings[i]] += 1
 
     print(year_set)
     print(ns_set)

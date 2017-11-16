@@ -145,10 +145,10 @@ def convert_mfc(project, data_file, output_prefix, threshold, raw_data_dir, meta
             #    output[k] = {'text': text, 'label': int(list(article_tones.keys())[0]), 'year': int(year), 'year_group': year_group, 'month': month, 'source': source, 'csi': csi}
 
             # keep all annotations
-            output[k] = {'text': text, 'year': int(year), 'year_group': year_group, 'month': month, 'source': source}
+            output[k] = {'text': text, 'year': int(year), 'year_group': year_group, 'month': month, 'source': source, 'labels': {}}
 
             for frame_i, frame in enumerate(FRAMES):
-                output[k][frame] = {0: article_frames[frame_i, 0], 1: article_frames[frame_i, 1]}
+                output[k]['labels'][frame] = {0: article_frames[frame_i, 0], 1: article_frames[frame_i, 1]}
 
     print(year_group_sizes)
     print(len(output))
@@ -179,9 +179,9 @@ def convert_mfc(project, data_file, output_prefix, threshold, raw_data_dir, meta
             month = int(metadata[key]['month'])
             source = SOURCES[metadata[key]['source']]
 
-            output[key] = {'text': text, 'year': int(year), 'year_group': year_group, 'month': month, 'source': source}
+            output[key] = {'text': text, 'year': int(year), 'year_group': year_group, 'month': month, 'source': source, 'labels': {}}
             for frame_i, frame in enumerate(FRAMES):
-                output[key][frame] = {}
+                output[key]['labels'][frame] = {}
 
             year_group_sizes[year_group] += 1
 

@@ -50,9 +50,9 @@ def import_politifact_data(input_dir, project):
         year = article['ruling_date'][:4]
         party_name = article['speaker']['party']['party']
         if party_name == 'Republican':
-            output[key] = {'text': text, 'republican': {1: 1}, 'year': int(year)}
+            output[key] = {'text': text, 'labels': {'republican': {1: 1}}, 'year': int(year)}
         elif party_name == 'Democrat':
-            output[key] = {'text': text, 'republican': {0: 1}, 'year': int(year)}
+            output[key] = {'text': text, 'labels': {'republican': {0: 1}}, 'year': int(year)}
 
     print("Saving %d articles" % len(output))
     fh.makedirs(dirs.dir_data_raw(project))
