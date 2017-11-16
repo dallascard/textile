@@ -245,7 +245,7 @@ def test_over_time(project_dir, subset, config_file, model_type, field, test_sta
         cshift_predictions = model.predict(X_cshift)
         cshift_predictions_df = pd.DataFrame(cshift_predictions, index=features_concat.get_items(), columns=[label])
         cshift_pred_probs = model.predict_probs(X_cshift)
-        cshift_pred_probs_df = pd.DataFrame(cshift_pred_probs, index=features_concat.get_items(), columns=range(n_labels))
+        cshift_pred_probs_df = pd.DataFrame(cshift_pred_probs, index=features_concat.get_items(), columns=range(2))
 
         # display the min and max probs
         print("Min: %0.4f" % cshift_pred_probs_df[1].min())
