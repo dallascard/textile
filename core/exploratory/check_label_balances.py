@@ -65,11 +65,13 @@ def check_balances(project_dir, subset, field, test_start, test_end, label):
     test_subset_all = metadata[test_selector_all]
     test_items_all = test_subset_all.index.tolist()
     n_test_all = len(test_items_all)
+    print("n test = %d" % n_test_all)
 
     train_selector_all = metadata[field] < int(test_start)
     train_subset_all = metadata[train_selector_all]
     train_items_all = list(train_subset_all.index)
     n_train_all = len(train_items_all)
+    print("n train = %d" % n_train_all)
 
     # load all labels
     label_dir = dirs.dir_labels(project_dir, subset)
