@@ -29,8 +29,6 @@ def main():
     do_all = options.all
     label_name = options.label
 
-    if do_all:
-
     datafile = os.path.join(dirs.dir_data_raw(project_dir), subset + '.json')
 
     print("Reading data")
