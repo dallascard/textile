@@ -7,7 +7,7 @@ from core.util import dirs
 
 
 def main():
-    usage = "%prog project_dir subset model_config.json"
+    usage = "%prog project_dir subset"
     parser = OptionParser(usage=usage)
     parser.add_option('--field', dest='field', default='year',
                       help='Field on which to split for train and test: default=%default')
@@ -24,7 +24,6 @@ def main():
     field = options.field
     test_start = int(options.test_start)
     test_end = int(options.test_end)
-    label = options.label
 
     label_files = glob.glob(os.path.join(dirs.dir_labels(project_dir, subset), '*.csv'))
 
