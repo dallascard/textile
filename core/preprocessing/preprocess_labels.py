@@ -109,7 +109,7 @@ def preprocess_labels(project_dir, subset, data, label_name, metadata_fields):
 
         # TODO: make this faster; avoid inserting into dataframe
         #labels = item[label_name]
-        if label_name in item:
+        if label_name in item['labels']:
             labels = item['labels'][label_name]
         else:
             labels = 0
