@@ -22,7 +22,9 @@ def main():
     cities = Counter()
 
     lines = fh.read_json_lines(os.path.join(input_dir, 'business.json'))
-    for line in lines:
+    for key, line in lines.items():
+        if key % 10000 == 0:
+            print(key)
         city = line['city']
         cities.update([city])
 
