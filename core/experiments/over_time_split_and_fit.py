@@ -241,20 +241,17 @@ def test_over_time(project_dir, subset, config_file, model_type, field, test_sta
         model, dev_f1, dev_acc, dev_cal, dev_cal_overall = train.train_model_with_labels(project_dir, model_type, loss, model_name, subset, train_test_labels_df, feature_defs, penalty=penalty, alpha_min=alpha_min, alpha_max=alpha_max, n_alphas=n_alphas, intercept=intercept, n_dev_folds=n_dev_folds, save_model=True, do_ensemble=do_ensemble, dh=dh, seed=seed, pos_label=cshift_pos_label, verbose=False)
         print("cshift results: %0.4f f1, %0.4f acc" % (dev_f1, dev_acc))
 
-        # take predictions from model on the training data
-        train_test_pred_df, train_test_probs_df, _ = predict.predict(project_dir, model, model_name, subset, label, verbose=verbose)
-
-        X_test, features_concat = predict.load_data(project_dir, model_name, subset)
-        test_predictions = model.predict(X_test)
-        #test_predictions_df = pd.DataFrame(test_predictions, index=features_concat.get_items(), columns=[label])
-        test_pred_probs = model.predict_probs(X_test)
-        #test_pred_probs_df = pd.DataFrame(test_pred_probs, index=features_concat.get_items(), columns=range(n_labels))
+        X_cshift, features_concat = predict.load_data(project_dir, model_name, subset, items_to_use=all_items)
+        cshift_predictions = model.predict(X_cshift)
+        cshift_predictions_df = pd.DataFrame(cshift_predictions, index=features_concat.get_items(), columns=[label])
+        cshift_pred_probs = model.predict_probs(X_cshift)
+        cshift_pred_probs_df = pd.DataFrame(cshift_pred_probs, index=features_concat.get_items(), columns=range(n_labels))
 
         # display the min and max probs
-        print("Min: %0.4f" % train_test_probs_df[1].min())
-        print("Max: %0.4f" % train_test_probs_df[1].max())
+        print("Min: %0.4f" % cshift_pred_probs_df[1].min())
+        print("Max: %0.4f" % cshift_pred_probs_df[1].max())
         # use the estimated probability of each item being a training item to compute item weights
-        weights = n_train_all / float(n_test_all) * (1.0/train_test_probs_df[0].values - 1)
+        weights = n_train_all / float(n_test_all) * (1.0/cshift_pred_probs_df[0].values - 1)
         # print a summary of the weights from just the training items
         print("Min weight: %0.4f" % weights[train_selector_all].min())
         print("Ave weight: %0.4f" % weights[train_selector_all].mean())
