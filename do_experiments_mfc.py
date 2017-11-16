@@ -22,8 +22,10 @@ def main():
                       help='Objective for choosing best alpha [calibration|f1]: default=%default')
     parser.add_option('--sample', action="store_true", dest="sample", default=False,
                       help='Sample labels instead of averaging: default=%default')
-    parser.add_option('--penalty', dest='penalty', default='l2',
+    parser.add_option('--penalty', dest='penalty', default='l1',
                       help='Regularization type: default=%default')
+    parser.add_option('--cshift', action="store_true", dest="cshift", default=False,
+                      help='Covariate shift method [None|classify]: default=%default')
     parser.add_option('-r', dest='repeats', default=3,
                       help='Repeats: default=%default')
     parser.add_option('--model', dest='model', default='LR',
@@ -48,6 +50,7 @@ def main():
     objective = options.objective
     sample_labels = options.sample
     penalty = options.penalty
+    cshift = options.csfhit
     repeats = int(options.repeats)
     model_type = options.model
     lower = options.lower
@@ -60,7 +63,8 @@ def main():
 
     for subset, label in pairs:
         print("\n\nStarting", subset, label)
-        over_time_split_and_fit.test_over_time(project, subset, config, model_type, 'year', first_year, last_year, n_train, n_calib, penalty, suffix, loss='log', objective=objective, do_ensemble=True, label=label, intercept=True, sample_labels=sample_labels, n_dev_folds=5, list_size=ls, repeats=repeats, lower=lower)
+        over_time_split_and_fit.test_over_time(project, subset, config, model_type, 'year', first_year, last_year, n_train, n_calib, penalty, suffix, loss='log', objective=objective, do_ensemble=True, label=label, intercept=True, sample_labels=sample_labels, n_dev_folds=5, list_size=ls, repeats=repeats, lower=lower, cshift=cshift)
+
 
 if __name__ == '__main__':
     main()
