@@ -76,8 +76,9 @@ def import_review_data(reviews_file, project_dir, prop, display=1000):
                 data[k]['text'] = review['summary'] + '\n\n' + review['reviewText']
                 data[k]['rating'] = review['overall']
                 ratings.update([int(review['overall'])])
+                rated_5 = int(int(review['overall']) == 5)
                 data[k]['summary'] = review['summary']
-                data[k]['labels'] = {'helpfulness': {0: n_votes - n_helpful_votes,  1: n_helpful_votes}}
+                data[k]['labels'] = {'helpfulness': {0: n_votes - n_helpful_votes,  1: n_helpful_votes}, 'fivestar': {0: 1-rated_5, 1: rated_5}}
                 year_counts.update([year])
                 data[k]['year'] = year
                 data[k]['month'] = month
@@ -87,7 +88,7 @@ def import_review_data(reviews_file, project_dir, prop, display=1000):
 
     print("Found %d reviews with at least one vote" % len(data))
 
-    print(ratings.items())
+    print("Ratings:", ratings.items())
 
     print("Earliest date:", dates.date.min())
     print("Latest date:", dates.date.max())
