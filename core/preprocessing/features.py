@@ -259,6 +259,7 @@ def create_from_dense_array(name, items, terms, array):
 
 
 def create_from_dict_of_counts(name, dict_of_counters, min_df=1):
+    print("Creating %s" % name)
     keys = list(dict_of_counters.keys())
     keys.sort()
     n_items = len(keys)
@@ -266,7 +267,8 @@ def create_from_dict_of_counts(name, dict_of_counters, min_df=1):
     vocab = Counter()
     for key in keys:
         vocab.update(list(dict_of_counters[key].keys()))
-    vocab = [word for word, count in vocab if count >= min_df]
+    print("Vocab size before filtering = %d" % len(vocab))
+    vocab = [word for word, count in vocab.items() if count >= min_df]
     print("Vocab size after filtering = %d" % len(vocab))
 
     terms = list(vocab)
@@ -283,8 +285,11 @@ def create_from_dict_of_counts(name, dict_of_counters, min_df=1):
         #item_terms = list(dict_of_counters[item].keys())
         #indices = [term_index[t] for t in item_terms]
         index_count_pairs = {term_index[term]: count for term, count in dict_of_counters[item].items() if term in term_index}
-        indices, item_counts = zip(*index_count_pairs.items())
-        counts[item_i, indices] = item_counts
+        if len(index_count_pairs) > 0:
+            indices, item_counts = zip(*index_count_pairs.items())
+            counts[item_i, indices] = item_counts
+        else:
+            print("skipping %s" % item)
 
     return Feature(name, keys, terms, counts.tocsc())
 

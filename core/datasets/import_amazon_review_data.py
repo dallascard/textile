@@ -45,6 +45,8 @@ def import_review_data(reviews_file, project_dir, prop):
         keys = [keys[i] for i in subset]
         print("Using a random subset of %d reviews" % subset_size)
 
+    ratings = Counter()
+
     data = {}
     for k_i, k in enumerate(keys):
         review = reviews[k]
@@ -68,6 +70,7 @@ def import_review_data(reviews_file, project_dir, prop):
                 reviewers.add(review['reviewerID'])
                 data[k]['text'] = review['summary'] + '\n\n' + review['reviewText']
                 data[k]['rating'] = review['overall']
+                ratings.update([int(review['overall'])])
                 data[k]['summary'] = review['summary']
                 data[k]['labels'] = {'helpfulness': {0: n_votes - n_helpful_votes,  1: n_helpful_votes}}
                 year_counts.update([year])
@@ -79,6 +82,8 @@ def import_review_data(reviews_file, project_dir, prop):
 
     print("Found %d reviews with at least one vote" % len(data))
 
+    print(ratings.items())
+
     print("Earliest date:", dates.date.min())
     print("Latest date:", dates.date.max())
     print("%d reviewers" % len(reviewers))
@@ -89,6 +94,7 @@ def import_review_data(reviews_file, project_dir, prop):
     data_dir = dirs.dir_data_raw(project_dir)
     fh.makedirs(data_dir)
     fh.write_to_json(data, os.path.join(data_dir, 'all.json'))
+
 
 if __name__ == '__main__':
     main()
