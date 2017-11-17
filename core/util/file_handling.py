@@ -36,7 +36,7 @@ def read_json(input_filename):
 
 def read_json_lines(input_filename):
     if input_filename[-3:] == '.gz':
-        with gzip.open(input_filename, 'r', encoding='utf-8') as input_file:
+        with gzip.open(input_filename, 'r') as input_file:
             data = {}
             for l_i, line in enumerate(input_file):
                 data[l_i] = json.loads(line, encoding='utf-8')
