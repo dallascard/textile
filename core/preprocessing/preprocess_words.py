@@ -24,6 +24,8 @@ def main():
                       help='Max degree of word n-grams: default=%default')
     parser.add_option('--fast', action="store_true", dest="fast", default=False,
                       help='Only do things that are fast (i.e. only splitting, no parsing, no lemmas): default=%default')
+    parser.add_option('--min_df', dest='min_df', default=1,
+                      help='Minimum document frequency (best to avoid, but possibly necessary): default=%default')
     parser.add_option('-d', dest='display', default=1000,
                       help='Display progress every X items: default=%default')
 
@@ -38,11 +40,12 @@ def main():
     fast = options.fast
     ngrams = int(options.ngrams)
     display = int(options.display)
+    min_df = int(options.min_df)
 
-    preprocess_words(project_dir, subset, ngrams=ngrams, lower=lower, lemmatize=lemmatize, fast=fast, display=display, suffix=suffix)
+    preprocess_words(project_dir, subset, ngrams=ngrams, lower=lower, lemmatize=lemmatize, fast=fast, display=display, suffix=suffix, min_df=min_df)
 
 
-def preprocess_words(project_dir, subset, ngrams=2, lower=False, lemmatize=False, fast=False, display=1000, suffix=''):
+def preprocess_words(project_dir, subset, ngrams=2, lower=False, lemmatize=False, fast=False, display=1000, suffix='', min_df=1):
 
     print("Reading data")
     datafile = os.path.join(dirs.dir_data_raw(project_dir), subset + '.json')
@@ -120,7 +123,7 @@ def preprocess_words(project_dir, subset, ngrams=2, lower=False, lemmatize=False
 
     print("Creating features")
     for k, v in feature_dicts.items():
-        feature = features.create_from_dict_of_counts(k + suffix, v)
+        feature = features.create_from_dict_of_counts(k + suffix, v, min_df=min_df)
         feature.save_feature(dirs.dir_features(project_dir, subset))
 
 

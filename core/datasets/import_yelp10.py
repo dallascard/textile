@@ -62,8 +62,6 @@ def main():
                     data[review_id]['labels']['useful'] = {0: funny + cool, 1: useful}
                     data[review_id]['labels']['cool'] = {0: useful + funny, 1: cool}
 
-            else:
-                print("%s not found in city lookup" % business_id)
 
     print(toronto_count, phoenix_count)
     fh.makedirs(dirs.dir_data_raw(project_dir))

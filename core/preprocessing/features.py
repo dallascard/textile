@@ -1,6 +1,7 @@
 import os
 import sys
 import json
+from collections import Counter
 
 import numpy as np
 from scipy import sparse
@@ -257,14 +258,16 @@ def create_from_dense_array(name, items, terms, array):
     return Feature(name, items, terms, array)
 
 
-def create_from_dict_of_counts(name, dict_of_counters):
+def create_from_dict_of_counts(name, dict_of_counters, min_df=1):
     keys = list(dict_of_counters.keys())
     keys.sort()
     n_items = len(keys)
 
-    vocab = set()
+    vocab = Counter()
     for key in keys:
         vocab.update(list(dict_of_counters[key].keys()))
+    vocab = [word for word, count in vocab if count >= min_df]
+    print("Vocab size after filtering = %d" % len(vocab))
 
     terms = list(vocab)
     terms.sort()
@@ -276,9 +279,11 @@ def create_from_dict_of_counts(name, dict_of_counters):
     print("Building matrix with %d items and %d unique terms" % (n_items, n_terms))
 
     for item_i, item in enumerate(keys):
-        item_counts = list(dict_of_counters[item].values())
-        item_terms = list(dict_of_counters[item].keys())
-        indices = [term_index[t] for t in item_terms]
+        #item_counts = list(dict_of_counters[item].values())
+        #item_terms = list(dict_of_counters[item].keys())
+        #indices = [term_index[t] for t in item_terms]
+        index_count_pairs = {term_index[term]: count for term, count in dict_of_counters[item].items() if term in term_index}
+        indices, item_counts = zip(*index_count_pairs.items())
         counts[item_i, indices] = item_counts
 
     return Feature(name, keys, terms, counts.tocsc())
