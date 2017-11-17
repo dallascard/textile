@@ -1,4 +1,5 @@
 import os
+import gzip
 from optparse import OptionParser
 
 from collections import Counter
@@ -11,7 +12,7 @@ from ..util import file_handling as fh
 
 
 def main():
-    usage = "%prog reviews_file.json project_dir"
+    usage = "%prog reviews_file.json[.gz] project_dir"
     parser = OptionParser(usage=usage)
     parser.add_option('-p', dest='prop', default=1.0,
                       help='Use only a random proportion of training data: default=%default')

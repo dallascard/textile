@@ -1,4 +1,5 @@
 import os
+import gzip
 import json
 import codecs
 import pickle
@@ -34,10 +35,16 @@ def read_json(input_filename):
 
 
 def read_json_lines(input_filename):
-    with codecs.open(input_filename, 'r', encoding='utf-8') as input_file:
-        data = {}
-        for l_i, line in enumerate(input_file):
-            data[l_i] = json.loads(line, encoding='utf-8')
+    if input_filename[-3:] == '.gz':
+        with gzip.open(input_filename, 'r', encoding='utf-8') as input_file:
+            data = {}
+            for l_i, line in enumerate(input_file):
+                data[l_i] = json.loads(line, encoding='utf-8')
+    else:
+        with codecs.open(input_filename, 'r', encoding='utf-8') as input_file:
+            data = {}
+            for l_i, line in enumerate(input_file):
+                data[l_i] = json.loads(line, encoding='utf-8')
     return data
 
 
