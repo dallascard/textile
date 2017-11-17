@@ -87,7 +87,7 @@ def check_balances(project_dir, subset, field, test_start, test_end, label):
     test_items = [i for i in test_items_all if i in labeled_items]
 
     train_proportion = labels_df.loc[train_items_labeled].mean(axis=0).values / labels_df.loc[train_items_labeled].mean(axis=0).values.sum()
-    test_proportion =  labels_df.loc[test_items].mean(axis=0).values / labels_df.loc[test_items].mean(axis=0).values.sum()
+    test_proportion = labels_df.loc[test_items].mean(axis=0).values / labels_df.loc[test_items].mean(axis=0).values.sum()
     print(train_proportion)
     print(test_proportion)
     return abs(train_proportion[1] - test_proportion[1])

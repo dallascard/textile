@@ -49,12 +49,19 @@ def main():
         if business_id in city_lookup:
             city = city_lookup[business_id]
             if funny + useful + cool > 0:
-                if city == 'Phoenix':
+                if city == 'Las Vegas':
                     phoenix_count += 1
-                    data[review_id] = {'text': text, 'city': 1, 'date': date, 'year': year, 'labels': {'funny': {0: useful + cool, 1: funny}}}
+                    data[review_id] = {'text': text, 'city': 1, 'date': date, 'year': year, 'labels': {}}
+                    data[review_id]['labels']['funny'] = {0: useful + cool, 1: funny}
+                    data[review_id]['labels']['useful'] = {0: funny + cool, 1: useful}
+                    data[review_id]['labels']['cool'] = {0: useful + funny, 1: cool}
                 elif city == 'Toronto':
                     toronto_count += 1
-                    data[review_id] = {'text': text, 'city': 0, 'date': date, 'year': year, 'labels': {'funny': {0: useful + cool, 1: funny}}}
+                    data[review_id] = {'text': text, 'city': 0, 'date': date, 'year': year, 'labels': {}}
+                    data[review_id]['labels']['funny'] = {0: useful + cool, 1: funny}
+                    data[review_id]['labels']['useful'] = {0: funny + cool, 1: useful}
+                    data[review_id]['labels']['cool'] = {0: useful + funny, 1: cool}
+
             else:
                 print("%s not found in city lookup" % business_id)
 
