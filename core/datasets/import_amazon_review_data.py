@@ -16,17 +16,21 @@ def main():
     parser = OptionParser(usage=usage)
     parser.add_option('-p', dest='prop', default=1.0,
                       help='Use only a random proportion of training data: default=%default')
+    parser.add_option('-d', dest='display', default=1000,
+                      help='Display progress after each batch of this many items: default=%default')
+
 
     (options, args) = parser.parse_args()
 
     reviews_file = args[0]
     project = args[1]
     prop = float(options.prop)
+    dislay = int(options.display)
 
-    import_review_data(reviews_file, project, prop)
+    import_review_data(reviews_file, project, prop, dislay)
 
 
-def import_review_data(reviews_file, project_dir, prop):
+def import_review_data(reviews_file, project_dir, prop, display=1000):
     print("Loading data")
     reviews = fh.read_json_lines(reviews_file)
 
@@ -51,7 +55,7 @@ def import_review_data(reviews_file, project_dir, prop):
     data = {}
     for k_i, k in enumerate(keys):
         review = reviews[k]
-        if k_i % 1000 == 0:
+        if k_i % display == 0:
             print(k_i)
         helpfulness = review['helpful']
         n_helpful_votes = helpfulness[0]
