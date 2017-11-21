@@ -11,7 +11,7 @@ from ..util import dirs
 def main():
     usage = "%prog input_dir project_dir"
     parser = OptionParser(usage=usage)
-    parser.add_option('--subset', dest='subset', default='article',
+    parser.add_option('--subset', dest='subset', default='all',
                       help='article or user: default=%default')
     #parser.add_option('--approx', action="store_true", dest="approx", default=False,
     #                  help='Approximate label distribution: default=%default')
@@ -51,7 +51,7 @@ def import_data(input_dir, project, subset):
         ns_set.add(comments.loc[item, 'ns'])
         sample_set.add(comments.loc[item, 'sample'])
         split_set.add(comments.loc[item, 'split'])
-        if comments.loc[item, 'sample'] == 'random' and comments.loc[item, 'ns'] == subset:
+        if comments.loc[item, 'sample'] == 'random' and comments.loc[item, 'ns'] == 'article':
             data[item] = {}
             data[item]['text'] = re.sub('NEWLINE_TOKEN', '\n', comments.loc[item, 'comment'])
             data[item]['year'] = int(comments.loc[item, 'year'])
