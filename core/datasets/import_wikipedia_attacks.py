@@ -74,7 +74,7 @@ def import_data(input_dir, project, subset):
     year_averages = defaultdict(list)
     for item, values in data.items():
         year = values['year']
-        attack = values['label'][0] / float(values['label'][0] + values['label'][1])
+        attack = values['labels']['attack'][0] / float(values['labels']['attack'][0] + values['labels']['attack'][1])
         year_averages[year].append(attack)
 
     years = list(year_averages.keys())
