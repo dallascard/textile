@@ -9,7 +9,7 @@ def main():
                       help='Number of nodes required: default=%default')
     parser.add_option('-n', dest='tasks', default=1,
                       help='Total number of tasks: default=%default')
-    parser.add_option('-t', dest='hours', default=1,
+    parser.add_option('-t', dest='hours', default=8,
                       help='Estimated number of hours required: default=%default')
     parser.add_option('--dev', action="store_true", dest="dev", default=False,
                       help='Use development queue: default=%default')
@@ -43,18 +43,18 @@ def make_script(input_file, output_file, nodes, tasks, hours, dev, module, addti
 
 
     script = """#!/bin/bash
-                #-----------------------------------------------------------------
-                # Example SLURM job script to run serial applications on TACC's
-                # Stampede system.
-                #
-                # This script requests one core (out of 16) on one node. The job
-                # will have access to all the memory in the node.  Note that this
-                # job will be charged as if all 16 cores were requested.
-                #-----------------------------------------------------------------
+#-----------------------------------------------------------------
+# Example SLURM job script to run serial applications on TACC's
+# Stampede system.
+#
+# This script requests one core (out of 16) on one node. The job
+# will have access to all the memory in the node.  Note that this
+# job will be charged as if all 16 cores were requested.
+#-----------------------------------------------------------------
     
-                #SBATCH --mail-user=dallas.slurm@yahoo.ca
-                #SBATCH --mail-type=all
-                """
+#SBATCH --mail-user=dallas.slurm@yahoo.ca
+#SBATCH --mail-type=all
+"""
     script += "#SBATCH -J " + name + "\n"
     script += "#SBATCH -o " + name + ".%j.out\n"
     script += "#SBATCH -n " + str(tasks) + "\n"
