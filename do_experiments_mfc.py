@@ -58,8 +58,7 @@ def main():
         lower = float(lower)
     suffix = options.suffix
 
-    pairs = [('pro_tone', 'label'), ('framing', 'Economic'), ('framing', 'Legality'), ('framing', 'Health'), ('framing', 'Political')]
-    #pairs = [('framing', 'Economic'), ('framing', 'Legality')]
+    pairs = [('framing', 'Economic'), ('framing', 'Legality'), ('framing', 'Health'), ('framing', 'Political'), ('framing', 'Capacity'), ('framing', 'Crime')]
 
     for subset, label in pairs:
         print("\n\nStarting", subset, label)
