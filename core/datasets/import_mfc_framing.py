@@ -102,6 +102,8 @@ def convert_mfc(project, data_file, output_prefix, threshold, raw_data_dir, meta
     keys = list(data.keys())
     keys.sort()
 
+    frame_counts = np.zeros(len(FRAMES))
+
     for k in keys:
         text = data[k]['text']
         paragraphs = text.split('\n\n')
@@ -149,6 +151,10 @@ def convert_mfc(project, data_file, output_prefix, threshold, raw_data_dir, meta
 
             for frame_i, frame in enumerate(FRAMES):
                 output[k]['labels'][frame] = {0: article_frames[frame_i, 0], 1: article_frames[frame_i, 1]}
+                frame_counts[frame_i] += article_frames[frame_i, 1]
+
+    for frame_i, frame in enumerate(FRAMES):
+        print(frame, frame_counts[frame_i])
 
     print(year_group_sizes)
     print(len(output))
