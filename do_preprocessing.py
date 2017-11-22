@@ -8,7 +8,7 @@ from core.preprocessing import preprocess_word_vectors
 
 
 def main():
-    usage = "%prog project word2vec_file"
+    usage = "%prog project"
     parser = OptionParser(usage=usage)
     #parser.add_option('--label', dest='label', default='label',
     #                  help='Reference feature definition: default=%default')
@@ -27,10 +27,10 @@ def main():
     for subset, label in pairs:
         preprocess_labels.preprocess_labels(project, subset, label_name=label, metadata_fields=['year_group'])
 
-    #for subset in ['framing', 'pro_tone']:
-    #    preprocess_words.preprocess_words(project, subset, lower=True)
-    #    preprocess_words.preprocess_words(project, subset, ngrams=1, lower=False, suffix='_default')
-    #    #preprocess_word_vectors.preprocess_word_vectors(project, subset, word2vec_file, ref='unigrams_default')
+    for subset in ['framing', 'pro_tone']:
+        preprocess_words.preprocess_words(project, subset, ngrams=5, lower=True)
+        #preprocess_words.preprocess_words(project, subset, ngrams=1, lower=False, suffix='_default')
+        #preprocess_word_vectors.preprocess_word_vectors(project, subset, word2vec_file, ref='unigrams_default')
 
 
 if __name__ == '__main__':
