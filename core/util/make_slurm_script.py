@@ -40,8 +40,6 @@ def make_script(input_file, output_file, nodes, tasks, hours, dev, module, addti
     with open(input_file, 'r') as f:
         lines = f.read()
 
-
-
     script = """#!/bin/bash
 #-----------------------------------------------------------------
 # Example SLURM job script to run serial applications on TACC's
