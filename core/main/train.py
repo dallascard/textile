@@ -9,8 +9,8 @@ from scipy import sparse
 from sklearn.model_selection import KFold
 
 from ..util import file_handling as fh
-from ..models import linear, mlp, evaluation, ensemble
-from ..models import decision_list
+from ..models import linear, evaluation, ensemble
+from ..models import decision_list, dan
 from ..models import get_top_features
 from ..preprocessing import features
 from ..util import dirs
@@ -21,7 +21,7 @@ def main():
     usage = "%prog project_dir subset model_name config.json"
     parser = OptionParser(usage=usage)
     parser.add_option('--model', dest='model', default='LR',
-                      help='Model type [LR|MLP]: default=%default')
+                      help='Model type [LR|DAN]: default=%default')
     parser.add_option('--loss', dest='loss', default='log',
                       help='Loss function [log|brier]: default=%default')
     parser.add_option('--dh', dest='dh', default=0,
@@ -74,7 +74,7 @@ def main():
     train_model(project_dir, model_type, loss, model_name, subset, label, feature_defs, weights_file, penalty=penalty, intercept=intercept, objective=objective, n_dev_folds=n_dev_folds, do_ensemble=do_ensemble, dh=dh, seed=seed)
 
 
-def train_model(project_dir, model_type, loss, model_name, subset, label, feature_defs, weights_file=None, items_to_use=None,
+def train_model(project_dir, model_type, loss, model_name, subset, label, feature_defs, items_to_use=None,
                 penalty='l2', alpha_min=0.01, alpha_max=1000, n_alphas=8, intercept=True,
                 objective='f1', n_dev_folds=5, save_model=True, do_ensemble=True, dh=0,
                 seed=None, verbose=True):
@@ -83,14 +83,10 @@ def train_model(project_dir, model_type, loss, model_name, subset, label, featur
     labels_df = fh.read_csv_to_df(os.path.join(label_dir, label + '.csv'), index_col=0, header=0)
 
     weights = None
-    #if weights_file is not None:
-    #    weights_df = fh.read_csv_to_df(weights_file)
-    #    assert np.all(weights_df.index == labels_df.index)
-    #    weights = weights_df['weight'].values
 
-    #return train_model_with_labels(project_dir, model_type, loss, model_name, subset, labels_df, feature_defs, weights,
-    #                               items_to_use, penalty, alpha_min, alpha_max, n_alphas, intercept, objective,
-    #                               n_dev_folds, save_model, do_ensemble, dh, seed, verbose)
+    return train_model_with_labels(project_dir, model_type, loss, model_name, subset, labels_df, feature_defs, weights,
+                                   items_to_use, penalty, alpha_min, alpha_max, n_alphas, intercept, objective,
+                                   n_dev_folds, save_model, do_ensemble, dh, seed, verbose)
 
 
 def train_model_with_labels(project_dir, model_type, loss, model_name, subset, labels_df, feature_defs, weights_df=None,
@@ -99,7 +95,8 @@ def train_model_with_labels(project_dir, model_type, loss, model_name, subset, l
                             pos_label=1, vocab=None, group_identical=False, nonlinearity='tanh',
                             init_lr=1e-4, min_epochs=2, max_epochs=100, patience=8, tol=1e-4, early_stopping=True,
                             list_size=10, do_cfm=False, do_platt=False, dl_feature_list=None,
-                            lower=None, interactive=False, stoplist=None, verbose=True):
+                            lower=None, interactive=False, stoplist=None,
+                            update_emb=True, verbose=True):
 
     features_dir = dirs.dir_features(project_dir, subset)
     n_items, n_classes = labels_df.shape
@@ -169,6 +166,19 @@ def train_model_with_labels(project_dir, model_type, loss, model_name, subset, l
         fh.write_to_json(feature_signatures, os.path.join(output_dir, 'features.json'), sort_keys=False)
 
     features_concat = features.concatenate(feature_list)
+
+    print(features_concat.get_shape(), "before embeddings")
+
+    if model_type == 'DAN':
+        word_vectors_prefix = os.path.join(features_dir, 'unigrams' + '_vecs')
+        init_embeddings = fh.load_dense(word_vectors_prefix + '.npz')
+        word_vector_terms = fh.read_json(word_vectors_prefix + '.json')
+        features_concat.set_terms(word_vector_terms)
+    else:
+        init_embeddings = None
+
+    print(features_concat.get_shape(), "after embeddings")
+
     col_names = features_concat.get_col_names()
     if len(col_names) < 200:
         print(col_names)
@@ -364,7 +374,7 @@ def train_model_with_labels(project_dir, model_type, loss, model_name, subset, l
             if save_model:
                 full_model.save()
 
-    elif model_type == 'MLP':
+    elif model_type == 'DAN':
         if dh > 0:
             dimensions = [n_features, dh, n_classes]
         else:
@@ -378,10 +388,6 @@ def train_model_with_labels(project_dir, model_type, loss, model_name, subset, l
         best_dev_cal_mae = 0.0
         best_dev_cal_est = 0.0
 
-        if sparse.issparse(X):
-            assert X.size < 10000000
-            X = np.array(X.todense())
-
         for alpha_i, alpha in enumerate(alphas):
             alpha_models[alpha] = []
 
@@ -389,7 +395,9 @@ def train_model_with_labels(project_dir, model_type, loss, model_name, subset, l
             for train_indices, dev_indices in kfold.split(X):
                 print("Starting fold %d" % fold)
                 name = model_name + '_' + str(fold)
-                model = mlp.MLP(dimensions=dimensions, loss_function=loss, nonlinearity=nonlinearity, penalty=penalty, reg_strength=alpha, output_dir=output_dir, name=name, pos_label=pos_label, objective=objective)
+                #model = mlp.MLP(dimensions=dimensions, loss_function=loss, nonlinearity=nonlinearity, penalty=penalty, reg_strength=alpha, output_dir=output_dir, name=name, pos_label=pos_label, objective=objective)
+
+                model = dan.DAN(dimensions, output_dir=output_dir, name=name, pos_label=pos_label, objective=objective, init_emb=init_embeddings, update_emb=update_emb)
 
                 X_train = X[train_indices, :]
                 Y_train = Y[train_indices, :]
@@ -401,7 +409,6 @@ def train_model_with_labels(project_dir, model_type, loss, model_name, subset, l
                 X_dev, Y_dev, w_dev = prepare_data(X_dev, Y_dev, w_dev, loss=loss)
 
                 model.fit(X_train, Y_train, X_dev, Y_dev, train_weights=w_train, dev_weights=w_dev, seed=seed, init_lr=init_lr, min_epochs=min_epochs, max_epochs=max_epochs, patience=patience, tol=tol, early_stopping=early_stopping)
-                #best_models.append(model)
                 alpha_models[alpha].append(model)
 
                 dev_predictions = model.predict(X_dev)
@@ -573,6 +580,101 @@ def train_model_with_labels(project_dir, model_type, loss, model_name, subset, l
         if save_model:
             full_model.save()
 
+        """ elif model_type == 'MLP':
+        if dh > 0:
+            dimensions = [n_features, dh, n_classes]
+        else:
+            dimensions = [n_features, n_classes]
+        if not save_model:
+            output_dir = None
+
+        best_models = []
+        best_dev_f1 = 0.0
+        best_dev_acc = 0.0
+        best_dev_cal_mae = 0.0
+        best_dev_cal_est = 0.0
+
+        if sparse.issparse(X):
+            assert X.size < 10000000
+            X = np.array(X.todense())
+
+        for alpha_i, alpha in enumerate(alphas):
+            alpha_models[alpha] = []
+
+            fold = 1
+            for train_indices, dev_indices in kfold.split(X):
+                print("Starting fold %d" % fold)
+                name = model_name + '_' + str(fold)
+                model = mlp.MLP(dimensions=dimensions, loss_function=loss, nonlinearity=nonlinearity, penalty=penalty, reg_strength=alpha, output_dir=output_dir, name=name, pos_label=pos_label, objective=objective)
+
+                X_train = X[train_indices, :]
+                Y_train = Y[train_indices, :]
+                X_dev = X[dev_indices, :]
+                Y_dev = Y[dev_indices, :]
+                w_train = weights[train_indices]
+                w_dev = weights[dev_indices]
+                X_train, Y_train, w_train = prepare_data(X_train, Y_train, w_train, loss=loss)
+                X_dev, Y_dev, w_dev = prepare_data(X_dev, Y_dev, w_dev, loss=loss)
+
+                model.fit(X_train, Y_train, X_dev, Y_dev, train_weights=w_train, dev_weights=w_dev, seed=seed, init_lr=init_lr, min_epochs=min_epochs, max_epochs=max_epochs, patience=patience, tol=tol, early_stopping=early_stopping)
+                #best_models.append(model)
+                alpha_models[alpha].append(model)
+
+                dev_predictions = model.predict(X_dev)
+                dev_pred_probs = model.predict_probs(X_dev)
+
+                y_dev_vector = np.argmax(Y_dev, axis=1)
+
+                dev_f1 = evaluation.f1_score(y_dev_vector, dev_predictions, n_classes, pos_label=pos_label, weights=w_dev)
+                dev_acc = evaluation.acc_score(y_dev_vector, dev_predictions, n_classes, weights=w_dev)
+                dev_proportions = evaluation.compute_proportions(Y_dev, w_dev)
+                pred_proportions = evaluation.compute_proportions(dev_pred_probs, w_dev)
+                dev_cal_mae = evaluation.eval_proportions_mae(dev_proportions, pred_proportions)
+                dev_cal_est = evaluation.evaluate_calibration_rmse(y_dev_vector, dev_pred_probs)
+
+                mean_dev_f1s[alpha_i] += dev_f1 / float(n_dev_folds)
+                mean_dev_acc[alpha_i] += dev_acc / float(n_dev_folds)
+                mean_dev_cal_mae[alpha_i] += dev_cal_mae / float(n_dev_folds)
+                mean_dev_cal_est[alpha_i] += dev_cal_est / float(n_dev_folds)
+                mean_model_size[alpha_i] += model.get_model_size() / float(n_dev_folds)
+                fold += 1
+
+            print("%d\t%0.2f\t%.1f\t%0.3f\t%0.3f\t%0.3f\t%0.3f\t%0.3f" % (alpha_i, alpha, mean_model_size[alpha_i], mean_train_f1s[alpha_i], mean_dev_f1s[alpha_i], mean_dev_acc[alpha_i], mean_dev_cal_mae[alpha_i], mean_dev_cal_est[alpha_i]))
+
+        if objective == 'f1':
+            best_alpha_index = mean_dev_f1s.argmax()
+            print("Using best f1: %d" % best_alpha_index)
+        elif objective == 'calibration':
+            best_alpha_index = mean_dev_cal_est.argmin()
+            print("Using best calibration: %d" % best_alpha_index)
+        else:
+            sys.exit("Objective not recognized")
+        best_alpha = alphas[best_alpha_index]
+        best_dev_f1 = mean_dev_f1s[best_alpha_index]
+        best_dev_acc = mean_dev_acc[best_alpha_index]
+        best_dev_cal_mae = mean_dev_cal_mae[best_alpha_index]
+        best_dev_cal_est = mean_dev_cal_est[best_alpha_index]
+        print("Best: alpha = %.3f, dev f1 = %.3f, dev cal mae = %.3f, dev calibration estimate= %0.3f" % (best_alpha, best_dev_f1, best_dev_cal_mae, best_dev_cal_est))
+
+        best_models = alpha_models[best_alpha]
+        print("Number of best models = %d" % len(best_models))
+
+        if save_model:
+            print("Saving models")
+            for model in best_models:
+                model.save()
+
+        if do_ensemble:
+            fold = 1
+            for model_i, model in enumerate(best_models):
+                name = model_name + '_' + str(fold)
+                model_ensemble.add_model(model, name)
+                fold += 1
+            full_model = model_ensemble
+            full_model.save()
+        else:
+            full_model = None
+        """
     else:
         sys.exit("Model type %s not recognized" % model_type)
 

@@ -3,7 +3,7 @@ import sys
 
 import numpy as np
 
-from ..models import linear, mlp
+from ..models import linear
 from ..util import file_handling as fh
 
 
@@ -72,8 +72,8 @@ def load_from_file(model_dir, name):
         model_type = metadata['model_type']
         if model_type == 'LR':
             model = linear.load_from_file(model_dir, m)
-        elif model_type == 'MLP':
-            model = mlp.load_from_file(model_dir, m)
+        #elif model_type == 'MLP':
+        #    model = mlp.load_from_file(model_dir, m)
         else:
             sys.exit("Model type %s not recognized" % model_type)
         ensemble.add_model(model, m)

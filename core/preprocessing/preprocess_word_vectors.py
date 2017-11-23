@@ -33,7 +33,7 @@ def main():
     preprocess_word_vectors(project_dir, subset, word2vec_file, ref, dh)
 
 
-def preprocess_word_vectors(project_dir, subset, word2vec_file, ref, dh=300):
+def preprocess_word_vectors(project_dir, subset, word2vec_file, ref, dh=300, add_oov=True):
 
     print("Loading %s" % ref)
     unigrams = features.load_from_file(dirs.dir_features(project_dir, subset), ref)
@@ -47,6 +47,9 @@ def preprocess_word_vectors(project_dir, subset, word2vec_file, ref, dh=300):
 
     # create the list of terms that have vectors
     vocab = [w for w in terms if w in vectors]
+    if add_oov:
+        # make the first dimension a zero vector for OOV
+        vocab = ['__OOV__'] + vocab
     dv = len(vocab)
 
     W = np.zeros([dv, dh])
