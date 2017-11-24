@@ -73,7 +73,7 @@ def make_script(name, input_text, nodes, tasks, hours, dev, module, addtional_mo
         script += "source activate " + str(mod) + "\n"
     for line in input_text:
         script += line
-    script += "date\n"
+    script += "\ndate\n"
 
     return script
 
