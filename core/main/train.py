@@ -93,7 +93,7 @@ def train_model_with_labels(project_dir, model_type, loss, model_name, subset, l
                             items_to_use=None, penalty='l2', alpha_min=0.01, alpha_max=1000, n_alphas=8, intercept=True,
                             objective='f1', n_dev_folds=5, save_model=True, do_ensemble=True, dh=0, seed=None,
                             pos_label=1, vocab=None, group_identical=False, nonlinearity='tanh',
-                            init_lr=1e-4, min_epochs=2, max_epochs=100, patience=8, tol=1e-4, early_stopping=True,
+                            init_lr=1e-3, min_epochs=2, max_epochs=100, patience=8, tol=1e-4, early_stopping=True,
                             list_size=10, do_cfm=False, do_platt=False, dl_feature_list=None,
                             lower=None, interactive=False, stoplist=None,
                             update_emb=True, verbose=True):
@@ -408,7 +408,7 @@ def train_model_with_labels(project_dir, model_type, loss, model_name, subset, l
                 X_train, Y_train, w_train = prepare_data(X_train, Y_train, w_train, loss=loss)
                 X_dev, Y_dev, w_dev = prepare_data(X_dev, Y_dev, w_dev, loss=loss)
 
-                model.fit(X_train, Y_train, X_dev, Y_dev, train_weights=w_train, dev_weights=w_dev, seed=seed, init_lr=init_lr, min_epochs=min_epochs, max_epochs=max_epochs, patience=patience, tol=tol, early_stopping=early_stopping)
+                model.fit(X_train, Y_train, X_dev, Y_dev, train_weights=w_train, dev_weights=w_dev, col_names=col_names, seed=seed, init_lr=init_lr, min_epochs=min_epochs, max_epochs=max_epochs, patience=patience)
                 alpha_models[alpha].append(model)
 
                 dev_predictions = model.predict(X_dev)
