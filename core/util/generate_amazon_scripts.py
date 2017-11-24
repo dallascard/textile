@@ -38,7 +38,7 @@ def main():
                             cmd += ' --cshift'
 
                         name = '_'.join(['run', subset, label, str(n_train), objective, 'cshift', str(use_cshift)])
-                        script = make_script(name, cmd, 1, 1, 10, False, 'python3', [])
+                        script = make_script(name, cmd, 1, 1, 10, False, 'pytorch', [])
 
                         with open(name + '.sh', 'w') as f:
                             f.write(script)

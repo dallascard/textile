@@ -13,7 +13,7 @@ def main():
                       help='Estimated number of hours required: default=%default')
     parser.add_option('--dev', action="store_true", dest="dev", default=False,
                       help='Use development queue: default=%default')
-    parser.add_option('-m', dest='module', default='python3',
+    parser.add_option('-m', dest='module', default='pytorch',
                       help='Base module: default=%default')
 
     (options, args) = parser.parse_args()
