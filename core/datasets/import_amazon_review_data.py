@@ -60,6 +60,9 @@ def import_review_data(reviews_file, project_dir, prop, display=1000):
         helpfulness = review['helpful']
         n_helpful_votes = helpfulness[0]
         n_votes = helpfulness[1]
+        # deal with errors where n_helpful > n_votes (assume 100% helpful votes)
+        if n_helpful_votes > n_votes:
+            n_helpful_votes = n_votes
         if n_votes > 0:
             date_string = review['reviewTime']
             parts = date_string.split(',')
