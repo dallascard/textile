@@ -24,7 +24,7 @@ def main():
             for objective in objectives:
                 for use_cshift in use_cshift_options:
                     for n_train in n_train_vals:
-                        cmd = 'python -m core.experiment.over_time_split_and_fit'
+                        cmd = 'python -m core.experiments.over_time_split_and_fit'
                         cmd += ' projects/amazon/' + subset
                         cmd += ' all config/n5grams.json'
                         cmd += ' --label ' + label
