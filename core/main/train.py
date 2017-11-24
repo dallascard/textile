@@ -413,7 +413,6 @@ def train_model_with_labels(project_dir, model_type, loss, model_name, subset, l
 
                 dev_predictions = model.predict(X_dev)
                 dev_pred_probs = model.predict_probs(X_dev)
-
                 y_dev_vector = np.argmax(Y_dev, axis=1)
 
                 dev_f1 = evaluation.f1_score(y_dev_vector, dev_predictions, n_classes, pos_label=pos_label, weights=w_dev)

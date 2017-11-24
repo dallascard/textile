@@ -32,14 +32,14 @@ def main():
     parser.add_option('--suffix', dest='suffix', default='',
                       help='Suffix to mdoel name: default=%default')
     parser.add_option('--model', dest='model', default='LR',
-                      help='Model type [LR|MLP]: default=%default')
+                      help='Model type [LR|DAN]: default=%default')
     parser.add_option('--loss', dest='loss', default='log',
                       help='Loss function [log|brier]: default=%default')
     parser.add_option('--penalty', dest='penalty', default='l1',
                       help='Regularization type: default=%default')
     parser.add_option('--no_intercept', action="store_true", dest="no_intercept", default=False,
                       help='Use to fit a model with no intercept: default=%default')
-    parser.add_option('--dh', dest='dh', default=100,
+    parser.add_option('--dh', dest='dh', default=300,
                       help='Hidden layer size for MLP [0 for None]: default=%default')
     parser.add_option('--nonlinearity', dest='nonlinearity', default='tanh',
                       help='Nonlinearity for an MLP [tanh|sigmoid|relu]: default=%default')
@@ -385,12 +385,7 @@ def test_over_time(project_dir, subset, config_file, model_type, field, test_sta
         model, dev_f1, dev_acc, dev_cal_mae, dev_cal_est = train.train_model_with_labels(project_dir, model_type, 'log', model_name, subset, sampled_labels_df, feature_defs, weights_df=weights_df, items_to_use=train_items, penalty=penalty, alpha_min=alpha_min, alpha_max=alpha_max, n_alphas=n_alphas, intercept=intercept, objective=objective, n_dev_folds=n_dev_folds, do_ensemble=do_ensemble, dh=dh, seed=seed, pos_label=pos_label, vocab=None, group_identical=group_identical, nonlinearity=nonlinearity, init_lr=init_lr, min_epochs=min_epochs, max_epochs=max_epochs, patience=patience, tol=tol, early_stopping=early_stopping, do_cfm=do_cfm, do_platt=do_platt, lower=lower, stoplist=stoplist, verbose=verbose)
         results_df.loc['cross_val'] = [dev_f1, dev_acc, dev_cal_mae, dev_cal_est]
 
-        # predict on test data
-        force_dense = False
-        if model_type == 'MLP':
-            force_dense = True
-
-        X_test, features_concat = predict.load_data(project_dir, model_name, subset, items_to_use=test_items, force_dense=force_dense)
+        X_test, features_concat = predict.load_data(project_dir, model_name, subset, items_to_use=test_items)
         test_predictions = model.predict(X_test)
         test_predictions_df = pd.DataFrame(test_predictions, index=features_concat.get_items(), columns=[label])
         test_pred_probs = model.predict_probs(X_test)
@@ -526,7 +521,7 @@ def make_model_basename(log):
     else:
         model_basename += '_' + str(log['n_train'])
     model_basename += '_' + str(log['n_calib'])
-    if log['model_type'] == 'MLP':
+    if log['model_type'] == 'DAN':
         model_basename += '_' + str(log['dh'])
     if log['sample_labels']:
         model_basename += '_sampled'

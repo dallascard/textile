@@ -27,7 +27,7 @@ class DAN:
         self._penalty = None
         self._dropout_prob = 0.0
         self._n_classes = None
-        self._init_emb = None
+        self._init_emb = init_emb
         self._update_emb = update_emb
 
         if output_dir is None:
@@ -56,7 +56,8 @@ class DAN:
     def get_loss_function(self):
         return self._loss_function
 
-    def set_model(self, model, train_proportions, n_classes):
+    def set_model(self, model, train_proportions, col_names, n_classes):
+        self._col_names = col_names
         self._train_proportions = train_proportions
         self._n_classes = n_classes
         if model is None:
@@ -64,7 +65,7 @@ class DAN:
         else:
             self._model = model
 
-    def fit(self, X_train, Y_train, X_dev, Y_dev, train_weights=None, dev_weights=None, col_names=None, seed=None, init_lr=1e-4, min_epochs=2, max_epochs=100, patience=8, tol=1e-4, early_stopping=True, **kwargs):
+    def fit(self, X_train, Y_train, X_dev, Y_dev, train_weights=None, dev_weights=None, col_names=None, seed=None, init_lr=1e-3, min_epochs=2, max_epochs=100, patience=8):
         """
         Fit a classifier to data
         """
@@ -100,11 +101,13 @@ class DAN:
 
             criterion = nn.CrossEntropyLoss()
             grad_params = filter(lambda p: p.requires_grad, self._model.parameters())
-            optimizer = optim.SGD(grad_params, lr=0.1, momentum=0.9)
+            optimizer = optim.Adam(grad_params, lr=init_lr)
 
             epoch = 0
+            done = False
+            n_epochs_since_improvement = 0
             best_dev_acc = 0.0
-            while epoch < max_epochs:
+            while not done:
                 running_loss = 0.0
                 weight_sum = 0
                 for i in range(n_train):
@@ -146,6 +149,21 @@ class DAN:
                     for i, p in enumerate(model_params):
                         best_model_params[i].data[:] = p.data[:]
                     best_dev_acc = dev_acc
+                    n_epochs_since_improvement = 0
+                else:
+                    n_epochs_since_improvement += 1
+
+                if epoch >= min_epochs and n_epochs_since_improvement > patience:
+                    print("Patience exceeded. Done")
+                    print("Best validation acc = %0.4f" % best_dev_acc)
+                    done = True
+
+                if epoch >= max_epochs:
+                    print("Max epochs exceeded. Done")
+                    print("Best validation acc = %0.4f" % best_dev_acc)
+                    done = True
+
+                epoch += 1
 
         # do a quick evaluation and store the results internally
         train_pred = self.predict(X_train)
@@ -171,7 +189,9 @@ class DAN:
             n_items, _ = X.shape
             return np.ones(n_items, dtype=int) * np.argmax(self._train_proportions)
         else:
-            return self._model.predict(X)
+            probs = self.predict_probs(X)
+            predictions = np.argmax(probs, axis=1)
+            return predictions
 
     def predict_probs(self, X, verbose=False):
         n_items, _ = X.shape
@@ -182,9 +202,13 @@ class DAN:
             full_probs[:, default] = 1.0
             return full_probs
         else:
-            # otherwise, get probabilities from the model
-            model_probs = self._model.predict_probs(X, verbose=verbose)
-            return model_probs
+            for i in range(n_items):
+                X_i_list = X[i, :].nonzero()[1].tolist()
+                X_i_array = np.array(X_i_list, dtype=np.int).reshape(1, len(X_i_list))
+                X_i = Variable(torch.LongTensor(X_i_array))
+                outputs = self._model(X_i)
+                full_probs[i, :] = outputs.data.numpy().copy()
+            return full_probs
 
     def predict_proportions(self, X=None, weights=None, do_cfm=False, do_platt=False):
         # TODO: fix this to be the same as other models
