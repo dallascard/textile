@@ -873,21 +873,6 @@ def prepare_data(X, Y, weights=None, predictions=None, loss='log', normalize=Tru
         weights_return = np.array(weights_list)
         if predictions is not None:
             pred_return = np.array(pred_list)
-
-    elif loss == 'brier':
-        Y_list = []
-        # just normalize labels
-        for i in range(n_items):
-            labels = Y[i, :]
-            Y_list.append(labels / float(labels.sum()))
-        X_return = X.copy()
-        Y_return = np.array(Y_list)
-        if weights is None:
-            weights_return = np.ones(n_items)
-        else:
-            weights_return = np.array(weights)
-        if predictions is not None:
-            pred_return = np.array(predictions)
     else:
         sys.exit("Loss %s not recognized" % loss)
 

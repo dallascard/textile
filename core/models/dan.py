@@ -43,7 +43,7 @@ class DAN:
         self._dev_acc = None
         self._dev_acc_cfm = None
         self._dev_pvc_cfm = None
-
+        self._col_names = None
 
         # create a variable to store the label proportions in the training data
         self._train_proportions = None
@@ -64,17 +64,22 @@ class DAN:
         else:
             self._model = model
 
-    def fit(self, X_train, Y_train, X_dev, Y_dev, train_weights=None, dev_weights=None, seed=None, init_lr=1e-4, min_epochs=2, max_epochs=100, patience=8, tol=1e-4, early_stopping=True, **kwargs):
+    def fit(self, X_train, Y_train, X_dev, Y_dev, train_weights=None, dev_weights=None, col_names=None, seed=None, init_lr=1e-4, min_epochs=2, max_epochs=100, patience=8, tol=1e-4, early_stopping=True, **kwargs):
         """
         Fit a classifier to data
         """
         _, n_classes = Y_train.shape
         self._n_classes = n_classes
 
-        n_train, _ = X_train.shape
+        n_train, n_features = X_train.shape
         n_dev, _ = X_train.shape
         Y_list_train = Y_train.argmax(axis=1)
         Y_list_dev = Y_dev.argmax(axis=1)
+
+        if col_names is not None:
+            self._col_names = col_names
+        else:
+            self._col_names = range(n_features)
 
         # store the proportion of class labels in the training data
         if train_weights is None:
@@ -84,17 +89,14 @@ class DAN:
         self._train_proportions = (class_sums / float(class_sums.sum())).tolist()
 
         # if there is only a single type of label, make a default prediction
-        train_labels = np.argmax(Y_train, axis=1)
+        train_labels = np.argmax(Y_train, axis=1).reshape((n_train, ))
         if np.max(self._train_proportions) == 1.0:
             self._model = None
         else:
             #model_filename = os.path.join(self._output_dir, self._name + '.ckpt')
-            self._model = torchDAN(self._dimensions, init_emb=self._init_emb, update_emb=self._update_emb)
-            best_model = torchDAN(self._dimensions, init_emb=self._init_emb, update_emb=self._update_emb)
+            self._model = torchDAN(self._dimensions, init_emb=self._init_emb.copy(), update_emb=self._update_emb)
+            best_model = torchDAN(self._dimensions)
             # train model
-
-            # set the initial embeddings:
-
 
             criterion = nn.CrossEntropyLoss()
             grad_params = filter(lambda p: p.requires_grad, self._model.parameters())
@@ -104,7 +106,7 @@ class DAN:
             best_dev_acc = 0.0
             while epoch < max_epochs:
                 running_loss = 0.0
-                count = 0
+                weight_sum = 0
                 for i in range(n_train):
                     X_i_list = X_train[i, :].nonzero()[1].tolist()
                     X_i_array = np.array(X_i_list, dtype=np.int).reshape(1, len(X_i_list))
@@ -115,12 +117,16 @@ class DAN:
                     outputs = self._model(X_i)
 
                     loss = criterion(outputs, y_i)
-                    loss.backward()
+
+                    # apply per-instance weights
+                    scaling_factor = torch.ones(loss.data.shape) * train_weights[i]
+                    loss.backward(scaling_factor)
+
                     optimizer.step()
                     running_loss += loss.data[0]
-                    count += 1
+                    weight_sum += train_weights[i]
                     if i % 500 == 0:
-                        print("%d %d %0.4f" % (epoch, i, running_loss / count))
+                        print("%d %d %0.4f" % (epoch, i, running_loss / weight_sum))
 
                 dev_acc = 0.0
                 for i in range(n_dev):
@@ -128,8 +134,9 @@ class DAN:
                     X_i_array = np.array(X_i_list, dtype=np.int).reshape(1, len(X_i_list))
                     X_i = Variable(torch.LongTensor(X_i_array))
                     outputs = self._model(X_i)
-                    dev_acc += Y_list_dev[i] == outputs.data.numpy().argmax()
-                dev_acc /= n_dev
+                    dev_acc += (Y_list_dev[i] == outputs.data.numpy().argmax()) * dev_weights[i]
+
+                dev_acc /= np.sum(dev_weights)
                 print("epoch %d: dev acc = %0.4f" % (epoch, dev_acc))
 
                 if dev_acc > best_dev_acc:
@@ -140,7 +147,6 @@ class DAN:
                         best_model_params[i].data[:] = p.data[:]
                     best_dev_acc = dev_acc
 
-        """
         # do a quick evaluation and store the results internally
         train_pred = self.predict(X_train)
         self._train_acc = evaluation.acc_score(train_labels, train_pred, n_classes=n_classes, weights=train_weights)
@@ -157,7 +163,6 @@ class DAN:
             if self._n_classes == 2:
                 self._venn_info = np.vstack([Y_dev[:, 1], dev_pred_probs[:, 1], dev_weights]).T
                 assert self._venn_info.shape == (len(dev_labels), 3)
-        """
 
     def predict(self, X):
         # if we've stored a default value, then that is our prediction
@@ -263,8 +268,10 @@ class DAN:
                   'dimensions': self.get_dimensions(),
                   'loss_function': self._loss_function,
                   'nonlinearity': self._nonlinearity,
+                  'objective': self._objective,
                   'reg_strength': self.get_reg_strength(),
                   'penalty': self.get_penalty(),
+                  'update_emb': self._update_emb,
                   'pos_label': self._pos_label,
                   'n_classes': self.get_n_classes(),
                   'train_proportions': self.get_train_proportions(),
@@ -274,7 +281,9 @@ class DAN:
                   'dev_acc': self._dev_acc
                   }
         fh.write_to_json(output, os.path.join(self._output_dir, self._name + '_metadata.json'), sort_keys=False)
+        fh.write_to_json(self.get_col_names(), os.path.join(self._output_dir, self._name + '_col_names.json'), sort_keys=False)
         np.savez(os.path.join(self._output_dir, self._name + '_dev_info.npz'), acc_cfm=self._dev_acc_cfm, pvc_cfm=self._dev_pvc_cfm, venn_info=self._venn_info)
+        torch.save(self._model.state_dict(), os.path.join(self._output_dir, self._name + '_model'))
 
 
 def load_from_file(model_dir, name):
@@ -287,16 +296,19 @@ def load_from_file(model_dir, name):
     train_proportions = input['train_proportions']
     loss_function = input['loss_function']
     nonlinearity = input['nonlinearity']
+    objective = input['objective']
+    update_emb = input['update_emb']
 
-    classifier = MLP(dimensions, loss_function, nonlinearity, penalty, reg_strength, model_dir, name=name, pos_label=pos_label)
-    model_filename = os.path.join(model_dir, name + '.ckpt')
-    model = tf_MLP(dimensions, model_filename, loss_function, penalty, reg_strength, nonlinearity, pos_label=pos_label)
-    classifier.set_model(model, train_proportions, n_classes)
+    classifier = DAN(dimensions, model_dir, name, objective=objective, update_emb=update_emb)
+    model = torchDAN(dimensions, update_emb=update_emb)
+    model.load_state_dict(torch.load(os.path.join(model_dir, name + '_model')))
+    classifier.set_model(model, train_proportions, col_names, n_classes)
     dev_info = np.load(os.path.join(model_dir, name + '_dev_info.npz'))
     classifier._dev_acc_cfm = dev_info['acc_cfm']
-    classifier._dev_pvc_cfm = dev_info['pvc_cfm']
-    classifier._venn_info = dev_info['venn_info']
+    classifier._dev_acc_cfms_ms = dev_info['acc_cfms_ms']
+
     return classifier
+
 
 
 class torchDAN(nn.Module):
