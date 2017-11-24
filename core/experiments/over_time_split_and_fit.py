@@ -329,7 +329,6 @@ def test_over_time(project_dir, subset, config_file, model_type, field, test_sta
             temp = labels_df.values / np.array(labels_df.values.sum(axis=1).reshape((n_labeled_items, 1)), dtype=float)
             samples = np.zeros([n_labeled_items, n_classes], dtype=int)
             for i in range(n_labeled_items):
-                print(temp[i, :], labels_df.values[i, :])
                 index = np.random.choice(np.arange(n_classes), size=1, p=temp[i, :])
                 samples[i, index] = 1
             sampled_labels_df = pd.DataFrame(samples, index=labels_df.index, columns=labels_df.columns)
