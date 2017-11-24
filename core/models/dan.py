@@ -128,7 +128,7 @@ class DAN:
                     optimizer.step()
                     running_loss += loss.data[0]
                     weight_sum += train_weights[i]
-                    if i % 500 == 0:
+                    if i % 100 == 0 and i > 0:
                         print("%d %d %0.4f" % (epoch, i, running_loss / weight_sum))
 
                 dev_acc = 0.0
