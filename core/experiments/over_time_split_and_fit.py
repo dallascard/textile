@@ -281,6 +281,7 @@ def test_over_time(project_dir, subset, config_file, model_type, field, test_sta
     labeled_item_selector = label_sums_df > 0
     labels_df = labels_df[labeled_item_selector]
     n_labeled_items, n_classes = labels_df.shape
+    print("%d labeled items" % n_labeled_items)
     labeled_items = set(labels_df.index)
 
     train_items_labeled = [i for i in train_items_all if i in labeled_items]
@@ -328,6 +329,7 @@ def test_over_time(project_dir, subset, config_file, model_type, field, test_sta
             temp = labels_df.values / np.array(labels_df.values.sum(axis=1).reshape((n_labeled_items, 1)), dtype=float)
             samples = np.zeros([n_labeled_items, n_classes], dtype=int)
             for i in range(n_labeled_items):
+                print(temp[i, :], labels_df.values[i, :])
                 index = np.random.choice(np.arange(n_classes), size=1, p=temp[i, :])
                 samples[i, index] = 1
             sampled_labels_df = pd.DataFrame(samples, index=labels_df.index, columns=labels_df.columns)
