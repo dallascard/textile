@@ -30,15 +30,19 @@ def main():
     dev = options.dev
     module = options.module
 
-    make_script(input_file, output_file, nodes, tasks, hours, dev, module, additional_modules)
-
-
-def make_script(input_file, output_file, nodes, tasks, hours, dev, module, addtional_modules):
     basename = os.path.basename(input_file)
     name = os.path.splitext(basename)[0]
 
     with open(input_file, 'r') as f:
-        lines = f.read()
+        input_text = f.read()
+
+    script = make_script(name, input_text, nodes, tasks, hours, dev, module, additional_modules)
+
+    with open(output_file, 'w') as f:
+        f.write(script)
+
+
+def make_script(name, input_text, nodes, tasks, hours, dev, module, addtional_modules):
 
     script = """#!/bin/bash
 #-----------------------------------------------------------------
@@ -67,12 +71,11 @@ def make_script(input_file, output_file, nodes, tasks, hours, dev, module, addti
     script += "source activate " + str(module) + "\n"
     for mod in addtional_modules:
         script += "source activate " + str(mod) + "\n"
-    for line in lines:
+    for line in input_text:
         script += line
     script += "date\n"
 
-    with open(output_file, 'w') as f:
-        f.write(script)
+    return script
 
 
 if __name__ == '__main__':
