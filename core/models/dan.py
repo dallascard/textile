@@ -74,7 +74,8 @@ class DAN:
 
         n_train, n_features = X_train.shape
         n_dev, _ = X_dev.shape
-        Y_list_train = Y_train.argmax(axis=1)
+        #Y_list_train = Y_train.argmax(axis=1)
+        Y_list_train = np.array(Y_train.argmax(axis=1), dtype=np.float32)
         Y_list_dev = Y_dev.argmax(axis=1)
 
         if col_names is not None:
@@ -95,13 +96,19 @@ class DAN:
             self._model = None
         else:
             #model_filename = os.path.join(self._output_dir, self._name + '.ckpt')
-            self._model = torchDAN(self._dimensions, init_emb=self._init_emb.copy(), update_emb=self._update_emb)
+            # DEBUG!
+            #self._model = torchDAN(self._dimensions, init_emb=self._init_emb.copy(), update_emb=self._update_emb)
+            self._model = torchDAN(self._dimensions, init_emb=self._init_emb.copy(), update_emb=True)
             best_model = torchDAN(self._dimensions)
             # train model
 
-            criterion = nn.CrossEntropyLoss()
-            grad_params = filter(lambda p: p.requires_grad, self._model.parameters())
-            optimizer = optim.Adam(grad_params, lr=init_lr)
+            criterion = nn.BCELoss()
+            #criterion = nn.CrossEntropyLoss()
+            # DEBUG!
+            #grad_params = filter(lambda p: p.requires_grad, self._model.parameters())
+            grad_params = self._model.parameters()
+            # DEBUG!
+            optimizer = optim.Adagrad(grad_params)
 
             epoch = 0
             done = False
@@ -110,15 +117,15 @@ class DAN:
             while not done:
                 running_loss = 0.0
                 weight_sum = 0
+                train_acc = 0.0
                 for i in range(n_train):
                     X_i_list = X_train[i, :].nonzero()[1].tolist()
                     X_i_array = np.array(X_i_list, dtype=np.int).reshape(1, len(X_i_list))
                     X_i = Variable(torch.LongTensor(X_i_array))
-                    y_i = Variable(torch.from_numpy(Y_list_train[i:i+1]))
+                    y_i = Variable(torch.from_numpy(Y_list_train[i:i+1].reshape(1, 1)))
 
                     optimizer.zero_grad()
                     outputs = self._model(X_i)
-
                     loss = criterion(outputs, y_i)
 
                     # apply per-instance weights
@@ -127,17 +134,24 @@ class DAN:
 
                     optimizer.step()
                     running_loss += loss.data[0]
+                    pred = np.array(outputs.data.numpy() >= 0.5, dtype=int)
+                    train_acc += (np.argmax(Y_train[i]) == pred) * train_weights[i]
+
                     weight_sum += train_weights[i]
                     if i % 100 == 0 and i > 0:
-                        print("%d %d %0.4f" % (epoch, i, running_loss / weight_sum))
+                        print("%d %d %0.4f %0.4f" % (epoch, i, running_loss / weight_sum, train_acc / weight_sum))
 
                 dev_acc = 0.0
                 for i in range(n_dev):
                     X_i_list = X_dev[i, :].nonzero()[1].tolist()
                     X_i_array = np.array(X_i_list, dtype=np.int).reshape(1, len(X_i_list))
                     X_i = Variable(torch.LongTensor(X_i_array))
+                    y_i = Variable(torch.from_numpy(Y_list_train[i:i+1].reshape(1, 1)))
+                    #print(y_i, outputs.data.numpy().shape, outputs.data.numpy(), outputs.data.numpy().argmax())
+
                     outputs = self._model(X_i)
-                    dev_acc += (Y_list_dev[i] == outputs.data.numpy().argmax()) * dev_weights[i]
+                    pred = np.array(outputs.data.numpy() >= 0.5, dtype=int)
+                    dev_acc += (np.argmax(Y_dev[i]) == pred) * dev_weights[i]
 
                 dev_acc /= np.sum(dev_weights)
                 print("epoch %d: dev acc = %0.4f" % (epoch, dev_acc))
@@ -355,6 +369,6 @@ class torchDAN(nn.Module):
         for i in range(self.n_layers):
             layer = self.layers[i]
             h = layer(F.relu(h))
-        return h
+        return F.sigmoid(h)
 
 

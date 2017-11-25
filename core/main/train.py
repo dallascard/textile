@@ -376,9 +376,9 @@ def train_model_with_labels(project_dir, model_type, loss, model_name, subset, l
 
     elif model_type == 'DAN':
         if dh > 0:
-            dimensions = [n_features, dh, n_classes]
+            dimensions = [n_features, dh, 1]
         else:
-            dimensions = [n_features, n_classes]
+            dimensions = [n_features, 1]
         if not save_model:
             output_dir = None
 
