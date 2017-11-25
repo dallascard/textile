@@ -73,7 +73,7 @@ class DAN:
         self._n_classes = n_classes
 
         n_train, n_features = X_train.shape
-        n_dev, _ = X_train.shape
+        n_dev, _ = X_dev.shape
         Y_list_train = Y_train.argmax(axis=1)
         Y_list_dev = Y_dev.argmax(axis=1)
 
