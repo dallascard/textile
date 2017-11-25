@@ -138,7 +138,7 @@ class DAN:
                     train_acc += (np.argmax(Y_train[i]) == pred) * train_weights[i]
 
                     weight_sum += train_weights[i]
-                    if i % 100 == 0 and i > 0:
+                    if (i+1) % 100 == 0:
                         print("%d %d %0.4f %0.4f" % (epoch, i, running_loss / weight_sum, train_acc / weight_sum))
 
                 dev_acc = 0.0
