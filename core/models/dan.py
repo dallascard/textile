@@ -101,15 +101,21 @@ class DAN:
             #model_filename = os.path.join(self._output_dir, self._name + '.ckpt')
             # DEBUG!
             #self._model = torchDAN(self._dimensions, init_emb=self._init_emb.copy(), update_emb=self._update_emb)
-            #self._model = torchDAN(self._dimensions, init_emb=self._init_emb, update_emb=True)
-            self._model = torchDAN(self._dimensions, init_emb=None, update_emb=True)
+            print(self._dimensions)
+            self._model = torchDAN(self._dimensions, init_emb=self._init_emb, update_emb=False)
             best_model = torchDAN(self._dimensions)
             # train model
+            print(self._model.n_layers)
 
             #criterion = nn.BCELoss()
             criterion = nn.CrossEntropyLoss()
             grad_params = filter(lambda p: p.requires_grad, self._model.parameters())
-            optimizer = optim.Adagrad(grad_params)
+            optimizer = optim.Adagrad(grad_params, lr=1e-3)
+
+            print("Grad parameters")
+            grad_params = filter(lambda p: p.requires_grad, self._model.parameters())
+            for p in grad_params:
+                print(p.data.shape)
 
             epoch = 0
             done = False
@@ -355,22 +361,20 @@ class torchDAN(nn.Module):
 
     def __init__(self, dims, init_emb=None, update_emb=False):
         super(torchDAN, self).__init__()
-        assert len(dims) >= 2
+        assert len(dims) == 3
         self.n_layers = len(dims)-2
         self.emb = nn.Embedding(dims[0], dims[1])
         if not update_emb:
             self.emb.weight.requires_grad = False
         if init_emb is not None:
             self.emb.weight.data.copy_(torch.from_numpy(init_emb))
-        self.layers = nn.ModuleList()
-        for layer in range(1, len(dims)-1):
-            self.layers.append(nn.Linear(dims[layer], dims[layer+1]))
+        self.linear1 = nn.Linear(dims[1], dims[2])
 
     def forward(self, X):
         h = torch.mean(self.emb(X), dim=1)
-        for i in range(self.n_layers):
-            layer = self.layers[i]
-            h = layer(F.sigmoid(h))
+        h = self.linear1(F.relu(h))
+        #for layer in self.layers:
+        #    h = layer(F.sigmoid(h))
         return h
 
 

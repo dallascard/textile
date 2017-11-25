@@ -13,7 +13,8 @@ def main():
 
     (options, args) = parser.parse_args()
 
-    subsets = ['clothes5', 'home5', 'sports5', 'video5']
+    #subsets = ['clothes5', 'home5', 'sports5', 'video5']
+    subsets = ['toys5', 'tools5']
     labels = ['helpfulness', 'fivestar']
     n_train_vals = [1000, 2000, 5000, 10000, 20000]
     use_cshift_options = [False, True]
