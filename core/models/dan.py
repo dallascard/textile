@@ -101,7 +101,8 @@ class DAN:
             #model_filename = os.path.join(self._output_dir, self._name + '.ckpt')
             # DEBUG!
             #self._model = torchDAN(self._dimensions, init_emb=self._init_emb.copy(), update_emb=self._update_emb)
-            self._model = torchDAN(self._dimensions, init_emb=self._init_emb.copy(), update_emb=True)
+            #self._model = torchDAN(self._dimensions, init_emb=self._init_emb, update_emb=True)
+            self._model = torchDAN(self._dimensions, init_emb=None, update_emb=True)
             best_model = torchDAN(self._dimensions)
             # train model
 
