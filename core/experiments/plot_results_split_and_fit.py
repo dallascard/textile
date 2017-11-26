@@ -12,8 +12,8 @@ from ..util import file_handling as fh
 def main():
     usage = "%prog csv_results_files"
     parser = OptionParser(usage=usage)
-    parser.add_option('--output', dest='output', default=None,
-                      help='Output filename (optional): default=%default')
+    parser.add_option('--prefix', dest='prefix', default=None,
+                      help='Output prefix (optional): default=%default')
     parser.add_option('--similar', action="store_true", dest="similar", default=False,
                       help='Only use the most similar examples: default=%default')
     parser.add_option('--different', action="store_true", dest="different", default=False,
@@ -33,7 +33,7 @@ def main():
     use_balanced = options.balanced
     use_unbalanced = options.unbalanced
 
-    output = options.output
+    output = options.prefix
 
     rows = ['train', 'CC', 'PCC', 'ACC_internal', 'MS_internal', 'PCC_platt2']
     values = {}
@@ -87,7 +87,7 @@ def main():
     print(df.var(axis=1))
 
     if output is not None:
-        df.mean(axis=1).to_csv(output)
+        df.mean(axis=1).to_csv(output + '.csv')
 
     cmap = plt.get_cmap('jet')
     colors = cmap(np.linspace(0, 1.0, len(rows)))
@@ -107,7 +107,8 @@ def main():
         else:
             ax.plot(groups, means, color=colors[r_i], label=row, alpha=0.5)
     ax.legend()
-    plt.savefig('test.pdf', bbox_inches='tight')
+    if output is not None:
+        plt.savefig(output + '.pdf', bbox_inches='tight')
 
 
 if __name__ == '__main__':
