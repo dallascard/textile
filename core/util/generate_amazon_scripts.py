@@ -14,9 +14,9 @@ def main():
     (options, args) = parser.parse_args()
 
     #subsets = ['clothes5', 'home5', 'sports5', 'video5']
-    subsets = ['toys5', 'tools5']
+    subsets = ['toys5', 'tools5', 'clothes5', 'sports5']
     labels = ['helpfulness', 'fivestar']
-    n_train_vals = [1000, 2000, 5000, 10000, 20000]
+    n_train_vals = [500, 1000]
     use_cshift_options = [False, True]
     objectives = ['f1', 'calibration']
 
@@ -33,7 +33,7 @@ def main():
                         cmd += ' --test_end 2014'
                         cmd += ' --n_train ' + str(n_train)
                         cmd += ' --sample'
-                        cmd += ' --repeats 5'
+                        cmd += ' --repeats 20'
                         cmd += ' --objective ' + objective
                         if use_cshift:
                             cmd += ' --cshift'
