@@ -47,7 +47,7 @@ def main():
         cool = int(line['cool'])
         business_id = line['business_id']
         if business_id in city_lookup:
-            city = city_lookup[business_id]
+            city = int(city_lookup[business_id])
             if funny + useful + cool > 0:
                 if city == 'Las Vegas':
                     phoenix_count += 1
@@ -55,13 +55,14 @@ def main():
                     data[review_id]['labels']['funny'] = {0: useful + cool, 1: funny}
                     data[review_id]['labels']['useful'] = {0: funny + cool, 1: useful}
                     data[review_id]['labels']['cool'] = {0: useful + funny, 1: cool}
+                    data[review_id]['labels']['city'] = {0: 1, 1: 0}
                 elif city == 'Toronto':
                     toronto_count += 1
                     data[review_id] = {'text': text, 'city': 0, 'date': date, 'year': year, 'labels': {}}
                     data[review_id]['labels']['funny'] = {0: useful + cool, 1: funny}
                     data[review_id]['labels']['useful'] = {0: funny + cool, 1: useful}
                     data[review_id]['labels']['cool'] = {0: useful + funny, 1: cool}
-
+                    data[review_id]['labels']['city'] = {0: 0, 1: 1}
 
     print(toronto_count, phoenix_count)
     fh.makedirs(dirs.dir_data_raw(project_dir))
