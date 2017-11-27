@@ -229,16 +229,6 @@ class DAN:
         train_pred = self.predict(X_train)
         self._train_acc = evaluation.acc_score(train_labels, train_pred, n_classes=n_classes, weights=train_weights)
         self._train_f1 = evaluation.f1_score(train_labels, train_pred, n_classes=n_classes, pos_label=self._pos_label, weights=train_weights)
-        print("Train acc / f1:", self._train_acc, self._train_f1)
-
-        if X_dev is not None and Y_dev is not None:
-            dev_labels = np.argmax(Y_dev, axis=1)
-            dev_pred = self.predict(X_dev)
-            self._dev_acc = evaluation.acc_score(dev_labels, dev_pred, n_classes=n_classes, weights=dev_weights)
-            self._dev_f1 = evaluation.f1_score(dev_labels, dev_pred, n_classes=n_classes, pos_label=self._pos_label, weights=dev_weights)
-            print("Dev acc / f1:", self._dev_acc, self._dev_f1)
-            self._dev_acc_cfm = calibration.compute_acc(dev_labels, dev_pred, n_classes, weights=dev_weights)
-            self._dev_pvc_cfm = calibration.compute_pvc(dev_labels, dev_pred, n_classes, weights=dev_weights)
 
     def fit_cfms(self, X_dev, Y_dev, dev_weights, prep_data=False):
         _, n_classes = Y_dev.shape
