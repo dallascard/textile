@@ -4,6 +4,7 @@ import tempfile
 from optparse import OptionParser
 
 import numpy as np
+from scipy.special import expit
 import torch
 from torch.autograd import Variable
 import torch.nn as nn
@@ -228,9 +229,6 @@ class DAN:
             self._dev_f1 = evaluation.f1_score(dev_labels, dev_pred, n_classes=n_classes, pos_label=self._pos_label, weights=dev_weights)
             self._dev_acc_cfm = calibration.compute_acc(dev_labels, dev_pred, n_classes, weights=dev_weights)
             self._dev_pvc_cfm = calibration.compute_pvc(dev_labels, dev_pred, n_classes, weights=dev_weights)
-            if self._n_classes == 2:
-                self._venn_info = np.vstack([Y_dev[:, 1], dev_pred_probs[:, 1], dev_weights]).T
-                assert self._venn_info.shape == (len(dev_labels), 3)
 
     def predict(self, X):
         # if we've stored a default value, then that is our prediction
@@ -258,7 +256,8 @@ class DAN:
                 X_i_array = np.array(X_i_list, dtype=np.int).reshape(1, len(X_i_list))
                 X_i = Variable(torch.LongTensor(X_i_array))
                 outputs = self._model(X_i)
-                full_probs[i, :] = outputs.data.numpy().copy()
+                p = expit(outputs.data.numpy().copy())
+                full_probs[i, :] = [1.0-p, p]
             return full_probs
 
     def predict_proportions(self, X=None, weights=None, do_cfm=False, do_platt=False):
