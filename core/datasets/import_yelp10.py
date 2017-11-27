@@ -47,7 +47,7 @@ def main():
         cool = int(line['cool'])
         business_id = line['business_id']
         if business_id in city_lookup:
-            city = int(city_lookup[business_id])
+            city = city_lookup[business_id]
             if funny + useful + cool > 0:
                 if city == 'Las Vegas':
                     phoenix_count += 1
