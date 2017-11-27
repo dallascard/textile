@@ -123,7 +123,9 @@ class DAN:
                 running_loss = 0.0
                 weight_sum = 0
                 train_acc = 0.0
-                for i in range(n_train):
+                order = np.arange(n_train)
+                np.random.shuffle(order)
+                for i in order:
                     X_i_list = X_train[i, :].nonzero()[1].tolist()
                     sel = np.random.choice((0, 1), p=(dropout_prob, 1-dropout_prob), size=len(X_i_list), replace=True)
                     X_i_list = [x for x_i, x in enumerate(X_i_list) if sel[x_i] == 1]
