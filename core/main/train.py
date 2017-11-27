@@ -6,6 +6,7 @@ from collections import defaultdict
 import numpy as np
 import pandas as pd
 from scipy import sparse
+from scipy.spatial import distance
 from sklearn.model_selection import KFold
 
 from ..util import file_handling as fh
@@ -178,6 +179,16 @@ def train_model_with_labels(project_dir, model_type, loss, model_name, subset, l
     else:
         print("NOT loading word vectors")
         init_embeddings = None
+
+    test_words = ['law', 'lawyer', 'court', 'judge', 'the']
+    for w_i, w1 in enumerate(test_words):
+        i1 = features_concat.get_terms().index(w1)
+        v1 = init_embeddings[i1, :]
+        for w2 in test_words[w_i:]:
+            i2 = features_concat.get_terms().index(w2)
+            v2 = init_embeddings[i2, :]
+            print(w1, w2, distance.cosine(v1, v2))
+
 
     print(features_concat.get_shape(), "after embeddings")
 
