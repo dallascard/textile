@@ -97,7 +97,7 @@ def train_model_with_labels(project_dir, model_type, loss, model_name, subset, l
                             init_lr=1e-3, min_epochs=2, max_epochs=100, patience=8, tol=1e-4, early_stopping=True,
                             list_size=10, do_cfm=False, do_platt=False, dl_feature_list=None,
                             lower=None, interactive=False, stoplist=None,
-                            update_emb=True, verbose=True):
+                            update_emb=False, verbose=True):
 
     features_dir = dirs.dir_features(project_dir, subset)
     n_items, n_classes = labels_df.shape
@@ -175,20 +175,28 @@ def train_model_with_labels(project_dir, model_type, loss, model_name, subset, l
         word_vectors_prefix = os.path.join(features_dir, 'unigrams' + '_vecs')
         init_embeddings = fh.load_dense(word_vectors_prefix + '.npz')
         word_vector_terms = fh.read_json(word_vectors_prefix + '.json')
-        features_concat.set_terms(word_vector_terms)
+        word_list = []
+        word_list.extend('court courts legal constitutional judge ruling law unconstitutional lawsuit'.split())
+        word_list.extend('remain the_denomination be_the the_church and know full as_he the views'.split())
+        word_list.extend('court courts legal ruling judge constitutional law marriage the_constitution'.split())
+        word_list.extend('god released obama homosexuality to_include remain this_week for_same the my'.split())
+        word_list.extend('court courts judge legal ruling constitution state constitutional marriage_to'.split())
+        word_list.extend('homosexuality released rep opposition_to full the_church not_only remain know late'.split())
+        word_list.extend('court judge legal lawsuit constitutional courts ruling recognized supreme'.split())
+        word_list.extend('released homosexuality to_approve for_same 2004 money yesterday to_his rep late'.split())
+        word_list.extend('court courts constitutional legal lawsuit judge licenses ruling state'.split())
+        word_list.extend('the homosexuality this_week the_denomination six yesterday - march him major'.split())
+        word_list = set(word_list)
+        terms = [t for t in word_vector_terms if t in word_list]
+
+        #features_concat.set_terms(word_vector_terms)
+        features_concat.set_terms(terms)
+
+        terms_index = [word_vector_terms.index(t) for t in terms]
+        init_embeddings = init_embeddings[terms_index, :]
     else:
         print("NOT loading word vectors")
         init_embeddings = None
-
-    test_words = ['law', 'lawyer', 'court', 'judge', 'the']
-    for w_i, w1 in enumerate(test_words):
-        i1 = features_concat.get_terms().index(w1)
-        v1 = init_embeddings[i1, :]
-        for w2 in test_words[w_i:]:
-            i2 = features_concat.get_terms().index(w2)
-            v2 = init_embeddings[i2, :]
-            print(w1, w2, distance.cosine(v1, v2))
-
 
     print(features_concat.get_shape(), "after embeddings")
 

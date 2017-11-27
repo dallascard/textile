@@ -34,6 +34,7 @@ class DAN:
             self._output_dir = tempfile.gettempdir()
         else:
             self._output_dir = output_dir
+
         self._name = name
         self._pos_label = pos_label
         self._objective = objective
@@ -102,8 +103,8 @@ class DAN:
             # DEBUG!
             #self._model = torchDAN(self._dimensions, init_emb=self._init_emb.copy(), update_emb=self._update_emb)
             print(self._dimensions)
-            self._model = torchDAN(self._dimensions, init_emb=self._init_emb, update_emb=False)
-            best_model = torchDAN(self._dimensions)
+            self._model = torchDAN(self._dimensions, init_emb=self._init_emb, update_emb=self._update_emb)
+            best_model = torchDAN(self._dimensions, init_emb=self._init_emb, update_emb=self._update_emb)
             # train model
             print(self._model.n_layers)
 
@@ -137,8 +138,9 @@ class DAN:
                     loss = criterion(outputs, y_i)
 
                     # apply per-instance weights
-                    scaling_factor = torch.ones(loss.data.shape) * train_weights[i]
-                    loss.backward(scaling_factor)
+                    #scaling_factor = torch.ones(loss.data.shape) * train_weights[i]
+                    #loss.backward(scaling_factor)
+                    loss.backward()
 
                     optimizer.step()
                     running_loss += loss.data[0]
@@ -156,8 +158,6 @@ class DAN:
                     X_i_list = X_dev[i, :].nonzero()[1].tolist()
                     X_i_array = np.array(X_i_list, dtype=np.int).reshape(1, len(X_i_list))
                     X_i = Variable(torch.LongTensor(X_i_array))
-                    #y_i = Variable(torch.from_numpy(Y_list_train[i:i+1].reshape(1, 1)))
-                    y_i = Variable(torch.LongTensor(Y_list_dev[i:i+1]))
 
                     outputs = self._model(X_i)
                     pred = np.argmax(outputs.data.numpy())
