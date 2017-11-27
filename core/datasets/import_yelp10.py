@@ -1,7 +1,6 @@
-import os
-from collections import Counter
-from optparse import OptionParser
 
+import os
+from optparse import OptionParser
 
 from ..util import dirs
 from ..util import file_handling as fh

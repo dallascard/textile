@@ -170,11 +170,13 @@ def train_model_with_labels(project_dir, model_type, loss, model_name, subset, l
     print(features_concat.get_shape(), "before embeddings")
 
     if model_type == 'DAN':
+        print("Loading word vectors")
         word_vectors_prefix = os.path.join(features_dir, 'unigrams' + '_vecs')
         init_embeddings = fh.load_dense(word_vectors_prefix + '.npz')
         word_vector_terms = fh.read_json(word_vectors_prefix + '.json')
         features_concat.set_terms(word_vector_terms)
     else:
+        print("NOT loading word vectors")
         init_embeddings = None
 
     print(features_concat.get_shape(), "after embeddings")

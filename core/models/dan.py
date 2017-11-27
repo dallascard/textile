@@ -149,6 +149,8 @@ class DAN:
                     if (i+1) % 200 == 0:
                         print("%d %d %0.4f %0.4f" % (epoch, i+1, running_loss / weight_sum, train_acc / weight_sum))
 
+                print("%d %d %0.4f %0.4f" % (epoch, i+1, running_loss / weight_sum, train_acc / weight_sum))
+
                 dev_acc = 0.0
                 for i in range(n_dev):
                     X_i_list = X_dev[i, :].nonzero()[1].tolist()
