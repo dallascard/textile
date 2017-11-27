@@ -119,6 +119,7 @@ def train_model_with_labels(project_dir, model_type, loss, model_name, subset, l
     if vocab is not None:
         vocab_index = dict(zip(vocab, range(len(vocab))))
 
+    init_embeddings = None
     printv("loading features", verbose)
     feature_list = []
     feature_signatures = []
@@ -153,6 +154,17 @@ def train_model_with_labels(project_dir, model_type, loss, model_name, subset, l
         else:
             word_vectors_prefix = None
         feature.transform(feature_def.transform, word_vectors_prefix=word_vectors_prefix, alpha=feature_def.alpha)
+        if model_type == 'DAN':
+            # TODO: make this less hacky (i.e. deal with non unigram features or something...)
+            print(name)
+            print(feature.get_shape(), "before embeddings")
+            print("Loading word vectors")
+            word_vectors_prefix = os.path.join(features_dir, 'unigrams' + '_vecs')
+            init_embeddings = np.array(fh.load_dense(word_vectors_prefix + '.npz'), dtype=np.float32)
+            word_vector_terms = fh.read_json(word_vectors_prefix + '.json')
+            feature.set_terms(word_vector_terms)
+            print(feature.get_shape(), "after embeddings")
+
         printv("Final shape = (%d, %d)" % feature.get_shape(), verbose)
         feature_list.append(feature)
         if save_model:
@@ -167,37 +179,6 @@ def train_model_with_labels(project_dir, model_type, loss, model_name, subset, l
         fh.write_to_json(feature_signatures, os.path.join(output_dir, 'features.json'), sort_keys=False)
 
     features_concat = features.concatenate(feature_list)
-
-    print(features_concat.get_shape(), "before embeddings")
-
-    if model_type == 'DAN':
-        print("Loading word vectors")
-        word_vectors_prefix = os.path.join(features_dir, 'unigrams' + '_vecs')
-        init_embeddings = np.array(fh.load_dense(word_vectors_prefix + '.npz'), dtype=np.float32)
-        word_vector_terms = fh.read_json(word_vectors_prefix + '.json')
-
-        """
-        word_list = ['god', 'law']
-        word_list = set(word_list)
-        terms = [t for t in word_vector_terms if t in word_list]
-
-        #
-        features_concat.set_terms(terms)
-        terms.sort()
-        terms_index = [word_vector_terms.index(t) for t in terms]
-        for t_i, t in enumerate(terms):
-            print(t_i, t)
-        init_embeddings = init_embeddings[terms_index, :]
-        """
-        features_concat.set_terms(word_vector_terms)
-        print('law', word_vector_terms.index('law'))
-        print('god', word_vector_terms.index('god'))
-
-    else:
-        print("NOT loading word vectors")
-        init_embeddings = None
-
-    print(features_concat.get_shape(), "after embeddings")
 
     col_names = features_concat.get_col_names()
     if len(col_names) < 200:
