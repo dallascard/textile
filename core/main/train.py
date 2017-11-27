@@ -175,6 +175,7 @@ def train_model_with_labels(project_dir, model_type, loss, model_name, subset, l
         word_vectors_prefix = os.path.join(features_dir, 'unigrams' + '_vecs')
         init_embeddings = fh.load_dense(word_vectors_prefix + '.npz')
         word_vector_terms = fh.read_json(word_vectors_prefix + '.json')
+
         word_list = []
         word_list.extend('court courts legal constitutional judge ruling law unconstitutional lawsuit'.split())
         word_list.extend('remain the_denomination be_the the_church and know full as_he the views'.split())
@@ -191,8 +192,10 @@ def train_model_with_labels(project_dir, model_type, loss, model_name, subset, l
 
         #features_concat.set_terms(word_vector_terms)
         features_concat.set_terms(terms)
-
+        terms.sort()
         terms_index = [word_vector_terms.index(t) for t in terms]
+        for t_i, t in enumerate(terms):
+            print(t_i, t)
         init_embeddings = init_embeddings[terms_index, :]
     else:
         print("NOT loading word vectors")

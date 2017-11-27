@@ -166,6 +166,12 @@ class DAN:
                 dev_acc /= np.sum(dev_weights)
                 print("epoch %d: dev acc = %0.4f" % (epoch, dev_acc))
 
+                for i in range(self._dimensions[0]):
+                    X_i_array = np.array(1, dtype=np.int).reshape(1, 1)
+                    X_i = Variable(torch.LongTensor(X_i_array))
+                    outputs = self._model(X_i)
+                    print(i, outputs.data.numpy())
+
                 if dev_acc > best_dev_acc:
                     print("Updating best model")
                     model_params = list(self._model.parameters())
