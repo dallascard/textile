@@ -396,6 +396,31 @@ def test_over_time(project_dir, subset, config_file, model_type, field, test_sta
         model, dev_f1, dev_acc, dev_cal_mae, dev_cal_est = train.train_model_with_labels(project_dir, model_type, 'log', model_name, subset, sampled_labels_df, feature_defs, weights_df=weights_df, items_to_use=train_items, penalty=penalty, alpha_min=alpha_min, alpha_max=alpha_max, n_alphas=n_alphas, intercept=intercept, objective=objective, n_dev_folds=n_dev_folds, do_ensemble=do_ensemble, dh=dh, seed=seed, pos_label=pos_label, vocab=None, group_identical=group_identical, nonlinearity=nonlinearity, init_lr=init_lr, min_epochs=min_epochs, max_epochs=max_epochs, patience=patience, do_cfm=do_cfm, do_platt=do_platt, lower=lower, stoplist=stoplist, dropout=dropout, verbose=verbose)
         results_df.loc['cross_val'] = [dev_f1, dev_acc, dev_cal_mae, dev_cal_est]
 
+
+        # DEBUG:
+        X_temp, features_concat = predict.load_data(project_dir, model_name, subset, items_to_use=train_items)
+        temp_predictions = model.predict(X_temp)
+        temp_predictions_df = pd.DataFrame(temp_predictions, index=features_concat.get_items(), columns=[label])
+        temp_pred_probs = model.predict_probs(X_temp)
+        _, n_labels = temp_pred_probs.shape
+        temp_pred_probs_df = pd.DataFrame(temp_pred_probs, index=features_concat.get_items(), columns=range(n_labels))
+
+        f1_temp, acc_temp = evaluate_predictions.evaluate_predictions(sampled_labels_df, temp_predictions_df, temp_pred_probs_df, pos_label=pos_label, average=average)
+        true_temp_vector = np.argmax(sampled_labels_df.as_matrix(), axis=1)
+        temp_cal_est = evaluation.evaluate_calibration_rmse(true_temp_vector, temp_pred_probs_df.as_matrix(), min_bins=1, max_bins=1)
+        temp_cc_estimate, temp_pcc_estimate = model.predict_proportions(X_temp)
+
+        temp_cc_mae = np.mean(np.abs(temp_cc_estimate[1] - target_estimate))
+        temp_pcc_mae = np.mean(np.abs(temp_pcc_estimate[1] - target_estimate))
+
+        results_df.loc['temp'] = [f1_temp, acc_temp, temp_pcc_mae, temp_cal_est]
+
+        output_df.loc['CC_temp'] = [n_train_r, 'train', 'test', 'n/a', temp_cc_estimate[1], temp_cc_mae, np.nan, np.nan, np.nan]
+        output_df.loc['PCC_temp'] = [n_train_r, 'train', 'test', 'n/a', temp_pcc_estimate[1], temp_pcc_mae, np.nan, np.nan, np.nan]
+
+
+
+
         X_test, features_concat = predict.load_data(project_dir, model_name, subset, items_to_use=test_items)
         test_predictions = model.predict(X_test)
         test_predictions_df = pd.DataFrame(test_predictions, index=features_concat.get_items(), columns=[label])
