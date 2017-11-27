@@ -34,11 +34,13 @@ def process_articles(input_dir):
 
     files = glob.glob(os.path.join(input_dir, '199*.zip'))
     files.sort()
-    for file in files:
+    for f_i, file in enumerate(files):
         with zipfile.ZipFile(file, 'r') as f:
             names = f.namelist()
             print('%s (%d)' % (file, len(names)))
             n_missing_codes = 0
+            week = f_i // 7
+            print(f_i, week)
             for name in names:
                 title = ''
                 headline = ''
@@ -82,7 +84,7 @@ def process_articles(input_dir):
                         print("Headline is empty")
                     if len(codes) == 0:
                         n_missing_codes += 1
-                    data[id] = {'text': title + '\n\n' + headline + '\n\n' + text, 'date': date, 'year': year, 'labels': {}, 'yearmonth': int(yearmonth)}
+                    data[id] = {'text': title + '\n\n' + headline + '\n\n' + text, 'date': date, 'year': year, 'labels': {}, 'yearmonth': int(yearmonth), 'week': week}
                     for code in codes:
                         data[id]['labels'][code] = 1
                 except Exception as e:
