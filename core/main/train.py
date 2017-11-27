@@ -91,13 +91,13 @@ def train_model(project_dir, model_type, loss, model_name, subset, label, featur
 
 
 def train_model_with_labels(project_dir, model_type, loss, model_name, subset, labels_df, feature_defs, weights_df=None,
-                            items_to_use=None, penalty='l2', alpha_min=0.01, alpha_max=1000, n_alphas=8, intercept=True,
+                            items_to_use=None, penalty='l1', alpha_min=0.01, alpha_max=1000, n_alphas=8, intercept=True,
                             objective='f1', n_dev_folds=5, save_model=True, do_ensemble=True, dh=0, seed=None,
                             pos_label=1, vocab=None, group_identical=False, nonlinearity='tanh',
-                            init_lr=1e-3, min_epochs=2, max_epochs=100, patience=8, tol=1e-4, early_stopping=True,
+                            init_lr=1e-3, min_epochs=2, max_epochs=100, patience=8,
                             list_size=10, do_cfm=False, do_platt=False, dl_feature_list=None,
                             lower=None, interactive=False, stoplist=None,
-                            update_emb=False, verbose=True):
+                            update_emb=False, dropout=0.0, verbose=True):
 
     features_dir = dirs.dir_features(project_dir, subset)
     n_items, n_classes = labels_df.shape
@@ -396,7 +396,7 @@ def train_model_with_labels(project_dir, model_type, loss, model_name, subset, l
 
     elif model_type == 'DAN':
         if dh > 0:
-            dimensions = [n_features, dh, 50, 1]
+            dimensions = [n_features, dh, dh, dh, 1]
         else:
             dimensions = [n_features, 1]
         if not save_model:
@@ -417,7 +417,7 @@ def train_model_with_labels(project_dir, model_type, loss, model_name, subset, l
                 name = model_name + '_' + str(fold)
                 #model = mlp.MLP(dimensions=dimensions, loss_function=loss, nonlinearity=nonlinearity, penalty=penalty, reg_strength=alpha, output_dir=output_dir, name=name, pos_label=pos_label, objective=objective)
 
-                model = dan.DAN(dimensions, output_dir=output_dir, name=name, pos_label=pos_label, objective=objective, init_emb=init_embeddings, update_emb=update_emb)
+                model = dan.DAN(dimensions, alpha=alpha, output_dir=output_dir, name=name, pos_label=pos_label, objective=objective, init_emb=init_embeddings, update_emb=update_emb)
 
                 X_train = X[train_indices, :]
                 Y_train = Y[train_indices, :]
@@ -428,7 +428,7 @@ def train_model_with_labels(project_dir, model_type, loss, model_name, subset, l
                 X_train, Y_train, w_train = prepare_data(X_train, Y_train, w_train, loss=loss)
                 X_dev, Y_dev, w_dev = prepare_data(X_dev, Y_dev, w_dev, loss=loss)
 
-                model.fit(X_train, Y_train, X_dev, Y_dev, train_weights=w_train, dev_weights=w_dev, col_names=col_names, seed=seed, init_lr=init_lr, min_epochs=min_epochs, max_epochs=max_epochs, patience=patience)
+                model.fit(X_train, Y_train, X_dev, Y_dev, train_weights=w_train, dev_weights=w_dev, col_names=col_names, seed=seed, init_lr=init_lr, min_epochs=min_epochs, max_epochs=max_epochs, patience=patience, dropout_prob=dropout)
                 alpha_models[alpha].append(model)
 
                 dev_predictions = model.predict(X_dev)
@@ -446,7 +446,7 @@ def train_model_with_labels(project_dir, model_type, loss, model_name, subset, l
                 mean_dev_acc[alpha_i] += dev_acc / float(n_dev_folds)
                 mean_dev_cal_mae[alpha_i] += dev_cal_mae / float(n_dev_folds)
                 mean_dev_cal_est[alpha_i] += dev_cal_est / float(n_dev_folds)
-                mean_model_size[alpha_i] += model.get_model_size() / float(n_dev_folds)
+                mean_model_size[alpha_i] += 0
                 fold += 1
 
             print("%d\t%0.2f\t%.1f\t%0.3f\t%0.3f\t%0.3f\t%0.3f\t%0.3f" % (alpha_i, alpha, mean_model_size[alpha_i], mean_train_f1s[alpha_i], mean_dev_f1s[alpha_i], mean_dev_acc[alpha_i], mean_dev_cal_mae[alpha_i], mean_dev_cal_est[alpha_i]))

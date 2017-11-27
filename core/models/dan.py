@@ -18,14 +18,15 @@ class DAN:
     """
     Multilayer perceptron (representing documents as weighted sums of word vectors)
     """
-    def __init__(self, dimensions, output_dir=None, name='model', pos_label=1, objective='f1', init_emb=None, update_emb=False):
+    def __init__(self, dimensions, alpha=0.0, output_dir=None, name='model', pos_label=1, objective='f1', init_emb=None, update_emb=False):
         self._model_type = 'DAN'
+        self._penalty = 'l2'
+        self._alpha = alpha
         self._dimensions = dimensions[:]
         self._loss_function = 'log'
         self._nonlinearity = 'relu'
         self._loss_function = 'log'
         self._reg_strength = 0
-        self._penalty = None
         self._dropout_prob = 0.0
         self._n_classes = None
         self._init_emb = init_emb
@@ -67,7 +68,7 @@ class DAN:
         else:
             self._model = model
 
-    def fit(self, X_train, Y_train, X_dev, Y_dev, train_weights=None, dev_weights=None, col_names=None, seed=None, init_lr=1e-3, min_epochs=2, max_epochs=100, patience=8):
+    def fit(self, X_train, Y_train, X_dev, Y_dev, train_weights=None, dev_weights=None, col_names=None, seed=None, init_lr=1e-2, min_epochs=2, max_epochs=200, patience=8, dropout_prob=0.0):
         """
         Fit a classifier to data
         """
@@ -93,7 +94,7 @@ class DAN:
             class_sums = np.dot(train_weights, Y_train) / train_weights.sum()
             dev_class_sums = np.dot(dev_weights, Y_dev) / dev_weights.sum()
         self._train_proportions = (class_sums / float(class_sums.sum())).tolist()
-        print("Dev proportions", (dev_class_sums / float(dev_class_sums.sum())).tolist())
+        #print("Dev proportions", (dev_class_sums / float(dev_class_sums.sum())).tolist())
 
         # if there is only a single type of label, make a default prediction
         train_labels = np.argmax(Y_train, axis=1).reshape((n_train, ))
@@ -103,22 +104,15 @@ class DAN:
             #model_filename = os.path.join(self._output_dir, self._name + '.ckpt')
             # DEBUG!
             #self._model = torchDAN(self._dimensions, init_emb=self._init_emb.copy(), update_emb=self._update_emb)
-            print(self._dimensions)
             self._model = torchDAN(self._dimensions, init_emb=self._init_emb, update_emb=self._update_emb)
             best_model = torchDAN(self._dimensions, init_emb=self._init_emb, update_emb=self._update_emb)
             # train model
-            print(self._model.n_layers)
 
             #criterion = nn.BCELoss()
             criterion = nn.BCEWithLogitsLoss()
             #criterion = nn.CrossEntropyLoss()
             grad_params = filter(lambda p: p.requires_grad, self._model.parameters())
-            optimizer = optim.Adagrad(grad_params, lr=1e-2)
-
-            print("Grad parameters")
-            grad_params = filter(lambda p: p.requires_grad, self._model.parameters())
-            for p in grad_params:
-                print(p.data.shape)
+            optimizer = optim.Adagrad(grad_params, lr=init_lr, weight_decay=self._alpha)
 
             epoch = 0
             done = False
@@ -130,6 +124,8 @@ class DAN:
                 train_acc = 0.0
                 for i in range(n_train):
                     X_i_list = X_train[i, :].nonzero()[1].tolist()
+                    sel = np.random.choice((0, 1), p=(dropout_prob, 1-dropout_prob), size=len(X_i_list), replace=True)
+                    X_i_list = [x for x_i, x in enumerate(X_i_list) if sel[x_i] == 1]
                     #if Y_list_train[i] == 1:
                     #    X_i_list += [14281]
                     #else:
@@ -164,6 +160,7 @@ class DAN:
 
                 print("%d %d %0.4f %0.4f" % (epoch, i+1, running_loss / weight_sum, train_acc / weight_sum))
 
+                """
                 for j in [14281, 10863]:
                     X_i_array = np.array(j, dtype=np.int).reshape(1, 1)
                     #X_i_list = [j]
@@ -172,6 +169,7 @@ class DAN:
                     #X_i = Variable(torch.from_numpy(X_i_array))
                     outputs = self._model(X_i)
                     print(j, outputs.data.numpy())
+                """
 
                 dev_acc = 0.0
                 for i in range(n_dev):
@@ -199,10 +197,10 @@ class DAN:
                 else:
                     n_epochs_since_improvement += 1
 
-                #if epoch >= min_epochs and n_epochs_since_improvement > patience:
-                #    print("Patience exceeded. Done")
-                #    print("Best validation acc = %0.4f" % best_dev_acc)
-                #    done = True
+                if epoch >= min_epochs and n_epochs_since_improvement > patience:
+                    print("Patience exceeded. Done")
+                    print("Best validation acc = %0.4f" % best_dev_acc)
+                    done = True
 
                 if epoch >= max_epochs:
                     print("Max epochs exceeded. Done")
@@ -210,6 +208,12 @@ class DAN:
                     done = True
 
                 epoch += 1
+
+            # restore best model
+            model_params = list(self._model.parameters())
+            best_model_params = list(best_model.parameters())
+            for i, p in enumerate(best_model_params):
+                model_params[i].data[:] = p.data[:]
 
         # do a quick evaluation and store the results internally
         train_pred = self.predict(X_train)
@@ -239,7 +243,8 @@ class DAN:
             predictions = np.argmax(probs, axis=1)
             return predictions
 
-    def predict_probs(self, X, verbose=False):
+    def predict_probs(self, X, do_platt=False, do_cfm=False, verbose=False):
+        # TODO: implement Platt
         n_items, _ = X.shape
         full_probs = np.zeros([n_items, self._n_classes])
         # if we've saved a default label, predict that with 100% confidence
@@ -335,6 +340,7 @@ class DAN:
     def save(self):
         output = {'model_type': self.get_model_type(),
                   'name': self.get_name(),
+                  'alpha': self._alpha,
                   'dimensions': self.get_dimensions(),
                   'loss_function': self._loss_function,
                   'nonlinearity': self._nonlinearity,
@@ -369,8 +375,9 @@ def load_from_file(model_dir, name):
     nonlinearity = input['nonlinearity']
     objective = input['objective']
     update_emb = input['update_emb']
+    alpha = input['alpha']
 
-    classifier = DAN(dimensions, model_dir, name, objective=objective, update_emb=update_emb)
+    classifier = DAN(dimensions, alpha=alpha, output_dir=model_dir, name=name, objective=objective, update_emb=update_emb)
     model = torchDAN(dimensions, update_emb=update_emb)
     model.load_state_dict(torch.load(os.path.join(model_dir, name + '_model')))
     classifier.set_model(model, train_proportions, col_names, n_classes)
@@ -395,13 +402,15 @@ class torchDAN(nn.Module):
 
         self.linear1 = nn.Linear(dims[1], dims[2])
         self.linear2 = nn.Linear(dims[2], dims[3])
+        self.linear3 = nn.Linear(dims[3], dims[4])
 
     def forward(self, X):
         h = self.emb(X)
         #h = F.dropout(h)
         h = h.mean(dim=1)
         h = self.linear1(h)
-        h = self.linear2(F.tanh(h))
+        h = self.linear2(F.relu(h))
+        h = self.linear3(F.relu(h))
 
         #h = h[:, -1, :]
         #print(h.data.numpy()[0, :6])

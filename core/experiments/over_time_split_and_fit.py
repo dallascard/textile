@@ -59,8 +59,8 @@ def main():
                       help='Covariate shift method [None|classify]: default=%default')
     parser.add_option('--objective', dest='objective', default='f1',
                       help='Objective for choosing best alpha [calibration|f1]: default=%default')
-    parser.add_option('--early', action="store_true", dest="early_stopping", default=False,
-                      help='Use early stopping for MLP: default=%default')
+    #parser.add_option('--early', action="store_true", dest="early_stopping", default=False,
+    #                  help='Use early stopping for MLP: default=%default')
     parser.add_option('--group', action="store_true", dest="group", default=False,
                       help='Group identical feature vectors: default=%default')
     parser.add_option('--n_dev_folds', dest='n_dev_folds', default=5,
@@ -79,6 +79,14 @@ def main():
                       help='Do interactive feature selection: default=%default')
     parser.add_option('--stoplist', dest='stoplist_file', default=None,
                       help='Stoplist file: default=%default')
+    parser.add_option('--dropout', dest='dropout', default=0.0,
+                      help='Apply word dropout to DANs: default=%default')
+    parser.add_option('--lr', dest='init_lr', default=0.01,
+                      help='Initial learning rate for DAN training: default=%default')
+    parser.add_option('--patience', dest='patience', default=8,
+                      help='Patience for DAN training: default=%default')
+    parser.add_option('--max_epochs', dest='max_epochs', default=200,
+                      help='Maximum number of epochs for DAN training: default=%default')
     parser.add_option('--verbose', action="store_true", dest="verbose", default=False,
                       help='Print more output: default=%default')
 
@@ -114,7 +122,6 @@ def main():
     penalty = options.penalty
     cshift = options.cshift
     objective = options.objective
-    early_stopping = options.early_stopping
     intercept = not options.no_intercept
     group_identical = options.group
     n_dev_folds = int(options.n_dev_folds)
@@ -131,6 +138,12 @@ def main():
         lower = float(lower)
     interactive = options.interactive
     stoplist_file = options.stoplist_file
+
+    dropout = float(options.dropout)
+    init_lr = float(options.init_lr)
+    patience = int(options.patience)
+    max_epochs = int(options.max_epochs)
+
     verbose = options.verbose
 
     average = 'micro'
@@ -142,10 +155,10 @@ def main():
         do_platt = False
         do_cfm = False
 
-    test_over_time(project_dir, subset, config_file, model_type, field, test_start, test_end, n_train, n_calib, penalty, suffix, loss, objective, do_ensemble, dh, label, intercept, n_dev_folds, average, seed, alpha_min, alpha_max, n_alphas, sample_labels, group_identical, annotated, nonlinearity, early_stopping=early_stopping, list_size=ls, repeats=repeats, oracle=oracle, lower=lower, interactive=interactive, stoplist_file=stoplist_file, cshift=cshift, do_cfm=do_cfm, do_platt=do_platt, verbose=verbose)
+    test_over_time(project_dir, subset, config_file, model_type, field, test_start, test_end, n_train, n_calib, penalty, suffix, loss, objective, do_ensemble, dh, label, intercept, n_dev_folds, average, seed, alpha_min, alpha_max, n_alphas, sample_labels, group_identical, annotated, nonlinearity, init_lr=init_lr, list_size=ls, repeats=repeats, oracle=oracle, lower=lower, interactive=interactive, stoplist_file=stoplist_file, cshift=cshift, do_cfm=do_cfm, do_platt=do_platt, dropout=dropout, patience=patience, max_epochs=max_epochs, verbose=verbose)
 
 
-def test_over_time(project_dir, subset, config_file, model_type, field, test_start, test_end, n_train=None, n_calib=0, penalty='l2', suffix='', loss='log', objective='f1', do_ensemble=True, dh=100, label='label', intercept=True, n_dev_folds=5, average='micro', seed=None, alpha_min=0.01, alpha_max=1000.0, n_alphas=8, sample_labels=False, group_identical=False, annotated_subset=None, nonlinearity='tanh', init_lr=1e-3, min_epochs=2, max_epochs=100, patience=8, tol=1e-4, early_stopping=False, list_size=1, repeats=1, oracle=False, lower=None, interactive=False, stoplist_file=None, cshift=False, do_cfm=True, do_platt=True, verbose=False):
+def test_over_time(project_dir, subset, config_file, model_type, field, test_start, test_end, n_train=None, n_calib=0, penalty='l2', suffix='', loss='log', objective='f1', do_ensemble=True, dh=100, label='label', intercept=True, n_dev_folds=5, average='micro', seed=None, alpha_min=0.01, alpha_max=1000.0, n_alphas=8, sample_labels=False, group_identical=False, annotated_subset=None, nonlinearity='tanh', init_lr=1e-2, min_epochs=2, max_epochs=200, patience=8, tol=1e-4, list_size=1, repeats=1, oracle=False, lower=None, interactive=False, stoplist_file=None, cshift=False, do_cfm=True, do_platt=True, dropout=0.0, verbose=False):
     # Just run a regular model, one per year, training on the past, and save the reults
 
     log = {
@@ -182,7 +195,6 @@ def test_over_time(project_dir, subset, config_file, model_type, field, test_sta
         'max_epochs': max_epochs,
         'patience': patience,
         'tol': tol,
-        'early_stopping': early_stopping,
         'interactive': interactive,
         'stoplist_file': stoplist_file,
         'list_size': list_size
@@ -381,7 +393,7 @@ def test_over_time(project_dir, subset, config_file, model_type, field, test_sta
             stoplist = None
 
         print("Training a LR model")
-        model, dev_f1, dev_acc, dev_cal_mae, dev_cal_est = train.train_model_with_labels(project_dir, model_type, 'log', model_name, subset, sampled_labels_df, feature_defs, weights_df=weights_df, items_to_use=train_items, penalty=penalty, alpha_min=alpha_min, alpha_max=alpha_max, n_alphas=n_alphas, intercept=intercept, objective=objective, n_dev_folds=n_dev_folds, do_ensemble=do_ensemble, dh=dh, seed=seed, pos_label=pos_label, vocab=None, group_identical=group_identical, nonlinearity=nonlinearity, init_lr=init_lr, min_epochs=min_epochs, max_epochs=max_epochs, patience=patience, tol=tol, early_stopping=early_stopping, do_cfm=do_cfm, do_platt=do_platt, lower=lower, stoplist=stoplist, verbose=verbose)
+        model, dev_f1, dev_acc, dev_cal_mae, dev_cal_est = train.train_model_with_labels(project_dir, model_type, 'log', model_name, subset, sampled_labels_df, feature_defs, weights_df=weights_df, items_to_use=train_items, penalty=penalty, alpha_min=alpha_min, alpha_max=alpha_max, n_alphas=n_alphas, intercept=intercept, objective=objective, n_dev_folds=n_dev_folds, do_ensemble=do_ensemble, dh=dh, seed=seed, pos_label=pos_label, vocab=None, group_identical=group_identical, nonlinearity=nonlinearity, init_lr=init_lr, min_epochs=min_epochs, max_epochs=max_epochs, patience=patience, do_cfm=do_cfm, do_platt=do_platt, lower=lower, stoplist=stoplist, dropout=dropout, verbose=verbose)
         results_df.loc['cross_val'] = [dev_f1, dev_acc, dev_cal_mae, dev_cal_est]
 
         X_test, features_concat = predict.load_data(project_dir, model_name, subset, items_to_use=test_items)
@@ -521,7 +533,7 @@ def make_model_basename(log):
         model_basename += '_' + str(log['n_train'])
     model_basename += '_' + str(log['n_calib'])
     if log['model_type'] == 'DAN':
-        model_basename += '_' + str(log['dh'])
+        model_basename += '_dh' + str(log['dh'])
     if log['sample_labels']:
         model_basename += '_sampled'
     if log['cshift']:
