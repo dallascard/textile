@@ -19,6 +19,10 @@ def main():
                       help='Use training data from before this field value: default=%default')
     parser.add_option('--test_end', dest='test_end', default=2012,
                       help='Last field value of test data to use: default=%default')
+    parser.add_option('--train_start', dest='train_start', default=None,
+                      help='Range beginning for training data (None = all before test): default=%default')
+    parser.add_option('--train_end', dest='train_end', default=None,
+                      help='Range beginning for training data (None = all before test): default=%default')
     parser.add_option('-n', dest='n', default=10,
                       help='Number to print: default=%default')
 
@@ -30,6 +34,12 @@ def main():
     field = options.field
     test_start = int(options.test_start)
     test_end = int(options.test_end)
+    train_start = options.train_start
+    if train_start is not None:
+        train_start = int(options.train_start)
+    train_end = options.train_end
+    if train_end is not None:
+        train_end = int(options.train_end)
     n = int(options.n)
 
     label_files = glob.glob(os.path.join(dirs.dir_labels(project_dir, subset), '*.csv'))
@@ -38,7 +48,7 @@ def main():
     labels = []
     for label_file in label_files:
         label = os.path.basename(label_file).split('.')[0]
-        diff = check_balances(project_dir, subset, field, test_start, test_end, label)
+        diff = check_balances(project_dir, subset, field, test_start, test_end, label, train_start, train_end)
         labels.append(label)
         diffs.append(diff)
 
@@ -52,7 +62,7 @@ def main():
         print(labels[order[i]], diffs[order[i]])
 
 
-def check_balances(project_dir, subset, field, test_start, test_end, label):
+def check_balances(project_dir, subset, field, test_start, test_end, label, train_start=None, train_end=None):
     print(label)
     # load the file that contains metadata about each item
     metadata_file = os.path.join(dirs.dir_subset(project_dir, subset), 'metadata.csv')
@@ -69,7 +79,17 @@ def check_balances(project_dir, subset, field, test_start, test_end, label):
     n_test_all = len(test_items_all)
     print("n test = %d" % n_test_all)
 
-    train_selector_all = metadata[field] < int(test_start)
+    if train_end is None:
+        if train_start is None:
+            train_selector_all = metadata[field] < int(test_start)
+        else:
+            train_selector_all = (metadata[field] < int(test_start)) & (metadata[field] >= train_start)
+    else:
+        if train_start is None:
+            train_selector_all = metadata[field] <= int(train_end)
+        else:
+            train_selector_all = (metadata[field] <= int(train_end)) & (metadata[field] >= train_start)
+
     train_subset_all = metadata[train_selector_all]
     train_items_all = list(train_subset_all.index)
     n_train_all = len(train_items_all)
