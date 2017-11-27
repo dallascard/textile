@@ -427,8 +427,9 @@ def test_over_time(project_dir, subset, config_file, model_type, field, train_st
         _, n_labels = temp_pred_probs.shape
         temp_pred_probs_df = pd.DataFrame(temp_pred_probs, index=features_concat.get_items(), columns=range(n_labels))
 
-        f1_temp, acc_temp = evaluate_predictions.evaluate_predictions(sampled_labels_df, temp_predictions_df, temp_pred_probs_df, pos_label=pos_label, average=average)
-        true_temp_vector = np.argmax(sampled_labels_df.as_matrix(), axis=1)
+        temp_labels_df = sampled_labels_df.loc[train_items]
+        f1_temp, acc_temp = evaluate_predictions.evaluate_predictions(temp_labels_df, temp_predictions_df, temp_pred_probs_df, pos_label=pos_label, average=average)
+        true_temp_vector = np.argmax(temp_labels_df.as_matrix(), axis=1)
         temp_cal_est = evaluation.evaluate_calibration_rmse(true_temp_vector, temp_pred_probs_df.as_matrix(), min_bins=1, max_bins=1)
         temp_cc_estimate, temp_pcc_estimate = model.predict_proportions(X_temp)
 
