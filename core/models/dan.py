@@ -1,4 +1,5 @@
 import os
+import sys
 import tempfile
 from optparse import OptionParser
 
@@ -109,9 +110,10 @@ class DAN:
             print(self._model.n_layers)
 
             #criterion = nn.BCELoss()
-            criterion = nn.CrossEntropyLoss()
+            criterion = nn.BCEWithLogitsLoss()
+            #criterion = nn.CrossEntropyLoss()
             grad_params = filter(lambda p: p.requires_grad, self._model.parameters())
-            optimizer = optim.Adagrad(grad_params, lr=1e-3)
+            optimizer = optim.Adagrad(grad_params, lr=1e-2)
 
             print("Grad parameters")
             grad_params = filter(lambda p: p.requires_grad, self._model.parameters())
@@ -128,49 +130,63 @@ class DAN:
                 train_acc = 0.0
                 for i in range(n_train):
                     X_i_list = X_train[i, :].nonzero()[1].tolist()
+                    #if Y_list_train[i] == 1:
+                    #    X_i_list += [14281]
+                    #else:
+                    #    X_i_list += [10863]
                     X_i_array = np.array(X_i_list, dtype=np.int).reshape(1, len(X_i_list))
-                    X_i = Variable(torch.LongTensor(X_i_array))
-                    #y_i = Variable(torch.from_numpy(Y_list_train[i:i+1].reshape(1, 1)))
-                    y_i = Variable(torch.LongTensor(Y_list_train[i:i+1]))
+                    #X_i_array = np.vstack([self._init_emb[x, :] for x in X_i_list]).mean(axis=0)
 
-                    optimizer.zero_grad()
-                    outputs = self._model(X_i)
-                    loss = criterion(outputs, y_i)
+                    if len(X_i_list) > 0:
+                        X_i = Variable(torch.LongTensor(X_i_array))
+                        #X_i = Variable(torch.from_numpy(X_i_array))
+                        #y_i = Variable(torch.LongTensor(Y_list_train[i:i+1]))
+                        y_i = Variable(torch.from_numpy(np.array(Y_list_train[i:i+1], dtype=np.float32)))
+                        #y_i = Variable(torch.LongTensor(Y_list_train[i:i+1].reshape(1, 1)))
 
-                    # apply per-instance weights
-                    #scaling_factor = torch.ones(loss.data.shape) * train_weights[i]
-                    #loss.backward(scaling_factor)
-                    loss.backward()
+                        optimizer.zero_grad()
+                        outputs = self._model(X_i)
+                        loss = criterion(outputs.view(-1), y_i)
 
-                    optimizer.step()
-                    running_loss += loss.data[0]
-                    pred = np.argmax(outputs.data.numpy())
-                    train_acc += (Y_list_train[i] == pred) * train_weights[i]
+                        # apply per-instance weights
+                        #scaling_factor = torch.ones(loss.data.shape) * train_weights[i]
+                        #loss.backward(scaling_factor)
+                        loss.backward()
 
-                    weight_sum += train_weights[i]
+                        optimizer.step()
+                        running_loss += loss.data[0]
+                        pred = int(outputs.data.numpy() >= 0)
+                        train_acc += (Y_list_train[i] == pred) * train_weights[i]
+                        weight_sum += train_weights[i]
+
                     if (i+1) % 200 == 0:
                         print("%d %d %0.4f %0.4f" % (epoch, i+1, running_loss / weight_sum, train_acc / weight_sum))
 
                 print("%d %d %0.4f %0.4f" % (epoch, i+1, running_loss / weight_sum, train_acc / weight_sum))
 
+                for j in [14281, 10863]:
+                    X_i_array = np.array(j, dtype=np.int).reshape(1, 1)
+                    #X_i_list = [j]
+                    #X_i_array = np.vstack([self._init_emb[x, :] for x in X_i_list]).mean(axis=0)
+                    X_i = Variable(torch.LongTensor(X_i_array))
+                    #X_i = Variable(torch.from_numpy(X_i_array))
+                    outputs = self._model(X_i)
+                    print(j, outputs.data.numpy())
+
                 dev_acc = 0.0
                 for i in range(n_dev):
                     X_i_list = X_dev[i, :].nonzero()[1].tolist()
                     X_i_array = np.array(X_i_list, dtype=np.int).reshape(1, len(X_i_list))
-                    X_i = Variable(torch.LongTensor(X_i_array))
+                    #X_i_array = np.vstack([self._init_emb[x, :] for x in X_i_list]).mean(axis=0)
 
-                    outputs = self._model(X_i)
-                    pred = np.argmax(outputs.data.numpy())
-                    dev_acc += (Y_list_dev[i] == pred) * dev_weights[i]
-
+                    if len(X_i_list) > 0:
+                        X_i = Variable(torch.LongTensor(X_i_array))
+                        #X_i = Variable(torch.from_numpy(X_i_array))
+                        outputs = self._model(X_i)
+                        pred = int(outputs.data.numpy() >= 0)
+                        dev_acc += (Y_list_dev[i] == pred) * dev_weights[i]
                 dev_acc /= np.sum(dev_weights)
                 print("epoch %d: dev acc = %0.4f" % (epoch, dev_acc))
-
-                for i in range(self._dimensions[0]):
-                    X_i_array = np.array(1, dtype=np.int).reshape(1, 1)
-                    X_i = Variable(torch.LongTensor(X_i_array))
-                    outputs = self._model(X_i)
-                    print(i, outputs.data.numpy())
 
                 if dev_acc > best_dev_acc:
                     print("Updating best model")
@@ -183,10 +199,10 @@ class DAN:
                 else:
                     n_epochs_since_improvement += 1
 
-                if epoch >= min_epochs and n_epochs_since_improvement > patience:
-                    print("Patience exceeded. Done")
-                    print("Best validation acc = %0.4f" % best_dev_acc)
-                    done = True
+                #if epoch >= min_epochs and n_epochs_since_improvement > patience:
+                #    print("Patience exceeded. Done")
+                #    print("Best validation acc = %0.4f" % best_dev_acc)
+                #    done = True
 
                 if epoch >= max_epochs:
                     print("Max epochs exceeded. Done")
@@ -369,18 +385,27 @@ class torchDAN(nn.Module):
 
     def __init__(self, dims, init_emb=None, update_emb=False):
         super(torchDAN, self).__init__()
-        assert len(dims) == 3
+        #assert len(dims) == 3
         self.n_layers = len(dims)-2
         self.emb = nn.Embedding(dims[0], dims[1])
         if not update_emb:
             self.emb.weight.requires_grad = False
         if init_emb is not None:
             self.emb.weight.data.copy_(torch.from_numpy(init_emb))
+
         self.linear1 = nn.Linear(dims[1], dims[2])
+        self.linear2 = nn.Linear(dims[2], dims[3])
 
     def forward(self, X):
-        h = torch.mean(self.emb(X), dim=1)
-        h = self.linear1(F.relu(h))
+        h = self.emb(X)
+        #h = F.dropout(h)
+        h = h.mean(dim=1)
+        h = self.linear1(h)
+        h = self.linear2(F.tanh(h))
+
+        #h = h[:, -1, :]
+        #print(h.data.numpy()[0, :6])
+        #h = self.linear1(F.sigmoid(h))
         #for layer in self.layers:
         #    h = layer(F.sigmoid(h))
         return h

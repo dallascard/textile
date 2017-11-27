@@ -173,30 +173,26 @@ def train_model_with_labels(project_dir, model_type, loss, model_name, subset, l
     if model_type == 'DAN':
         print("Loading word vectors")
         word_vectors_prefix = os.path.join(features_dir, 'unigrams' + '_vecs')
-        init_embeddings = fh.load_dense(word_vectors_prefix + '.npz')
+        init_embeddings = np.array(fh.load_dense(word_vectors_prefix + '.npz'), dtype=np.float32)
         word_vector_terms = fh.read_json(word_vectors_prefix + '.json')
 
-        word_list = []
-        word_list.extend('court courts legal constitutional judge ruling law unconstitutional lawsuit'.split())
-        word_list.extend('remain the_denomination be_the the_church and know full as_he the views'.split())
-        word_list.extend('court courts legal ruling judge constitutional law marriage the_constitution'.split())
-        word_list.extend('god released obama homosexuality to_include remain this_week for_same the my'.split())
-        word_list.extend('court courts judge legal ruling constitution state constitutional marriage_to'.split())
-        word_list.extend('homosexuality released rep opposition_to full the_church not_only remain know late'.split())
-        word_list.extend('court judge legal lawsuit constitutional courts ruling recognized supreme'.split())
-        word_list.extend('released homosexuality to_approve for_same 2004 money yesterday to_his rep late'.split())
-        word_list.extend('court courts constitutional legal lawsuit judge licenses ruling state'.split())
-        word_list.extend('the homosexuality this_week the_denomination six yesterday - march him major'.split())
+        """
+        word_list = ['god', 'law']
         word_list = set(word_list)
         terms = [t for t in word_vector_terms if t in word_list]
 
-        #features_concat.set_terms(word_vector_terms)
+        #
         features_concat.set_terms(terms)
         terms.sort()
         terms_index = [word_vector_terms.index(t) for t in terms]
         for t_i, t in enumerate(terms):
             print(t_i, t)
         init_embeddings = init_embeddings[terms_index, :]
+        """
+        features_concat.set_terms(word_vector_terms)
+        print('law', word_vector_terms.index('law'))
+        print('god', word_vector_terms.index('god'))
+
     else:
         print("NOT loading word vectors")
         init_embeddings = None
@@ -400,9 +396,9 @@ def train_model_with_labels(project_dir, model_type, loss, model_name, subset, l
 
     elif model_type == 'DAN':
         if dh > 0:
-            dimensions = [n_features, dh, 2]
+            dimensions = [n_features, dh, 50, 1]
         else:
-            dimensions = [n_features, 2]
+            dimensions = [n_features, 1]
         if not save_model:
             output_dir = None
 
