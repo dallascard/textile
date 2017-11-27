@@ -398,7 +398,7 @@ def train_model_with_labels(project_dir, model_type, loss, model_name, subset, l
                 name = model_name + '_' + str(fold)
                 #model = mlp.MLP(dimensions=dimensions, loss_function=loss, nonlinearity=nonlinearity, penalty=penalty, reg_strength=alpha, output_dir=output_dir, name=name, pos_label=pos_label, objective=objective)
 
-                model = dan.DAN(dimensions, alpha=alpha, output_dir=output_dir, name=name, pos_label=pos_label, objective=objective, init_emb=init_embeddings, update_emb=update_emb)
+                model = dan.DAN(dimensions, alpha=alpha, output_dir=output_dir, name=name, pos_label=pos_label, objective=objective, init_emb=init_embeddings, update_emb=update_emb, do_cfm=do_cfm, do_platt=do_platt)
 
                 X_train = X[train_indices, :]
                 Y_train = Y[train_indices, :]
@@ -449,6 +449,20 @@ def train_model_with_labels(project_dir, model_type, loss, model_name, subset, l
 
         best_models = alpha_models[best_alpha]
         print("Number of best models = %d" % len(best_models))
+
+        if do_cfm or do_platt:
+            for fold, model in enumerate(best_models):
+                dev_indices = dev_splits[fold]
+                X_dev = X[dev_indices, :]
+                Y_dev = Y[dev_indices, :]
+                w_dev = weights[dev_indices]
+                X_dev, Y_dev, w_dev = prepare_data(X_dev, Y_dev, w_dev, loss=loss)
+                if do_cfm:
+                    printv("Fitting cfms", verbose)
+                    model.fit_cfms(X_dev, Y_dev, w_dev)
+                if do_platt:
+                    printv("Fitting Platt scaling", verbose)
+                    model.fit_platt(X_dev, Y_dev, w_dev)
 
         if save_model:
             print("Saving models")

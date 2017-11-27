@@ -12,6 +12,7 @@ import torch.nn.functional as F
 import torch.optim as optim
 
 from ..util import file_handling as fh
+from ..main import train
 from ..models import evaluation, calibration
 
 
@@ -19,7 +20,7 @@ class DAN:
     """
     Multilayer perceptron (representing documents as weighted sums of word vectors)
     """
-    def __init__(self, dimensions, alpha=0.0, output_dir=None, name='model', pos_label=1, objective='f1', init_emb=None, update_emb=False):
+    def __init__(self, dimensions, alpha=0.0, output_dir=None, name='model', pos_label=1, objective='f1', init_emb=None, update_emb=False, do_platt=False, do_cfm=False):
         self._model_type = 'DAN'
         self._penalty = 'l2'
         self._alpha = alpha
@@ -48,6 +49,12 @@ class DAN:
         self._dev_acc_cfm = None
         self._dev_pvc_cfm = None
         self._col_names = None
+
+        self._do_cfm = do_cfm
+        self._do_platt = do_platt
+        self._platt_a = None
+        self._platt_b = None
+        self._platt_T = None
 
         # create a variable to store the label proportions in the training data
         self._train_proportions = None
@@ -233,6 +240,37 @@ class DAN:
             self._dev_acc_cfm = calibration.compute_acc(dev_labels, dev_pred, n_classes, weights=dev_weights)
             self._dev_pvc_cfm = calibration.compute_pvc(dev_labels, dev_pred, n_classes, weights=dev_weights)
 
+    def fit_cfms(self, X_dev, Y_dev, dev_weights, prep_data=False):
+        _, n_classes = Y_dev.shape
+        if prep_data:
+            X_dev, Y_dev, dev_weights = train.prepare_data(X_dev, Y_dev, dev_weights, loss='log')
+
+        dev_labels = np.argmax(Y_dev, axis=1)
+        dev_pred = self.predict(X_dev)
+        dev_pred_probs = self.predict_probs(X_dev, do_platt=False)
+        self._dev_acc = evaluation.acc_score(dev_labels, dev_pred, n_classes=n_classes, weights=dev_weights)
+        self._dev_f1 = evaluation.f1_score(dev_labels, dev_pred, n_classes=n_classes, pos_label=self._pos_label, weights=dev_weights)
+        self._dev_acc_cfm = calibration.compute_acc(dev_labels, dev_pred, n_classes, weights=dev_weights)
+        self._dev_acc_cfms_ms = calibration.compute_acc_median_sweep(dev_labels, dev_pred_probs, n_classes, weights=dev_weights)
+
+    def fit_platt(self, X_dev, Y_dev, dev_weights, prep_data=False):
+        if prep_data:
+            X_dev, Y_dev, dev_weights = train.prepare_data(X_dev, Y_dev, dev_weights, loss='log')
+        n_dev, n_classes = Y_dev.shape
+
+        if n_classes == 2:
+            # fit a platt model with an intercept
+            scores = np.reshape(self.score(X_dev), (n_dev, 1))
+
+            model = train.train_lr_model_with_cv(scores, Y_dev, dev_weights, col_names=['p'], basename='platt2', intercept=True, n_dev_folds=2, pos_label=self._pos_label, do_ensemble=False, fit_platt=False, fit_cfms=False, save_model=False, verbose=False)
+            coefs = dict(model.get_coefs())
+            self._platt_a = coefs['p']
+            self._platt_b = model.get_intercept()
+
+            # fit a platt model without an intercept
+            model = train.train_lr_model_with_cv(scores, Y_dev, dev_weights, col_names=['p'], basename='platt1', intercept=False, n_dev_folds=2, pos_label=self._pos_label, do_ensemble=False, fit_platt=False, fit_cfms=False, save_model=False, verbose=False)
+            self._platt_T = dict(model.get_coefs())['p']
+
     def predict(self, X):
         # if we've stored a default value, then that is our prediction
         if self._model is None:
@@ -245,7 +283,6 @@ class DAN:
             return predictions
 
     def predict_probs(self, X, do_platt=False, do_cfm=False, verbose=False):
-        # TODO: implement Platt
         n_items, _ = X.shape
         full_probs = np.zeros([n_items, self._n_classes])
         # if we've saved a default label, predict that with 100% confidence
@@ -263,17 +300,48 @@ class DAN:
                 full_probs[i, :] = [1.0-p, p]
             return full_probs
 
+    def score(self, X):
+        n_items, _ = X.shape
+        scores = np.zeros(n_items)
+        # if we've saved a default label, predict that with 100% confidence
+        if self._model is None:
+            scores = 0.0
+            return scores
+        else:
+            for i in range(n_items):
+                X_i_list = X[i, :].nonzero()[1].tolist()
+                X_i_array = np.array(X_i_list, dtype=np.int).reshape(1, len(X_i_list))
+                X_i = Variable(torch.LongTensor(X_i_array))
+                outputs = self._model(X_i)
+                scores[i] = outputs.data.numpy().copy()
+            return scores
+
     def predict_proportions(self, X=None, weights=None, do_cfm=False, do_platt=False):
-        # TODO: fix this to be the same as other models
         pred_probs = self.predict_probs(X)
         predictions = np.argmax(pred_probs, axis=1)
         if do_cfm:
+            assert self._do_cfm
             if self._n_classes == 2:
                 acc = calibration.apply_acc_binary(predictions, self._dev_acc_cfm, weights)
+                acc_ms = calibration.apply_acc_binary_median_sweep(pred_probs, self._dev_acc_cfms_ms, weights)
             else:
                 acc = calibration.apply_acc_bounded_lstsq(predictions, self._dev_acc_cfm)
-            pvc = calibration.apply_pvc(predictions, self._dev_pvc_cfm, weights)
-            return acc, pvc
+                acc_ms = [0, 0]
+            return acc, acc_ms
+        elif do_platt:
+            assert self._do_platt
+            scores = self.score(X)
+            corrected_scores = expit(self._platt_T * scores)
+            corrected_probs = np.zeros_like(pred_probs)
+            corrected_probs[:, 0] = 1 - corrected_scores
+            corrected_probs[:, 1] = corrected_scores
+            platt1 = calibration.pcc(corrected_probs, weights)
+
+            corrected_scores = expit(self._platt_a * scores + self._platt_b)
+            corrected_probs[:, 0] = 1 - corrected_scores
+            corrected_probs[:, 1] = corrected_scores
+            platt2 = calibration.pcc(corrected_probs, weights)
+            return platt1, platt2
         else:
             cc = calibration.cc(predictions, self._n_classes, weights)
             pcc = calibration.pcc(pred_probs, weights)
