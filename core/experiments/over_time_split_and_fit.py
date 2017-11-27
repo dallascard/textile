@@ -23,6 +23,10 @@ def main():
                       help='Number of test instances to use for calibration: default=%default')
     parser.add_option('--field', dest='field', default='year',
                       help='Field on which to split for train and test: default=%default')
+    parser.add_option('--train_start', dest='train_start', default=None,
+                      help='Start of training range (all before test if None): default=%default')
+    parser.add_option('--train_end', dest='train_end', default=None,
+                      help='End of training range (all before test if None): default=%default')
     parser.add_option('--test_start', dest='test_start', default=2011,
                       help='Use training data from before this field value: default=%default')
     parser.add_option('--test_end', dest='test_end', default=2012,
@@ -101,6 +105,12 @@ def main():
         n_train = int(n_train)
     n_calib = int(options.n_calib)
     field = options.field
+    train_start = options.train_start
+    if train_start is not None:
+        train_start = int(train_start)
+    train_end = options.train_end
+    if train_end is not None:
+        train_end = int(train_end)
     test_start = int(options.test_start)
     test_end = int(options.test_end)
     sample_labels = options.sample
@@ -155,10 +165,10 @@ def main():
         do_platt = False
         do_cfm = False
 
-    test_over_time(project_dir, subset, config_file, model_type, field, test_start, test_end, n_train, n_calib, penalty, suffix, loss, objective, do_ensemble, dh, label, intercept, n_dev_folds, average, seed, alpha_min, alpha_max, n_alphas, sample_labels, group_identical, annotated, nonlinearity, init_lr=init_lr, list_size=ls, repeats=repeats, oracle=oracle, lower=lower, interactive=interactive, stoplist_file=stoplist_file, cshift=cshift, do_cfm=do_cfm, do_platt=do_platt, dropout=dropout, patience=patience, max_epochs=max_epochs, verbose=verbose)
+    test_over_time(project_dir, subset, config_file, model_type, field, train_start, train_end, test_start, test_end, n_train, n_calib, penalty, suffix, loss, objective, do_ensemble, dh, label, intercept, n_dev_folds, average, seed, alpha_min, alpha_max, n_alphas, sample_labels, group_identical, annotated, nonlinearity, init_lr=init_lr, list_size=ls, repeats=repeats, oracle=oracle, lower=lower, interactive=interactive, stoplist_file=stoplist_file, cshift=cshift, do_cfm=do_cfm, do_platt=do_platt, dropout=dropout, patience=patience, max_epochs=max_epochs, verbose=verbose)
 
 
-def test_over_time(project_dir, subset, config_file, model_type, field, test_start, test_end, n_train=None, n_calib=0, penalty='l2', suffix='', loss='log', objective='f1', do_ensemble=True, dh=100, label='label', intercept=True, n_dev_folds=5, average='micro', seed=None, alpha_min=0.01, alpha_max=1000.0, n_alphas=8, sample_labels=False, group_identical=False, annotated_subset=None, nonlinearity='tanh', init_lr=1e-2, min_epochs=2, max_epochs=200, patience=8, tol=1e-4, list_size=1, repeats=1, oracle=False, lower=None, interactive=False, stoplist_file=None, cshift=False, do_cfm=True, do_platt=True, dropout=0.0, verbose=False):
+def test_over_time(project_dir, subset, config_file, model_type, field, train_start, train_end, test_start, test_end, n_train=None, n_calib=0, penalty='l2', suffix='', loss='log', objective='f1', do_ensemble=True, dh=100, label='label', intercept=True, n_dev_folds=5, average='micro', seed=None, alpha_min=0.01, alpha_max=1000.0, n_alphas=8, sample_labels=False, group_identical=False, annotated_subset=None, nonlinearity='tanh', init_lr=1e-2, min_epochs=2, max_epochs=200, patience=8, tol=1e-4, list_size=1, repeats=1, oracle=False, lower=None, interactive=False, stoplist_file=None, cshift=False, do_cfm=True, do_platt=True, dropout=0.0, verbose=False):
     # Just run a regular model, one per year, training on the past, and save the reults
 
     log = {
@@ -167,6 +177,8 @@ def test_over_time(project_dir, subset, config_file, model_type, field, test_sta
         'config_file': config_file,
         'model_type': model_type,
         'field': field,
+        'train_start': train_start,
+        'train_end': train_end,
         'test_start': test_start,
         'test_end': test_end,
         'n_train': n_train,
@@ -231,7 +243,17 @@ def test_over_time(project_dir, subset, config_file, model_type, field, test_sta
     test_items_all = test_subset_all.index.tolist()
     n_test_all = len(test_items_all)
 
-    train_selector_all = metadata[field] < int(test_start)
+    if train_end is None:
+        if train_start is None:
+            train_selector_all = metadata[field] < int(test_start)
+        else:
+            train_selector_all = (metadata[field] < int(test_start)) & (metadata[field] >= train_start)
+    else:
+        if train_start is None:
+            train_selector_all = metadata[field] <= int(train_end)
+        else:
+            train_selector_all = (metadata[field] <= int(train_end)) & (metadata[field] >= train_start)
+
     train_subset_all = metadata[train_selector_all]
     train_items_all = list(train_subset_all.index)
     n_train_all = len(train_items_all)
