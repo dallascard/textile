@@ -35,9 +35,9 @@ def main():
                             cmd += ' --n_train ' + str(n_train)
                             if label == 'helpful':
                                 cmd += ' --sample'
-                            if n_train_vals < 800:
+                            if n_train < 800:
                                 cmd += ' --repeats 20'
-                            if n_train_vals < 1500:
+                            if n_train < 1500:
                                 cmd += ' --repeats 10'
                             else:
                                 cmd += ' --repeats 5'
