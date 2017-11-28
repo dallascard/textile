@@ -463,6 +463,7 @@ class torchDAN(nn.Module):
         self.linear1 = nn.Linear(dims[1], dims[2])
         self.linear2 = nn.Linear(dims[2], dims[3])
         self.linear3 = nn.Linear(dims[3], dims[4])
+        self.linear4 = nn.Linear(dims[4], dims[5])
 
     def forward(self, X):
         h = self.emb(X)
@@ -471,6 +472,7 @@ class torchDAN(nn.Module):
         h = self.linear1(h)
         h = self.linear2(F.relu(h))
         h = self.linear3(F.relu(h))
+        h = self.linear4(F.relu(h))
 
         #h = h[:, -1, :]
         #print(h.data.numpy()[0, :6])
