@@ -27,7 +27,7 @@ def main():
                     for n_train in n_train_vals:
                         for test_year in test_years:
                             cmd = 'python -m core.experiments.over_time_split_and_fit'
-                            cmd += ' projects/yelp/' + subset
+                            cmd += ' projects/yelp/ '
                             cmd += ' all config/default.json'
                             cmd += ' --label ' + label
                             cmd += ' --test_start ' + str(test_year)
