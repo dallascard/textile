@@ -188,7 +188,11 @@ class LinearClassifier:
 
 
     def score(self, X):
-        return self._model.decision_function(X)
+        if self._model is None:
+            n, p = X.shape
+            return np.zeros(n)
+        else:
+            return self._model.decision_function(X)
 
     def predict_proportions(self, X=None, weights=None, do_cfm=False, do_platt=False):
         pred_probs = self.predict_probs(X)

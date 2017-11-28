@@ -12,6 +12,10 @@ def main():
                       help='Number of training instances to use (0 for all): default=%default')
     parser.add_option('--n_calib', dest='n_calib', default=0,
                       help='Number of test instances to use for calibration: default=%default')
+    parser.add_option('--train_start', dest='train_start', default=None,
+                      help='Start of training range (before test start if None): default=%default')
+    parser.add_option('--train_end', dest='train_end', default=None,
+                      help='end of trainign range (before test start if None): default=%default')
     parser.add_option('--first_test_year', dest='first_year', default=2011,
                       help='Use training data from before this year: default=%default')
     parser.add_option('--last_test_year', dest='last_year', default=2012,
@@ -61,6 +65,12 @@ def main():
     if n_train is not None:
         n_train = int(n_train)
     n_calib = int(options.n_calib)
+    train_start = options.train_start
+    if train_start is not None:
+        train_start = int(train_start)
+    train_end = options.train_end
+    if train_end is not None:
+        train_end = int(train_end)
     first_year = int(options.first_year)
     last_year = int(options.last_year)
     ls = int(options.ls)
@@ -89,7 +99,7 @@ def main():
 
     for subset, label in pairs:
         print("\n\nStarting", subset, label)
-        over_time_split_and_fit.test_over_time(project, subset, config, model_type, 'year', first_year, last_year, n_train, n_calib, penalty, suffix, alpha_min=alpha_min, alpha_max=alpha_max, n_alphas=n_alphas, loss='log', objective=objective, do_ensemble=True, label=label, intercept=True, sample_labels=sample_labels, n_dev_folds=5, list_size=ls, repeats=repeats, lower=lower, cshift=cshift, dh=dh, init_lr=init_lr, dropout=dropout, patience=patience, max_epochs=max_epochs)
+        over_time_split_and_fit.test_over_time(project, subset, config, model_type, 'year', train_start, train_end, first_year, last_year, n_train, n_calib, penalty, suffix, alpha_min=alpha_min, alpha_max=alpha_max, n_alphas=n_alphas, loss='log', objective=objective, do_ensemble=True, label=label, intercept=True, sample_labels=sample_labels, n_dev_folds=5, list_size=ls, repeats=repeats, lower=lower, cshift=cshift, dh=dh, init_lr=init_lr, dropout=dropout, patience=patience, max_epochs=max_epochs)
 
 
 if __name__ == '__main__':
