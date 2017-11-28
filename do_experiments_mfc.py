@@ -16,6 +16,12 @@ def main():
                       help='Use training data from before this year: default=%default')
     parser.add_option('--last_test_year', dest='last_year', default=2012,
                       help='Last year of test data to use: default=%default')
+    parser.add_option('--alpha_min', dest='alpha_min', default=0.01,
+                      help='Minimum value of training hyperparameter: default=%default')
+    parser.add_option('--alpha_max', dest='alpha_max', default=1000,
+                      help='Maximum value of training hyperparameter: default=%default')
+    parser.add_option('--n_alphas', dest='n_alphas', default=8,
+                      help='Number of alpha values to try: default=%default')
     parser.add_option('--ls', dest='ls', default=10,
                       help='List size (for DL): default=%default')
     parser.add_option('--objective', dest='objective', default='f1',
@@ -29,11 +35,22 @@ def main():
     parser.add_option('-r', dest='repeats', default=3,
                       help='Repeats: default=%default')
     parser.add_option('--model', dest='model', default='LR',
-                      help='Model type [LR|MLP]: default=%default')
+                      help='Model type [LR|DAN]: default=%default')
+    parser.add_option('--dh', dest='dh', default=300,
+                      help='Hidden layer size for MLP [0 for None]: default=%default')
     parser.add_option('--lower', dest='lower', default=None,
                       help='Lower bound to enforce positive weights: default=%default')
     parser.add_option('--suffix', dest='suffix', default='',
                       help='Suffix to mdoel name: default=%default')
+    parser.add_option('--dropout', dest='dropout', default=0.0,
+                      help='Apply word dropout to DANs: default=%default')
+    parser.add_option('--lr', dest='init_lr', default=0.01,
+                      help='Initial learning rate for DAN training: default=%default')
+    parser.add_option('--patience', dest='patience', default=8,
+                      help='Patience for DAN training: default=%default')
+    parser.add_option('--max_epochs', dest='max_epochs', default=200,
+                      help='Maximum number of epochs for DAN training: default=%default')
+
 
 
     (options, args) = parser.parse_args()
@@ -58,11 +75,21 @@ def main():
         lower = float(lower)
     suffix = options.suffix
 
-    pairs = [('framing', 'Economic'), ('framing', 'Legality'), ('framing', 'Health'), ('framing', 'Political'), ('framing', 'Capacity'), ('framing', 'Crime'), ('sources', 'NY_Times')]
+    alpha_min = float(options.alpha_min)
+    alpha_max = float(options.alpha_max)
+    n_alphas = int(options.n_alphas)
+
+    dh = int(options.dh)
+    dropout = float(options.dropout)
+    init_lr = float(options.init_lr)
+    patience = int(options.patience)
+    max_epochs = int(options.max_epochs)
+
+    pairs = [('framing', 'Economic'), ('framing', 'Legality'), ('framing', 'Health'), ('framing', 'Political'), ('framing', 'Capacity'), ('framing', 'Crime')]
 
     for subset, label in pairs:
         print("\n\nStarting", subset, label)
-        over_time_split_and_fit.test_over_time(project, subset, config, model_type, 'year', first_year, last_year, n_train, n_calib, penalty, suffix, loss='log', objective=objective, do_ensemble=True, label=label, intercept=True, sample_labels=sample_labels, n_dev_folds=5, list_size=ls, repeats=repeats, lower=lower, cshift=cshift)
+        over_time_split_and_fit.test_over_time(project, subset, config, model_type, 'year', first_year, last_year, n_train, n_calib, penalty, suffix, alpha_min=alpha_min, alpha_max=alpha_max, n_alphas=n_alphas, loss='log', objective=objective, do_ensemble=True, label=label, intercept=True, sample_labels=sample_labels, n_dev_folds=5, list_size=ls, repeats=repeats, lower=lower, cshift=cshift, dh=dh, init_lr=init_lr, dropout=dropout, patience=patience, max_epochs=max_epochs)
 
 
 if __name__ == '__main__':
