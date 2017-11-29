@@ -1,3 +1,5 @@
+import os
+import re
 from optparse import OptionParser
 
 import matplotlib as mpl
@@ -46,6 +48,9 @@ def main():
     train_maes = []
     for f_i, f in enumerate(files):
         print(f)
+        comp = re.sub('_2011', '_cshift_2011', f)
+        if not os.path.exists(comp):
+            print("Can't find %s" % comp)
         n_files += 1
         df_f = fh.read_csv_to_df(f)
         n_rows, n_cols = df_f.shape
