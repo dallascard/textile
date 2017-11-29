@@ -93,7 +93,8 @@ def main():
     print(df.std(axis=1))
 
     if output is not None:
-        df.mean(axis=1).to_csv(output + '.csv')
+        df.to_csv(output + '.csv')
+        df.mean(axis=1).to_csv(output + '_mean.csv')
 
     cmap = plt.get_cmap('jet')
     colors = cmap(np.linspace(0, 1.0, len(rows)))
