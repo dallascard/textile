@@ -36,8 +36,8 @@ def main():
     df2 = pd.read_csv(csv2, index_col=0, header=0)
 
     print("Comparing %s to %s" % (df1.index[r1], df2.index[r2]))
-    values1 = df1.iloc[r1]
-    values2 = df2.iloc[r2]
+    values1 = df1.iloc[r1].values
+    values2 = df2.iloc[r2].values
     print(np.mean(values1))
     print(np.mean(values2))
     print(values1 - values2)
