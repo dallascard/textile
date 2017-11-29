@@ -29,8 +29,8 @@ def main():
 
     csv1 = args[0]
     csv2 = args[1]
-    r1 = args[2]
-    r2 = args[3]
+    r1 = int(args[2])
+    r2 = int(args[3])
 
     df1 = pd.read_csv(csv1, index_col=0, header=0)
     df2 = pd.read_csv(csv2, index_col=0, header=0)
