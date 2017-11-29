@@ -85,7 +85,7 @@ def main():
 
     df = pd.DataFrame(df.values[:, selector], index=df.index)
     print(df.mean(axis=1))
-    print(df.var(axis=1))
+    print(df.std(axis=1))
 
     if output is not None:
         df.mean(axis=1).to_csv(output + '.csv')
