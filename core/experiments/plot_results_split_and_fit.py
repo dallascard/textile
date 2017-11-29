@@ -63,6 +63,7 @@ def main():
                 values[row][n_train] = []
         for row in rows:
             values[row][n_train].append(df_f.loc[row, 'MAE'])
+    print("%d files" % len(files))
 
     df = pd.DataFrame(mae_values, index=df.index)
 
