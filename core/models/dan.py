@@ -126,6 +126,8 @@ class DAN:
             done = False
             n_epochs_since_improvement = 0
             best_dev_acc = 0.0
+            best_dev_f1 = 0.0
+            best_dev_rmse = np.inf
             while not done:
                 running_loss = 0.0
                 weight_sum = 0
@@ -182,6 +184,8 @@ class DAN:
                 """
 
                 dev_acc = 0.0
+                dev_preds = []
+                dev_pred_probs = []
                 for i in range(n_dev):
                     X_i_list = X_dev[i, :].nonzero()[1].tolist()
                     X_i_array = np.array(X_i_list, dtype=np.int).reshape(1, len(X_i_list))
@@ -192,17 +196,31 @@ class DAN:
                         #X_i = Variable(torch.from_numpy(X_i_array))
                         outputs = self._model(X_i)
                         pred = int(outputs.data.numpy() >= 0)
+                        dev_preds.append(pred)
+                        dev_pred_probs.append(expit(outputs.data.numpy()))
                         dev_acc += (Y_list_dev[i] == pred) * dev_weights[i]
                 dev_acc /= np.sum(dev_weights)
+                dev_f1 = evaluation.f1_score(Y_list_dev, dev_preds, pos_label=self._pos_label, weights=dev_weights)
+                dev_rmse = evaluation.evaluate_calibration_rmse(Y_list_dev, dev_pred_probs, min_bins=3, max_bins=5)
                 print("epoch %d: dev acc = %0.4f" % (epoch, dev_acc))
 
-                if dev_acc > best_dev_acc:
+                update = False
+                if self._objective == 'acc' and dev_acc > best_dev_acc:
+                    best_dev_acc = dev_acc
+                    update = True
+                elif self._objective == 'f1' and dev_f1 > best_dev_f1:
+                    best_dev_f1 = dev_f1
+                    update = True
+                elif self._objective == 'calibration' and dev_rmse < best_dev_rmse:
+                    best_dev_rmse = dev_rmse
+                    update = True
+
+                if update:
                     print("Updating best model")
                     model_params = list(self._model.parameters())
                     best_model_params = list(best_model.parameters())
                     for i, p in enumerate(model_params):
                         best_model_params[i].data[:] = p.data[:]
-                    best_dev_acc = dev_acc
                     n_epochs_since_improvement = 0
                 else:
                     n_epochs_since_improvement += 1
