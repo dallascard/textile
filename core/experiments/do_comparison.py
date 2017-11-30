@@ -38,11 +38,21 @@ def main():
     print("Comparing %s to %s" % (df1.index[r1], df2.index[r2]))
     values1 = df1.iloc[r1].values
     values2 = df2.iloc[r2].values
+
     print(np.mean(values1))
     print(np.mean(values2))
     print(values1 - values2)
     print(ttest_rel(values1, values2))
 
+    values = np.r_[values1, values2]
+    labels = np.repeat((0, 1), len(values1))
+
+    diffs = []
+    for i in range(1000):
+        np.random.shuffle(labels)
+        diff = values[labels == 0] - values[labels == 1]
+        diffs.append(diff)
+    print(np.percentile(diffs, 5), np.percentile(diffs, 50), np.median(diffs), np.percentile(diffs, 95))
 
 if __name__ == '__main__':
     main()
