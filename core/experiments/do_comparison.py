@@ -39,8 +39,19 @@ def main():
     values1 = df1.iloc[r1].values
     values2 = df2.iloc[r2].values
 
+    temp1 = []
+    temp2 = []
+    n_values = len(values1)
+    for i in range(n_values//5):
+        temp1.append(np.mean(values1[i*5:(i+1)*5]))
+        temp2.append(np.mean(values2[i*5:(i+1)*5]))
+
+    values1 = np.array(temp1)
+    values2 = np.array(temp2)
+
     print(np.mean(values1))
     print(np.mean(values2))
+    print(values1 - values2)
     print(np.mean(values1 - values2))
     print(ttest_rel(values1, values2))
 
