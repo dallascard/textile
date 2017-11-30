@@ -41,7 +41,7 @@ def main():
 
     print(np.mean(values1))
     print(np.mean(values2))
-    print(values1 - values2)
+    print(np.mean(values1 - values2))
     print(ttest_rel(values1, values2))
 
     values = np.r_[values1, values2]
