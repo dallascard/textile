@@ -5,7 +5,7 @@ mpl.use('Agg')
 import matplotlib.pyplot as plt
 import numpy as np
 import pandas as pd
-from scipy.stats import ttest_rel
+from scipy.stats import ttest_rel, wilcoxon
 
 from ..util import file_handling as fh
 
@@ -41,9 +41,10 @@ def main():
 
     print(np.mean(values1))
     print(np.mean(values2))
-    print(values1 - values2)
+    #print(values1 - values2)
     print(np.mean(values1 - values2))
     print(ttest_rel(values1, values2))
+    print(wilcoxon(values1, values2))
 
     values = np.r_[values1, values2]
     labels = np.repeat((0, 1), len(values1))
@@ -54,6 +55,7 @@ def main():
         diff = values[labels == 0] - values[labels == 1]
         diffs.append(diff)
     print(np.percentile(diffs, 5), np.percentile(diffs, 50), np.median(diffs), np.percentile(diffs, 95))
+
 
 if __name__ == '__main__':
     main()
