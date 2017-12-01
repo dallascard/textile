@@ -137,9 +137,6 @@ def main():
     n_dev_folds = int(options.n_dev_folds)
     repeats = int(options.repeats)
     seed = options.seed
-    if options.seed is not None:
-        seed = int(seed)
-        np.random.seed(seed)
     #run_all = options.run_all
     annotated = options.annotated
     oracle = options.oracle
@@ -170,6 +167,9 @@ def main():
 
 def test_over_time(project_dir, subset, config_file, model_type, field, train_start, train_end, test_start, test_end, n_train=None, n_calib=0, penalty='l2', suffix='', loss='log', objective='f1', do_ensemble=True, dh=100, label='label', intercept=True, n_dev_folds=5, average='micro', seed=None, alpha_min=0.01, alpha_max=1000.0, n_alphas=8, sample_labels=False, group_identical=False, annotated_subset=None, nonlinearity='tanh', init_lr=1e-2, min_epochs=2, max_epochs=200, patience=8, tol=1e-4, list_size=1, repeats=1, oracle=False, lower=None, interactive=False, stoplist_file=None, cshift=False, do_cfm=True, do_platt=True, dropout=0.0, verbose=False):
     # Just run a regular model, one per year, training on the past, and save the reults
+
+    if seed is not None:
+        np.random.seed(int(seed))
 
     log = {
         'project': project_dir,

@@ -99,7 +99,7 @@ def main():
     for subset, label in pairs:
         print("\n\nStarting", subset, label)
         over_time_split_and_fit.test_over_time(project, subset, config, model_type, 'year', train_start, train_end, first_year, last_year, n_train, n_calib, penalty, suffix, seed=seed, alpha_min=alpha_min, alpha_max=alpha_max, n_alphas=n_alphas, loss='log', objective=objective, do_ensemble=True, label=label, intercept=True, sample_labels=sample_labels, n_dev_folds=5, list_size=ls, repeats=repeats, lower=lower, cshift=cshift, dh=dh, init_lr=init_lr, dropout=dropout, patience=patience, max_epochs=max_epochs)
-        seed +=1
+        seed += 1
 
 
 if __name__ == '__main__':
