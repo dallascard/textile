@@ -16,14 +16,15 @@ def main():
     #subsets = ['clothes5', 'home5', 'sports5', 'video5']
     subsets = ['toys5', 'tools5', 'clothes5', 'sports5']
     labels = ['helpfulness', 'fivestar']
-    n_train_vals = [500, 1000]
+    n_train_vals = [500, 5000]
     use_cshift_options = [False, True]
     objectives = ['f1', 'calibration']
 
-    for subset in subsets:
-        for label in labels:
-            for objective in objectives:
-                for use_cshift in use_cshift_options:
+    seed = 42
+    for objective in objectives:
+        for use_cshift in use_cshift_options:
+            for subset in subsets:
+                for label in labels:
                     for n_train in n_train_vals:
                         cmd = 'python -m core.experiments.over_time_split_and_fit'
                         cmd += ' projects/amazon/' + subset
@@ -33,16 +34,21 @@ def main():
                         cmd += ' --test_end 2014'
                         cmd += ' --n_train ' + str(n_train)
                         cmd += ' --sample'
-                        cmd += ' --repeats 20'
+                        if n_train == 500:
+                            cmd += ' --repeats 10'
+                        else:
+                            cmd += ' --repeats 5'
                         cmd += ' --objective ' + objective
                         if use_cshift:
                             cmd += ' --cshift'
+                        cmd += ' --seed ' + str(seed)
 
                         name = '_'.join(['run', subset, label, str(n_train), objective, 'cshift', str(use_cshift)])
                         script = make_script(name, [cmd], 1, 1, 10, False, 'pytorch', [])
 
                         with open(name + '.sh', 'w') as f:
                             f.write(script)
+
 
 
 if __name__ == '__main__':
