@@ -323,6 +323,12 @@ def test_over_time(project_dir, subset, config_file, model_type, field, train_st
     n_test = len(test_items)
 
     for r in range(repeats):
+
+        # set seed very explicily here to make sure experiments are comparable
+        if seed is not None:
+            seed += 1
+            np.random.seed(int(seed))
+
         print("* Starting repetition %d *" % r)
         model_name = model_basename + '_' + str(test_start) + '-' + str(test_end) + '_' + str(r)
         if n_train is not None and len(train_items_labeled) >= n_train:
