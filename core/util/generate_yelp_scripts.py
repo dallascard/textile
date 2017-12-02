@@ -17,7 +17,7 @@ def main():
     labels = ['city']
     n_train_vals = [500, 5000]
     use_cshift_options = [False, True]
-    objectives = ['f1', 'calibration']
+    objectives = ['f1', 'calibration', 'acc']
     test_years = [2009, 2010, 2011, 2012, 2013, 2014, 2015, 2016, 2017]
     model_types = ['LR', 'DAN']
 
