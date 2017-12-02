@@ -215,15 +215,20 @@ class DAN:
 
                 if epoch >= min_epochs and n_epochs_since_improvement > patience:
                     print("Patience exceeded. Done")
-                    print("Best validation acc = %0.4f" % best_dev_acc)
                     done = True
 
                 if epoch >= max_epochs:
                     print("Max epochs exceeded. Done")
-                    print("Best validation acc = %0.4f" % best_dev_acc)
                     done = True
 
                 epoch += 1
+
+            if self._objective == 'acc':
+                print("Best validation acc = %0.4f" % best_dev_acc)
+            elif self._objective == 'f1':
+                print("Best validation f1 = %0.4f" % best_dev_f1)
+            elif self._objective == 'calibration':
+                print("Best validation cal = %0.4f" % best_dev_rmse)
 
             # restore best model
             model_params = list(self._model.parameters())
