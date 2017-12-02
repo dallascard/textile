@@ -322,7 +322,7 @@ def train_model_with_labels(project_dir, model_type, loss, model_name, subset, l
         if objective == 'f1':
             best_alpha_index = mean_dev_f1s.argmax()
             print("Using best f1: %d" % best_alpha_index)
-        elif objective == 'accuracy':
+        elif objective == 'acc':
             best_alpha_index = mean_dev_acc.argmax()
             print("Using best accuracy: %d" % best_alpha_index)
         elif objective == 'calibration':
@@ -785,6 +785,10 @@ def train_lr_model_with_cv(X, Y, weights, col_names, basename, output_dir=None, 
         best_alpha_index = mean_dev_f1s.argmax()
         if verbose:
             print("Using best f1: %d" % best_alpha_index)
+    elif objective == 'acc':
+        best_alpha_index = mean_dev_acc.argmax()
+        if verbose:
+            print("Using best accuracy: %d" % best_alpha_index)
     elif objective == 'calibration':
         best_alpha_index = mean_dev_cal_est.argmin()
         if verbose:
