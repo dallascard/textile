@@ -7,7 +7,7 @@ def main():
     parser = OptionParser(usage=usage)
     parser.add_option('-N', dest='nodes', default=1,
                       help='Number of nodes required: default=%default')
-    parser.add_option('-n', dest='tasks', default=1,
+    parser.add_option('-n', dest='tasks', default=16,
                       help='Total number of tasks: default=%default')
     parser.add_option('-t', dest='hours', default=8,
                       help='Estimated number of hours required: default=%default')

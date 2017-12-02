@@ -38,7 +38,7 @@ def main():
     parser.add_option('--no_intercept', action="store_true", dest="no_intercept", default=False,
                       help='Use to fit a model with no intercept: default=%default')
     parser.add_option('--objective', dest='objective', default='f1',
-                      help='Objective for choosing best alpha [calibration|f1]: default=%default')
+                      help='Objective for choosing best alpha [calibration|f1|acc]: default=%default')
     parser.add_option('--n_dev_folds', dest='n_dev_folds', default=5,
                       help='Number of dev folds for tuning regularization: default=%default')
     parser.add_option('--seed', dest='seed', default=None,
@@ -322,6 +322,9 @@ def train_model_with_labels(project_dir, model_type, loss, model_name, subset, l
         if objective == 'f1':
             best_alpha_index = mean_dev_f1s.argmax()
             print("Using best f1: %d" % best_alpha_index)
+        elif objective == 'accuracy':
+            best_alpha_index = mean_dev_acc.argmax()
+            print("Using best accuracy: %d" % best_alpha_index)
         elif objective == 'calibration':
             best_alpha_index = mean_dev_cal_est.argmin()
             print("Using best calibration: %d" % best_alpha_index)
@@ -435,6 +438,9 @@ def train_model_with_labels(project_dir, model_type, loss, model_name, subset, l
         if objective == 'f1':
             best_alpha_index = mean_dev_f1s.argmax()
             print("Using best f1: %d" % best_alpha_index)
+        elif objective == 'acc':
+            best_alpha_index = mean_dev_acc.argmax()
+            print("Using best accuracy: %d" % best_alpha_index)
         elif objective == 'calibration':
             best_alpha_index = mean_dev_cal_est.argmin()
             print("Using best calibration: %d" % best_alpha_index)
