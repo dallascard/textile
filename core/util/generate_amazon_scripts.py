@@ -46,7 +46,7 @@ def main():
                                 cmd += ' --cshift'
                             cmd += ' --seed ' + str(seed)
 
-                            name = '_'.join(['run', subset, label, str(n_train), objective, 'cshift', str(use_cshift)])
+                            name = '_'.join(['run', subset, label, model, str(n_train), objective, 'cshift', str(use_cshift)])
                             script = make_script(name, [cmd], 1, 16, 10, False, 'pytorch', [])
 
                             with open(name + '.sh', 'w') as f:
