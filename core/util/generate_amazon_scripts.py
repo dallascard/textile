@@ -34,7 +34,10 @@ def main():
                         for n_train in n_train_vals:
                             cmd = 'python -m core.experiments.over_time_split_and_fit'
                             cmd += ' projects/amazon/' + subset
-                            cmd += ' all config/n5grams.json'
+                            if model == 'LR':
+                                cmd += ' all config/n5grams.json'
+                            else:
+                                cmd += ' all config/unigrams.json'
                             cmd += ' --model ' + model
                             cmd += ' --label ' + label
                             cmd += ' --test_start 2013'

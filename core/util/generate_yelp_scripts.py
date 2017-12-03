@@ -35,7 +35,10 @@ def main():
                             for test_year in test_years:
                                 cmd = 'python -m core.experiments.over_time_split_and_fit'
                                 cmd += ' projects/yelp/ '
-                                cmd += ' all config/default.json'
+                                if model == 'LR':
+                                    cmd += ' all config/n5grams.json'
+                                else:
+                                    cmd += ' all config/unigrams.json'
                                 cmd += ' --model ' + model
                                 cmd += ' --label ' + label
                                 cmd += ' --test_start ' + str(test_year)
