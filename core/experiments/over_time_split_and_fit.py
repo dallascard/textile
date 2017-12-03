@@ -169,7 +169,8 @@ def test_over_time(project_dir, subset, config_file, model_type, field, train_st
     # Just run a regular model, one per year, training on the past, and save the reults
 
     if seed is not None:
-        np.random.seed(int(seed))
+        seed = int(seed)
+        np.random.seed(seed)
 
     log = {
         'project': project_dir,
@@ -327,7 +328,7 @@ def test_over_time(project_dir, subset, config_file, model_type, field, train_st
         # set seed very explicily here to make sure experiments are comparable
         if seed is not None:
             seed += 1
-            np.random.seed(int(seed))
+            np.random.seed(seed)
 
         print("* Starting repetition %d *" % r)
         model_name = model_basename + '_' + str(test_start) + '-' + str(test_end) + '_' + str(r)
