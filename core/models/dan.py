@@ -4,7 +4,7 @@ import tempfile
 from optparse import OptionParser
 
 import numpy as np
-from scipy.special import expit
+from scipy.special import expit, logit
 import torch
 from torch.autograd import Variable
 import torch.nn as nn
@@ -314,10 +314,13 @@ class DAN:
         else:
             for i in range(n_items):
                 X_i_list = X[i, :].nonzero()[1].tolist()
-                X_i_array = np.array(X_i_list, dtype=np.int).reshape(1, len(X_i_list))
-                X_i = Variable(torch.LongTensor(X_i_array))
-                outputs = self._model(X_i)
-                scores[i] = outputs.data.numpy().copy()
+                if len(X_i_list) > 0:
+                    X_i_array = np.array(X_i_list, dtype=np.int).reshape(1, len(X_i_list))
+                    X_i = Variable(torch.LongTensor(X_i_array))
+                    outputs = self._model(X_i)
+                    scores[i] = outputs.data.numpy().copy()
+                else:
+                    scores[i] = logit(self._train_proportions[1])
             return scores
 
     def predict_proportions(self, X=None, weights=None, do_cfm=False, do_platt=False):
