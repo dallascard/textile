@@ -294,11 +294,14 @@ class DAN:
         else:
             for i in range(n_items):
                 X_i_list = X[i, :].nonzero()[1].tolist()
-                X_i_array = np.array(X_i_list, dtype=np.int).reshape(1, len(X_i_list))
-                X_i = Variable(torch.LongTensor(X_i_array))
-                outputs = self._model(X_i)
-                p = expit(outputs.data.numpy().copy())
-                full_probs[i, :] = [1.0-p, p]
+                if len(X_i_list) > 0:
+                    X_i_array = np.array(X_i_list, dtype=np.int).reshape(1, len(X_i_list))
+                    X_i = Variable(torch.LongTensor(X_i_array))
+                    outputs = self._model(X_i)
+                    p = expit(outputs.data.numpy().copy())
+                    full_probs[i, :] = [1.0-p, p]
+                else:
+                    full_probs[i, :] = np.array(self._train_proportions)
             return full_probs
 
     def score(self, X):
