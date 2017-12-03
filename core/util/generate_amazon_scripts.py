@@ -23,6 +23,10 @@ def main():
 
     seed = 42
     for model in model_types:
+        if model == 'LR':
+            hours = 10
+        else:
+            hours = 24
         for objective in objectives:
             for use_cshift in use_cshift_options:
                 for subset in subsets:
@@ -47,7 +51,7 @@ def main():
                             cmd += ' --seed ' + str(seed)
 
                             name = '_'.join(['run', subset, label, model, str(n_train), objective, 'cshift', str(use_cshift)])
-                            script = make_script(name, [cmd], 1, 16, 10, False, 'pytorch', [])
+                            script = make_script(name, [cmd], 1, 16, hours, False, 'pytorch', [])
 
                             with open(name + '.sh', 'w') as f:
                                 f.write(script)
