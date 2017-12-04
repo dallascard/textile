@@ -76,7 +76,7 @@ class DAN:
         else:
             self._model = model
 
-    def fit(self, X_train, Y_train, X_dev, Y_dev, train_weights=None, dev_weights=None, col_names=None, seed=None, init_lr=1e-2, min_epochs=2, max_epochs=200, patience=8, dropout_prob=0.0):
+    def fit(self, X_train, Y_train, X_dev, Y_dev, train_weights=None, dev_weights=None, col_names=None, seed=None, init_lr=1e-2, min_epochs=2, max_epochs=100, patience=8, dropout_prob=0.0):
         """
         Fit a classifier to data
         """
