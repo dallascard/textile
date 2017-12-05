@@ -50,9 +50,9 @@ def main():
                       help='Apply word dropout to DANs: default=%default')
     parser.add_option('--lr', dest='init_lr', default=0.01,
                       help='Initial learning rate for DAN training: default=%default')
-    parser.add_option('--patience', dest='patience', default=8,
+    parser.add_option('--patience', dest='patience', default=5,
                       help='Patience for DAN training: default=%default')
-    parser.add_option('--max_epochs', dest='max_epochs', default=200,
+    parser.add_option('--max_epochs', dest='max_epochs', default=50,
                       help='Maximum number of epochs for DAN training: default=%default')
 
     (options, args) = parser.parse_args()
