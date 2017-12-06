@@ -134,6 +134,8 @@ def main():
     penalty = options.penalty
     cshift = options.cshift
     n_cshift = options.n_cshift
+    if n_cshift is not None:
+        n_cshift = int(n_cshift)
     objective = options.objective
     intercept = not options.no_intercept
     group_identical = options.group
@@ -165,7 +167,7 @@ def main():
         do_platt = False
         do_cfm = False
 
-    test_over_time(project_dir, subset, config_file, model_type, field, train_start, train_end, test_start, test_end, n_train, n_calib, penalty, suffix, loss, objective, do_ensemble, dh, label, intercept, n_dev_folds, average, seed, alpha_min, alpha_max, n_alphas, sample_labels, group_identical, annotated, nonlinearity, init_lr=init_lr, list_size=ls, repeats=repeats, oracle=oracle, lower=lower, interactive=interactive, stoplist_file=stoplist_file, cshift=cshift, do_cfm=do_cfm, do_platt=do_platt, dropout=dropout, patience=patience, max_epochs=max_epochs, verbose=verbose)
+    test_over_time(project_dir, subset, config_file, model_type, field, train_start, train_end, test_start, test_end, n_train, n_calib, penalty, suffix, loss, objective, do_ensemble, dh, label, intercept, n_dev_folds, average, seed, alpha_min, alpha_max, n_alphas, sample_labels, group_identical, annotated, nonlinearity, init_lr=init_lr, list_size=ls, repeats=repeats, oracle=oracle, lower=lower, interactive=interactive, stoplist_file=stoplist_file, cshift=cshift, n_cshift=n_cshift, do_cfm=do_cfm, do_platt=do_platt, dropout=dropout, patience=patience, max_epochs=max_epochs, verbose=verbose)
 
 
 def test_over_time(project_dir, subset, config_file, model_type, field, train_start, train_end, test_start, test_end, n_train=None, n_calib=0, penalty='l2', suffix='', loss='log', objective='f1', do_ensemble=True, dh=300, label='label', intercept=True, n_dev_folds=5, average='micro', seed=None, alpha_min=0.01, alpha_max=1000.0, n_alphas=8, sample_labels=False, group_identical=False, annotated_subset=None, nonlinearity='tanh', init_lr=1e-2, min_epochs=2, max_epochs=50, patience=5, tol=1e-4, list_size=1, repeats=1, oracle=False, lower=None, interactive=False, stoplist_file=None, cshift=False, n_cshift=None, do_cfm=True, do_platt=True, dropout=0.0, verbose=False):
@@ -287,7 +289,7 @@ def test_over_time(project_dir, subset, config_file, model_type, field, train_st
         train_test_labels_df = pd.DataFrame(train_test_labels, index=all_items, columns=[0, 1])
 
         if n_cshift is not None and len(all_items) >= n_cshift:
-            print("Taking a random sample of %d extra items for reweighting" % n_cshift)
+            print("Taking a random sample of %d items for reweighting" % n_cshift)
             np.random.shuffle(all_items)
             cshift_items = np.random.choice(all_items, size=n_cshift, replace=False)
         else:
