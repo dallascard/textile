@@ -278,8 +278,8 @@ def test_over_time(project_dir, subset, config_file, model_type, field, train_st
         # start by learning to discriminate train from non-train data
         # Label items based on whether they come from train or test
         train_test_labels = np.zeros((len(all_items), 2), dtype=int)
-        train_test_labels[:len(n_train_all), 0] = 1
-        train_test_labels[len(n_train_all):, 1] = 1
+        train_test_labels[:n_train_all, 0] = 1
+        train_test_labels[n_train_all:, 1] = 1
         if np.sum(train_test_labels[:, 0]) < np.sum(train_test_labels[:, 1]):
             cshift_pos_label = 0
         else:
