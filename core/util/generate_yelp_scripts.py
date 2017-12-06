@@ -28,7 +28,6 @@ def main():
     else:
         model = 'LR'
 
-
     seed = 42 + offset
     if model == 'LR':
         hours = 10
@@ -40,10 +39,6 @@ def main():
         alpha_min = 0.0001
         alpha_max = 0.1
         n_alphas = 4
-    if model == 'LR':
-        hours = 10
-    else:
-        hours = 24
     for subset in subsets:
         for label in labels:
             for objective in objectives:

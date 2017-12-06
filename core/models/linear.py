@@ -12,7 +12,7 @@ from sklearn.linear_model import LinearRegression, Lasso, Ridge
 from ..util import file_handling as fh
 from ..models import evaluation, calibration
 from ..main import train
-from .core.models import lrb
+#from .core.models import lrb
 
 
 class LinearClassifier:
@@ -105,11 +105,10 @@ class LinearClassifier:
             self._model = None
 
         else:
-            if self._lower is None:
-                self._model = LogisticRegression(penalty=self._penalty, C=self._alpha, fit_intercept=self._fit_intercept)
-            else:
-                assert self._penalty == 'l1'
-                self._model = lrb.LogisticRegressionBounded(C=self._alpha, fit_intercept=self._fit_intercept, lower=self._lower)
+            self._model = LogisticRegression(penalty=self._penalty, C=self._alpha, fit_intercept=self._fit_intercept)
+            #else:
+            #    assert self._penalty == 'l1'
+            #    self._model = lrb.LogisticRegressionBounded(C=self._alpha, fit_intercept=self._fit_intercept, lower=self._lower)
 
             # train the model using a vector of labels
             self._model.fit(X_train, train_labels, sample_weight=train_weights)
