@@ -245,8 +245,8 @@ def train_model_with_labels(project_dir, model_type, loss, model_name, subset, l
     mean_train_f1s = np.zeros(n_alphas)
     mean_dev_f1s = np.zeros(n_alphas)
     mean_dev_acc = np.zeros(n_alphas)
-    mean_dev_cal_mae = np.ones(n_alphas) * 100000  # track the calibration across the range of probabilities (using bins)
-    mean_dev_cal_est = np.ones(n_alphas) * 100000  # track the calibration overall
+    mean_dev_cal_mae = np.zeros(n_alphas)
+    mean_dev_cal_est = np.zeros(n_alphas)
     mean_model_size = np.zeros(n_alphas)
 
     print("%s\t%s\t%s\t%s\t%s\t%s\t%s\t%s" % ('iter', 'alpha', 'size', 'f1_trn', 'f1_dev', 'acc_dev', 'dev_cal_mae', 'dev_cal_est'))
