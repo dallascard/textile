@@ -242,7 +242,7 @@ def test_over_time(project_dir, subset, config_file, model_type, field, train_st
     print("\nTesting on %s to %s" % (test_start, test_end))
 
     # first, split into training and non-train data based on the field of interest
-    all_items = list(metadata.index)
+    #all_items = list(metadata.index)
     test_selector_all = (metadata[field] >= int(test_start)) & (metadata[field] <= int(test_end))
     test_subset_all = metadata[test_selector_all]
     test_items_all = test_subset_all.index.tolist()
@@ -262,6 +262,7 @@ def test_over_time(project_dir, subset, config_file, model_type, field, train_st
     train_subset_all = metadata[train_selector_all]
     train_items_all = list(train_subset_all.index)
     n_train_all = len(train_items_all)
+    all_items = train_items_all + test_items_all
 
     print("Train: %d, Test: %d (labeled and unlabeled)" % (n_train_all, n_test_all))
 
