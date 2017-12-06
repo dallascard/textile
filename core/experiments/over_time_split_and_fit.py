@@ -309,16 +309,16 @@ def test_over_time(project_dir, subset, config_file, model_type, field, train_st
         print("Max: %0.4f" % cshift_pred_probs_df[1].max())
         # use the estimated probability of each item being a training item to compute item weights
         weights = n_train_all / float(n_test_all) * (1.0/cshift_pred_probs_df[0].values - 1)
-        # print a summary of the weights from just the training items
-        print("Min weight: %0.4f" % weights[train_selector_all].min())
-        print("Ave weight: %0.4f" % weights[train_selector_all].mean())
-        print("Max weight: %0.4f" % weights[train_selector_all].max())
-        # print a summary of all weights
-        print("Min weight: %0.4f" % weights.min())
-        print("Ave weight: %0.4f" % weights.mean())
-        print("Max weight: %0.4f" % weights.max())
-        # create a data frame with this information
         weights_df_all = pd.DataFrame(weights, index=all_items)
+        # print a summary of the weights from just the training items
+        print("Min weight: %0.4f" % weights_df_all.loc[train_items_all].min())
+        print("Ave weight: %0.4f" % weights_df_all.loc[train_items_all].mean())
+        print("Max weight: %0.4f" % weights_df_all.loc[train_items_all].max())
+        # print a summary of all weights
+        #print("Min weight: %0.4f" % weights.min())
+        #print("Ave weight: %0.4f" % weights.mean())
+        #print("Max weight: %0.4f" % weights.max())
+        # create a data frame with this information
     else:
         weights_df_all = None
 
