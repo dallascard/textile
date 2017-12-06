@@ -48,7 +48,7 @@ def main():
                             cmd = 'python -m core.experiments.over_time_split_and_fit'
                             cmd += ' projects/yelp/ '
                             if model == 'LR':
-                                cmd += ' all config/n5grams.json'
+                                cmd += ' all config/config.json'
                             else:
                                 cmd += ' all config/unigrams.json'
                             cmd += ' --model ' + model
