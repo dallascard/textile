@@ -165,7 +165,7 @@ def main():
         do_platt = False
         do_cfm = False
 
-    test_over_time(project_dir, subset, config_file, model_type, field, train_start, train_end, test_start, test_end, n_train, n_calib, penalty, suffix, loss, objective, do_ensemble, dh, label, intercept, n_dev_folds, average, seed, alpha_min, alpha_max, n_alphas, sample_labels, group_identical, annotated, nonlinearity, init_lr=init_lr, list_size=ls, repeats=repeats, oracle=oracle, lower=lower, interactive=interactive, stoplist_file=stoplist_file, cshift=cshift, n_cshift=n_cshift, do_cfm=do_cfm, do_platt=do_platt, dropout=dropout, patience=patience, max_epochs=max_epochs, verbose=verbose)
+    test_over_time(project_dir, subset, config_file, model_type, field, train_start, train_end, test_start, test_end, n_train, n_calib, penalty, suffix, loss, objective, do_ensemble, dh, label, intercept, n_dev_folds, average, seed, alpha_min, alpha_max, n_alphas, sample_labels, group_identical, annotated, nonlinearity, init_lr=init_lr, list_size=ls, repeats=repeats, oracle=oracle, lower=lower, interactive=interactive, stoplist_file=stoplist_file, cshift=cshift, do_cfm=do_cfm, do_platt=do_platt, dropout=dropout, patience=patience, max_epochs=max_epochs, verbose=verbose)
 
 
 def test_over_time(project_dir, subset, config_file, model_type, field, train_start, train_end, test_start, test_end, n_train=None, n_calib=0, penalty='l2', suffix='', loss='log', objective='f1', do_ensemble=True, dh=300, label='label', intercept=True, n_dev_folds=5, average='micro', seed=None, alpha_min=0.01, alpha_max=1000.0, n_alphas=8, sample_labels=False, group_identical=False, annotated_subset=None, nonlinearity='tanh', init_lr=1e-2, min_epochs=2, max_epochs=50, patience=5, tol=1e-4, list_size=1, repeats=1, oracle=False, lower=None, interactive=False, stoplist_file=None, cshift=False, n_cshift=None, do_cfm=True, do_platt=True, dropout=0.0, verbose=False):
@@ -242,7 +242,7 @@ def test_over_time(project_dir, subset, config_file, model_type, field, train_st
     print("\nTesting on %s to %s" % (test_start, test_end))
 
     # first, split into training and non-train data based on the field of interest
-    #all_items = list(metadata.index)
+    all_items = list(metadata.index)
     test_selector_all = (metadata[field] >= int(test_start)) & (metadata[field] <= int(test_end))
     test_subset_all = metadata[test_selector_all]
     test_items_all = test_subset_all.index.tolist()
@@ -262,13 +262,63 @@ def test_over_time(project_dir, subset, config_file, model_type, field, train_st
     train_subset_all = metadata[train_selector_all]
     train_items_all = list(train_subset_all.index)
     n_train_all = len(train_items_all)
-    all_items = train_items_all + test_items_all
 
     print("Train: %d, Test: %d (labeled and unlabeled)" % (n_train_all, n_test_all))
 
     # load all labels
     label_dir = dirs.dir_labels(project_dir, subset)
     labels_df = fh.read_csv_to_df(os.path.join(label_dir, label + '.csv'), index_col=0, header=0)
+
+    # if desired, attempt to learn weights for the training data using techniques for covariate shift
+    if cshift:
+        print("Training a classifier for covariate shift")
+        # start by learning to discriminate train from non-train data
+        # Label items based on whether they come from train or test
+        train_test_labels = np.zeros((len(all_items), 2), dtype=int)
+        train_test_labels[train_selector_all, 0] = 1
+        train_test_labels[test_selector_all, 1] = 1
+        if np.sum(train_test_labels[:, 0]) < np.sum(train_test_labels[:, 1]):
+            cshift_pos_label = 0
+        else:
+            cshift_pos_label = 1
+        train_test_labels_df = pd.DataFrame(train_test_labels, index=labels_df.index, columns=[0, 1])
+
+        if n_cshift is not None and len(all_items) >= n_cshift:
+            print("Taking a random sample of %d extra items for reweighting" % n_cshift)
+            np.random.shuffle(all_items)
+            cshift_items = np.random.choice(all_items, size=n_cshift, replace=False)
+        else:
+            print("Using all train items")
+            cshift_items = all_items
+
+        # create a cshift model using the same specifiction as our model below (e.g. LR/MLP, etc.)
+        model_name = model_basename + '_' + str(test_start) + '-' + str(test_end) + 'cshift'
+        model, dev_f1, dev_acc, dev_cal, dev_cal_overall = train.train_model_with_labels(project_dir, model_type, loss, model_name, subset, train_test_labels_df, feature_defs, items_to_use=cshift_items, penalty=penalty, alpha_min=alpha_min, alpha_max=alpha_max, n_alphas=n_alphas, intercept=intercept, n_dev_folds=n_dev_folds, save_model=True, do_ensemble=False, dh=dh, seed=seed, pos_label=cshift_pos_label, verbose=False)
+        print("cshift results: %0.4f f1, %0.4f acc" % (dev_f1, dev_acc))
+
+        #X_cshift, features_concat = predict.load_data(project_dir, model_name, subset, items_to_use=all_items)
+        X_cshift, features_concat = predict.load_data(project_dir, model_name, subset, items_to_use=all_items)
+        cshift_pred_probs = model.predict_probs(X_cshift)
+        cshift_pred_probs_df = pd.DataFrame(cshift_pred_probs, index=features_concat.get_items(), columns=range(2))
+
+        # display the min and max probs
+        print("Min: %0.4f" % cshift_pred_probs_df[1].min())
+        print("Max: %0.4f" % cshift_pred_probs_df[1].max())
+        # use the estimated probability of each item being a training item to compute item weights
+        weights = n_train_all / float(n_test_all) * (1.0/cshift_pred_probs_df[0].values - 1)
+        # print a summary of the weights from just the training items
+        print("Min weight: %0.4f" % weights[train_selector_all].min())
+        print("Ave weight: %0.4f" % weights[train_selector_all].mean())
+        print("Max weight: %0.4f" % weights[train_selector_all].max())
+        # print a summary of all weights
+        print("Min weight: %0.4f" % weights.min())
+        print("Ave weight: %0.4f" % weights.mean())
+        print("Max weight: %0.4f" % weights.max())
+        # create a data frame with this information
+        weights_df_all = pd.DataFrame(weights, index=all_items)
+    else:
+        weights_df_all = None
+
 
     # find the labeled items
     print("Subsetting items with labels")
@@ -280,68 +330,6 @@ def test_over_time(project_dir, subset, config_file, model_type, field, train_st
     labeled_items = set(labels_df.index)
 
     train_items_labeled = [i for i in train_items_all if i in labeled_items]
-
-    # if desired, attempt to learn weights for the training data using techniques for covariate shift
-    if cshift:
-        print("Training a classifier for covariate shift")
-        # start by learning to discriminate train from non-train data
-        # Label items based on whether they come from train or test
-        train_test_labels = np.zeros((len(all_items), 2), dtype=int)
-        train_test_labels[:len(train_items_all), 0] = 1
-        train_test_labels[len(train_items_all), 1] = 1
-        if np.sum(train_test_labels[:, 0]) < np.sum(train_test_labels[:, 1]):
-            cshift_pos_label = 0
-        else:
-            cshift_pos_label = 1
-        train_test_labels_df = pd.DataFrame(train_test_labels, index=all_items, columns=[0, 1])
-
-        if n_cshift is not None:
-            n_cshift = int(n_cshift)
-
-        if n_cshift is not None and len(all_items) >= n_cshift:
-            print("Taking a random sample of %d extra items for reweighting" % n_cshift)
-            np.random.shuffle(all_items)
-            cshift_items = np.random.choice(all_items, size=n_cshift, replace=False)
-            # make sure we include the labeled training data
-            cshift_items = list(set(cshift_items.tolist() + train_items_labeled))
-            cshift_train_items = [i for i in train_items_all if i in cshift_items]
-            print("Including %d training items" % len(cshift_train_items))
-        else:
-            print("Using all train items")
-            cshift_items = all_items
-            cshift_train_items = train_items_all
-
-        cshift_df = train_test_labels_df.loc[cshift_items].copy()
-
-        # create a cshift model using the same specifiction as our model below (e.g. LR/MLP, etc.)
-        model_name = model_basename + '_' + str(test_start) + '-' + str(test_end) + 'cshift'
-        model, dev_f1, dev_acc, dev_cal, dev_cal_overall = train.train_model_with_labels(project_dir, model_type, loss, model_name, subset, cshift_df, feature_defs, items_to_use=cshift_items, penalty=penalty, alpha_min=alpha_min, alpha_max=alpha_max, n_alphas=n_alphas, intercept=intercept, n_dev_folds=n_dev_folds, save_model=True, do_ensemble=False, dh=dh, seed=seed, pos_label=cshift_pos_label, verbose=False)
-        print("cshift results: %0.4f f1, %0.4f acc" % (dev_f1, dev_acc))
-
-        #X_cshift, features_concat = predict.load_data(project_dir, model_name, subset, items_to_use=all_items)
-        X_cshift, features_concat = predict.load_data(project_dir, model_name, subset, items_to_use=cshift_items)
-        cshift_pred_probs = model.predict_probs(X_cshift)
-        cshift_pred_probs_df = pd.DataFrame(cshift_pred_probs, index=features_concat.get_items(), columns=range(2))
-
-        # display the min and max probs
-        print("Min: %0.4f" % cshift_pred_probs_df[1].min())
-        print("Max: %0.4f" % cshift_pred_probs_df[1].max())
-        # use the estimated probability of each item being a training item to compute item weights
-        weights = n_train_all / float(n_test_all) * (1.0/cshift_pred_probs_df[0].values - 1)
-        weights_df_all = pd.DataFrame(weights, index=cshift_items)
-
-        # print a summary of the weights from just the training items
-        print("Min weight: %0.4f" % weights_df_all.loc[cshift_train_items].min())
-        print("Ave weight: %0.4f" % weights_df_all.loc[cshift_train_items].mean())
-        print("Max weight: %0.4f" % weights_df_all.loc[cshift_train_items].max())
-        # print a summary of all weights
-        #print("Min weight: %0.4f" % weights.min())
-        #print("Ave weight: %0.4f" % weights.mean())
-        #print("Max weight: %0.4f" % weights.max())
-        # create a data frame with this information
-    else:
-        weights_df_all = None
-
 
     test_items = [i for i in test_items_all if i in labeled_items]
     #n_train = len(train_items)
