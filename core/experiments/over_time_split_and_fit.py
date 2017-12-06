@@ -263,14 +263,14 @@ def test_over_time(project_dir, subset, config_file, model_type, field, train_st
     train_items_all = list(train_subset_all.index)
     n_train_all = len(train_items_all)
     # only keep the items in the train and test sets
-    all_items = train_items_all + test_items_all
+    #all_items = train_items_all + test_items_all
 
     print("Train: %d, Test: %d (labeled and unlabeled)" % (n_train_all, n_test_all))
 
     # load all labels
     label_dir = dirs.dir_labels(project_dir, subset)
     labels_df = fh.read_csv_to_df(os.path.join(label_dir, label + '.csv'), index_col=0, header=0)
-    labels_df = labels_df.loc[all_items]
+    #labels_df = labels_df.loc[all_items]
 
     # if desired, attempt to learn weights for the training data using techniques for covariate shift
     if cshift:
