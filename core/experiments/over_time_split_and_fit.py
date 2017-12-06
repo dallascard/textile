@@ -262,6 +262,9 @@ def test_over_time(project_dir, subset, config_file, model_type, field, train_st
     train_subset_all = metadata[train_selector_all]
     train_items_all = list(train_subset_all.index)
     n_train_all = len(train_items_all)
+    # only keep the items in the train and test sets
+
+    all_items = train_items_all + test_items_all
 
     print("Train: %d, Test: %d (labeled and unlabeled)" % (n_train_all, n_test_all))
 
@@ -275,13 +278,13 @@ def test_over_time(project_dir, subset, config_file, model_type, field, train_st
         # start by learning to discriminate train from non-train data
         # Label items based on whether they come from train or test
         train_test_labels = np.zeros((len(all_items), 2), dtype=int)
-        train_test_labels[train_selector_all, 0] = 1
-        train_test_labels[test_selector_all, 1] = 1
+        train_test_labels[:len(n_train_all), 0] = 1
+        train_test_labels[len(n_train_all):, 1] = 1
         if np.sum(train_test_labels[:, 0]) < np.sum(train_test_labels[:, 1]):
             cshift_pos_label = 0
         else:
             cshift_pos_label = 1
-        train_test_labels_df = pd.DataFrame(train_test_labels, index=labels_df.index, columns=[0, 1])
+        train_test_labels_df = pd.DataFrame(train_test_labels, index=all_items, columns=[0, 1])
 
         if n_cshift is not None and len(all_items) >= n_cshift:
             print("Taking a random sample of %d extra items for reweighting" % n_cshift)
