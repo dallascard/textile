@@ -287,6 +287,7 @@ def test_over_time(project_dir, subset, config_file, model_type, field, train_st
         else:
             cshift_pos_label = 1
         train_test_labels_df = pd.DataFrame(train_test_labels, index=all_items, columns=[0, 1])
+        print(train_test_labels_df.mean(axis=0))
 
         if n_cshift is not None and len(all_items) >= n_cshift:
             print("Taking a random sample of %d items for reweighting" % n_cshift)
