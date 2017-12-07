@@ -304,11 +304,14 @@ def test_over_time(project_dir, subset, config_file, model_type, field, train_st
         #X_cshift, features_concat = predict.load_data(project_dir, model_name, subset, items_to_use=all_items)
         X_cshift, features_concat = predict.load_data(project_dir, model_name, subset, items_to_use=all_items)
         cshift_pred_probs = model.predict_probs(X_cshift)
+        assert len(features_concat.index) == len(all_items)
+        for i in all_items:
+            assert i == features_concat.index()[i]
         cshift_pred_probs_df = pd.DataFrame(cshift_pred_probs, index=features_concat.get_items(), columns=range(2))
 
         # display the min and max probs
-        print("Min: %0.4f" % cshift_pred_probs_df[1].min())
-        print("Max: %0.4f" % cshift_pred_probs_df[1].max())
+        print("Min: %0.6f" % cshift_pred_probs_df[1].values[:n_train_all].min())
+        print("Max: %0.6f" % cshift_pred_probs_df[1].values[:n_train_all].max())
         # use the estimated probability of each item being a training item to compute item weights
         weights = n_train_all / float(n_test_all) * (1.0/cshift_pred_probs_df[0].values - 1)
         weights_df_all = pd.DataFrame(weights, index=all_items)
