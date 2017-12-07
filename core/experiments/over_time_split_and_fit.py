@@ -308,8 +308,8 @@ def test_over_time(project_dir, subset, config_file, model_type, field, train_st
         cshift_pred_probs = model.predict_probs(X_cshift)
         f_items = features_concat.get_items()
         assert len(f_items) == len(all_items)
-        for i in all_items:
-            assert i == f_items[i]
+        for i in range(len(all_items)):
+            assert all_items[i] == f_items[i]
         cshift_pred_probs_df = pd.DataFrame(cshift_pred_probs, index=features_concat.get_items(), columns=range(2))
 
         # display the min and max probs
