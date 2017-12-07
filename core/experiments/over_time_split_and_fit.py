@@ -313,9 +313,9 @@ def test_over_time(project_dir, subset, config_file, model_type, field, train_st
         weights = n_train_all / float(n_test_all) * (1.0/cshift_pred_probs_df[0].values - 1)
         weights_df_all = pd.DataFrame(weights, index=all_items)
         # print a summary of the weights from just the training items
-        print("Min weight: %0.4f" % weights_df_all.loc[train_items_all].min())
-        print("Ave weight: %0.4f" % weights_df_all.loc[train_items_all].mean())
-        print("Max weight: %0.4f" % weights_df_all.loc[train_items_all].max())
+        print("Min weight: %0.4f" % weights[:n_train_all].min())
+        print("Ave weight: %0.4f" % weights[:n_train_all].mean())
+        print("Max weight: %0.4f" % weights[:n_train_all].max())
         # print a summary of all weights
         #print("Min weight: %0.4f" % weights.min())
         #print("Ave weight: %0.4f" % weights.mean())
