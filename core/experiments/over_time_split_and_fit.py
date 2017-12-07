@@ -314,9 +314,19 @@ def test_over_time(project_dir, subset, config_file, model_type, field, train_st
 
         # display the min and max probs
         print("Min: %0.6f" % cshift_pred_probs_df[1].values[:n_train_all].min())
+        print("Mean: %0.6f" % cshift_pred_probs_df[1].values[:n_train_all].mean())
         print("Max: %0.6f" % cshift_pred_probs_df[1].values[:n_train_all].max())
+        # HACK: need to prevent 0s in prob(y=0|x)
+        p_train_values =  cshift_pred_probs_df[0].values
+        threshold = 0.01
+        p_train_values[p_train_values < threshold] = threshold
+        print("After thresholding")
+        print("Min: %0.6f" % p_train_values[:n_train_all].min())
+        print("Mean: %0.6f" % p_train_values[:n_train_all].mean())
+        print("Max: %0.6f" % p_train_values[:n_train_all].max())
+
         # use the estimated probability of each item being a training item to compute item weights
-        weights = n_train_all / float(n_test_all) * (1.0/cshift_pred_probs_df[0].values - 1)
+        weights = n_train_all / float(n_test_all) * (1.0/p_train_values - 1)
         weights_df_all = pd.DataFrame(weights, index=all_items)
         # print a summary of the weights from just the training items
         print("Min weight: %0.4f" % weights[:n_train_all].min())
