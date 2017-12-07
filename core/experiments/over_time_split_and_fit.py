@@ -290,7 +290,7 @@ def test_over_time(project_dir, subset, config_file, model_type, field, train_st
 
         if n_cshift is not None and len(all_items) >= n_cshift:
             print("Taking a random sample of %d items for reweighting" % n_cshift)
-            np.random.shuffle(all_items)
+            #np.random.shuffle(all_items)
             cshift_items = np.random.choice(all_items, size=n_cshift, replace=False)
         else:
             print("Using all train items")
