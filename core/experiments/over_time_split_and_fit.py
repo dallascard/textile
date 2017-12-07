@@ -296,7 +296,7 @@ def test_over_time(project_dir, subset, config_file, model_type, field, train_st
             print("Using all train items")
             cshift_items = all_items
 
-        print(train_test_labels_df.mean(axis=0))
+        print(train_test_labels_df.loc[cshift_items].mean(axis=0))
 
         # create a cshift model using the same specifiction as our model below (e.g. LR/MLP, etc.)
         model_name = model_basename + '_' + str(test_start) + '-' + str(test_end) + 'cshift'
