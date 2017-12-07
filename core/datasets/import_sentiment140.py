@@ -1,5 +1,6 @@
 import os
 from optparse import OptionParser
+from collections import Counter
 
 import numpy as np
 import pandas as pd
@@ -64,6 +65,8 @@ def load_df(filename):
 
 
 def convert_to_json(df, prop=1.0):
+    dayofyears = Counter()
+
     data = {}
     index = list(df.index)
     n_items = len(index)
@@ -83,7 +86,12 @@ def convert_to_json(df, prop=1.0):
                         'dayofyear': row.date.dayofyear,
                         'text': row.text,
                         'user': row.user,
-                        'query': row.query}
+                        'query': row.query,
+                        'hour': row.date.hour,
+                        'hour4': row.date.hour // 6}
+        dayofyears.update([row.date.dayofyear])
+
+    print(dayofyears.most_common())
     return data
 
 
