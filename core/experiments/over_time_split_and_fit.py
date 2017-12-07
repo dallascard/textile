@@ -252,6 +252,7 @@ def test_over_time(project_dir, subset, config_file, model_type, field, train_st
 
     if min_test is not None:
         if n_test_all < min_test:
+            print("Not enough test samples; exiting")
             return
 
     if train_end is None:
