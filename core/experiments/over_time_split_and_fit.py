@@ -306,7 +306,7 @@ def test_over_time(project_dir, subset, config_file, model_type, field, train_st
         #X_cshift, features_concat = predict.load_data(project_dir, model_name, subset, items_to_use=all_items)
         X_cshift, features_concat = predict.load_data(project_dir, model_name, subset, items_to_use=all_items)
         cshift_pred_probs = model.predict_probs(X_cshift)
-        assert len(features_concat.index) == len(all_items)
+        assert len(features_concat.get_items()) == len(all_items)
         for i in all_items:
             assert i == features_concat.index()[i]
         cshift_pred_probs_df = pd.DataFrame(cshift_pred_probs, index=features_concat.get_items(), columns=range(2))
