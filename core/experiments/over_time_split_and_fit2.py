@@ -349,7 +349,7 @@ def test_over_time(project_dir, subset, config_file, model_type, field, train_st
                 cshift_items = list(np.random.choice(all_items, size=n_cshift, replace=False))
                 print(len(cshift_items))
                 print(len(set(cshift_items).intersection(set(train_items))))
-                cshift_items = list(set(cshift_items + train_items))
+                cshift_items = list(set(cshift_items + list(train_items)))
                 print(len(cshift_items))
             else:
                 print("Using all train items")
