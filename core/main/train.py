@@ -320,7 +320,10 @@ def train_model_with_labels(project_dir, model_type, loss, model_name, subset, l
             print("%d\t%0.2f\t%.1f\t%0.3f\t%0.3f\t%0.3f\t%0.3f\t%0.3f" % (alpha_i, alpha, mean_model_size[alpha_i], mean_train_f1s[alpha_i], mean_dev_f1s[alpha_i], mean_dev_acc[alpha_i], mean_dev_cal_mae[alpha_i], mean_dev_cal_est[alpha_i]))
 
         if objective == 'f1':
-            best_alpha_index = mean_dev_f1s.argmax()
+            if np.max(mean_dev_f1s) > 0:
+                best_alpha_index = mean_dev_f1s.argmax()
+            else:
+                best_alpha_index = len(mean_dev_f1s) - 1
             print("Using best f1: %d" % best_alpha_index)
         elif objective == 'acc':
             best_alpha_index = mean_dev_acc.argmax()
@@ -782,7 +785,10 @@ def train_lr_model_with_cv(X, Y, weights, col_names, basename, output_dir=None, 
             print("%d\t%0.2f\t%.1f\t%0.3f\t%0.3f\t%0.3f\t%0.3f\t%0.3f" % (alpha_i, alpha, mean_model_size[alpha_i], mean_train_f1s[alpha_i], mean_dev_f1s[alpha_i], mean_dev_acc[alpha_i], mean_dev_cal_mae[alpha_i], mean_dev_cal_est[alpha_i]))
 
     if objective == 'f1':
-        best_alpha_index = mean_dev_f1s.argmax()
+        if np.max(mean_dev_f1s) > 0:
+            best_alpha_index = mean_dev_f1s.argmax()
+        else:
+            best_alpha_index = len(mean_dev_f1s) - 1
         if verbose:
             print("Using best f1: %d" % best_alpha_index)
     elif objective == 'acc':
