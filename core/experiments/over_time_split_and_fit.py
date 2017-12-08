@@ -416,7 +416,7 @@ def test_over_time(project_dir, subset, config_file, model_type, field, train_st
                 running = test_label_props[order[i]]
                 new_test_items = [test_items[order[i]]]
                 i += 1
-                while (running / i) < test_prop:
+                while (running / i) <= test_prop:
                     running += test_label_props[order[i]]
                     new_test_items.append(test_items[order[i]])
                     i += 1
@@ -428,7 +428,7 @@ def test_over_time(project_dir, subset, config_file, model_type, field, train_st
                 running = test_label_props[order[i]]
                 new_test_items = [test_items[order[i]]]
                 i += 1
-                while (running / i) > test_prop:
+                while (running / i) >= test_prop:
                     running += test_label_props[order[i]]
                     new_test_items.append(test_items[order[i]])
                     i += 1
