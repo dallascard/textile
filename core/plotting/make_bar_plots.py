@@ -114,9 +114,10 @@ def main():
 
     rows = [values[r] for r in to_plot]
     rows = np.vstack(rows)
+    means = np.mean(rows, axis=1)
 
     fig, ax = plt.subplots()
-    ax.barh(range(len(to_plot)), rows)
+    ax.barh(range(len(to_plot)), means)
     ax.set_yticks(names)
     plt.savefig(output + '.pdf', bbox_inches='tight')
 
