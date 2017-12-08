@@ -78,7 +78,6 @@ def main():
     for day in range(first_day, last_day+1):
         print("\n\nStarting", day)
         over_time_split_and_fit.test_over_time(project, 'train', config, model_type, 'dayofyear', train_start=None, train_end=None, test_start=day, test_end=day, n_train=n_train, n_calib=n_calib, penalty=penalty, suffix=suffix, seed=seed, alpha_min=alpha_min, alpha_max=alpha_max, n_alphas=n_alphas, loss='log', objective=objective, do_ensemble=True, label='positive', intercept=True, n_dev_folds=5, repeats=repeats, cshift=cshift, dh=dh, init_lr=init_lr, dropout=dropout, patience=patience, max_epochs=max_epochs, min_test=1000)
-        seed += 1
 
 
 if __name__ == '__main__':
