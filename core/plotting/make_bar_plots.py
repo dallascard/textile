@@ -109,7 +109,7 @@ def main():
     for row, numbers in values.items():
         print(row, len(numbers), np.mean(numbers))
 
-    to_plot = ['train_f1', 'ACC_internal_f1', 'PCC_cshift' 'PCC_platt2_f1', 'PCC_acc', 'PCC_f1', 'PCC_cal']
+    to_plot = ['train_f1', 'ACC_internal_f1', 'PCC_cshift', 'PCC_platt2_f1', 'PCC_acc', 'PCC_f1', 'PCC_cal']
     names = ['Train', 'ACC', 'Reweighting', 'Platt', 'PCC(acc)', 'PCC(F1)', 'PCC(cal)']
 
     rows = [values[r] for r in to_plot]
@@ -117,6 +117,7 @@ def main():
 
     fig, ax = plt.subplots()
     ax.barh(range(len(to_plot)), rows)
+    ax.set_yticks(names)
     plt.savefig(output + '.pdf', bbox_inches='tight')
 
     #if output is not None:
