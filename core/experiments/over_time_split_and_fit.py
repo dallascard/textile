@@ -93,8 +93,11 @@ def main():
                       help='Patience for DAN training: default=%default')
     parser.add_option('--max_epochs', dest='max_epochs', default=50,
                       help='Maximum number of epochs for DAN training: default=%default')
+    parser.add_option('--test_prop', dest='test_prop', default=None,
+                      help='Create a dataset with artificial test proportions: default=%default')
     parser.add_option('--verbose', action="store_true", dest="verbose", default=False,
                       help='Print more output: default=%default')
+
 
     (options, args) = parser.parse_args()
 
@@ -156,6 +159,7 @@ def main():
     patience = int(options.patience)
     max_epochs = int(options.max_epochs)
 
+    test_prop = options.test_prop
     verbose = options.verbose
 
     average = 'micro'
@@ -167,10 +171,10 @@ def main():
         do_platt = False
         do_cfm = False
 
-    test_over_time(project_dir, subset, config_file, model_type, field, train_start, train_end, test_start, test_end, n_train, n_calib, penalty, suffix, loss, objective, do_ensemble, dh, label, intercept, n_dev_folds, average, seed, alpha_min, alpha_max, n_alphas, sample_labels, group_identical, annotated, nonlinearity, init_lr=init_lr, list_size=ls, repeats=repeats, oracle=oracle, lower=lower, interactive=interactive, stoplist_file=stoplist_file, cshift=cshift, n_cshift=n_cshift, do_cfm=do_cfm, do_platt=do_platt, dropout=dropout, patience=patience, max_epochs=max_epochs, verbose=verbose)
+    test_over_time(project_dir, subset, config_file, model_type, field, train_start, train_end, test_start, test_end, n_train, n_calib, penalty, suffix, loss, objective, do_ensemble, dh, label, intercept, n_dev_folds, average, seed, alpha_min, alpha_max, n_alphas, sample_labels, group_identical, annotated, nonlinearity, init_lr=init_lr, list_size=ls, repeats=repeats, oracle=oracle, lower=lower, interactive=interactive, stoplist_file=stoplist_file, cshift=cshift, n_cshift=n_cshift, do_cfm=do_cfm, do_platt=do_platt, dropout=dropout, patience=patience, max_epochs=max_epochs, test_prop=test_prop, verbose=verbose)
 
 
-def test_over_time(project_dir, subset, config_file, model_type, field, train_start, train_end, test_start, test_end, n_train=None, n_calib=0, penalty='l2', suffix='', loss='log', objective='f1', do_ensemble=True, dh=300, label='label', intercept=True, n_dev_folds=5, average='micro', seed=None, alpha_min=0.01, alpha_max=1000.0, n_alphas=8, sample_labels=False, group_identical=False, annotated_subset=None, nonlinearity='tanh', init_lr=1e-2, min_epochs=2, max_epochs=50, patience=5, tol=1e-4, list_size=1, repeats=1, oracle=False, lower=None, interactive=False, stoplist_file=None, cshift=False, n_cshift=None, do_cfm=True, do_platt=True, dropout=0.0, min_test=None, verbose=False):
+def test_over_time(project_dir, subset, config_file, model_type, field, train_start, train_end, test_start, test_end, n_train=None, n_calib=0, penalty='l2', suffix='', loss='log', objective='f1', do_ensemble=True, dh=300, label='label', intercept=True, n_dev_folds=5, average='micro', seed=None, alpha_min=0.01, alpha_max=1000.0, n_alphas=8, sample_labels=False, group_identical=False, annotated_subset=None, nonlinearity='tanh', init_lr=1e-2, min_epochs=2, max_epochs=50, patience=5, tol=1e-4, list_size=1, repeats=1, oracle=False, lower=None, interactive=False, stoplist_file=None, cshift=False, n_cshift=None, do_cfm=True, do_platt=True, dropout=0.0, min_test=None, test_prop=None, verbose=False):
     # Just run a regular model, one per year, training on the past, and save the reults
 
     if seed is not None:
@@ -399,6 +403,34 @@ def test_over_time(project_dir, subset, config_file, model_type, field, train_st
         output_df = pd.DataFrame([], columns=['N', 'training data', 'test data', 'cal', 'estimate', 'MAE', '95lcl', '95ucl', 'contains_test'])
 
         test_labels_df = labels_df.loc[test_items]
+        # do a fake adjustment of the test label proportions
+        if test_prop is not None:
+            test_prop = float(test_prop)
+            test_pos_df = test_labels_df[test_labels_df[0] == 0]
+            test_neg_df = test_labels_df[test_labels_df[1] == 0]
+            test_pos_items = list(test_pos_df.index)
+            test_neg_items = list(test_neg_df.index)
+            n_test_pos = len(test_pos_items)
+            n_test_neg = len(test_neg_items)
+            print("%d positive, %d negative" % (n_test_pos, n_test_neg))
+            true_prop = n_test_pos / float(n_test_pos + n_test_neg)
+            if test_prop > true_prop:
+                n_neg_needed = int(n_test_pos * (1 - test_prop) / test_prop)
+                if n_neg_needed > 0:
+                    print("Selecting %d negative items" % n_neg_needed)
+                    neg_items = np.random.choice(test_neg_items, size=n_neg_needed, replace=False)
+                    test_items = test_pos_items + list(neg_items)
+                else:
+                    test_items = test_pos_items
+            else:
+                n_pos_needed = int(n_test_neg * test_prop / float(1.0 - test_prop))
+                if n_pos_needed > 0:
+                    print("Selecting %d positive items" % n_pos_needed)
+                    pos_items = np.random.choice(test_pos_items, size=n_pos_needed, replace=False)
+                    test_items = list(pos_items) + test_neg_items
+                else:
+                    test_items = test_neg_items
+            test_labels_df = labels_df.loc[test_items]
 
         # if instructed, sample labels in proportion to annotations (to simulate having one label per item)
         if sample_labels:
