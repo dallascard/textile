@@ -13,6 +13,8 @@ from ..util import file_handling as fh
 def main():
     usage = "%prog csv1 csv2 r1 r2"
     parser = OptionParser(usage=usage)
+    parser.add_option('--max', dest='max', default=None,
+                      help='Exclude outliers above this point: default=%default')
     #parser.add_option('--prefix', dest='prefix', default=None,
     #                  help='Output prefix (optional): default=%default')
     #parser.add_option('--similar', action="store_true", dest="similar", default=False,
@@ -27,6 +29,10 @@ def main():
 
     (options, args) = parser.parse_args()
 
+    threshold = options.max
+    if threshold is not None:
+        threshold = float(threshold)
+
     csv1 = args[0]
     csv2 = args[1]
     r1 = int(args[2])
@@ -38,6 +44,15 @@ def main():
     print("Comparing %s to %s" % (df1.index[r1], df2.index[r2]))
     values1 = df1.iloc[r1].values
     values2 = df2.iloc[r2].values
+
+    if threshold is not None:
+        values_matrix = np.zeros((2, len(values1)))
+        values_matrix[0, :] = values1
+        values_matrix[1, :] = values2
+        col_max = np.max(values_matrix, axis=0)
+        below_threshold = col_max < threshold
+        values1 = values_matrix[0, below_threshold]
+        values2 = values_matrix[1, below_threshold]
 
     print(np.mean(values1))
     print(np.mean(values2))
