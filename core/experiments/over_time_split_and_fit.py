@@ -405,32 +405,38 @@ def test_over_time(project_dir, subset, config_file, model_type, field, train_st
         test_labels_df = labels_df.loc[test_items]
         # do a fake adjustment of the test label proportions
         if test_prop is not None:
-            test_prop = float(test_prop)
-            test_pos_df = test_labels_df[test_labels_df[0] == 0]
-            test_neg_df = test_labels_df[test_labels_df[1] == 0]
-            test_pos_items = list(test_pos_df.index)
-            test_neg_items = list(test_neg_df.index)
-            n_test_pos = len(test_pos_items)
-            n_test_neg = len(test_neg_items)
-            print("%d positive, %d negative" % (n_test_pos, n_test_neg))
-            true_prop = n_test_pos / float(n_test_pos + n_test_neg)
-            if test_prop > true_prop:
-                n_neg_needed = int(n_test_pos * (1 - test_prop) / test_prop)
-                if n_neg_needed > 0:
-                    print("Selecting %d negative items" % n_neg_needed)
-                    neg_items = np.random.choice(test_neg_items, size=n_neg_needed, replace=False)
-                    test_items = test_pos_items + list(neg_items)
-                else:
-                    test_items = test_pos_items
+            test_label_props = test_labels_df[1] / (test_labels_df[1] + test_labels_df[0]).values
+            order = list(np.argsort(test_label_props))
+
+            true_prop = np.mean(test_label_props)
+            if test_prop < true_prop:
+                i = 0
+                running = test_label_props[order[i]]
+                new_test_items = [test_items[order[i]]]
+                i += 1
+                while (running / i) < test_prop:
+                    running += test_label_props[order[i]]
+                    new_test_items.append(test_items[order[i]])
+                    i += 1
+                print("Taking %d test_items" % len(new_test_items))
+                test_items = new_test_items[:]
             else:
-                n_pos_needed = int(n_test_neg * test_prop / float(1.0 - test_prop))
-                if n_pos_needed > 0:
-                    print("Selecting %d positive items" % n_pos_needed)
-                    pos_items = np.random.choice(test_pos_items, size=n_pos_needed, replace=False)
-                    test_items = list(pos_items) + test_neg_items
-                else:
-                    test_items = test_neg_items
+                order.reverse()
+                i = 0
+                running = test_label_props[order[i]]
+                new_test_items = [test_items[order[i]]]
+                i += 1
+                while (running / i) > test_prop:
+                    running += test_label_props[order[i]]
+                    new_test_items.append(test_items[order[i]])
+                    i += 1
+                print("Taking %d test_items" % len(new_test_items))
+                test_items = new_test_items[:]
+
             test_labels_df = labels_df.loc[test_items]
+            test_label_props = test_labels_df[1] / (test_labels_df[1] + test_labels_df[0]).values
+            print("New props = %0.3f" % np.mean(test_label_props))
+
 
         # if instructed, sample labels in proportion to annotations (to simulate having one label per item)
         if sample_labels:
