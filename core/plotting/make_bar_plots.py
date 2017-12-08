@@ -117,6 +117,9 @@ def main():
     rows = np.vstack(rows)
     means = np.mean(rows, axis=1)
 
+    values_df = pd.DataFrame(values, index=names)
+    values_df.to_csv(output + '.csv')
+
     y = list(range(len(names)))
     y.reverse()
 
@@ -127,7 +130,7 @@ def main():
         ax.scatter(vals, np.ones_like(vals) * y_val)
     ax.set_yticks(y)
     ax.set_yticklabels(names)
-    plt.savefig(output + '.pdf')
+    plt.savefig(output + '.pdf', bbox_inches='tight')
 
     #if output is not None:
     #    df.to_csv(output + '.csv')
