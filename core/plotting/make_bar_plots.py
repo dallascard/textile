@@ -14,7 +14,7 @@ from ..util import file_handling as fh
 def main():
     usage = "%prog csv_results_files(f1_cshift)"
     parser = OptionParser(usage=usage)
-    parser.add_option('--prefix', dest='prefix', default=None,
+    parser.add_option('--prefix', dest='prefix', default='test',
                       help='Output prefix (optional): default=%default')
     parser.add_option('--similar', action="store_true", dest="similar", default=False,
                       help='Only use the most similar examples: default=%default')
@@ -116,10 +116,16 @@ def main():
     rows = np.vstack(rows)
     means = np.mean(rows, axis=1)
 
+    y = list(range(len(names)))
+    y.reverse()
+
     fig, ax = plt.subplots()
-    ax.barh(range(len(to_plot)), means)
-    ax.set_yticks(range(len(to_plot)), names)
-    plt.savefig(output + '.pdf', bbox_inches='tight')
+    ax.barh(y, means)
+    for y_i, y_val in enumerate(y):
+        vals = values[to_plot[y_i]]
+        ax.scatter(np.ones_like(vals) * y_val, vals)
+    ax.set_yticks(y, names)
+    plt.savefig(output + '.pdf')
 
     #if output is not None:
     #    df.to_csv(output + '.csv')
