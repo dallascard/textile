@@ -123,7 +123,7 @@ def main():
     ax.barh(y, means)
     for y_i, y_val in enumerate(y):
         vals = values[to_plot[y_i]]
-        ax.scatter(np.ones_like(vals) * y_val, vals)
+        ax.scatter(vals, np.ones_like(vals) * y_val)
     ax.set_yticks(y, names)
     plt.savefig(output + '.pdf')
 
