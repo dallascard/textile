@@ -118,7 +118,7 @@ def main():
 
     fig, ax = plt.subplots()
     ax.barh(range(len(to_plot)), means)
-    ax.set_yticks(names)
+    ax.set_yticks(range(len(to_plot)), names)
     plt.savefig(output + '.pdf', bbox_inches='tight')
 
     #if output is not None:
