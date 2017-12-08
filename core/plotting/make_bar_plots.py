@@ -125,7 +125,7 @@ def main():
         vals = values[to_plot[y_i]]
         ax.scatter(vals, np.ones_like(vals) * y_val)
     ax.set_yticks(y)
-    ax.set_yticknames(names)
+    ax.set_yticklabels(names)
     plt.savefig(output + '.pdf')
 
     #if output is not None:
