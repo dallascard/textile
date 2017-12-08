@@ -318,6 +318,16 @@ def test_over_time(project_dir, subset, config_file, model_type, field, train_st
             train_items = train_items_labeled
         n_train_r = len(train_items)
 
+        # now, choose a calibration set
+        if n_calib > 0 and n_test >= n_calib:
+            np.random.shuffle(test_items)
+            calib_items = np.random.choice(test_items, size=n_calib, replace=False)
+        elif n_test < n_calib:
+            print("Error: Only %d labeled test instances available" % n_test)
+            calib_items = test_items
+        else:
+            calib_items = []
+
         # now work out the covariate shift
         # if desired, attempt to learn weights for the training data using techniques for covariate shift
         if cshift:
@@ -335,9 +345,12 @@ def test_over_time(project_dir, subset, config_file, model_type, field, train_st
 
             if n_cshift is not None and len(all_items) >= n_cshift:
                 # take a random sample, but make sure to include the training items (assume n_train << n_cshift)
-                print("Taking a random sample of %d items for reweighting" % n_cshift)
-                cshift_items = list(set(list(np.random.choice(all_items, size=n_cshift, replace=False)) + train_items))
-
+                print("Taking a random sample of %d items from %d for reweighting" % (n_cshift, len(all_items)))
+                cshift_items = list(np.random.choice(all_items, size=n_cshift, replace=False))
+                print(len(cshift_items))
+                print(len(set(cshift_items).intersection(set(train_items))))
+                cshift_items = list(set(cshift_items + train_items))
+                print(len(cshift_items))
             else:
                 print("Using all train items")
                 cshift_items = all_items
@@ -353,9 +366,9 @@ def test_over_time(project_dir, subset, config_file, model_type, field, train_st
             X_cshift, features_concat = predict.load_data(project_dir, model_name, subset, items_to_use=all_items)
             cshift_pred_probs = model.predict_probs(X_cshift)
             f_items = features_concat.get_items()
-            assert len(f_items) == len(all_items)
-            for i in range(len(all_items)):
-                assert all_items[i] == f_items[i]
+            #assert len(f_items) == len(all_items)
+            #for i in range(len(all_items)):
+            #    assert all_items[i] == f_items[i]
             cshift_pred_probs_df = pd.DataFrame(cshift_pred_probs, index=features_concat.get_items(), columns=range(2))
 
             # display the min and max probs
