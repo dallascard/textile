@@ -405,6 +405,7 @@ def test_over_time(project_dir, subset, config_file, model_type, field, train_st
         test_labels_df = labels_df.loc[test_items]
         # do a fake adjustment of the test label proportions
         if test_prop is not None:
+            test_prop = float(test_prop)
             test_label_values = test_labels_df.values
             test_label_props = test_label_values[:, 1] / (test_label_values[:, 1] + test_label_values[:, 0])
             order = list(np.argsort(test_label_props))
