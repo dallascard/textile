@@ -375,22 +375,25 @@ def test_over_time(project_dir, subset, config_file, model_type, field, train_st
             print("Min: %0.6f" % cshift_pred_probs_df[1].values[:n_train_all].min())
             print("Mean: %0.6f" % cshift_pred_probs_df[1].values[:n_train_all].mean())
             print("Max: %0.6f" % cshift_pred_probs_df[1].values[:n_train_all].max())
+
+            labeled_train_probs_df = cshift_pred_probs_df.loc[train_items]
+
             # HACK: need to prevent 0s in prob(y=0|x)
-            p_train_values =  cshift_pred_probs_df[0].values
+            p_train_values = labeled_train_probs_df[0].values
             #threshold = 0.01
             #p_train_values[p_train_values < threshold] = threshold
             print("After thresholding")
-            print("Min: %0.6f" % p_train_values[:n_train_all].min())
-            print("Mean: %0.6f" % p_train_values[:n_train_all].mean())
-            print("Max: %0.6f" % p_train_values[:n_train_all].max())
+            print("Min: %0.6f" % p_train_values.min())
+            print("Mean: %0.6f" % p_train_values.mean())
+            print("Max: %0.6f" % p_train_values.max())
 
             # use the estimated probability of each item being a training item to compute item weights
             weights = n_train_all / float(n_test_all) * (1.0/p_train_values - 1)
-            weights_df_all = pd.DataFrame(weights, index=all_items)
+            weights_df_all = pd.DataFrame(weights, index=labeled_train_probs_df)
             # print a summary of the weights from just the training items
-            print("Min weight: %0.4f" % weights[:n_train_all].min())
-            print("Ave weight: %0.4f" % weights[:n_train_all].mean())
-            print("Max weight: %0.4f" % weights[:n_train_all].max())
+            print("Min weight: %0.4f" % weights.min())
+            print("Ave weight: %0.4f" % weights.mean())
+            print("Max weight: %0.4f" % weights.max())
             # print a summary of all weights
             #print("Min weight: %0.4f" % weights.min())
             #print("Ave weight: %0.4f" % weights.mean())
