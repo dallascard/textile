@@ -117,7 +117,7 @@ def main():
     rows = np.vstack(rows)
     means = np.mean(rows, axis=1)
 
-    values_df = pd.DataFrame(values, index=names)
+    values_df = pd.DataFrame(rows, index=names)
     values_df.to_csv(output + '.csv')
 
     y = list(range(len(names)))
