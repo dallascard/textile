@@ -63,6 +63,8 @@ def main():
     penalty = options.penalty
     cshift = options.cshift
     n_cshift = options.n_cshift
+    if n_cshift is not None:
+        n_cshift = int(n_cshift)
     repeats = int(options.repeats)
     model_type = options.model
     suffix = options.suffix
