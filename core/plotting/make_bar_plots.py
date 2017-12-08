@@ -53,7 +53,7 @@ def main():
         if d != 'cshift':
             current_files = [re.sub('cshift_', '', f) for f in files]
         else:
-            current_files = [f for f in files]
+            current_files = [re.sub('acc_', 'f1_', f) for f in files]
         if d == 'acc':
             current_files = [re.sub('f1_', 'acc_', f) for f in current_files]
         elif d == 'cal':
