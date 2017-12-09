@@ -65,7 +65,7 @@ def make_script(name, input_text, nodes, tasks, hours, dev, module, addtional_mo
     else:
         script += "#SBATCH -p normal\n"
     script += "#SBATCH -N " + str(nodes) + "\n"
-    script += "#SBATCH -t " + str(hours) + ":30:00\n"
+    script += "#SBATCH -t " + str(hours) + ":00:00\n"
 
     script += "\ndate\n"
     script += "source activate " + str(module) + "\n"

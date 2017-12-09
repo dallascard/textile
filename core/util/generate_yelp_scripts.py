@@ -30,7 +30,7 @@ def main():
 
     seed = 42 + offset
     if model == 'LR':
-        hours = 10
+        hours = 48
         alpha_min = 0.01
         alpha_max = 1000
         n_alphas = 8
