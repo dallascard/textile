@@ -110,7 +110,7 @@ def main():
     for row, numbers in values.items():
         print(row, len(numbers), np.mean(numbers))
 
-    to_plot = ['train_f1', 'PCC_cal', 'PCC_acc', 'PCC_f1' 'CC', 'PCC_cshift', 'PCC_platt2_f1', 'ACC_internal_f1']
+    to_plot = ['train_f1', 'PCC_cal', 'PCC_acc', 'PCC_f1', 'CC_f1', 'PCC_cshift', 'PCC_platt2_f1', 'ACC_internal_f1']
     names = ['Train', 'PCC(cal)', 'PCC(F1)', 'PCC(acc)', 'CC', 'Platt', 'Reweighting', 'ACC']
 
     rows = [values[r] for r in to_plot]
