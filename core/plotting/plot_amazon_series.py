@@ -25,8 +25,8 @@ def main():
     target_vals = []
     train_vals = []
     pcc_f1_vals = []
-    acc_f1_vals = []
-    cal_f1_vals = []
+    pcc_acc_vals = []
+    pcc_cal_vals = []
     platt_vals = []
     acc_vals = []
     cshift_vals = []
@@ -45,10 +45,20 @@ def main():
 
         target_vals.append(f1_df['estimate'].loc['target'])
         train_vals.append(f1_df['estimate'].loc['train'])
+        pcc_f1_vals.append(f1_df['estimate'].loc['PCC'])
+        platt_vals.append(f1_df['estimate'].loc['Platt2'])
+        acc_vals.append(f1_df['estimate'].loc['ACC'])
+        pcc_acc_vals.append(acc_df['estimate'].loc['PCC'])
+        pcc_cal_vals.append(cal_df['estimate'].loc['PCC'])
 
     fig, ax = plt.subplots()
     ax.plot(years, target_vals, label='Target')
-    ax.plot(years, train_vals, label='Train')
+    ax.plot(years, train_vals, label='Train sample mean')
+    ax.plot(pcc_cal_vals, train_vals, label='PCC(cal)')
+    ax.plot(pcc_acc_vals, train_vals, label='PCC(acc)')
+    ax.plot(pcc_f1_vals, train_vals, label='PCC(F1)')
+    ax.plot(platt_vals, train_vals, label='Platt')
+    ax.plot(acc_vals, train_vals, label='ACC')
     ax.legend()
     plt.savefig('test.pdf')
 
