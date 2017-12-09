@@ -23,6 +23,7 @@ def main():
 
     input_dir = 'projects/amazon/sports5/models/'
     target_vals = []
+    target_stds = []
     train_vals = []
     pcc_f1_vals = []
     pcc_acc_vals = []
@@ -44,6 +45,9 @@ def main():
         #cshift_df = pd.read_csv(cshift_file, index_col=0, header=0)
 
         target_vals.append(f1_df['estimate'].loc['target'])
+        target_p = f1_df['estimate'].loc['target']
+        target_n = f1_df['N'].loc['target']
+        target_stds.append(np.sqrt(target_p * (1- target_p) / target_n))
         train_vals.append(f1_df['estimate'].loc['train'])
         pcc_f1_vals.append(f1_df['estimate'].loc['PCC'])
         platt_vals.append(f1_df['estimate'].loc['Platt2'])
@@ -53,6 +57,8 @@ def main():
 
     fig, ax = plt.subplots()
     ax.plot(years, target_vals, label='Target')
+    ax.plot(years, np.array(target_vals) + 2 * np.array(target_stds), 'k--')
+    ax.plot(years, np.array(target_vals) - 2 * np.array(target_stds), 'k--')
     ax.plot(years, train_vals, label='Train sample mean')
     ax.plot(pcc_cal_vals, train_vals, label='PCC(cal)')
     ax.plot(pcc_acc_vals, train_vals, label='PCC(acc)')
