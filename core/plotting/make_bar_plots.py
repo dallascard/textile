@@ -37,7 +37,7 @@ def main():
 
     output = options.prefix
 
-    rows = ['train', 'PCC', 'ACC_internal', 'PCC_platt2']
+    rows = ['train', 'CC', 'PCC', 'ACC_internal', 'PCC_platt2']
 
     datasets = ['cshift', 'f1', 'acc', 'cal']
 
@@ -110,8 +110,8 @@ def main():
     for row, numbers in values.items():
         print(row, len(numbers), np.mean(numbers))
 
-    to_plot = ['train_f1', 'ACC_internal_f1', 'PCC_cshift', 'PCC_platt2_f1', 'PCC_acc', 'PCC_f1', 'PCC_cal']
-    names = ['Train', 'ACC', 'Reweighting', 'Platt', 'PCC(acc)', 'PCC(F1)', 'PCC(cal)']
+    to_plot = ['train_f1', 'PCC_cal', 'PCC_acc', 'PCC_f1' 'CC', 'PCC_cshift', 'PCC_platt2_f1', 'ACC_internal_f1']
+    names = ['Train', 'PCC(cal)', 'PCC(F1)', 'PCC(acc)', 'CC', 'Platt', 'Reweighting', 'ACC']
 
     rows = [values[r] for r in to_plot]
     rows = np.vstack(rows)
@@ -124,10 +124,10 @@ def main():
     y.reverse()
 
     fig, ax = plt.subplots()
-    ax.barh(y, means, alpha=0.5)
+    ax.barh(y, means, alpha=0.5, facecolor='blue')
     for y_i, y_val in enumerate(y):
         vals = values[to_plot[y_i]]
-        ax.scatter(vals, np.ones_like(vals) * y_val, s=10, c='k', alpha=0.5)
+        ax.scatter(vals, np.ones_like(vals) * y_val, s=10, facecolor='k', alpha=0.5)
     ax.set_yticks(y)
     ax.set_yticklabels(names)
     plt.savefig(output + '.pdf', bbox_inches='tight')
