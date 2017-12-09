@@ -45,7 +45,7 @@ def main():
                 for use_cshift in use_cshift_options:
                     for n_train in n_train_vals:
                         for test_year in test_years:
-                            cmd = 'python -m core.experiments.over_time_split_and_fit'
+                            cmd = 'python -m core.experiments.over_time_split_and_fit2'
                             cmd += ' projects/yelp/ '
                             if model == 'LR':
                                 cmd += ' all config/config.json'
@@ -73,6 +73,7 @@ def main():
                             cmd += ' --objective ' + objective
                             if use_cshift:
                                 cmd += ' --cshift'
+                                cmd += ' --n_cshift 100000'
                             cmd += ' --seed ' + str(seed)
                             cmd += ' --suffix ' + '_' + str(offset)
 
