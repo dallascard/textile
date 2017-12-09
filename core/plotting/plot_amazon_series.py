@@ -22,6 +22,7 @@ def main():
     (options, args) = parser.parse_args()
 
     input_dir = 'projects/amazon/sports5/models/'
+    test_vals = []
     train_vals = []
     pcc_f1_vals = []
     acc_f1_vals = []
@@ -42,10 +43,13 @@ def main():
         f1_df = pd.read_csv(f1_file, index_col=0, header=0)
         #cshift_df = pd.read_csv(cshift_file, index_col=0, header=0)
 
-        train_vals.append(f1_df.loc['train', 'RMSE'])
+        test_vals.append(f1_df['estimate'].loc['test'])
+        train_vals.append(f1_df['estimate'].loc['train'])
 
     fig, ax = plt.subplots()
-    ax.plot(years, train_vals)
+    ax.plot(years, test_vals, label='Test')
+    ax.plot(years, train_vals, label='Train')
+    ax.legend()
     plt.savefig('test.pdf')
 
 
