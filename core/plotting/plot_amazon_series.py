@@ -51,7 +51,7 @@ def main():
         train_vals.append(f1_df['estimate'].loc['train'])
         pcc_f1_vals.append(f1_df['estimate'].loc['PCC'])
         platt_vals.append(f1_df['estimate'].loc['PCC_platt2'])
-        acc_vals.append(f1_df['estimate'].loc['ACC'])
+        acc_vals.append(f1_df['estimate'].loc['ACC_internal'])
         pcc_acc_vals.append(acc_df['estimate'].loc['PCC'])
         pcc_cal_vals.append(cal_df['estimate'].loc['PCC'])
 
