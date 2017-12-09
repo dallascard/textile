@@ -58,7 +58,7 @@ def main():
 
     fig, ax = plt.subplots()
     ax.plot(years, target_vals, label='Target')
-    ax.fill_between(years, np.array(target_vals) - 2 * np.array(target_stds), np.array(target_vals) + 2 * np.array(target_stds), c='k', alpha=0.1)
+    ax.fill_between(years, np.array(target_vals) - 2 * np.array(target_stds), np.array(target_vals) + 2 * np.array(target_stds), color='k', alpha=0.1)
     ax.plot(years, train_vals, label='Train sample mean')
     ax.plot(years, pcc_cal_vals, label='PCC(cal)')
     ax.plot(years, pcc_acc_vals, label='PCC(acc)')
