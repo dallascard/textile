@@ -124,10 +124,10 @@ def main():
     y.reverse()
 
     fig, ax = plt.subplots()
-    ax.barh(y, means)
+    ax.barh(y, means, alpha=0.5)
     for y_i, y_val in enumerate(y):
         vals = values[to_plot[y_i]]
-        ax.scatter(vals, np.ones_like(vals) * y_val)
+        ax.scatter(vals, np.ones_like(vals) * y_val, s=10, c='k', alpha=0.5)
     ax.set_yticks(y)
     ax.set_yticklabels(names)
     plt.savefig(output + '.pdf', bbox_inches='tight')

@@ -32,8 +32,8 @@ def main():
     #acc_vals = []
     cshift_vals = []
 
-    years = [2009, 2010, 2011, 2012]
-    for year in ['2009', '2010', '2011', '2012']:
+    years = [2009, 2010, 2011, 2012, 2013, 2014]
+    for year in ['2009', '2010', '2011', '2012', '2013', '2014']:
         acc_file = os.path.join(input_dir, 'all_helpfulness_l1_acc_2000_0_sampled_' + year + '-' + year + '_0', 'results.csv')
         cal_file = os.path.join(input_dir, 'all_helpfulness_l1_calibration_2000_0_sampled_' + year + '-' + year + '_0', 'results.csv')
         f1_file = os.path.join(input_dir, 'all_helpfulness_l1_f1_2000_0_sampled_' + year + '-' + year + '_0', 'results.csv')
