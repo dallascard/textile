@@ -24,6 +24,8 @@ def main():
                       help='Only use the most balanced examples: default=%default')
     parser.add_option('--unbalanced', action="store_true", dest="unbalanced", default=False,
                       help='Only use the most unbalanced examples: default=%default')
+    parser.add_option('--twitter', action="store_true", dest="twitter", default=False,
+                      help='Special for twitter data: default=%default')
 
 
     (options, args) = parser.parse_args()
@@ -34,6 +36,7 @@ def main():
     use_least_similar = options.different
     use_balanced = options.balanced
     use_unbalanced = options.unbalanced
+    twitter = options.twitter
 
     output = options.prefix
 
@@ -51,8 +54,12 @@ def main():
     for d in datasets:
         print(d)
         if d != 'cshift':
-            current_files = [re.sub('cshift_', '', f) for f in files]
-            current_files = [re.sub('acc_', 'f1_', f) for f in current_files]
+            if twitter:
+                current_files = [re.sub('cshift_100000', '', f) for f in files]
+                current_files = [re.sub('cshift', '_0', f) for f in files]
+            else:
+                current_files = [re.sub('cshift_', '', f) for f in files]
+                current_files = [re.sub('acc_', 'f1_', f) for f in current_files]
         else:
             current_files = [f for f in files]
         if d == 'acc':

@@ -358,12 +358,12 @@ def test_over_time(project_dir, subset, config_file, model_type, field, train_st
             print(train_test_labels_df.loc[cshift_items].mean(axis=0))
 
             # create a cshift model using the same specifiction as our model below (e.g. LR/MLP, etc.)
-            model_name = model_basename + '_' + str(test_start) + '-' + str(test_end) + 'cshift'
-            model, dev_f1, dev_acc, dev_cal, dev_cal_overall = train.train_model_with_labels(project_dir, model_type, loss, model_name, subset, train_test_labels_df, feature_defs, items_to_use=cshift_items, penalty=penalty, alpha_min=alpha_min, alpha_max=alpha_max, n_alphas=n_alphas, intercept=intercept, n_dev_folds=n_dev_folds, save_model=True, do_ensemble=False, dh=dh, seed=seed, pos_label=cshift_pos_label, verbose=False)
+            cshift_model_name = model_basename + '_' + str(test_start) + '-' + str(test_end) + 'cshift'
+            model, dev_f1, dev_acc, dev_cal, dev_cal_overall = train.train_model_with_labels(project_dir, model_type, loss, cshift_model_name, subset, train_test_labels_df, feature_defs, items_to_use=cshift_items, penalty=penalty, alpha_min=alpha_min, alpha_max=alpha_max, n_alphas=n_alphas, intercept=intercept, n_dev_folds=n_dev_folds, save_model=True, do_ensemble=False, dh=dh, seed=seed, pos_label=cshift_pos_label, verbose=False)
             print("cshift results: %0.4f f1, %0.4f acc" % (dev_f1, dev_acc))
 
             #X_cshift, features_concat = predict.load_data(project_dir, model_name, subset, items_to_use=all_items)
-            X_cshift, features_concat = predict.load_data(project_dir, model_name, subset, items_to_use=train_items)
+            X_cshift, features_concat = predict.load_data(project_dir, cshift_model_name, subset, items_to_use=train_items)
             cshift_pred_probs = model.predict_probs(X_cshift)
             f_items = features_concat.get_items()
             #assert len(f_items) == len(all_items)
