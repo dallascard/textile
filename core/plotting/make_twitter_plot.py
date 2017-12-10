@@ -53,8 +53,9 @@ def main():
         PCC_vals = PCC_values[t]
         n_vals = len(ACC_vals)
         x = np.ones(n_vals) * float(t)
-        ax.scatter(x, ACC_vals, s=10, color='b', alpha=0.6)
-        ax.scatter(x, PCC_vals, s=10, color='g', marker='x', alpha=0.6)
+        ax.scatter(x, ACC_vals, s=10, color='b', alpha=0.6, label='ACC')
+        ax.scatter(x, PCC_vals, s=10, color='g', marker='x', alpha=0.6, label='PCC')
+    ax.legend()
     ax.set_xlabel('Target proportions')
     ax.set_ylabel('MAE')
 
