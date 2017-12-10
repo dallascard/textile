@@ -35,7 +35,7 @@ def main():
         for f in files:
             print(f)
             df_f = fh.read_csv_to_df(f)
-            ACC_values[t].append(df_f['MAE'].loc['ACC_interal'])
+            ACC_values[t].append(df_f['MAE'].loc['ACC_internal'])
             PCC_values[t].append(df_f['MAE'].loc['PCC'])
 
     ACC_means = np.zeros(len(targets))
