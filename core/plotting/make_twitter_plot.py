@@ -48,14 +48,19 @@ def main():
     x = [float(t) for t in targets]
     ax.plot(x, ACC_means, 'b-', alpha=0.9)
     ax.plot(x, PCC_means, 'g--', alpha=0.9)
-    for t in targets:
+    for t_i, t in enumerate(targets):
         ACC_vals = ACC_values[t]
         PCC_vals = PCC_values[t]
         n_vals = len(ACC_vals)
         x = np.ones(n_vals) * float(t)
-        ax.scatter(x, ACC_vals, s=10, color='b', alpha=0.6, label='ACC')
-        ax.scatter(x, PCC_vals, s=10, color='g', marker='x', alpha=0.6, label='PCC')
-    ax.legend()
+        if t_i == 0:
+            labels = ['ACC', 'PCC']
+        else:
+            labels = [None, None]
+        ax.scatter(x, ACC_vals, s=10, color='b', alpha=0.6, label=labels[0])
+        ax.scatter(x, PCC_vals, s=10, color='g', marker='x', alpha=0.6, label=labels[1])
+
+    ax.legend(loc='top')
     ax.set_xlabel('Target proportions')
     ax.set_ylabel('MAE')
 
