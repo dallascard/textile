@@ -67,8 +67,8 @@ def main():
     ax.set_ylim(0, 0.15)
     x = [float(t) for t in targets]
     ax.set_xticks(x)
-    ax.set_xticklabels([str(v-0.6) for v in x])
-
+    labels = ['-0.15', '-0.1', '-0.075', '-0.05', '-0.025', '0', '0.025', '0.05', '0.075', '0.1', '0.15']
+    ax.set_xticklabels(labels)
     plt.savefig(output + '.pdf', bbox_inches='tight')
 
 
