@@ -46,15 +46,17 @@ def main():
 
     fig, ax = plt.subplots()
     x = [float(t) for t in targets]
-    ax.plot(x, ACC_means, 'b-', alpha=0.8)
-    ax.plot(x, PCC_means, 'g--', alpha=0.8)
+    ax.plot(x, ACC_means, 'b-', alpha=0.9)
+    ax.plot(x, PCC_means, 'g--', alpha=0.9)
     for t in targets:
         ACC_vals = ACC_values[t]
         PCC_vals = PCC_values[t]
         n_vals = len(ACC_vals)
         x = np.ones(n_vals) * float(t)
-        ax.scatter(x-0.01, ACC_vals, s=10, color='b', alpha=0.5)
-        ax.scatter(x+0.01, PCC_vals, s=10, color='g', alpha=0.5)
+        ax.scatter(x, ACC_vals, s=10, color='b', alpha=0.6)
+        ax.scatter(x, PCC_vals, s=10, color='g', marker='x', alpha=0.6)
+    ax.set_xlabel('Target proportions')
+    ax.set_ylabel('MAE')
 
     plt.savefig(output + '.pdf', bbox_inches='tight')
 
