@@ -65,6 +65,7 @@ def main():
     ax.set_xlabel('Target proportions')
     ax.set_ylabel('MAE')
     ax.set_ylim(0, 0.15)
+    x = [float(t) for t in targets]
     ax.set_xticks(x)
     ax.set_xticklabels([str(v-0.6) for v in x])
 
