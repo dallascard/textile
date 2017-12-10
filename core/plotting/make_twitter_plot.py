@@ -62,7 +62,7 @@ def main():
 
 
     ax.legend(loc='upper center')
-    ax.set_xlabel('Target proportions')
+    ax.set_xlabel('Difference between train and target proportions')
     ax.set_ylabel('MAE')
     ax.set_ylim(0, 0.15)
     #x = [float(t) for t in targets]
