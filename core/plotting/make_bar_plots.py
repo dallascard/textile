@@ -137,6 +137,7 @@ def main():
         ax.scatter(vals, np.ones_like(vals) * y_val, s=10, facecolor='k', alpha=0.5)
     ax.set_yticks(y)
     ax.set_yticklabels(names)
+    ax.set_xlim(0, 0.5)
     plt.savefig(output + '.pdf', bbox_inches='tight')
 
     #if output is not None:
