@@ -58,11 +58,13 @@ def main():
         else:
             labels = [None, None]
         ax.scatter(x, ACC_vals, s=10, color='b', alpha=0.6, label=labels[0])
+
         ax.scatter(x, PCC_vals, s=10, color='g', marker='x', alpha=0.6, label=labels[1])
 
     ax.legend(loc='upper center')
     ax.set_xlabel('Target proportions')
     ax.set_ylabel('MAE')
+    ax.set_ylim(0, 0.15)
 
     plt.savefig(output + '.pdf', bbox_inches='tight')
 
