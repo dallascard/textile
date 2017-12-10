@@ -51,7 +51,8 @@ def main():
     for t in targets:
         ACC_vals = ACC_values[t]
         PCC_vals = PCC_values[t]
-        x = np.ones(len(ACC_vals)) * t
+        n_vals = len(ACC_vals)
+        x = np.ones(n_vals) * float(t)
         ax.scatter(x-0.01, ACC_vals, s=10, color='b', alpha=0.5)
         ax.scatter(x+0.01, PCC_vals, s=10, color='g', alpha=0.5)
 
