@@ -55,7 +55,7 @@ def main():
         print(d)
         if d != 'cshift':
             if twitter:
-                current_files = [re.sub('cshift_100000', '', f) for f in files]
+                current_files = [re.sub('cshift_100000_', '', f) for f in files]
                 current_files = [re.sub('cshift', '_0', f) for f in current_files]
             else:
                 current_files = [re.sub('cshift_', '', f) for f in files]
