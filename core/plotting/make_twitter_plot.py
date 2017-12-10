@@ -66,8 +66,8 @@ def main():
     ax.set_ylabel('MAE')
     ax.set_ylim(0, 0.15)
     x = [float(t) for t in targets]
-    ax.set_xticks(x)
-    labels = ['-0.15', '-0.1', '-0.075', '-0.05', '-0.025', '0', '0.025', '0.05', '0.075', '0.1', '0.15']
+    x_vals = [0.45, 0.5, 0.55, 0.6, 0.65, 0.7, 0.75]
+    labels = ['-0.15', '-0.1', '-0.05', '0', '0.05', '0.1', '0.15']
     ax.set_xticklabels(labels)
     plt.savefig(output + '.pdf', bbox_inches='tight')
 
