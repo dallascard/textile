@@ -1,5 +1,6 @@
 import os
 import re
+from glob import glob
 from optparse import OptionParser
 
 import matplotlib as mpl
@@ -29,7 +30,7 @@ def main():
         PCC_values[t] = []
 
     for t in targets:
-        files = os.path.join('projects', 'twitter', 'models', 'train_positive_l1_f1_5000_0' + t + '_167-167_*', 'results.csv')
+        files = glob(os.path.join('projects', 'twitter', 'models', 'train_positive_l1_f1_5000_0' + t + '_167-167_*', 'results.csv'))
 
         for f in files:
             print(f)
