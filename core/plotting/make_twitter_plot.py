@@ -49,11 +49,11 @@ def main():
         PCC_means[t_i] = np.mean(PCC_values[t])
         CC_means[t_i] = np.mean(CC_values[t])
 
-    fig, ax = plt.subplots()
+    fig, ax = plt.subplots(figsize=(3, 3))
     x = [float(t) for t in targets]
     ax.plot(x, ACC_means, 'b-', alpha=0.9)
     ax.plot(x, PCC_means, 'g-', alpha=0.9)
-    ax.plot(x, CC_means, 'r-', alpha=0.9)
+    #ax.plot(x, CC_means, 'r-', alpha=0.9)
     for t_i, t in enumerate(targets):
         ACC_vals = ACC_values[t]
         PCC_vals = PCC_values[t]
@@ -66,7 +66,7 @@ def main():
             labels = [None, None, None]
         ax.scatter(x, PCC_vals, s=10, color='g', marker='x', alpha=0.6, label=labels[0])
         ax.scatter(x, ACC_vals, s=10, color='b', alpha=0.6, label=labels[1])
-        ax.scatter(x, CC_vals, s=10, color='r', marker='+', alpha=0.6, label=labels[2])
+        #ax.scatter(x, CC_vals, s=10, color='r', marker='+', alpha=0.6, label=labels[2])
 
 
     ax.legend(loc='upper center')

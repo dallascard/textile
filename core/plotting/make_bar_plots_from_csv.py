@@ -8,8 +8,6 @@ import matplotlib.pyplot as plt
 import numpy as np
 import pandas as pd
 
-from ..util import file_handling as fh
-
 
 def main():
     usage = "%prog"
@@ -42,7 +40,7 @@ def main():
     fig, axes = plt.subplots(1, 4, figsize=(12, 3), sharey=True)
     fig.subplots_adjust(wspace=0)
 
-    names = ['Train', 'CC', 'PCC(acc)', 'PCC(F1)', 'Platt', 'Reweighting', 'ACC', 'PCC(cal)', ]
+    names = ['Train', 'CC', 'PCC(acc)', 'PCC(F1)', 'Platt', 'Reweighting', 'ACC', 'PCC(cal)']
     y = list(range(len(names)))
 
     y.reverse()
@@ -64,6 +62,10 @@ def main():
         if d_i == 0:
             ax.set_yticks(y)
             ax.set_yticklabels(names)
+
+    #if not intrinsic:
+    #    axes[0].text(0.2, -0.5, '*', fontsize=16)
+    #    axes[2].text(0.2, -0.5, '*', fontsize=16)
 
     if intrinsic:
         plt.savefig('/Users/dcard/Submissions/NAACL2018/fig_intrinsic.pdf', bbox_inches='tight')
