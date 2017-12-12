@@ -3,14 +3,11 @@ from optparse import OptionParser
 
 import numpy as np
 import pandas as pd
-from scipy import sparse
 
 from core.util import file_handling as fh
 from core.preprocessing import features
 from core.main import train, predict, evaluate_predictions
 from core.models import evaluation
-from core.models import get_top_features
-from core.discovery import fightin_words
 from core.util import dirs
 
 

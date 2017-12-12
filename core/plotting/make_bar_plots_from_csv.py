@@ -56,7 +56,7 @@ def main():
         ax.barh(y, df.loc[names].mean(axis=1), alpha=0.6, facecolor='blue')
         for y_i, y_val in enumerate(y):
             vals = df.loc[names[y_i]]
-            ax.scatter(vals, np.ones_like(vals) * y_val, s=10, marker='.', color='k', alpha=0.5)
+            ax.scatter(vals, np.ones_like(vals) * y_val, s=10, color='k', alpha=0.6)
         ax.set_xlim(0, 0.29)
         ax.set_xlabel(dataset)
         if d_i == 0:
