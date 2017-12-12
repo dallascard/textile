@@ -39,7 +39,7 @@ def main():
             df_f = fh.read_csv_to_df(f)
             ACC_values[t].append(df_f['MAE'].loc['ACC_internal'])
             PCC_values[t].append(df_f['MAE'].loc['PCC'])
-            CC_values[t].append(df_f['MAE'].log['CC'])
+            CC_values[t].append(df_f['MAE'].loc['CC'])
 
     ACC_means = np.zeros(len(targets))
     PCC_means = np.zeros(len(targets))
