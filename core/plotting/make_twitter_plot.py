@@ -21,7 +21,7 @@ def main():
 
     output = options.prefix
 
-    targets = ['0.45', '0.5', '0.525', '0.55', '0.575', '0.6', '0.625', '0.65', '0.675', '0.7', '0.75']
+    targets = ['0.5', '0.525', '0.55', '0.575', '0.6', '0.625', '0.65', '0.675', '0.7']
 
     ACC_values = {}
     PCC_values = {}
@@ -74,8 +74,8 @@ def main():
     ax.set_ylabel('MAE')
     ax.set_ylim(0, 0.15)
     #x = [float(t) for t in targets]
-    x_vals = [0.45, 0.5, 0.55, 0.6, 0.65, 0.7, 0.75]
-    labels = ['-0.15', '-0.1', '-0.05', '0', '0.05', '0.1', '0.15']
+    x_vals = [0.5, 0.55, 0.6, 0.65, 0.7]
+    labels = ['-0.1', '-0.05', '0', '0.05', '0.1']
     ax.set_xticks(x_vals)
     ax.set_xticklabels(labels)
     plt.savefig(output + '.pdf', bbox_inches='tight')
