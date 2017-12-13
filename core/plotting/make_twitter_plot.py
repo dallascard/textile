@@ -72,10 +72,10 @@ def main():
     ax.legend(loc='upper center')
     ax.set_xlabel('Modified target label proportion')
     ax.set_ylabel('MAE')
-    ax.set_ylim(0, 0.15)
+    #ax.set_ylim(0, 0.15)
     #x = [float(t) for t in targets]
-    #x_vals = [0.5, 0.55, 0.6, 0.65, 0.7]
-    #ax.set_xticks(x_vals)
+    x_vals = [0.5, 0.55, 0.6, 0.65, 0.7]
+    ax.set_xticks(x_vals)
     #ax.set_xticklabels(labels)
     plt.savefig(output + '.pdf', bbox_inches='tight')
 
