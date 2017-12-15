@@ -68,7 +68,6 @@ def main():
         ax.scatter(x, ACC_vals, s=10, color='b', alpha=0.6, label=labels[1])
         #ax.scatter(x, CC_vals, s=10, color='r', marker='+', alpha=0.6, label=labels[2])
 
-
     ax.legend(loc='upper center')
     ax.set_xlabel('Modified target label proportion')
     ax.set_ylabel('AE')
