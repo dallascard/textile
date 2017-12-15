@@ -41,6 +41,7 @@ def main():
     fig.subplots_adjust(wspace=0)
 
     names = ['Train', 'CC', 'PCC(acc)', 'PCC(F1)', 'Platt', 'Reweighting', 'ACC', 'PCC(cal)']
+    label_names = ['Train', 'CC', r'PCC$^{\mathrm{acc}}$', r'PCC$^{F_1}$', 'Platt', 'Reweighting', 'ACC', 'PCC$^{\mathrm{cal}}$']
     y = list(range(len(names)))
 
     y.reverse()
@@ -61,7 +62,7 @@ def main():
         ax.set_xlabel(dataset)
         if d_i == 0:
             ax.set_yticks(y)
-            ax.set_yticklabels(names)
+            ax.set_yticklabels(label_names)
 
     #if not intrinsic:
     #    axes[0].text(0.2, -0.5, '*', fontsize=16)

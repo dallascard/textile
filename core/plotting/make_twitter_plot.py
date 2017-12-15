@@ -13,7 +13,7 @@ from ..util import file_handling as fh
 def main():
     usage = "%prog"
     parser = OptionParser(usage=usage)
-    parser.add_option('--prefix', dest='prefix', default='test',
+    parser.add_option('--prefix', dest='prefix', default='twitter_ACC',
                       help='Output prefix (optional): default=%default')
 
     (options, args) = parser.parse_args()
@@ -61,7 +61,7 @@ def main():
         n_vals = len(ACC_vals)
         x = np.ones(n_vals) * float(t)
         if t_i == 0:
-            labels = ['PCC(F1)', 'ACC', 'CC']
+            labels = [r'PCC$^{F_1}$', 'ACC', 'CC']
         else:
             labels = [None, None, None]
         ax.scatter(x, PCC_vals, s=10, color='g', marker='x', alpha=0.6, label=labels[0])
