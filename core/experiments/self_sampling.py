@@ -17,9 +17,9 @@ def main():
                       help='number of features: default=%default')
     parser.add_option('-s', dest='sample_size', default=500,
                       help='Number of instances to sample: default=%default')
-    parser.add_option('--dx', dest='dx', default=0.01,
+    parser.add_option('--px', dest='px', default=0.01,
                       help='Density of features in X: default=%default')
-    parser.add_option('--dw', dest='dw', default=0.1,
+    parser.add_option('--pw', dest='pw', default=0.1,
                       help='Density of weights: default=%default')
     parser.add_option('--iter', dest='iter', default=100,
                       help='Number of iterations: default=%default')
@@ -31,11 +31,16 @@ def main():
 
     (options, args) = parser.parse_args()
 
-    N = 1000
-    sample_maes = np.zeros(N)
-    model_maes = np.zeros(N)
-    for i in range(N):
-        sample_mae, model_mae = do_experiment(px=0.01, p=5000, sample_size=500, n=10000)
+    n = int(options.n)
+    p = int(options.p)
+    sample_size = int(options.sample_size)
+    px = float(options.px)
+    pw = float(options.pw)
+    n_iter = int(options.iter)
+    sample_maes = np.zeros(n_iter)
+    model_maes = np.zeros(n_iter)
+    for i in range(n_iter):
+        sample_mae, model_mae = do_experiment(n=n, p=p, sample_size=sample_size, px=px, pw=pw)
         sample_maes[i] = sample_mae
         model_maes[i] = model_mae
         if (i+1) % 10 == 0:
