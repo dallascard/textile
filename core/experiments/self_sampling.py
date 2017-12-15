@@ -71,8 +71,8 @@ def do_experiment(n, p, sample_size, px, pw, w_bias=0.0):
 
     model = LogisticRegression(C=1.0, penalty='l1')
     model.fit(sample_X, sample_y)
-    pred = model.predict(X)
-    pred_mean = np.mean(pred)
+    pred_probx = model.predict_proba(X)
+    pred_mean = pred_probx.mean(axis=0)[1]
     sample_mean = np.mean(sample_y)
 
     sample_mae = np.abs(py - sample_mean)
