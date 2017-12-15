@@ -39,6 +39,7 @@ def main():
     ax.plot(n_trains, pcc, label='PCC')
     ax.set_xlabel('Amount of labeled data (L)')
     ax.set_ylabel('Mean AE')
+    ax.set_xscale("log", nonposx='clip')
     ax.legend()
     plt.savefig('self_sampling.pdf', bbox_inches='tight')
 
