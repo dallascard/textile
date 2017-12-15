@@ -69,7 +69,7 @@ def do_experiment(n, p, sample_size, px, pw, w_bias=0.0):
     sample_X = X[sample, :]
     sample_y = y[sample]
 
-    model = LogisticRegression(alpha=1.0, penalty='l1')
+    model = LogisticRegression(C=1.0, penalty='l1')
     model.fit(sample_X, sample_y)
     pred = model.predict(X)
     pred_mean = np.mean(pred)
