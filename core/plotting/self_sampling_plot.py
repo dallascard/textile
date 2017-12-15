@@ -1,9 +1,17 @@
+import os
+import glob
+
 from optparse import OptionParser
 
-import matplotlib.pylot as plt
+import matplotlib as mpl
+mpl.use('Agg')
+import matplotlib.pyplot as plt
 import numpy as np
 
+from ..util import file_handling as fh
 
+
+# Plotting function for core.experiments.self_sampling
 
 def main():
     usage = "%prog"
@@ -16,8 +24,23 @@ def main():
 
     (options, args) = parser.parse_args()
 
-    #pcc = [0.0602, 0.0466, 0.0212, 0.0127, 0.0077, 0.0036]
-    #srs = [0.0414, 0.0281, 0.0177, 0.0127, ]
+    n_trains = [100, 200, 500, 1000, 2000, 5000, 10000]
+
+    srs = []
+    pcc = []
+
+    for n in n_trains:
+        lines = fh.read_text('self_sampling_' + str(n) + '.txt')
+        srs.append(float(lines[0].strip()))
+        pcc.append(float(lines[1].strip()))
+
+    fig, ax = plt.subplots(figsize=(5, 2))
+    ax.plot(n_trains, srs, label='SRS')
+    ax.plot(n_trains, pcc, label='PCC')
+    ax.set_xlabel('Amount of labeled data (L)')
+    ax.set_ylabel('Mean AE')
+    ax.legend()
+    plt.savefig('self_sampling.pdf', bbox_inches='tight')
 
 
 if __name__ == '__main__':
