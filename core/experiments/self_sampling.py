@@ -6,7 +6,8 @@ from scipy import sparse
 from scipy.stats import ttest_rel, wilcoxon
 from sklearn.linear_model import LogisticRegression
 
-from ..main.train import train_lr_model_with_cv
+from ..util import file_handling as fh
+
 
 def main():
     usage = "%prog"
@@ -48,6 +49,9 @@ def main():
     print(np.mean(sample_maes), np.mean(model_maes))
     print("paired t-test:", ttest_rel(sample_maes, model_maes))
     print("Wilcoxon:", wilcoxon(sample_maes, model_maes))
+
+    output_filename = 'self_sampling_' + str(sample_size) + '.txt'
+    fh.write_list_to_text([str(np.mean(sample_maes)), str(np.mean(model_maes))], output_filename)
 
 
 def do_experiment(n, p, sample_size, px, pw, w_bias=0.0):
