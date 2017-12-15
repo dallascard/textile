@@ -51,9 +51,10 @@ def main():
 
 
 def do_experiment(n, p, sample_size, px, pw, w_bias=0.0):
-    weights = np.random.randn(p) + w_bias
-    ablation = np.array(np.random.rand(p) >= pw, dtype=int)
-    weights = weights * ablation
+    #weights = np.random.randn(p) + w_bias
+    #ablation = np.array(np.random.rand(p) >= pw, dtype=int)
+    weights = np.random.laplace(loc=0, scale=1, size=p)
+    #weights = weights * ablation
     bias = np.random.randn()
     X = sparse.csr_matrix(sparse.random(n, p, density=px) > 0, dtype=int)
     #print(X.min(), X.max())
@@ -68,7 +69,7 @@ def do_experiment(n, p, sample_size, px, pw, w_bias=0.0):
     sample_X = X[sample, :]
     sample_y = y[sample]
 
-    model = LogisticRegression(penalty='l1')
+    model = LogisticRegression(alpha=1.0, penalty='l1')
     model.fit(sample_X, sample_y)
     pred = model.predict(X)
     pred_mean = np.mean(pred)
