@@ -22,7 +22,7 @@ def main():
     output = options.prefix
 
     #targets = ['0.5', '0.55', '0.575', '0.6', '0.625', '0.65', '0.7']
-    targets = ['0.4', '0.5', '0.575', '0.6', '0.625', '0.7', '0.8']
+    targets = ['0.4', '0.5' , '0.6', '0.625', '0.65', '0.7', '0.8']
 
     ACC_values = {}
     PCC_values = {}
@@ -73,7 +73,7 @@ def main():
     ax.legend(loc='upper center')
     ax.set_xlabel('Modified target label proportion')
     ax.set_ylabel('MAE')
-    ax.set_ylim(0, 0.1)
+    #ax.set_ylim(0, 0.1)
     #x = [float(t) for t in targets]
     #x_vals = [0.5, 0.55, 0.6, 0.65, 0.7]
     #ax.set_xticks(x_vals)
