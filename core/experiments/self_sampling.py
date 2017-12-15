@@ -56,7 +56,7 @@ def do_experiment(n, p, sample_size, px, pw, w_bias=0.0):
     weights = weights * ablation
     bias = np.random.randn()
     X = sparse.csr_matrix(sparse.random(n, p, density=px) > 0, dtype=int)
-    y = expit(X.dot(weights) + bias)
+    y = np.array(expit(X.dot(weights) + bias) > 0, dtype=int)
     py = np.mean(y)
 
     sample = np.random.choice(np.arange(n), size=sample_size, replace=False)
