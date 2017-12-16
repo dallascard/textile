@@ -61,7 +61,7 @@ def main():
         n_vals = len(ACC_vals)
         x = np.ones(n_vals) * float(t)
         if t_i == 0:
-            labels = [r'PCC$^{F_1}$', 'ACC', 'CC']
+            labels = [r'PCC$^{\mathrm{F}_1}$', 'ACC', 'CC']
         else:
             labels = [None, None, None]
         ax.scatter(x, PCC_vals, s=10, color='g', marker='x', alpha=0.6, label=labels[0])

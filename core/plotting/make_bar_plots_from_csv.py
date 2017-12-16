@@ -41,7 +41,7 @@ def main():
     fig.subplots_adjust(wspace=0)
 
     names = ['Train', 'CC', 'PCC(acc)', 'PCC(F1)', 'Platt', 'Reweighting', 'ACC', 'PCC(cal)']
-    label_names = ['Train', 'CC', r'PCC$^{\mathrm{acc}}$', r'PCC$^{F_1}$', 'Platt', 'Reweighting', 'ACC', 'PCC$^{\mathrm{cal}}$']
+    label_names = ['Train', 'CC', r'PCC$^{\mathrm{acc}}$', r'PCC$^{\mathrm{F}_1}$', 'Platt', 'Reweighting', 'ACC', 'PCC$^{\mathrm{cal}}$']
     y = list(range(len(names)))
 
     y.reverse()
