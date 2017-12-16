@@ -35,8 +35,8 @@ def main():
         pcc.append(float(lines[1].strip()))
 
     fig, ax = plt.subplots(figsize=(5, 1.5))
-    ax.plot(n_trains, srs, label='SRS')
-    ax.plot(n_trains, pcc, label='PCC')
+    ax.plot(n_trains, srs, label='SRS', c='orange')
+    ax.plot(n_trains, pcc, label='PCC', c='blue', linestyle='--')
     ax.set_xlabel('Amount of labeled data (L)')
     ax.set_ylabel('Mean AE')
     ax.set_xscale("log", nonposx='clip')
