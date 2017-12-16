@@ -30,7 +30,7 @@ def main():
     pcc = []
 
     for n in n_trains:
-        lines = fh.read_text('self_sampling_' + str(n) + '.txt')
+        lines = fh.read_text('self_sampling_noise_' + str(n) + '.txt')
         srs.append(float(lines[0].strip()))
         pcc.append(float(lines[1].strip()))
 
