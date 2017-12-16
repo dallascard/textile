@@ -49,7 +49,7 @@ def main():
         PCC_means[t_i] = np.mean(PCC_values[t])
         CC_means[t_i] = np.mean(CC_values[t])
 
-    fig, ax = plt.subplots(figsize=(5, 3))
+    fig, ax = plt.subplots(figsize=(5, 2))
     x = [float(t) for t in targets]
     ax.plot(x, ACC_means, 'b-', alpha=0.9)
     ax.plot(x, PCC_means, 'g-', alpha=0.9)
