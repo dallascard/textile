@@ -47,9 +47,9 @@ def main():
     y.reverse()
 
     if intrinsic:
-        datasets = ['AE: Yelp (500)', 'AE: Yelp (5000)', 'AE: Twitter (500)', 'AE: Twitter (5000)']
+        datasets = ['AE: Yelp (L=500)', 'AE: Yelp (L=5000)', 'AE: Twitter (L=500)', 'AE: Twitter (L=5000)']
     else:
-        datasets = ['AE: MFC (500)', 'AE: MFC (2000)', 'AE: Amazon (500)', 'AE: Amazon (5000)']
+        datasets = ['AE: MFC (L=500)', 'AE: MFC (L=2000)', 'AE: Amazon (L=500)', 'AE: Amazon (L=5000)']
 
     for d_i, dataset in enumerate(datasets):
         ax = axes[d_i]
