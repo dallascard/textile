@@ -50,11 +50,11 @@ def main():
     print("paired t-test:", ttest_rel(sample_maes, model_maes))
     print("Wilcoxon:", wilcoxon(sample_maes, model_maes))
 
-    output_filename = 'self_sampling_' + str(sample_size) + '.txt'
+    output_filename = 'self_sampling_sigma_' + str(sample_size) + '.txt'
     fh.write_list_to_text([str(np.mean(sample_maes)), str(np.mean(model_maes))], output_filename)
 
 
-def do_experiment(n, p, sample_size, px, pw, w_bias=0.0):
+def do_experiment(n, p, sample_size, px, pw, w_bias=0.0, sigma=1.0):
     #weights = np.random.randn(p) + w_bias
     #ablation = np.array(np.random.rand(p) >= pw, dtype=int)
     weights = np.random.laplace(loc=0, scale=1, size=p)
@@ -64,7 +64,7 @@ def do_experiment(n, p, sample_size, px, pw, w_bias=0.0):
     #print(X.min(), X.max())
     #print(weights.min(), weights.max())
     #temp = X.dot(weights)
-    p = expit(X.dot(weights) + bias)
+    p = expit(X.dot(weights) + bias + np.random.randn(n)*sigma)
     y = np.array(p > 0.5, dtype=int)
     #print(p.min(), p.max())
     py = np.mean(y)
