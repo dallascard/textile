@@ -34,7 +34,7 @@ def main():
         srs.append(float(lines[0].strip()))
         pcc.append(float(lines[1].strip()))
 
-    fig, ax = plt.subplots(figsize=(5, 2))
+    fig, ax = plt.subplots(figsize=(5, 1.5))
     ax.plot(n_trains, srs, label='SRS')
     ax.plot(n_trains, pcc, label='PCC')
     ax.set_xlabel('Amount of labeled data (L)')
