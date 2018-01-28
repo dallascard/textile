@@ -4,7 +4,7 @@ from collections import Counter
 from optparse import OptionParser
 
 import numpy as np
-from spacy.en import English
+import spacy
 
 from ..util import file_handling as fh
 from ..preprocessing import normalize_text, features
@@ -56,7 +56,7 @@ def preprocess_words(project_dir, subset, ngrams=2, lower=False, lemmatize=False
 
     if not fast:
         print("Loading spacy")
-        parser = English()
+        parser = spacy.load('en')
 
     items = []
     unigrams = {}
