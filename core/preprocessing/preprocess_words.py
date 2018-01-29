@@ -26,6 +26,8 @@ def main():
                       help='Only do things that are fast (i.e. only splitting, no parsing, no lemmas): default=%default')
     parser.add_option('--min_df', dest='min_df', default=1,
                       help='Minimum document frequency (best to avoid, but possibly necessary): default=%default')
+    parser.add_option('--pos', dest='pos', default=None,
+                      help='Restrict to one type of part-of-speech tag [ADJ|VERB|NOUN|...]: default=%default')
     parser.add_option('-d', dest='display', default=1000,
                       help='Display progress every X items: default=%default')
 
@@ -42,10 +44,10 @@ def main():
     display = int(options.display)
     min_df = int(options.min_df)
 
-    preprocess_words(project_dir, subset, ngrams=ngrams, lower=lower, lemmatize=lemmatize, fast=fast, display=display, suffix=suffix, min_df=min_df)
+    preprocess_words(project_dir, subset, ngrams=ngrams, lower=lower, lemmatize=lemmatize, fast=fast, display=display, suffix=suffix, min_df=min_df, pos=pos)
 
 
-def preprocess_words(project_dir, subset, ngrams=2, lower=False, lemmatize=False, fast=False, display=1000, suffix='', min_df=1):
+def preprocess_words(project_dir, subset, ngrams=2, lower=False, lemmatize=False, fast=False, display=1000, suffix='', min_df=1, pos=None):
 
     print("Reading data")
     datafile = os.path.join(dirs.dir_data_raw(project_dir), subset + '.json')
@@ -95,7 +97,7 @@ def preprocess_words(project_dir, subset, ngrams=2, lower=False, lemmatize=False
             else:
                 percept = get_word
 
-            unigrams[name] = extract_unigram_feature(parse, percept)
+            unigrams[name] = extract_unigram_feature(parse, percept, pos=pos)
             for n in range(2, ngrams+1):
                 ngram_dicts[n][name] = extract_ngram_feature(parse, percept, n=n)
 
@@ -127,17 +129,23 @@ def preprocess_words(project_dir, subset, ngrams=2, lower=False, lemmatize=False
         feature.save_feature(dirs.dir_features(project_dir, subset))
 
 
-def get_word(token):
+def get_word(token, pos=None):
     """Get word from spaCy"""
     #  get word and remove whitespace
-    word = re.sub('\s', '', token.orth_)
+    if pos is None or token.pos_ == pos:
+        word = re.sub('\s', '', token.orth_)
+    else:
+        word = ''
     return word
 
 
-def get_lemma(token):
+def get_lemma(token, pos=None):
     """Get token from spaCy"""
     # get lemma and remove whitespace
-    lemma = re.sub('\s', '', token.lemma_)
+    if pos is None or token.pos_ == pos:
+        lemma = re.sub('\s', '', token.lemma_)
+    else:
+        lemma = ''
     return lemma
 
 
@@ -146,9 +154,9 @@ def get_token(token):
     return token
 
 
-def extract_unigram_feature(parse, feature_function):
+def extract_unigram_feature(parse, feature_function, pos=None):
     counter = Counter()
-    counter.update([feature_function(token) for token in parse if len(feature_function(token)) > 0])
+    counter.update([feature_function(token, pos=pos) for token in parse if len(feature_function(token)) > 0])
     return dict(counter)
 
 
@@ -166,6 +174,10 @@ def extract_bigram_feature(parse, percept):
     return dict(counter)
 
 
+if __name__ == '__main__':
+    main()
+
+
 def extract_ngram_feature(parse, percept, n=3):
     counter = Counter()
     for sent in parse.sents:
@@ -177,7 +189,3 @@ def extract_ngram_feature(parse, percept, n=3):
                         counter.update(['_'.join(percepts)])
 
     return dict(counter)
-
-
-if __name__ == '__main__':
-    main()
