@@ -43,6 +43,7 @@ def main():
     ngrams = int(options.ngrams)
     display = int(options.display)
     min_df = int(options.min_df)
+    pos = options.pos
 
     preprocess_words(project_dir, subset, ngrams=ngrams, lower=lower, lemmatize=lemmatize, fast=fast, display=display, suffix=suffix, min_df=min_df, pos=pos)
 
