@@ -118,7 +118,8 @@ def main():
         print(row, len(numbers), np.mean(numbers))
 
     to_plot = ['train_f1', 'PCC_cal', 'PCC_acc', 'PCC_f1', 'CC_f1', 'PCC_cshift', 'PCC_platt2_f1', 'ACC_internal_f1']
-    names = ['Train', 'PCC(cal)', 'PCC(F1)', 'PCC(acc)', 'CC', 'Platt', 'Reweighting', 'ACC']
+    #names = ['Train', 'PCC(cal)', 'PCC(F1)', 'PCC(acc)', 'CC', 'Platt', 'Reweighting', 'ACC']
+    names = ['Train', 'PCC(cal)', 'PCC(acc)', 'PCC(F1)', 'CC', 'Reweighting', 'Platt', 'ACC']
 
     rows = [values[r] for r in to_plot]
     rows = np.vstack(rows)
