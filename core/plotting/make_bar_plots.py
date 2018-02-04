@@ -7,6 +7,7 @@ mpl.use('Agg')
 import matplotlib.pyplot as plt
 import numpy as np
 import pandas as pd
+from scipy.stats import pearsonr
 
 from ..util import file_handling as fh
 
@@ -16,26 +17,26 @@ def main():
     parser = OptionParser(usage=usage)
     parser.add_option('--prefix', dest='prefix', default='test',
                       help='Output prefix (optional): default=%default')
-    parser.add_option('--similar', action="store_true", dest="similar", default=False,
-                      help='Only use the most similar examples: default=%default')
-    parser.add_option('--different', action="store_true", dest="different", default=False,
-                      help='Only use the most different examples: default=%default')
-    parser.add_option('--balanced', action="store_true", dest="balanced", default=False,
-                      help='Only use the most balanced examples: default=%default')
-    parser.add_option('--unbalanced', action="store_true", dest="unbalanced", default=False,
-                      help='Only use the most unbalanced examples: default=%default')
-    parser.add_option('--twitter', action="store_true", dest="twitter", default=False,
-                      help='Special for twitter data: default=%default')
+    #parser.add_option('--similar', action="store_true", dest="similar", default=False,
+    #                  help='Only use the most similar examples: default=%default')
+    #parser.add_option('--different', action="store_true", dest="different", default=False,
+    #                  help='Only use the most different examples: default=%default')
+    #parser.add_option('--balanced', action="store_true", dest="balanced", default=False,
+    #                  help='Only use the most balanced examples: default=%default')
+    #parser.add_option('--unbalanced', action="store_true", dest="unbalanced", default=False,
+    #                  help='Only use the most unbalanced examples: default=%default')
+    #parser.add_option('--twitter', action="store_true", dest="twitter", default=False,
+    #                  help='Special for twitter data: default=%default')
 
 
     (options, args) = parser.parse_args()
     files = args
     n_files = len(files)
 
-    use_most_similar = options.similar
-    use_least_similar = options.different
-    use_balanced = options.balanced
-    use_unbalanced = options.unbalanced
+    #use_most_similar = options.similar
+    #use_least_similar = options.different
+    #use_balanced = options.balanced
+    #use_unbalanced = options.unbalanced
     twitter = options.twitter
 
     output = options.prefix
@@ -90,6 +91,7 @@ def main():
 
         print("%d files" % len(files))
 
+    """
     df = pd.DataFrame(mae_values, index=df.index)
 
     most_similar = train_maes < np.mean(train_maes)
@@ -111,6 +113,7 @@ def main():
     df = pd.DataFrame(df.values[:, selector], index=df.index)
     print(df.mean(axis=1))
     print(df.std(axis=1))
+    """
 
     for row, numbers in values.items():
         print(row, len(numbers), np.mean(numbers))
@@ -121,6 +124,7 @@ def main():
 
     rows = [values[r] for r in to_plot]
     rows = np.vstack(rows)
+    print(pearsonr(values['train_f1'], values['PCC_f1']))
     means = np.mean(rows, axis=1)
 
     values_df = pd.DataFrame(rows, index=names)
