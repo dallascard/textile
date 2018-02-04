@@ -124,10 +124,10 @@ def main():
     rows = np.vstack(rows)
 
     train_maes = values['train_f1']
-    most_similar = train_maes < np.percentile(train_maes, q=percentile)
+    most_similar = train_maes <= np.percentile(train_maes, q=percentile)
     least_similar = train_maes > np.percentile(train_maes, q=100-percentile)
     train_unalancedness = np.abs(np.array(train_estimates) - 0.5)
-    most_balanced = train_unalancedness < np.percentile(train_unalancedness, q=percentile)
+    most_balanced = train_unalancedness <= np.percentile(train_unalancedness, q=percentile)
     least_balanced = train_unalancedness > np.percentile(train_unalancedness, q=100-percentile)
 
     selector = np.array(np.ones(len(most_similar)), dtype=bool)
