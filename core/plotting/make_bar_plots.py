@@ -25,8 +25,8 @@ def main():
     #                  help='Only use the most balanced examples: default=%default')
     #parser.add_option('--unbalanced', action="store_true", dest="unbalanced", default=False,
     #                  help='Only use the most unbalanced examples: default=%default')
-    #parser.add_option('--twitter', action="store_true", dest="twitter", default=False,
-    #                  help='Special for twitter data: default=%default')
+    parser.add_option('--twitter', action="store_true", dest="twitter", default=False,
+                      help='Special for twitter data: default=%default')
 
 
     (options, args) = parser.parse_args()
