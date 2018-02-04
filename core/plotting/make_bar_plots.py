@@ -155,7 +155,7 @@ def main():
     ax.barh(y, means, alpha=0.5, facecolor='blue')
     for y_i, y_val in enumerate(y):
         #vals = values[to_plot[y_i]]
-        vals = values_df.loc[to_plot[y_i]]
+        vals = values_df.loc[names[y_i]]
         ax.scatter(vals, np.ones_like(vals) * y_val, s=10, facecolor='k', alpha=0.5)
     ax.set_yticks(y)
     ax.set_yticklabels(names)
