@@ -25,6 +25,8 @@ def main():
                       help='Only use the most balanced examples: default=%default')
     parser.add_option('--unbalanced', action="store_true", dest="unbalanced", default=False,
                       help='Only use the most unbalanced examples: default=%default')
+    parser.add_option('-p', dest='percentile', default=50,
+                      help='percentile (optional): default=%default')
     parser.add_option('--twitter', action="store_true", dest="twitter", default=False,
                       help='Special for twitter data: default=%default')
 
@@ -37,6 +39,7 @@ def main():
     use_least_similar = options.different
     use_balanced = options.balanced
     use_unbalanced = options.unbalanced
+    percentile = int(options.percentile)
     twitter = options.twitter
 
     output = options.prefix
@@ -120,11 +123,11 @@ def main():
     rows = np.vstack(rows)
 
     train_maes = values['train_f1']
-    most_similar = train_maes < np.mean(train_maes)
-    least_similar = train_maes > np.mean(train_maes)
+    most_similar = train_maes < np.percentile(train_maes, q=percentile)
+    least_similar = train_maes > np.percentile(train_maes, q=100-percentile)
     train_unalancedness = np.abs(np.array(train_estimates) - 0.5)
-    most_balanced = train_unalancedness < np.mean(train_unalancedness)
-    least_balanced = train_unalancedness > np.mean(train_unalancedness)
+    most_balanced = train_unalancedness < np.percentile(train_unalancedness, q=percentile)
+    least_balanced = train_unalancedness > np.percentile(train_unalancedness, q=100-percentile)
 
     selector = np.array(np.ones(len(most_similar)), dtype=bool)
     if use_most_similar:
