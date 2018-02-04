@@ -90,7 +90,6 @@ def main():
 
         print("%d files" % len(files))
 
-    """
     df = pd.DataFrame(mae_values, index=df.index)
 
     most_similar = train_maes < np.mean(train_maes)
@@ -112,7 +111,6 @@ def main():
     df = pd.DataFrame(df.values[:, selector], index=df.index)
     print(df.mean(axis=1))
     print(df.std(axis=1))
-    """
 
     for row, numbers in values.items():
         print(row, len(numbers), np.mean(numbers))

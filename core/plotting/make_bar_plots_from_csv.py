@@ -10,16 +10,19 @@ import pandas as pd
 
 
 def main():
-    usage = "%prog"
+    usage = "%prog base_dir"
     parser = OptionParser(usage=usage)
     parser.add_option('--intrinsic', action="store_true", dest="intrinsic", default=False,
                       help='Output figure for intrinsic data: default=%default')
+    parser.add_option('--switch', action="store_true", dest="switch", default=False,
+                      help='Switch labels to account for error in old data: default=%default')
 
     (options, args) = parser.parse_args()
 
+    base_dir = args[0]
     intrinsic = options.intrinsic
+    switch = options.switch
 
-    base_dir = 'results'
     if intrinsic:
         csv1 = os.path.join(base_dir, 'city_500.csv')
         csv2 = os.path.join(base_dir, 'city_5000.csv')
@@ -40,6 +43,7 @@ def main():
     fig, axes = plt.subplots(1, 4, figsize=(12, 3), sharey=True)
     fig.subplots_adjust(wspace=0)
 
+    names_old = ['Train', 'CC', 'PCC(F1)', 'PCC(acc)', 'Reweighting', 'Platt', 'ACC', 'PCC(cal)']
     names = ['Train', 'CC', 'PCC(acc)', 'PCC(F1)', 'Platt', 'Reweighting', 'ACC', 'PCC(cal)']
     label_names = ['Train', 'CC', r'PCC$^{\mathrm{acc}}$', r'PCC$^{\mathrm{F}_1}$', 'Platt', 'Reweighting', 'ACC', 'PCC$^{\mathrm{cal}}$']
     y = list(range(len(names)))
@@ -53,12 +57,20 @@ def main():
 
     for d_i, dataset in enumerate(datasets):
         ax = axes[d_i]
-        df = dfs[d_i]
+        df_temp = dfs[d_i]
+
+        if switch:
+            df = df_temp.copy()
+            for n_i in range(len(names_old)):
+                df.loc[names[n_i]] = df_temp.loc[names_old[n_i]]
+        else:
+            df = df_temp
+
         ax.barh(y, df.loc[names].mean(axis=1), alpha=0.6, facecolor='blue')
         for y_i, y_val in enumerate(y):
             vals = df.loc[names[y_i]]
             ax.scatter(vals, np.ones_like(vals) * y_val, s=10, color='k', alpha=0.6)
-        ax.set_xlim(0, 0.29)
+        ax.set_xlim(0, 0.39)
         ax.set_xlabel(dataset)
         if d_i == 0:
             ax.set_yticks(y)
