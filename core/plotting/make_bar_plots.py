@@ -52,7 +52,7 @@ def main():
 
     dfs = []
 
-    for d in datasets:
+    for d_i, d in enumerate(datasets):
         print(d)
         if d != 'cshift':
             if twitter:
@@ -77,14 +77,7 @@ def main():
             n_files += 1
             df_f = fh.read_csv_to_df(f)
             n_rows, n_cols = df_f.shape
-            if mae_values is None:
-                df = df_f
-                mae_values = np.zeros([n_rows, n_files-1])
-
-                train_estimates.append(df_f.loc['train', 'estimate'])
-                train_maes.append(df_f.loc['train', 'MAE'])
-
-            mae_values[:, f_i] = df_f['MAE'].values
+            train_estimates.append(df_f.loc['train', 'estimate'])
 
             n_train = int(df_f.loc['train', 'N'])
             for row in rows:
@@ -92,6 +85,7 @@ def main():
 
         print("%d files" % len(files))
 
+    """
     df = pd.DataFrame(mae_values, index=df.index)
 
     most_similar = train_maes < np.mean(train_maes)
@@ -113,6 +107,7 @@ def main():
     df = pd.DataFrame(df.values[:, selector], index=df.index)
     print(df.mean(axis=1))
     print(df.std(axis=1))
+    """
 
     for row, numbers in values.items():
         print(row, len(numbers), np.mean(numbers))
@@ -123,7 +118,26 @@ def main():
 
     rows = [values[r] for r in to_plot]
     rows = np.vstack(rows)
-    print(pearsonr(values['train_f1'], values['PCC_f1']))
+
+    train_maes = values['train_f1']
+    most_similar = train_maes < np.mean(train_maes)
+    least_similar = train_maes > np.mean(train_maes)
+    train_unalancedness = np.abs(np.array(train_estimates) - 0.5)
+    most_balanced = train_unalancedness < np.mean(train_unalancedness)
+    least_balanced = train_unalancedness > np.mean(train_unalancedness)
+
+    selector = np.array(np.ones(len(most_similar)), dtype=bool)
+    if use_most_similar:
+        selector *= most_similar
+    if use_least_similar:
+        selector *= least_similar
+    if use_balanced:
+        selector *= most_balanced
+    if use_unbalanced:
+        selector *= least_balanced
+
+    rows = rows[:, selector]
+
     means = np.mean(rows, axis=1)
 
     values_df = pd.DataFrame(rows, index=names)
