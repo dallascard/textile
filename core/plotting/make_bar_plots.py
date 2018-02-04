@@ -136,12 +136,17 @@ def main():
     if use_unbalanced:
         selector *= least_balanced
 
+    print(rows.shape)
     rows = rows[:, selector]
+    print(rows.shape)
 
     means = np.mean(rows, axis=1)
 
     values_df = pd.DataFrame(rows, index=names)
     values_df.to_csv(output + '.csv')
+
+    means_df = pd.DataFrame(means, index=names)
+    print(means_df)
 
     y = list(range(len(names)))
     y.reverse()
