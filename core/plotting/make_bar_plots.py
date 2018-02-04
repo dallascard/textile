@@ -115,9 +115,10 @@ def main():
     for row, numbers in values.items():
         print(row, len(numbers), np.mean(numbers))
 
-    to_plot = ['train_f1', 'PCC_cal', 'PCC_acc', 'PCC_f1', 'CC_f1', 'PCC_cshift', 'PCC_platt2_f1', 'ACC_internal_f1']
+    to_plot = ['train_f1', 'CC_f1', 'PCC_acc', 'PCC_f1', 'PCC_platt2_f1', 'PCC_cshift', 'ACC_internal_f1', 'PCC_cal']
     #names = ['Train', 'PCC(cal)', 'PCC(F1)', 'PCC(acc)', 'CC', 'Platt', 'Reweighting', 'ACC']
-    names = ['Train', 'PCC(cal)', 'PCC(acc)', 'PCC(F1)', 'CC', 'Reweighting', 'Platt', 'ACC']
+    names = ['Train', 'CC', 'PCC(acc)', 'PCC(F1)', 'Platt', 'Reweighting', 'ACC', 'PCC(cal)']
+    names = ['Train', 'CC', r'PCC$^{\mathrm{acc}}$', r'PCC$^{\mathrm{F}_1}$', 'Platt', 'Reweighting', 'ACC', 'PCC$^{\mathrm{cal}}$']
 
     rows = [values[r] for r in to_plot]
     rows = np.vstack(rows)
@@ -162,7 +163,7 @@ def main():
         ax.scatter(vals, np.ones_like(vals) * y_val, s=10, facecolor='k', alpha=0.5)
     ax.set_yticks(y)
     ax.set_yticklabels(names)
-    ax.set_xlim(0, 0.5)
+    ax.set_xlim(0, 0.39)
     plt.savefig(output + '.pdf', bbox_inches='tight')
 
     #if output is not None:
