@@ -323,7 +323,7 @@ def test_over_time(project_dir, subset, config_file, model_type, field, train_st
         print("Mean: %0.6f" % cshift_pred_probs_df[1].values[:n_train_all].mean())
         print("Max: %0.6f" % cshift_pred_probs_df[1].values[:n_train_all].max())
         # HACK: need to prevent 0s in prob(y=0|x)
-        p_train_values =  cshift_pred_probs_df[0].values
+        p_train_values = cshift_pred_probs_df[0].values
         threshold = 0.01
         p_train_values[p_train_values < threshold] = threshold
         print("After thresholding")
@@ -345,7 +345,6 @@ def test_over_time(project_dir, subset, config_file, model_type, field, train_st
         # create a data frame with this information
     else:
         weights_df_all = None
-
 
     # find the labeled items
     print("Subsetting items with labels")
@@ -436,7 +435,6 @@ def test_over_time(project_dir, subset, config_file, model_type, field, train_st
             test_label_values = test_labels_df.values
             test_label_props = test_label_values[:, 1] / (test_label_values[:, 1] + test_label_values[:, 0])
             print("New props = %0.3f" % np.mean(test_label_props))
-
 
         # if instructed, sample labels in proportion to annotations (to simulate having one label per item)
         if sample_labels:

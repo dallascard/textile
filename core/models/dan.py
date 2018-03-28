@@ -134,7 +134,7 @@ class DAN:
                 train_acc = 0.0
                 order = np.arange(n_train)
                 np.random.shuffle(order)
-                for i in order:
+                for ii, i in enumerate(order):
                     X_i_list = X_train[i, :].nonzero()[1].tolist()
                     sel = np.random.choice((0, 1), p=(dropout_prob, 1-dropout_prob), size=len(X_i_list), replace=True)
                     X_i_list = [x for x_i, x in enumerate(X_i_list) if sel[x_i] == 1]
@@ -167,10 +167,10 @@ class DAN:
                         train_acc += (Y_list_train[i] == pred) * train_weights[i]
                         weight_sum += train_weights[i]
 
-                    if (i+1) % 200 == 0:
-                        print("%d %d %0.4f %0.4f" % (epoch, i+1, running_loss / weight_sum, train_acc / weight_sum))
+                    if (ii+1) % 200 == 0:
+                        print("%d %d %0.4f %0.4f" % (epoch, ii+1, running_loss / weight_sum, train_acc / weight_sum))
 
-                print("%d %d %0.4f %0.4f" % (epoch, i+1, running_loss / weight_sum, train_acc / weight_sum))
+                print("%d %0.4f %0.4f" % (epoch, running_loss / weight_sum, train_acc / weight_sum))
 
                 """
                 for j in [14281, 10863]:

@@ -107,7 +107,7 @@ def convert_mfc(project, data_file, output_prefix, threshold, raw_data_dir, meta
     for k in keys:
         text = data[k]['text']
         paragraphs = text.split('\n\n')
-        text = '\n'.join(paragraphs[2:])
+        text = ' '.join(paragraphs[2:])
         framing_annotations = data[k]['annotations']['framing']
         #year = int(data[k]['year'])
         #month = int(data[k]['month'])
@@ -207,6 +207,7 @@ def get_source(source):
     else:
         source = SOURCES[source]
     return source
+
 
 if __name__ == '__main__':
     main()
